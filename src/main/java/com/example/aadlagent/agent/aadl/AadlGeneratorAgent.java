@@ -67,91 +67,55 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
 
         log.info("架构树长度: {} 字符", architectureJson.length());
         log.info("模块分析长度: {} 字符", modulesJson.length());
-        log.info("配置参数: temperature={}, maxTokens={}, maxRetries={}", temperature, maxTokens, maxRetries);
+        log.info("配置参数: temperature={}, maxTokens={}", temperature, maxTokens);
 
         log.info("正在构建Prompt...");
         String systemPrompt = prompt.buildPrompt(architectureJson, modulesJson, input.getRagContext());
         log.info("Prompt构建完成，长度: {} 字符", systemPrompt.length());
 
-        List<String> previousErrors = new ArrayList<>();
+        log.info("----------------------------------------");
+        log.info("正在调用大模型... (类型: {}, 模型: {})", modelType.name(), llmClient.getModelName());
 
-        for (int attempt = 1; attempt <= maxRetries; attempt++) {
-            log.info("----------------------------------------");
-            log.info("第 {}/{} 次尝试", attempt, maxRetries);
-            log.info("正在调用大模型... (类型: {}, 模型: {})", modelType.name(), llmClient.getModelName());
+        long llmStartTime = System.currentTimeMillis();
+        String llmResponse = llmClient.chat(systemPrompt, temperature, maxTokens);
+        long llmTime = System.currentTimeMillis() - llmStartTime;
 
-            String promptWithFeedback = systemPrompt;
-            if (!previousErrors.isEmpty()) {
-                StringBuilder feedbackBuilder = new StringBuilder();
-                feedbackBuilder.append("\n\n【上一次生成错误反馈】\n");
-                feedbackBuilder.append("请修复以下AADL语法问题：\n");
-                for (int i = 0; i < previousErrors.size(); i++) {
-                    feedbackBuilder.append(String.format("%d. %s\n", i + 1, previousErrors.get(i)));
-                }
-                feedbackBuilder.append("\n请基于以上反馈重新生成完整的AADL模型。");
-                promptWithFeedback = systemPrompt + feedbackBuilder.toString();
-                log.info("已添加错误反馈，Prompt长度: {} 字符", promptWithFeedback.length());
-            }
+        log.info("LLM调用完成，耗时: {}ms", llmTime);
 
-            long llmStartTime = System.currentTimeMillis();
-            String llmResponse = llmClient.chat(promptWithFeedback, temperature, maxTokens);
-            long llmTime = System.currentTimeMillis() - llmStartTime;
-
-            log.info("LLM调用完成，耗时: {}ms", llmTime);
-
-            if (llmResponse == null || llmResponse.trim().isEmpty()) {
-                log.warn("LLM返回空响应，准备重试");
-                continue;
-            }
-
-            log.info("LLM响应长度: {} 字符", llmResponse.length());
-            log.info("LLM响应前200字符: {}", llmResponse.length() > 200 ? llmResponse.substring(0, 200) + "..." : llmResponse);
-
-            try {
-                log.info("正在解析LLM响应...");
-                String aadlContent = extractAadlContent(llmResponse);
-
-                List<String> validationErrors = validateAadl(aadlContent);
-
-                if (validationErrors.isEmpty()) {
-                    long executionTime = System.currentTimeMillis() - startTime;
-                    int componentCount = countComponents(aadlContent);
-                    int connectionCount = countConnections(aadlContent);
-
-                    log.info("========================================");
-                    log.info("AadlGeneratorAgent执行成功!");
-                    log.info("组件数量: {} 个", componentCount);
-                    log.info("连接数量: {} 个", connectionCount);
-                    log.info("总耗时: {}ms", executionTime);
-                    log.info("========================================");
-
-                    printAadlSummary(aadlContent);
-
-                    return AgentOutput.success(input.getSessionId(), aadlContent, executionTime);
-                }
-
-                log.warn("AADL内容验证失败，检测到 {} 个问题，准备重试", validationErrors.size());
-                for (String error : validationErrors) {
-                    log.warn("  - {}", error);
-                }
-                previousErrors = validationErrors;
-
-            } catch (Exception e) {
-                log.warn("第{}次尝试解析LLM响应失败: {}", attempt, e.getMessage());
-                log.debug("详细错误:", e);
-                previousErrors = List.of("解析LLM响应失败: " + e.getMessage());
-            }
+        if (llmResponse == null || llmResponse.trim().isEmpty()) {
+            long executionTime = System.currentTimeMillis() - startTime;
+            log.error("LLM返回空响应");
+            return AgentOutput.failure(input.getSessionId(), "LLM返回空响应");
         }
 
-        long executionTime = System.currentTimeMillis() - startTime;
-        log.error("========================================");
-        log.error("AadlGeneratorAgent执行失败!");
-        log.error("重试次数: {} 次", maxRetries);
-        log.error("总耗时: {}ms", executionTime);
-        log.error("========================================");
+        log.info("LLM响应长度: {} 字符", llmResponse.length());
+        log.info("LLM响应前200字符: {}", llmResponse.length() > 200 ? llmResponse.substring(0, 200) + "..." : llmResponse);
 
-        return AgentOutput.failure(input.getSessionId(),
-                "AADL模型生成失败，已重试" + maxRetries + "次");
+        try {
+            log.info("正在解析LLM响应...");
+            String aadlContent = extractAadlContent(llmResponse);
+
+            long executionTime = System.currentTimeMillis() - startTime;
+            int componentCount = countComponents(aadlContent);
+            int connectionCount = countConnections(aadlContent);
+
+            log.info("========================================");
+            log.info("AadlGeneratorAgent执行完成!");
+            log.info("组件数量: {} 个", componentCount);
+            log.info("连接数量: {} 个", connectionCount);
+            log.info("总耗时: {}ms", executionTime);
+            log.info("========================================");
+
+            printAadlSummary(aadlContent);
+
+            return AgentOutput.success(input.getSessionId(), aadlContent, executionTime);
+
+        } catch (Exception e) {
+            long executionTime = System.currentTimeMillis() - startTime;
+            log.error("解析LLM响应失败: {}", e.getMessage());
+            log.debug("详细错误:", e);
+            return AgentOutput.failure(input.getSessionId(), "解析LLM响应失败: " + e.getMessage());
+        }
     }
 
     private String extractAadlContent(String response) {
