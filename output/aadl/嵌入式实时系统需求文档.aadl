@@ -1,12 +1,9 @@
-package System_Arch
+package Top_System
 public
-   -- =======================================
-   -- 顶层系统容器
-   -- =======================================
-   system System_Arch
-   end System_Arch;
+   system Top_System
+   end Top_System;
 
-   system implementation System_Arch.impl
+   system implementation Top_System.impl
      subcomponents
        MainProcessor : processor MainProcessor.impl;
        RAM : memory RAM.impl;
@@ -17,11 +14,10 @@ public
        HardwareTimer : device HardwareTimer.impl;
        WatchdogTimer : device WatchdogTimer.impl;
        KernelProcess : process KernelProcess.impl;
-   end System_Arch.impl;
+     properties
+       Actual_Processor_Binding => (reference (MainProcessor)) applies to KernelProcess;
+   end Top_System.impl;
 
-   -- =======================================
-   -- 软件组件定义
-   -- =======================================
    process KernelProcess
    end KernelProcess;
 
@@ -83,9 +79,6 @@ public
    thread implementation PerformanceMonitor.impl
    end PerformanceMonitor.impl;
 
-   -- =======================================
-   -- 硬件组件定义
-   -- =======================================
    processor MainProcessor
    end MainProcessor;
    processor implementation MainProcessor.impl
@@ -125,4 +118,4 @@ public
    end WatchdogTimer;
    device implementation WatchdogTimer.impl
    end WatchdogTimer.impl;
-end System_Arch;
+end Top_System;

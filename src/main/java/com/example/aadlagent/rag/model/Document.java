@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,6 +21,10 @@ public class Document {
     private String title;
 
     private String source;
+
+    private String category;
+
+    private List<String> tags;
 
     private float[] embedding;
 

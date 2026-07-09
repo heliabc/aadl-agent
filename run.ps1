@@ -620,19 +620,18 @@ if ($actionIdx -eq 1) {
     while ($true) {
         Write-Host ""
         Write-Host "知识库管理:" -ForegroundColor Yellow
-        Write-Host "  1. 查看知识库文档列表" -ForegroundColor Gray
+        Write-Host "  1. 查看知识库列表" -ForegroundColor Gray
         Write-Host "  2. 添加知识条目" -ForegroundColor Gray
-        Write-Host "  3. 上传知识文件" -ForegroundColor Gray
-        Write-Host "  4. 删除文档" -ForegroundColor Gray
-        Write-Host "  5. 重新加载知识库" -ForegroundColor Gray
-        Write-Host "  6. 返回主菜单" -ForegroundColor Gray
+        Write-Host "  3. 删除知识条目" -ForegroundColor Gray
+        Write-Host "  4. 重新加载知识库" -ForegroundColor Gray
+        Write-Host "  5. 返回主菜单" -ForegroundColor Gray
         
         $kbActionIdx = 0
         do {
-            $kbChoice = Read-Host "请输入操作序号 (1-6)"
-        } while (-not [int]::TryParse($kbChoice, [ref]$kbActionIdx) -or $kbActionIdx -lt 1 -or $kbActionIdx -gt 6)
+            $kbChoice = Read-Host "请输入操作序号 (1-5)"
+        } while (-not [int]::TryParse($kbChoice, [ref]$kbActionIdx) -or $kbActionIdx -lt 1 -or $kbActionIdx -gt 5)
         
-        if ($kbActionIdx -eq 6) {
+        if ($kbActionIdx -eq 5) {
             break
         }
         
@@ -642,21 +641,55 @@ if ($actionIdx -eq 1) {
             
             if ($kbActionIdx -eq 1) {
                 Write-Host ""
-                Write-Host "获取知识库文档列表..." -ForegroundColor Yellow
-                $resultJson = $webClient.DownloadString("$apiUrl/knowledge/list")
+                Write-Host "获取知识库列表..." -ForegroundColor Yellow
+                $resultJson = $webClient.DownloadString("$apiUrl/knowledge/bases")
                 $result = $resultJson | ConvertFrom-Json
                 
                 if ($result.success) {
-                    Write-Host "知识库共有 $($result.count) 个文档:" -ForegroundColor Green
-                    for ($i = 0; $i -lt $result.documents.Count; $i++) {
-                        $doc = $result.documents[$i]
-                        Write-Host "  $($i + 1). ID: $($doc.id), 标题: $($doc.title), 来源: $($doc.source)" -ForegroundColor Gray
+                    Write-Host "可用知识库:" -ForegroundColor Green
+                    for ($i = 0; $i -lt $result.bases.Count; $i++) {
+                        $base = $result.bases[$i]
+                        $countJson = $webClient.DownloadString("$apiUrl/knowledge/$base/count")
+                        $countResult = $countJson | ConvertFrom-Json
+                        Write-Host "  $($i + 1). $base ($($countResult.count) 条)" -ForegroundColor Gray
+                    }
+                    
+                    $baseIdx = 0
+                    do {
+                        $baseChoice = Read-Host "请输入知识库序号查看详情"
+                    } while (-not [int]::TryParse($baseChoice, [ref]$baseIdx) -or $baseIdx -lt 1 -or $baseIdx -gt $result.bases.Count)
+                    
+                    $selectedBase = $result.bases[$baseIdx - 1]
+                    $entriesJson = $webClient.DownloadString("$apiUrl/knowledge/$selectedBase/list")
+                    $entriesResult = $entriesJson | ConvertFrom-Json
+                    
+                    if ($entriesResult.success -and $entriesResult.count -gt 0) {
+                        Write-Host "`n$selectedBase 知识库条目:" -ForegroundColor Green
+                        for ($i = 0; $i -lt $entriesResult.entries.Count; $i++) {
+                            $entry = $entriesResult.entries[$i]
+                            Write-Host "  $($i + 1). ID: $($entry.id), 标题: $($entry.title)" -ForegroundColor Gray
+                        }
+                    } else {
+                        Write-Host "$selectedBase 知识库为空" -ForegroundColor Yellow
                     }
                 } else {
                     Write-Host "获取列表失败: $($result.message)" -ForegroundColor Red
                 }
             } elseif ($kbActionIdx -eq 2) {
                 Write-Host ""
+                Write-Host "选择目标知识库:" -ForegroundColor Yellow
+                Write-Host "  1. requirement (需求分析)" -ForegroundColor Gray
+                Write-Host "  2. architecture (架构生成)" -ForegroundColor Gray
+                Write-Host "  3. module (模块分析)" -ForegroundColor Gray
+                Write-Host "  4. aadl (AADL生成)" -ForegroundColor Gray
+                
+                $targetIdx = 0
+                do {
+                    $targetChoice = Read-Host "请输入序号"
+                } while (-not [int]::TryParse($targetChoice, [ref]$targetIdx) -or $targetIdx -lt 1 -or $targetIdx -gt 4)
+                
+                $targetBase = @("requirement", "architecture", "module", "aadl")[$targetIdx - 1]
+                
                 $title = Read-Host "请输入知识标题"
                 Write-Host "请输入知识内容（多行，空行结束）:" -ForegroundColor Yellow
                 $content = ""
@@ -679,104 +712,88 @@ if ($actionIdx -eq 1) {
                 }
                 $body = $bodyObj | ConvertTo-Json -Depth 10
                 $webClient.Headers.Add("Content-Type", "application/json; charset=utf-8")
-                $resultJson = $webClient.UploadString("$apiUrl/knowledge/add", "POST", $body)
+                $resultJson = $webClient.UploadString("$apiUrl/knowledge/$targetBase/add", "POST", $body)
                 $result = $resultJson | ConvertFrom-Json
                 
                 if ($result.success) {
-                    Write-Host "知识添加成功! ($($result.chunkCount) 个分块)" -ForegroundColor Green
+                    Write-Host "知识添加成功! ID: $($result.entry.id)" -ForegroundColor Green
                 } else {
                     Write-Host "添加失败: $($result.message)" -ForegroundColor Red
                 }
             } elseif ($kbActionIdx -eq 3) {
                 Write-Host ""
-                $filePath = Read-Host "请输入文件路径 (.md 或 .txt)"
+                Write-Host "选择目标知识库:" -ForegroundColor Yellow
+                Write-Host "  1. requirement (需求分析)" -ForegroundColor Gray
+                Write-Host "  2. architecture (架构生成)" -ForegroundColor Gray
+                Write-Host "  3. module (模块分析)" -ForegroundColor Gray
+                Write-Host "  4. aadl (AADL生成)" -ForegroundColor Gray
                 
-                if (-not (Test-Path $filePath)) {
-                    Write-Host "文件不存在: $filePath" -ForegroundColor Red
+                $targetIdx = 0
+                do {
+                    $targetChoice = Read-Host "请输入序号"
+                } while (-not [int]::TryParse($targetChoice, [ref]$targetIdx) -or $targetIdx -lt 1 -or $targetIdx -gt 4)
+                
+                $targetBase = @("requirement", "architecture", "module", "aadl")[$targetIdx - 1]
+                
+                $entriesJson = $webClient.DownloadString("$apiUrl/knowledge/$targetBase/list")
+                $entriesResult = $entriesJson | ConvertFrom-Json
+                
+                if (-not $entriesResult.success -or $entriesResult.count -eq 0) {
+                    Write-Host "$targetBase 知识库为空" -ForegroundColor Yellow
                     continue
                 }
                 
-                $filename = (Get-Item $filePath).Name
-                if (-not ($filename.EndsWith(".md") -or $filename.EndsWith(".txt"))) {
-                    Write-Host "只支持 .md 和 .txt 文件" -ForegroundColor Red
-                    continue
-                }
-                
-                $fileBytes = [System.IO.File]::ReadAllBytes($filePath)
-                $boundary = "----WebKitFormBoundary" + [Guid]::NewGuid().ToString()
-                $encoding = [System.Text.Encoding]::UTF8
-                
-                $header = "--$boundary`r`nContent-Disposition: form-data; name=`"file`"; filename=`"$filename`"`r`nContent-Type: text/plain`r`n`r`n"
-                $footer = "`r`n--$boundary--"
-                
-                $headerBytes = $encoding.GetBytes($header)
-                $footerBytes = $encoding.GetBytes($footer)
-                
-                $request = [System.Net.WebRequest]::Create("$apiUrl/knowledge/upload")
-                $request.Method = "POST"
-                $request.ContentType = "multipart/form-data; boundary=$boundary"
-                
-                $stream = $request.GetRequestStream()
-                $stream.Write($headerBytes, 0, $headerBytes.Length)
-                $stream.Write($fileBytes, 0, $fileBytes.Length)
-                $stream.Write($footerBytes, 0, $footerBytes.Length)
-                $stream.Close()
-                
-                $response = $request.GetResponse()
-                $responseStream = $response.GetResponseStream()
-                $reader = New-Object System.IO.StreamReader($responseStream)
-                $resultJson = $reader.ReadToEnd()
-                $reader.Close()
-                $response.Close()
-                
-                $result = $resultJson | ConvertFrom-Json
-                
-                if ($result.success) {
-                    Write-Host "文件上传成功! ($($result.chunkCount) 个分块)" -ForegroundColor Green
-                } else {
-                    Write-Host "上传失败: $($result.message)" -ForegroundColor Red
-                }
-            } elseif ($kbActionIdx -eq 4) {
-                Write-Host ""
-                $resultJson = $webClient.DownloadString("$apiUrl/knowledge/list")
-                $result = $resultJson | ConvertFrom-Json
-                
-                if (-not $result.success -or $result.count -eq 0) {
-                    Write-Host "知识库为空" -ForegroundColor Yellow
-                    continue
-                }
-                
-                Write-Host "选择要删除的文档:" -ForegroundColor Yellow
-                for ($i = 0; $i -lt $result.documents.Count; $i++) {
-                    $doc = $result.documents[$i]
-                    Write-Host "  $($i + 1). ID: $($doc.id), 标题: $($doc.title)" -ForegroundColor Gray
+                Write-Host "选择要删除的条目:" -ForegroundColor Yellow
+                for ($i = 0; $i -lt $entriesResult.entries.Count; $i++) {
+                    $entry = $entriesResult.entries[$i]
+                    Write-Host "  $($i + 1). ID: $($entry.id), 标题: $($entry.title)" -ForegroundColor Gray
                 }
                 
                 $delIdx = 0
                 do {
                     $delChoice = Read-Host "请输入序号"
-                } while (-not [int]::TryParse($delChoice, [ref]$delIdx) -or $delIdx -lt 1 -or $delIdx -gt $result.count)
+                } while (-not [int]::TryParse($delChoice, [ref]$delIdx) -or $delIdx -lt 1 -or $delIdx -gt $entriesResult.count)
                 
-                $docId = $result.documents[$delIdx - 1].id
+                $entryId = $entriesResult.entries[$delIdx - 1].id
                 
-                $deleteUrl = "$apiUrl/knowledge/$docId"
+                $deleteUrl = "$apiUrl/knowledge/$targetBase/$entryId"
                 $deleteRequest = [System.Net.WebRequest]::Create($deleteUrl)
                 $deleteRequest.Method = "DELETE"
                 $deleteResponse = $deleteRequest.GetResponse()
                 $deleteResponse.Close()
                 
-                Write-Host "文档删除成功: $docId" -ForegroundColor Green
-            } elseif ($kbActionIdx -eq 5) {
+                Write-Host "知识条目删除成功: $entryId" -ForegroundColor Green
+            } elseif ($kbActionIdx -eq 4) {
                 Write-Host ""
-                Write-Host "重新加载知识库..." -ForegroundColor Yellow
-                $webClient.Headers.Add("Content-Type", "application/json; charset=utf-8")
-                $resultJson = $webClient.UploadString("$apiUrl/knowledge/reload", "POST", "{}")
-                $result = $resultJson | ConvertFrom-Json
+                Write-Host "选择要重新加载的知识库:" -ForegroundColor Yellow
+                Write-Host "  1. requirement (需求分析)" -ForegroundColor Gray
+                Write-Host "  2. architecture (架构生成)" -ForegroundColor Gray
+                Write-Host "  3. module (模块分析)" -ForegroundColor Gray
+                Write-Host "  4. aadl (AADL生成)" -ForegroundColor Gray
+                Write-Host "  5. 全部" -ForegroundColor Gray
                 
-                if ($result.success) {
-                    Write-Host "知识库重新加载成功! ($($result.count) 个文档)" -ForegroundColor Green
+                $targetIdx = 0
+                do {
+                    $targetChoice = Read-Host "请输入序号"
+                } while (-not [int]::TryParse($targetChoice, [ref]$targetIdx) -or $targetIdx -lt 1 -or $targetIdx -gt 5)
+                
+                $basesToReload = if ($targetIdx -eq 5) {
+                    @("requirement", "architecture", "module", "aadl")
                 } else {
-                    Write-Host "加载失败: $($result.message)" -ForegroundColor Red
+                    @(@("requirement", "architecture", "module", "aadl")[$targetIdx - 1])
+                }
+                
+                foreach ($targetBase in $basesToReload) {
+                    Write-Host "重新加载 $targetBase 知识库..." -ForegroundColor Yellow
+                    $webClient.Headers.Add("Content-Type", "application/json; charset=utf-8")
+                    $resultJson = $webClient.UploadString("$apiUrl/knowledge/$targetBase/reload", "POST", "{}")
+                    $result = $resultJson | ConvertFrom-Json
+                    
+                    if ($result.success) {
+                        Write-Host "  $targetBase 加载成功! ($($result.count) 条)" -ForegroundColor Green
+                    } else {
+                        Write-Host "  $targetBase 加载失败: $($result.message)" -ForegroundColor Red
+                    }
                 }
             }
             

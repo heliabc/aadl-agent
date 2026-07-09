@@ -1,7 +1,6 @@
 
 package com.example.aadlagent.rag;
 
-import com.example.aadlagent.client.OllamaClient;
 import com.example.aadlagent.rag.model.Document;
 import com.example.aadlagent.config.RagConfig;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -24,7 +23,7 @@ import java.util.concurrent.Executors;
 @Component
 public class VectorSearchService {
 
-    private final OllamaClient ollamaClient;
+    private final EmbeddingService embeddingService;
     private final RagConfig ragConfig;
     private final Map<String, Document> documentStore = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -35,8 +34,8 @@ public class VectorSearchService {
     private volatile boolean initialized = false;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-    public VectorSearchService(OllamaClient ollamaClient, RagConfig ragConfig) {
-        this.ollamaClient = ollamaClient;
+    public VectorSearchService(EmbeddingService embeddingService, RagConfig ragConfig) {
+        this.embeddingService = embeddingService;
         this.ragConfig = ragConfig;
     }
 
@@ -81,9 +80,9 @@ public class VectorSearchService {
             return;
         }
 
-        boolean ollamaAvailable = ollamaClient.isAvailable();
-        if (!ollamaAvailable) {
-            log.warn("Ollama is not available, skipping embedding generation. Documents will be loaded without vectors.");
+        boolean embeddingAvailable = embeddingService.isAvailable();
+        if (!embeddingAvailable) {
+            log.warn("Embedding service is not available, skipping embedding generation. Documents will be loaded without vectors.");
         }
 
         try {
@@ -101,8 +100,8 @@ public class VectorSearchService {
                                 String id = "KNOW-" + fileName.hashCode() + "-" + i;
                                 float[] embedding = null;
                                 
-                                if (ollamaAvailable) {
-                                    embedding = ollamaClient.embed(chunks.get(i));
+                                if (embeddingAvailable) {
+                                    embedding = embeddingService.embed(chunks.get(i));
                                 }
                                 
                                 Document doc = Document.builder()
@@ -146,7 +145,7 @@ public class VectorSearchService {
 
     public void addDocument(Document document) {
         if (document.getEmbedding() == null) {
-            float[] embedding = ollamaClient.embed(document.getContent());
+            float[] embedding = embeddingService.embed(document.getContent());
             document.setEmbedding(embedding);
         }
         documentStore.put(document.getId(), document);
@@ -161,13 +160,17 @@ public class VectorSearchService {
     }
 
     public List<Document> search(String query, int topK) {
+        return search(query, new ArrayList<>(documentStore.values()), topK);
+    }
+
+    public List<Document> search(String query, List<Document> documents, int topK) {
         if (query == null || query.trim().isEmpty()) {
             return Collections.emptyList();
         }
 
         log.info("Searching for: {}", query);
 
-        float[] queryEmbedding = ollamaClient.embed(query);
+        float[] queryEmbedding = embeddingService.embed(query);
         if (queryEmbedding == null) {
             log.warn("Failed to generate query embedding");
             return Collections.emptyList();
@@ -175,7 +178,7 @@ public class VectorSearchService {
 
         List<Map.Entry<String, Double>> scores = new ArrayList<>();
 
-        for (Document doc : documentStore.values()) {
+        for (Document doc : documents) {
             if (doc.getEmbedding() == null) {
                 continue;
             }
@@ -190,9 +193,11 @@ public class VectorSearchService {
 
         for (int i = 0; i < limit; i++) {
             String docId = scores.get(i).getKey();
-            Document doc = documentStore.get(docId);
-            doc.setScore(scores.get(i).getValue());
-            results.add(doc);
+            Document doc = documents.stream().filter(d -> d.getId().equals(docId)).findFirst().orElse(null);
+            if (doc != null) {
+                doc.setScore(scores.get(i).getValue());
+                results.add(doc);
+            }
         }
 
         log.info("Search completed, found {} results", results.size());
@@ -201,9 +206,13 @@ public class VectorSearchService {
     }
 
     public List<Document> hybridSearch(String query, int topK) {
-        List<Document> vectorResults = search(query, topK);
+        return hybridSearch(query, new ArrayList<>(documentStore.values()), topK);
+    }
 
-        List<Document> keywordResults = keywordSearch(query, topK);
+    public List<Document> hybridSearch(String query, List<Document> documents, int topK) {
+        List<Document> vectorResults = search(query, documents, topK);
+
+        List<Document> keywordResults = keywordSearch(query, documents, topK);
 
         List<List<Document>> allResults = Arrays.asList(vectorResults, keywordResults);
 
@@ -212,6 +221,10 @@ public class VectorSearchService {
     }
 
     private List<Document> keywordSearch(String query, int topK) {
+        return keywordSearch(query, new ArrayList<>(documentStore.values()), topK);
+    }
+
+    private List<Document> keywordSearch(String query, List<Document> documents, int topK) {
         if (query == null || query.trim().isEmpty()) {
             return Collections.emptyList();
         }
@@ -220,7 +233,7 @@ public class VectorSearchService {
 
         String[] keywords = query.toLowerCase().split("\\s+");
 
-        for (Document doc : documentStore.values()) {
+        for (Document doc : documents) {
             String content = doc.getContent().toLowerCase();
             int matchCount = 0;
 
@@ -243,9 +256,11 @@ public class VectorSearchService {
 
         for (int i = 0; i < limit; i++) {
             String docId = scores.get(i).getKey();
-            Document doc = documentStore.get(docId);
-            doc.setScore(scores.get(i).getValue());
-            results.add(doc);
+            Document doc = documents.stream().filter(d -> d.getId().equals(docId)).findFirst().orElse(null);
+            if (doc != null) {
+                doc.setScore(scores.get(i).getValue());
+                results.add(doc);
+            }
         }
 
         return results;

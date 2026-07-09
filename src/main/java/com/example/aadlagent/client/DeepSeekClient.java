@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -23,8 +24,18 @@ public class DeepSeekClient implements LlmClient {
 
     public DeepSeekClient(DeepSeekConfig config) {
         this.config = config;
-        this.restTemplate = new RestTemplate();
+        this.restTemplate = createRestTemplate();
         this.objectMapper = new ObjectMapper();
+    }
+
+    private RestTemplate createRestTemplate() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(config.getTimeout());
+        factory.setReadTimeout(config.getTimeout());
+        
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.setRequestFactory(factory);
+        return restTemplate;
     }
 
     public String chat(String prompt, Double temperature, Integer maxTokens) {

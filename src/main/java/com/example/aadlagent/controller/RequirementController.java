@@ -78,7 +78,7 @@ public class RequirementController {
         log.info("Received requirement analysis request, content length: {} characters, model: {}, session: {}", 
                 requirementDoc.length(), modelType.name(), sessionId);
 
-        String ragContext = ragService.getEnhancedContext(requirementDoc);
+        String ragContext = ragService.getEnhancedContext(requirementDoc, "requirement");
         String sessionContext = sessionManager.buildContext(sessionId, 10);
         if (sessionContext != null && !sessionContext.isEmpty()) {
             ragContext = sessionContext + "\n\n" + ragContext;
@@ -211,7 +211,7 @@ public class RequirementController {
 
             String content = docFileReader.readFile(filePath);
 
-            String ragContext = ragService.getEnhancedContext(content);
+            String ragContext = ragService.getEnhancedContext(content, "requirement");
 
             AgentInput input = AgentInput.builder()
                     .sessionId(UUID.randomUUID().toString())
@@ -277,7 +277,7 @@ public class RequirementController {
 
             String requirementsJson = docFileReader.readFile(requirementsFilePath);
 
-            String ragContext = ragService.getEnhancedContext(requirementsJson);
+            String ragContext = ragService.getEnhancedContext(requirementsJson, "architecture");
             String sessionContext = sessionManager.buildContext(sessionId, 10);
             if (sessionContext != null && !sessionContext.isEmpty()) {
                 ragContext = sessionContext + "\n\n" + ragContext;
@@ -374,7 +374,7 @@ public class RequirementController {
             String requirementsJson = docFileReader.readFile(requirementsFilePath);
             String architectureJson = docFileReader.readFile(architectureFilePath);
 
-            String ragContext = ragService.getEnhancedContext(requirementsJson + "\n" + architectureJson);
+            String ragContext = ragService.getEnhancedContext(requirementsJson + "\n" + architectureJson, "module");
             String sessionContext = sessionManager.buildContext(sessionId, 10);
             if (sessionContext != null && !sessionContext.isEmpty()) {
                 ragContext = sessionContext + "\n\n" + ragContext;
@@ -472,7 +472,7 @@ public class RequirementController {
             String architectureJson = docFileReader.readFile(architectureFilePath);
             String modulesJson = docFileReader.readFile(modulesFilePath);
 
-            String ragContext = ragService.getEnhancedContext(architectureJson + "\n" + modulesJson);
+            String ragContext = ragService.getEnhancedContext(architectureJson + "\n" + modulesJson, "aadl");
             String sessionContext = sessionManager.buildContext(sessionId, 10);
             if (sessionContext != null && !sessionContext.isEmpty()) {
                 ragContext = sessionContext + "\n\n" + ragContext;
@@ -574,7 +574,7 @@ public class RequirementController {
 
             String architectureJson = docFileReader.readFile(architectureFilePath);
             String modulesJson = docFileReader.readFile(modulesFilePath);
-            String ragContext = ragService.getEnhancedContext(architectureJson + "\n" + modulesJson);
+            String ragContext = ragService.getEnhancedContext(architectureJson + "\n" + modulesJson, "aadl");
             String sessionContext = sessionManager.buildContext(sessionId, 10);
             if (sessionContext != null && !sessionContext.isEmpty()) {
                 ragContext = sessionContext + "\n\n" + ragContext;

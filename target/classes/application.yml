@@ -11,14 +11,14 @@ file:
 
 ollama:
   base-url: http://localhost:11434
-  chat-model: qwen3:8b
+  chat-model: qwen3:8B
   embedding-model: qwen3-embedding:latest
   timeout: 900000
 
 deepseek:
   api-key: ""
   base-url: https://api.deepseek.com
-  chat-model: deepseek-chat
+  chat-model: deepseek-v4-flash
   embedding-model: deepseek-embedding
   timeout: 300000
 
@@ -26,6 +26,11 @@ rag:
   top-k: 5
   rerank-top-k: 3
   rrf-k: 60
+
+qdrant:
+  host: localhost
+  port: 6334
+  embedding-size: 384
 
 agent:
   requirement:

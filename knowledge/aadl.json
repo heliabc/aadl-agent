@@ -1,0 +1,65 @@
+{
+  "agentType": "aadl",
+  "basics": [
+    {
+      "id": "BASIC-syntax-001",
+      "title": "AADL组件类型定义",
+      "content": "AADL定义了多种组件类型：软件组件包括thread（线程）、process（进程）、data（数据）、subprogram（子程序）；硬件组件包括processor（处理器）、memory（内存）、device（设备）、bus（总线）；复合组件包括system（系统容器）。组件声明语法：package PackageName public component-type component-name is features feature-name: feature-type; end component-name; end PackageName;",
+      "section": "语法规范",
+      "tags": ["语法", "组件", "类型"],
+      "createdAt": "2026-07-09T00:00:00",
+      "updatedAt": "2026-07-09T00:00:00"
+    },
+    {
+      "id": "BASIC-features-001",
+      "title": "AADL特性定义",
+      "content": "特性用于定义组件接口：port（端口，包括in/out/inout）、event port（事件端口）、data port（数据端口）、subprogram access（子程序访问点）。连接语法：port Component1.OutputPort -> Component2.InputPort; event port EventSource.EventOut -> EventSink.EventIn; binding ProcessComponent -> ProcessorComponent;",
+      "section": "语法规范",
+      "tags": ["语法", "特性", "连接"],
+      "createdAt": "2026-07-09T00:00:00",
+      "updatedAt": "2026-07-09T00:00:00"
+    }
+  ],
+  "examples": [
+    {
+      "id": "EXAMPLE-sensor-001",
+      "title": "传感器系统示例",
+      "scenario": "创建一个简单的传感器数据采集系统",
+      "input": "需要定义一个传感器数据采集系统，包含传感器设备、数据处理线程和存储组件",
+      "output": "package SensorSystem public component data SensorData is end SensorData; component thread SensorReader is features DataOut: out data port SensorData; end SensorReader; component process DataProcessor is features DataIn: in data port SensorData; end DataProcessor; component system MonitoringSystem is subcomponents Sensor: SensorReader; Processor: DataProcessor; connections port Sensor.DataOut -> Processor.DataIn; end MonitoringSystem; end SensorSystem;",
+      "explanation": "这个示例展示了如何定义数据组件、线程组件、进程组件，并通过端口连接它们形成完整的系统",
+      "tags": ["传感器", "数据", "线程"],
+      "createdAt": "2026-07-09T00:00:00",
+      "updatedAt": "2026-07-09T00:00:00"
+    }
+  ],
+  "errorCorrections": [
+    {
+      "id": "EC-syntax-001",
+      "title": "缺少分号错误",
+      "errorType": "语法错误",
+      "errorContent": "component thread SensorReader is features DataOut: out data port SensorData end SensorReader",
+      "errorDescription": "组件声明结束时缺少分号，每个AADL语句都必须以分号结尾",
+      "correctContent": "component thread SensorReader is features DataOut: out data port SensorData; end SensorReader;",
+      "correctionExplanation": "在'features'声明末尾添加分号，在'end SensorReader'末尾添加分号",
+      "suggestion": "编写AADL代码时，注意每个语句结尾都要添加分号",
+      "tags": ["错误", "语法", "分号"],
+      "createdAt": "2026-07-09T00:00:00",
+      "updatedAt": "2026-07-09T00:00:00"
+    },
+    {
+      "id": "EC-syntax-002",
+      "title": "端口类型不匹配",
+      "errorType": "语义错误",
+      "errorContent": "connections port Sensor.DataOut -> Processor.ControlIn;",
+      "errorDescription": "连接的端口类型不匹配，DataOut是数据端口，ControlIn是事件端口",
+      "correctContent": "connections port Sensor.DataOut -> Processor.DataIn;",
+      "correctionExplanation": "确保连接的端口类型一致，数据端口只能连接到数据端口，事件端口只能连接到事件端口",
+      "suggestion": "连接前检查端口类型是否匹配",
+      "tags": ["错误", "语义", "端口"],
+      "createdAt": "2026-07-09T00:00:00",
+      "updatedAt": "2026-07-09T00:00:00"
+    }
+  ],
+  "lastModified": "2026-07-09T00:00:00"
+}
