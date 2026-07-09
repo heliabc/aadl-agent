@@ -1,0 +1,128 @@
+package System_Arch
+public
+   -- =======================================
+   -- 顶层系统容器
+   -- =======================================
+   system System_Arch
+   end System_Arch;
+
+   system implementation System_Arch.impl
+     subcomponents
+       MainProcessor : processor MainProcessor.impl;
+       RAM : memory RAM.impl;
+       Flash : memory Flash.impl;
+       SerialPort : device SerialPort.impl;
+       CANController : device CANController.impl;
+       EthernetController : device EthernetController.impl;
+       HardwareTimer : device HardwareTimer.impl;
+       WatchdogTimer : device WatchdogTimer.impl;
+       KernelProcess : process KernelProcess.impl;
+   end System_Arch.impl;
+
+   -- =======================================
+   -- 软件组件定义
+   -- =======================================
+   process KernelProcess
+   end KernelProcess;
+
+   process implementation KernelProcess.impl
+     subcomponents
+       TaskScheduler : thread TaskScheduler.impl;
+       TimerManager : thread TimerManager.impl;
+       InterruptHandler : thread InterruptHandler.impl;
+       MemoryManager : thread MemoryManager.impl;
+       CommunicationManager : thread CommunicationManager.impl;
+       FileSystem : thread FileSystem.impl;
+       WatchdogManager : thread WatchdogManager.impl;
+       FaultDetector : thread FaultDetector.impl;
+       PerformanceMonitor : thread PerformanceMonitor.impl;
+   end KernelProcess.impl;
+
+   thread TaskScheduler
+   end TaskScheduler;
+   thread implementation TaskScheduler.impl
+   end TaskScheduler.impl;
+
+   thread TimerManager
+   end TimerManager;
+   thread implementation TimerManager.impl
+   end TimerManager.impl;
+
+   thread InterruptHandler
+   end InterruptHandler;
+   thread implementation InterruptHandler.impl
+   end InterruptHandler.impl;
+
+   thread MemoryManager
+   end MemoryManager;
+   thread implementation MemoryManager.impl
+   end MemoryManager.impl;
+
+   thread CommunicationManager
+   end CommunicationManager;
+   thread implementation CommunicationManager.impl
+   end CommunicationManager.impl;
+
+   thread FileSystem
+   end FileSystem;
+   thread implementation FileSystem.impl
+   end FileSystem.impl;
+
+   thread WatchdogManager
+   end WatchdogManager;
+   thread implementation WatchdogManager.impl
+   end WatchdogManager.impl;
+
+   thread FaultDetector
+   end FaultDetector;
+   thread implementation FaultDetector.impl
+   end FaultDetector.impl;
+
+   thread PerformanceMonitor
+   end PerformanceMonitor;
+   thread implementation PerformanceMonitor.impl
+   end PerformanceMonitor.impl;
+
+   -- =======================================
+   -- 硬件组件定义
+   -- =======================================
+   processor MainProcessor
+   end MainProcessor;
+   processor implementation MainProcessor.impl
+   end MainProcessor.impl;
+
+   memory RAM
+   end RAM;
+   memory implementation RAM.impl
+   end RAM.impl;
+
+   memory Flash
+   end Flash;
+   memory implementation Flash.impl
+   end Flash.impl;
+
+   device SerialPort
+   end SerialPort;
+   device implementation SerialPort.impl
+   end SerialPort.impl;
+
+   device CANController
+   end CANController;
+   device implementation CANController.impl
+   end CANController.impl;
+
+   device EthernetController
+   end EthernetController;
+   device implementation EthernetController.impl
+   end EthernetController.impl;
+
+   device HardwareTimer
+   end HardwareTimer;
+   device implementation HardwareTimer.impl
+   end HardwareTimer.impl;
+
+   device WatchdogTimer
+   end WatchdogTimer;
+   device implementation WatchdogTimer.impl
+   end WatchdogTimer.impl;
+end System_Arch;

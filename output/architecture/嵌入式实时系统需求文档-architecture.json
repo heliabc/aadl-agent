@@ -1,0 +1,61 @@
+{
+  "name" : "System",
+  "type" : "system",
+  "children" : [ {
+    "name" : "MainProcessor",
+    "type" : "processor",
+    "children" : [ {
+      "name" : "KernelProcess",
+      "type" : "process",
+      "children" : [ {
+        "name" : "TaskScheduler",
+        "type" : "thread"
+      }, {
+        "name" : "TimerManager",
+        "type" : "thread"
+      }, {
+        "name" : "InterruptHandler",
+        "type" : "thread"
+      }, {
+        "name" : "MemoryManager",
+        "type" : "thread"
+      }, {
+        "name" : "CommunicationManager",
+        "type" : "thread"
+      }, {
+        "name" : "FileSystem",
+        "type" : "thread"
+      }, {
+        "name" : "WatchdogManager",
+        "type" : "thread"
+      }, {
+        "name" : "FaultDetector",
+        "type" : "thread"
+      }, {
+        "name" : "PerformanceMonitor",
+        "type" : "thread"
+      } ]
+    } ]
+  }, {
+    "name" : "RAM",
+    "type" : "memory"
+  }, {
+    "name" : "Flash",
+    "type" : "memory"
+  }, {
+    "name" : "SerialPort",
+    "type" : "device"
+  }, {
+    "name" : "CANController",
+    "type" : "device"
+  }, {
+    "name" : "EthernetController",
+    "type" : "device"
+  }, {
+    "name" : "HardwareTimer",
+    "type" : "device"
+  }, {
+    "name" : "WatchdogTimer",
+    "type" : "device"
+  } ]
+}
