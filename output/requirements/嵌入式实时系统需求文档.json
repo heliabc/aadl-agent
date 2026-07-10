@@ -1,127 +1,106 @@
 [ {
   "requirementId" : "REQ-001",
-  "title" : "抢占式任务调度",
+  "title" : "抢占式任务调度功能",
   "description" : "系统应支持多任务并发执行，采用抢占式优先级调度算法，提供任务创建、删除、挂起和恢复的API接口，确保高优先级任务及时响应",
   "priority" : "高",
-  "acceptanceCriteria" : [ "创建优先级不同的多个任务后，高优先级任务就绪时能抢占低优先级任务运行", "调用任务删除API后，目标任务停止运行且资源被释放", "挂起任务后该任务不再被调度，恢复后从挂起点继续运行", "任务切换时间不超过10微秒" ],
-  "dependencies" : [ ]
+  "acceptanceCriteria" : [ "创建5个不同优先级的任务，高优先级任务就绪后能在10微秒内抢占低优先级任务并获得CPU", "调用任务删除API后，任务立即从就绪队列移除且资源释放", "挂起任务后该任务不再被调度，恢复后重新参与调度" ],
+  "dependencies" : [ "REQ-004" ]
 }, {
   "requirementId" : "REQ-002",
-  "title" : "高精度定时器管理",
-  "description" : "系统应提供毫秒级精度的定时器，支持单次触发和周期性触发两种模式，定时到期时及时通知应用程序",
-  "priority" : "高",
-  "acceptanceCriteria" : [ "设置1毫秒的定时器后，实际到期误差不超过±0.1毫秒", "单次触发定时器到期后仅执行一次回调，周期性定时器按设定间隔重复触发", "定时器到期后，应用程序在指定时间内（不超过50微秒）收到通知" ],
-  "dependencies" : [ "REQ-001" ]
+  "title" : "定时器管理功能",
+  "description" : "系统应提供高精度定时器，支持毫秒级精度，支持单次触发和周期性触发两种模式，定时到期时通知应用程序",
+  "priority" : "中",
+  "acceptanceCriteria" : [ "设置一个10毫秒单次定时器，到期后应用程序在1毫秒内收到通知", "设置一个50毫秒周期性定时器，连续触发10次，每次间隔偏差不超过±1毫秒", "同时启动10个不同周期的定时器，均能正确触发" ],
+  "dependencies" : [ ]
 }, {
   "requirementId" : "REQ-003",
-  "title" : "快速中断处理",
-  "description" : "系统应支持外部硬件中断处理，中断处理程序执行时间控制在100微秒以内，并提供中断优先级管理机制",
+  "title" : "中断处理功能",
+  "description" : "系统应支持外部中断处理，中断处理程序执行时间不超过100微秒，提供中断优先级管理机制，确保高优先级中断优先处理",
   "priority" : "高",
-  "acceptanceCriteria" : [ "外部中断触发后，系统在50微秒内进入中断处理程序", "中断处理程序执行时间不超过100微秒", "高优先级中断可以打断正在执行的低优先级中断处理" ],
+  "acceptanceCriteria" : [ "模拟外部中断请求，系统在50微秒内进入中断服务程序", "同时触发低优先级和高优先级中断，高优先级中断先被处理", "中断服务程序执行时间均不超过100微秒" ],
   "dependencies" : [ "REQ-001" ]
 }, {
   "requirementId" : "REQ-004",
-  "title" : "动态内存管理",
-  "description" : "系统应提供动态内存分配和释放功能，支持内存池管理，最大分配时间不超过1毫秒，提供内存使用统计和泄漏检测功能",
+  "title" : "内存管理功能",
+  "description" : "系统应提供动态内存分配和释放功能，支持内存池管理，最大分配时间不超过1毫秒，提供内存使用统计和内存泄漏检测功能",
   "priority" : "高",
-  "acceptanceCriteria" : [ "调用内存分配函数在1毫秒内返回有效内存地址或错误", "内存释放后该内存块可被再次分配", "系统能够统计已分配和空闲内存大小，并检测未释放的内存泄漏" ],
+  "acceptanceCriteria" : [ "分配100个大小不同的内存块，每次分配时间均小于1毫秒", "内存池分配和释放1000次后无内存泄漏（统计信息显示已用内存为0）", "调用内存统计API能正确返回已分配大小和空闲大小" ],
   "dependencies" : [ ]
 }, {
   "requirementId" : "REQ-005",
-  "title" : "实时通信管理",
-  "description" : "系统应支持串口、CAN总线和以太网通信，数据传输最大延迟不超过10毫秒，并实现TCP/IP和UDP协议栈",
+  "title" : "通信管理功能",
+  "description" : "系统应支持串口、CAN总线和以太网通信，数据传输最大延迟不超过10毫秒，提供TCP/IP和UDP协议栈",
   "priority" : "高",
-  "acceptanceCriteria" : [ "通过串口发送128字节数据，对方接收延迟不超过10毫秒", "通过CAN总线发送标准帧，传输延迟不超过10毫秒", "以太网TCP连接建立后，数据收发延迟不超过10毫秒", "协议栈支持TCP/IP和UDP的报文收发" ],
-  "dependencies" : [ "REQ-001" ]
+  "acceptanceCriteria" : [ "通过以太网发送1000字节数据，接收端在10毫秒内收到完整数据", "通过CAN总线发送标准帧，总线负载50%时发送延迟不超过10毫秒", "串口通信波特率115200时，连续收发1000字节无丢包" ],
+  "dependencies" : [ ]
 }, {
   "requirementId" : "REQ-006",
-  "title" : "嵌入式文件系统",
-  "description" : "系统应支持嵌入式文件系统，实现文件读写、原子操作、加密和权限管理功能",
+  "title" : "文件系统功能",
+  "description" : "系统应支持嵌入式文件系统，文件操作保证原子性，支持文件加密和权限管理",
   "priority" : "中",
-  "acceptanceCriteria" : [ "创建文件并写入数据后，读取内容与写入一致", "系统崩溃后文件内容不损坏（原子性保证）", "文件加密后无法通过直接读取存储介质获取明文", "可设置文件读/写/执行权限，未授权操作被拒绝" ],
+  "acceptanceCriteria" : [ "创建文件并写入数据，系统断电恢复后文件内容完整无损坏", "设置文件只读权限后，尝试写入操作返回权限错误", "加密文件内容后，未授权读取时显示乱码" ],
   "dependencies" : [ "REQ-004" ]
 }, {
   "requirementId" : "REQ-007",
-  "title" : "任务切换性能",
-  "description" : "系统应保证任务切换时间不超过10微秒",
+  "title" : "看门狗定时器功能",
+  "description" : "系统应提供看门狗定时器，在系统故障时自动复位，支持配置超时时间和喂狗操作",
   "priority" : "高",
-  "acceptanceCriteria" : [ "在两个相同优先级任务之间切换，测量切换时间不超过10微秒", "在高优先级任务抢占低优先级任务时，切换时间不超过10微秒" ],
-  "dependencies" : [ "REQ-001" ]
+  "acceptanceCriteria" : [ "设置看门狗超时时间为2秒，不喂狗时系统在2.1秒内复位", "在超时时间内定期喂狗，系统正常运行不复位", "看门狗超时后复位日志记录复位原因" ],
+  "dependencies" : [ "REQ-002" ]
 }, {
   "requirementId" : "REQ-008",
-  "title" : "中断响应性能",
-  "description" : "系统应保证中断响应时间不超过50微秒",
-  "priority" : "高",
-  "acceptanceCriteria" : [ "外部中断信号产生到CPU执行第一条中断指令的时间不超过50微秒", "在系统负载最高时（CPU使用率80%），中断响应时间仍不超过50微秒" ],
-  "dependencies" : [ "REQ-003" ]
-}, {
-  "requirementId" : "REQ-009",
-  "title" : "系统时钟精度",
-  "description" : "系统时钟精度应达到1毫秒",
-  "priority" : "高",
-  "acceptanceCriteria" : [ "系统时钟的计时误差在1秒内不超过±1毫秒", "使用高精度定时器测试，1秒间隔的触发误差不超过±1毫秒" ],
-  "dependencies" : [ "REQ-002" ]
-}, {
-  "requirementId" : "REQ-010",
-  "title" : "内存占用限制",
-  "description" : "系统运行时内存占用不超过256KB",
-  "priority" : "高",
-  "acceptanceCriteria" : [ "系统启动后，静态内存占用不超过200KB", "在最大并发任务和资源使用场景下，动态分配后总内存占用不超过256KB" ],
-  "dependencies" : [ "REQ-004" ]
-}, {
-  "requirementId" : "REQ-011",
-  "title" : "空闲CPU使用率",
-  "description" : "系统空闲时CPU使用率不超过5%",
+  "title" : "故障检测与自动恢复",
+  "description" : "系统应支持故障检测机制，检测到异常后自动尝试恢复，恢复失败时记录错误日志",
   "priority" : "中",
-  "acceptanceCriteria" : [ "系统无任何应用任务运行时，CPU使用率不超过5%", "在空闲状态下持续监测1小时，平均CPU使用率低于5%" ],
+  "acceptanceCriteria" : [ "模拟任务死锁，系统在1秒内检测到并自动恢复（如重启该任务）", "连续恢复失败3次后，系统停止恢复并输出错误日志", "故障检测功能不影响正常任务执行时间超过5%" ],
   "dependencies" : [ "REQ-001" ]
 }, {
-  "requirementId" : "REQ-012",
-  "title" : "连续运行可靠性",
-  "description" : "系统应能够连续运行10000小时无故障",
+  "requirementId" : "REQ-009",
+  "title" : "任务切换时间保障",
+  "description" : "系统应确保任务切换时间不超过10微秒，作为非功能性性能需求",
   "priority" : "高",
-  "acceptanceCriteria" : [ "系统在额定负载下连续运行10000小时，不出现死机、重启或功能异常", "运行期间记录所有错误日志，无严重错误发生" ],
-  "dependencies" : [ "REQ-013" ]
+  "acceptanceCriteria" : [ "在CPU负载80%条件下测量100次任务切换，最大切换时间小于10微秒", "所有切换时间平均值不超过5微秒" ],
+  "dependencies" : [ "REQ-001" ]
 }, {
-  "requirementId" : "REQ-013",
-  "title" : "看门狗定时器",
-  "description" : "系统应提供看门狗定时器功能，防止程序跑飞或死锁",
+  "requirementId" : "REQ-010",
+  "title" : "中断响应时间保障",
+  "description" : "系统应确保中断响应时间不超过50微秒，作为非功能性性能需求",
   "priority" : "高",
-  "acceptanceCriteria" : [ "看门狗定时器溢出后系统自动复位并记录复位原因", "正常运行时应定期喂狗，防止复位" ],
-  "dependencies" : [ "REQ-002" ]
+  "acceptanceCriteria" : [ "测量100次外部中断响应，最大响应时间小于50微秒", "在系统满负载（CPU利用率90%）时中断响应仍不超过50微秒" ],
+  "dependencies" : [ "REQ-003" ]
 }, {
-  "requirementId" : "REQ-014",
-  "title" : "故障检测与自动恢复",
-  "description" : "系统应支持故障检测和自动恢复机制",
-  "priority" : "高",
-  "acceptanceCriteria" : [ "检测到内存访问越界时，系统能捕获异常并尝试恢复", "任务死锁时，系统能检测并重启该任务", "故障恢复后系统功能正常，数据不丢失" ],
-  "dependencies" : [ "REQ-001", "REQ-004" ]
-}, {
-  "requirementId" : "REQ-015",
-  "title" : "C/C++编程支持",
-  "description" : "开发环境应支持C/C++编程语言编译和调试",
+  "requirementId" : "REQ-011",
+  "title" : "系统时钟精度要求",
+  "description" : "系统时钟精度应达到1毫秒，用作系统时间基准和定时器基础",
   "priority" : "中",
-  "acceptanceCriteria" : [ "使用C99和C++11标准的代码能正确编译", "支持标准库和嵌入式专用库的链接" ],
+  "acceptanceCriteria" : [ "使用高精度示波器测量系统时钟周期，误差不超过±0.5毫秒", "连续运行1小时，系统时钟累计误差不超过1秒" ],
   "dependencies" : [ ]
 }, {
-  "requirementId" : "REQ-016",
-  "title" : "集成开发环境",
-  "description" : "系统应提供集成开发环境（IDE），包含编辑器、编译器和调试器",
+  "requirementId" : "REQ-012",
+  "title" : "内存占用限制",
+  "description" : "系统整体内存占用（包括内核和基本服务）不超过256KB",
   "priority" : "中",
-  "acceptanceCriteria" : [ "IDE支持代码编辑、语法高亮和代码补全", "一键编译并下载至目标硬件", "支持断点调试、变量监视和单步执行" ],
-  "dependencies" : [ "REQ-015" ]
+  "acceptanceCriteria" : [ "系统启动后，内核及基础服务占用RAM小于256KB", "在最大任务数（64个）和最大中断数（32个）配置下，内存占用仍不超过256KB" ],
+  "dependencies" : [ "REQ-004" ]
 }, {
-  "requirementId" : "REQ-017",
-  "title" : "调试与仿真功能",
-  "description" : "开发环境应支持调试和仿真功能，无需硬件即可运行和调试系统",
-  "priority" : "中",
-  "acceptanceCriteria" : [ "仿真器能模拟目标CPU指令集和外设", "在仿真环境下可以设置断点、观察内存和寄存器", "仿真结果与实际硬件运行结果一致（功能层面）" ],
-  "dependencies" : [ "REQ-016" ]
+  "requirementId" : "REQ-013",
+  "title" : "空闲CPU使用率限制",
+  "description" : "系统空闲时CPU使用率不超过5%，即大部分时间进入低功耗模式",
+  "priority" : "低",
+  "acceptanceCriteria" : [ "系统无任务运行时，通过性能分析工具测量CPU使用率低于5%", "持续监控24小时，平均CPU使用率不超过3%" ],
+  "dependencies" : [ "REQ-001" ]
 }, {
-  "requirementId" : "REQ-018",
-  "title" : "性能分析工具",
-  "description" : "开发环境应提供性能分析工具，用于分析CPU使用率、任务执行时间和内存使用情况",
+  "requirementId" : "REQ-014",
+  "title" : "系统连续运行可靠性",
+  "description" : "系统应能够连续运行10000小时无故障，期间所有功能正常",
+  "priority" : "高",
+  "acceptanceCriteria" : [ "系统在实验室环境连续运行10000小时，无死机、无自动重启、无功能失效", "每1000小时进行一次功能完整性测试，所有需求功能正常运行" ],
+  "dependencies" : [ "REQ-007", "REQ-008" ]
+}, {
+  "requirementId" : "REQ-015",
+  "title" : "开发环境支持",
+  "description" : "系统应支持C/C++编程语言，提供集成开发环境(IDE)、调试仿真功能和性能分析工具",
   "priority" : "中",
-  "acceptanceCriteria" : [ "工具能实时显示各任务的CPU占用率和执行时间", "能统计内存分配峰值和泄漏报告", "分析结果以图表和文本形式导出" ],
-  "dependencies" : [ "REQ-016" ]
+  "acceptanceCriteria" : [ "使用C语言编写的示例工程能成功编译、链接并生成目标文件", "IDE支持单步调试、断点设置和变量查看功能", "性能分析工具能显示任务执行时间、CPU占用率和内存使用曲线" ],
+  "dependencies" : [ ]
 } ]

@@ -39,8 +39,49 @@ public class KnowledgeBaseManager {
 
     @PostConstruct
     public void init() {
-        executorService.submit(this::loadAllKnowledgeBases);
+        performStartupSelfCheck();
+        loadAllKnowledgeBases();
         executorService.submit(this::startFileWatcher);
+    }
+
+    private void performStartupSelfCheck() {
+        log.info("=== Starting Qdrant startup self-check ===");
+        
+        int maxRetries = 60;
+        int delayMs = 1000;
+        
+        for (String collection : AGENT_TYPES) {
+            log.info("Checking collection: {}", collection);
+            
+            for (int attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    List<String> existingCollections = qdrantVectorStore.listCollections();
+                    if (existingCollections.contains(collection)) {
+                        log.info("Collection '{}' exists - OK", collection);
+                        break;
+                    }
+                    
+                    log.warn("Collection '{}' not found, attempting creation... (attempt {}/{})", collection, attempt, maxRetries);
+                    qdrantVectorStore.search(collection, new float[384], 1);
+                    
+                } catch (Exception e) {
+                    log.warn("Failed to check/create collection '{}': {} (attempt {}/{})", collection, e.getMessage(), attempt, maxRetries);
+                }
+                
+                if (attempt < maxRetries) {
+                    try {
+                        Thread.sleep(delayMs);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException("Startup self-check interrupted", ie);
+                    }
+                }
+            }
+        }
+        
+        log.info("=== Qdrant startup self-check completed ===");
+        List<String> finalCollections = qdrantVectorStore.listCollections();
+        log.info("All collections verified: {}", finalCollections);
     }
 
     private void loadAllKnowledgeBases() {
@@ -79,18 +120,22 @@ public class KnowledgeBaseManager {
 
         try {
             long modifiedTime = Files.getLastModifiedTime(kbPath).toMillis();
-            if (modifiedTime == lastModifiedTimes.getOrDefault(agentType, 0L)) {
+            boolean fileChanged = modifiedTime != lastModifiedTimes.getOrDefault(agentType, 0L);
+            
+            if (!fileChanged && knowledgeBases.containsKey(agentType)) {
+                log.info("Knowledge base {} unchanged, but re-inserting to Qdrant on startup", agentType);
+                upsertExistingKnowledgeBase(agentType);
                 return;
             }
 
             String json = Files.readString(kbPath);
             
-            KnowledgeBase kb;
-            try {
-                kb = objectMapper.readValue(json, KnowledgeBase.class);
-            } catch (Exception e) {
-                kb = convertLegacyFormat(json, agentType);
-            }
+            KnowledgeBase kb = convertLegacyFormat(json, agentType);
+            log.info("Loaded KB for {} via legacy format: {} basics, {} examples, {} corrections", 
+                    agentType,
+                    kb.getBasics() != null ? kb.getBasics().size() : 0,
+                    kb.getExamples() != null ? kb.getExamples().size() : 0,
+                    kb.getErrorCorrections() != null ? kb.getErrorCorrections().size() : 0);
             
             if (kb == null) {
                 kb = KnowledgeBase.builder()
@@ -104,31 +149,58 @@ public class KnowledgeBaseManager {
             
             kb.setAgentType(agentType);
 
-            boolean embeddingAvailable = embeddingService.isAvailable();
             boolean qdrantAvailable = qdrantVectorStore.isAvailable();
+            log.info("Loading knowledge base {}: qdrantAvailable={}, basics={}, examples={}, corrections={}", 
+                    agentType, qdrantAvailable, 
+                    kb.getBasics() != null ? kb.getBasics().size() : 0,
+                    kb.getExamples() != null ? kb.getExamples().size() : 0,
+                    kb.getErrorCorrections() != null ? kb.getErrorCorrections().size() : 0);
             
             List<Document> docsToUpsert = new ArrayList<>();
+            int generatedEmbeddings = 0;
+            int skippedEmbeddings = 0;
             
             for (BasicKnowledge basic : kb.getBasics()) {
-                if (basic.getEmbedding() == null && embeddingAvailable) {
+                if (basic.getEmbedding() == null) {
                     try {
-                        basic.setEmbedding(embeddingService.embed(basic.getContent()));
+                        float[] embedding = embeddingService.embed(basic.getContent());
+                        if (embedding != null) {
+                            basic.setEmbedding(embedding);
+                            generatedEmbeddings++;
+                        } else {
+                            skippedEmbeddings++;
+                            log.warn("Embedding generation returned null for basic: {}", basic.getId());
+                        }
                     } catch (Exception e) {
-                        log.warn("Failed to generate embedding for basic: {}", basic.getId());
+                        skippedEmbeddings++;
+                        log.warn("Failed to generate embedding for basic {}: {}", basic.getId(), e.getMessage());
                     }
                 }
                 if (qdrantAvailable && basic.getEmbedding() != null) {
                     docsToUpsert.add(toDocument(basic, agentType, "basic"));
+                } else if (!qdrantAvailable && basic.getEmbedding() != null) {
+                    log.debug("Qdrant not available, skipping upsert for basic: {}", basic.getId());
+                } else if (qdrantAvailable && basic.getEmbedding() == null) {
+                    log.debug("No embedding for basic, skipping upsert: {}", basic.getId());
                 }
             }
             
             for (ExampleKnowledge example : kb.getExamples()) {
-                String content = example.getScenario() + "\n" + example.getInput() + "\n" + example.getOutput() + "\n" + example.getExplanation();
-                if (example.getEmbedding() == null && embeddingAvailable) {
+                String semanticContent = (example.getScenario() != null ? example.getScenario() : "") + "\n" + 
+                        (example.getInput() != null ? example.getInput() : "");
+                if (example.getEmbedding() == null) {
                     try {
-                        example.setEmbedding(embeddingService.embed(content));
+                        float[] embedding = embeddingService.embed(semanticContent);
+                        if (embedding != null) {
+                            example.setEmbedding(embedding);
+                            generatedEmbeddings++;
+                        } else {
+                            skippedEmbeddings++;
+                            log.warn("Embedding generation returned null for example: {}", example.getId());
+                        }
                     } catch (Exception e) {
-                        log.warn("Failed to generate embedding for example: {}", example.getId());
+                        skippedEmbeddings++;
+                        log.warn("Failed to generate embedding for example {}: {}", example.getId(), e.getMessage());
                     }
                 }
                 if (qdrantAvailable && example.getEmbedding() != null) {
@@ -137,12 +209,22 @@ public class KnowledgeBaseManager {
             }
             
             for (ErrorCorrection ec : kb.getErrorCorrections()) {
-                String content = ec.getErrorContent() + "\n" + ec.getCorrectContent() + "\n" + ec.getCorrectionExplanation();
-                if (ec.getEmbedding() == null && embeddingAvailable) {
+                String semanticContent = (ec.getErrorType() != null ? ec.getErrorType() : "") + "\n" + 
+                        (ec.getErrorDescription() != null ? ec.getErrorDescription() : "") + "\n" + 
+                        (ec.getCorrectionExplanation() != null ? ec.getCorrectionExplanation() : "");
+                if (ec.getEmbedding() == null) {
                     try {
-                        ec.setEmbedding(embeddingService.embed(content));
+                        float[] embedding = embeddingService.embed(semanticContent);
+                        if (embedding != null) {
+                            ec.setEmbedding(embedding);
+                            generatedEmbeddings++;
+                        } else {
+                            skippedEmbeddings++;
+                            log.warn("Embedding generation returned null for error correction: {}", ec.getId());
+                        }
                     } catch (Exception e) {
-                        log.warn("Failed to generate embedding for error correction: {}", ec.getId());
+                        skippedEmbeddings++;
+                        log.warn("Failed to generate embedding for error correction {}: {}", ec.getId(), e.getMessage());
                     }
                 }
                 if (qdrantAvailable && ec.getEmbedding() != null) {
@@ -153,13 +235,22 @@ public class KnowledgeBaseManager {
             knowledgeBases.put(agentType, kb);
             lastModifiedTimes.put(agentType, modifiedTime);
             
+            log.info("Knowledge base {}: {} docs to upsert, {} embeddings generated, {} skipped", 
+                    agentType, docsToUpsert.size(), generatedEmbeddings, skippedEmbeddings);
+            
             if (!docsToUpsert.isEmpty()) {
+                log.info("Calling upsertBatch for {} with {} documents", agentType, docsToUpsert.size());
                 qdrantVectorStore.upsertBatch(agentType, docsToUpsert);
+                log.info("upsertBatch completed for {}", agentType);
+            } else if (qdrantAvailable) {
+                log.warn("No documents to upsert for {} - check if embeddings are being generated", agentType);
+            } else {
+                log.warn("Qdrant not available, skipping upsert for {}", agentType);
             }
             
-            log.info("Loaded knowledge base {}: {} basics, {} examples, {} corrections (qdrant: {})", 
+            log.info("Loaded knowledge base {}: {} basics, {} examples, {} corrections (qdrant: {}, upserted: {})", 
                     agentType, kb.getBasics().size(), kb.getExamples().size(), 
-                    kb.getErrorCorrections().size(), qdrantAvailable);
+                    kb.getErrorCorrections().size(), qdrantAvailable, docsToUpsert.size());
         } catch (IOException e) {
             log.error("Failed to load knowledge base {}: {}", agentType, e.getMessage());
             knowledgeBases.put(agentType, createEmptyKnowledgeBase(agentType));
@@ -168,59 +259,92 @@ public class KnowledgeBaseManager {
 
     private KnowledgeBase convertLegacyFormat(String json, String agentType) {
         try {
-            List<KnowledgeEntry> entries = objectMapper.readValue(json, new com.fasterxml.jackson.core.type.TypeReference<List<KnowledgeEntry>>() {});
-            if (entries == null || entries.isEmpty()) {
-                return createEmptyKnowledgeBase(agentType);
-            }
+            com.fasterxml.jackson.databind.JsonNode rootNode = objectMapper.readTree(json);
+            
+            log.info("Legacy format parsing for {}: rootNode has basics={}, examples={}, errorCorrections={}", 
+                    agentType,
+                    rootNode.has("basics"),
+                    rootNode.has("examples"),
+                    rootNode.has("errorCorrections"));
             
             KnowledgeBase kb = createEmptyKnowledgeBase(agentType);
+            LocalDateTime now = LocalDateTime.now();
             
-            for (KnowledgeEntry entry : entries) {
-                String category = entry.getCategory();
-                if (category != null && category.contains("语法")) {
+            com.fasterxml.jackson.databind.JsonNode basicsNode = rootNode.get("basics");
+            log.info("Legacy format parsing for {}: basicsNode={}, isArray={}, size={}", 
+                    agentType,
+                    basicsNode != null,
+                    basicsNode != null && basicsNode.isArray(),
+                    basicsNode != null && basicsNode.isArray() ? basicsNode.size() : 0);
+            
+            if (basicsNode != null && basicsNode.isArray()) {
+                int index = 1;
+                for (com.fasterxml.jackson.databind.JsonNode node : basicsNode) {
+                    String category = node.has("category") ? node.get("category").asText() : null;
+                    String content = node.has("content") ? node.get("content").asText() : null;
+                    
                     kb.getBasics().add(BasicKnowledge.builder()
-                            .id(entry.getId())
-                            .title(entry.getTitle())
-                            .content(entry.getContent())
+                            .id("BASIC-" + agentType + "-" + String.format("%03d", index++))
+                            .title(category != null ? category : "基本规则")
+                            .content(content)
                             .section(category)
-                            .tags(entry.getTags())
-                            .createdAt(entry.getCreatedAt())
-                            .updatedAt(entry.getUpdatedAt())
-                            .embedding(entry.getEmbedding())
-                            .build());
-                } else if (category != null && category.contains("示例")) {
-                    kb.getExamples().add(ExampleKnowledge.builder()
-                            .id(entry.getId())
-                            .title(entry.getTitle())
-                            .scenario(entry.getContent())
-                            .tags(entry.getTags())
-                            .createdAt(entry.getCreatedAt())
-                            .updatedAt(entry.getUpdatedAt())
-                            .embedding(entry.getEmbedding())
-                            .build());
-                } else if (category != null && category.contains("错误")) {
-                    kb.getErrorCorrections().add(ErrorCorrection.builder()
-                            .id(entry.getId())
-                            .title(entry.getTitle())
-                            .errorContent(entry.getContent())
-                            .tags(entry.getTags())
-                            .createdAt(entry.getCreatedAt())
-                            .updatedAt(entry.getUpdatedAt())
-                            .embedding(entry.getEmbedding())
-                            .build());
-                } else {
-                    kb.getBasics().add(BasicKnowledge.builder()
-                            .id(entry.getId())
-                            .title(entry.getTitle())
-                            .content(entry.getContent())
-                            .section(category)
-                            .tags(entry.getTags())
-                            .createdAt(entry.getCreatedAt())
-                            .updatedAt(entry.getUpdatedAt())
-                            .embedding(entry.getEmbedding())
+                            .tags(new ArrayList<>())
+                            .createdAt(now)
+                            .updatedAt(now)
                             .build());
                 }
             }
+            
+            com.fasterxml.jackson.databind.JsonNode examplesNode = rootNode.get("examples");
+            if (examplesNode != null && examplesNode.isArray()) {
+                int index = 1;
+                for (com.fasterxml.jackson.databind.JsonNode node : examplesNode) {
+                    String scenario = node.has("scenario") ? node.get("scenario").asText() : null;
+                    String input = node.has("input") ? node.get("input").asText() : null;
+                    String goldenOutput = node.has("goldenOutput") ? node.get("goldenOutput").asText() : null;
+                    String explanation = node.has("explanation") ? node.get("explanation").asText() : null;
+                    
+                    kb.getExamples().add(ExampleKnowledge.builder()
+                            .id("EXAMPLE-" + agentType + "-" + String.format("%03d", index++))
+                            .title(scenario != null ? scenario.substring(0, Math.min(scenario.length(), 30)) : "示例")
+                            .scenario(scenario)
+                            .input(input)
+                            .output(goldenOutput)
+                            .explanation(explanation)
+                            .tags(new ArrayList<>())
+                            .createdAt(now)
+                            .updatedAt(now)
+                            .build());
+                }
+            }
+            
+            com.fasterxml.jackson.databind.JsonNode errorCorrectionsNode = rootNode.get("errorCorrections");
+            if (errorCorrectionsNode != null && errorCorrectionsNode.isArray()) {
+                int index = 1;
+                for (com.fasterxml.jackson.databind.JsonNode node : errorCorrectionsNode) {
+                    String errorType = node.has("errorType") ? node.get("errorType").asText() : null;
+                    String badBehavior = node.has("badBehavior") ? node.get("badBehavior").asText() : null;
+                    String correctionRule = node.has("correctionRule") ? node.get("correctionRule").asText() : null;
+                    
+                    kb.getErrorCorrections().add(ErrorCorrection.builder()
+                            .id("EC-" + agentType + "-" + String.format("%03d", index++))
+                            .title(errorType != null ? errorType : "错误修正")
+                            .errorType(errorType)
+                            .errorContent(badBehavior)
+                            .errorDescription(badBehavior)
+                            .correctContent(correctionRule)
+                            .correctionExplanation(correctionRule)
+                            .tags(new ArrayList<>())
+                            .createdAt(now)
+                            .updatedAt(now)
+                            .build());
+                }
+            }
+            
+            if (kb.getBasics().isEmpty() && kb.getExamples().isEmpty() && kb.getErrorCorrections().isEmpty()) {
+                return createEmptyKnowledgeBase(agentType);
+            }
+            
             return kb;
         } catch (Exception e) {
             log.warn("Failed to convert legacy format: {}", e.getMessage());
@@ -369,10 +493,11 @@ public class KnowledgeBaseManager {
         example.setCreatedAt(now);
         example.setUpdatedAt(now);
         
-        String content = example.getScenario() + "\n" + example.getInput() + "\n" + example.getOutput() + "\n" + (example.getExplanation() != null ? example.getExplanation() : "");
+        String semanticContent = (example.getScenario() != null ? example.getScenario() : "") + "\n" + 
+                (example.getInput() != null ? example.getInput() : "");
         if (example.getEmbedding() == null) {
             try {
-                example.setEmbedding(embeddingService.embed(content));
+                example.setEmbedding(embeddingService.embed(semanticContent));
             } catch (Exception e) {
                 log.warn("Failed to generate embedding for example");
             }
@@ -401,10 +526,12 @@ public class KnowledgeBaseManager {
         ec.setCreatedAt(now);
         ec.setUpdatedAt(now);
         
-        String content = ec.getErrorContent() + "\n" + ec.getCorrectContent() + "\n" + (ec.getCorrectionExplanation() != null ? ec.getCorrectionExplanation() : "");
+        String semanticContent = (ec.getErrorType() != null ? ec.getErrorType() : "") + "\n" + 
+                (ec.getErrorDescription() != null ? ec.getErrorDescription() : "") + "\n" + 
+                (ec.getCorrectionExplanation() != null ? ec.getCorrectionExplanation() : "");
         if (ec.getEmbedding() == null) {
             try {
-                ec.setEmbedding(embeddingService.embed(content));
+                ec.setEmbedding(embeddingService.embed(semanticContent));
             } catch (Exception e) {
                 log.warn("Failed to generate embedding for error correction");
             }
@@ -464,9 +591,10 @@ public class KnowledgeBaseManager {
                 if (updated.getExplanation() != null) example.setExplanation(updated.getExplanation());
                 if (updated.getTags() != null) example.setTags(updated.getTags());
                 
-                String content = example.getScenario() + "\n" + example.getInput() + "\n" + example.getOutput() + "\n" + (example.getExplanation() != null ? example.getExplanation() : "");
+                String semanticContent = (example.getScenario() != null ? example.getScenario() : "") + "\n" + 
+                        (example.getInput() != null ? example.getInput() : "");
                 try {
-                    example.setEmbedding(embeddingService.embed(content));
+                    example.setEmbedding(embeddingService.embed(semanticContent));
                 } catch (Exception e) {
                     log.warn("Failed to regenerate embedding for example");
                 }
@@ -499,9 +627,11 @@ public class KnowledgeBaseManager {
                 if (updated.getSuggestion() != null) ec.setSuggestion(updated.getSuggestion());
                 if (updated.getTags() != null) ec.setTags(updated.getTags());
                 
-                String content = ec.getErrorContent() + "\n" + ec.getCorrectContent() + "\n" + (ec.getCorrectionExplanation() != null ? ec.getCorrectionExplanation() : "");
+                String semanticContent = (ec.getErrorType() != null ? ec.getErrorType() : "") + "\n" + 
+                        (ec.getErrorDescription() != null ? ec.getErrorDescription() : "") + "\n" + 
+                        (ec.getCorrectionExplanation() != null ? ec.getCorrectionExplanation() : "");
                 try {
-                    ec.setEmbedding(embeddingService.embed(content));
+                    ec.setEmbedding(embeddingService.embed(semanticContent));
                 } catch (Exception e) {
                     log.warn("Failed to regenerate embedding for error correction");
                 }
@@ -610,6 +740,7 @@ public class KnowledgeBaseManager {
         return Document.builder()
                 .id(basic.getId())
                 .content(basic.getContent())
+                .payload(basic.getContent())
                 .title(basic.getTitle())
                 .source(agentType)
                 .category(type)
@@ -619,31 +750,267 @@ public class KnowledgeBaseManager {
     }
 
     private Document toDocument(ExampleKnowledge example, String agentType, String type) {
-        String content = example.getScenario() + "\n输入: " + example.getInput() + "\n输出: " + example.getOutput() + 
+        String semanticText = (example.getScenario() != null ? example.getScenario() : "") + "\n" + 
+                (example.getInput() != null ? example.getInput() : "") + 
                 (example.getExplanation() != null ? "\n解释: " + example.getExplanation() : "");
+        
+        String payload = (example.getScenario() != null ? "场景: " + example.getScenario() + "\n" : "") + 
+                (example.getInput() != null ? "输入: " + example.getInput() + "\n" : "") + 
+                (example.getOutput() != null ? "输出: " + example.getOutput() + "\n" : "") + 
+                (example.getExplanation() != null ? "解释: " + example.getExplanation() : "");
+
+        String fullText = semanticText + (example.getOutput() != null ? "\n" + example.getOutput() : "");
+        
         return Document.builder()
                 .id(example.getId())
-                .content(content)
+                .content(semanticText)
+                .payload(payload)
                 .title(example.getTitle())
                 .source(agentType)
                 .category(type)
                 .tags(example.getTags())
                 .embedding(example.getEmbedding())
+                .hardwareInterfaces(extractHardwareInterfaces(fullText))
+                .sensors(extractSensors(fullText))
+                .actuators(extractActuators(fullText))
+                .applicationDomains(extractApplicationDomains(fullText, example.getTags()))
+                .safetyLevels(extractSafetyLevels(fullText))
+                .schedulingPolicies(extractSchedulingPolicies(fullText))
                 .build();
     }
 
     private Document toDocument(ErrorCorrection ec, String agentType, String type) {
-        String content = "错误类型: " + ec.getErrorType() + "\n错误内容: " + ec.getErrorContent() + 
-                "\n错误描述: " + ec.getErrorDescription() + "\n正确内容: " + ec.getCorrectContent() + 
-                "\n修复说明: " + ec.getCorrectionExplanation() + (ec.getSuggestion() != null ? "\n建议: " + ec.getSuggestion() : "");
+        String semanticText = (ec.getErrorType() != null ? "错误类型: " + ec.getErrorType() : "") + "\n" + 
+                (ec.getErrorDescription() != null ? "错误描述: " + ec.getErrorDescription() : "") + 
+                (ec.getCorrectionExplanation() != null ? "修复说明: " + ec.getCorrectionExplanation() : "");
+        
+        String payload = (ec.getErrorType() != null ? "错误类型: " + ec.getErrorType() + "\n" : "") + 
+                (ec.getErrorContent() != null ? "错误内容: " + ec.getErrorContent() + "\n" : "") + 
+                (ec.getErrorDescription() != null ? "错误描述: " + ec.getErrorDescription() + "\n" : "") + 
+                (ec.getCorrectContent() != null ? "正确内容: " + ec.getCorrectContent() + "\n" : "") + 
+                (ec.getCorrectionExplanation() != null ? "修复说明: " + ec.getCorrectionExplanation() + "\n" : "") + 
+                (ec.getSuggestion() != null ? "建议: " + ec.getSuggestion() : "");
+
+        String fullText = semanticText + (ec.getCorrectContent() != null ? "\n" + ec.getCorrectContent() : "");
+
         return Document.builder()
                 .id(ec.getId())
-                .content(content)
+                .content(semanticText)
+                .payload(payload)
                 .title(ec.getTitle())
                 .source(agentType)
                 .category(type)
                 .tags(ec.getTags())
                 .embedding(ec.getEmbedding())
+                .hardwareInterfaces(extractHardwareInterfaces(fullText))
+                .sensors(extractSensors(fullText))
+                .actuators(extractActuators(fullText))
+                .applicationDomains(extractApplicationDomains(fullText, ec.getTags()))
+                .safetyLevels(extractSafetyLevels(fullText))
+                .schedulingPolicies(extractSchedulingPolicies(fullText))
                 .build();
+    }
+
+    private List<String> extractHardwareInterfaces(String text) {
+        if (text == null) return new ArrayList<>();
+        String lower = text.toLowerCase();
+        List<String> interfaces = new ArrayList<>();
+        
+        if (lower.contains("spi")) interfaces.add("SPI");
+        if (lower.contains("i2c") || lower.contains("i²c")) interfaces.add("I2C");
+        if (lower.contains("uart")) interfaces.add("UART");
+        if (lower.contains("can")) interfaces.add("CAN");
+        if (lower.contains("ethernet")) interfaces.add("ETHERNET");
+        if (lower.contains("usb")) interfaces.add("USB");
+        if (lower.contains("gpio")) interfaces.add("GPIO");
+        if (lower.contains("adc")) interfaces.add("ADC");
+        if (lower.contains("dac")) interfaces.add("DAC");
+        
+        return interfaces;
+    }
+
+    private List<String> extractSensors(String text) {
+        if (text == null) return new ArrayList<>();
+        String lower = text.toLowerCase();
+        List<String> sensors = new ArrayList<>();
+        
+        if (lower.contains("gyroscope") || lower.contains("陀螺仪")) sensors.add("GYROSCOPE");
+        if (lower.contains("accelerometer") || lower.contains("加速度计")) sensors.add("ACCELEROMETER");
+        if (lower.contains("temperature") || lower.contains("温度")) sensors.add("TEMPERATURE");
+        if (lower.contains("pressure") || lower.contains("压力")) sensors.add("PRESSURE");
+        if (lower.contains("gps")) sensors.add("GPS");
+        if (lower.contains("imu")) sensors.add("IMU");
+        if (lower.contains("sensor") || lower.contains("传感器")) sensors.add("SENSOR");
+        
+        return sensors;
+    }
+
+    private List<String> extractActuators(String text) {
+        if (text == null) return new ArrayList<>();
+        String lower = text.toLowerCase();
+        List<String> actuators = new ArrayList<>();
+        
+        if (lower.contains("motor") || lower.contains("电机")) actuators.add("MOTOR");
+        if (lower.contains("valve") || lower.contains("阀门")) actuators.add("VALVE");
+        if (lower.contains("led") || lower.contains("指示灯")) actuators.add("LED");
+        if (lower.contains("actuator") || lower.contains("执行器")) actuators.add("ACTUATOR");
+        
+        return actuators;
+    }
+
+    private List<String> extractApplicationDomains(String text, List<String> tags) {
+        if (text == null) text = "";
+        String lower = text.toLowerCase();
+        List<String> domains = new ArrayList<>();
+        
+        if (tags != null) {
+            for (String tag : tags) {
+                String tagLower = tag.toLowerCase();
+                if (tagLower.contains("航空") || tagLower.contains("aviation")) domains.add("AVIATION");
+                if (tagLower.contains("航天") || tagLower.contains("space")) domains.add("SPACE");
+                if (tagLower.contains("汽车") || tagLower.contains("automotive")) domains.add("AUTOMOTIVE");
+                if (tagLower.contains("医疗") || tagLower.contains("medical")) domains.add("MEDICAL");
+                if (tagLower.contains("工业") || tagLower.contains("industrial")) domains.add("INDUSTRIAL");
+                if (tagLower.contains("消费") || tagLower.contains("consumer")) domains.add("CONSUMER");
+                if (tagLower.contains("能源") || tagLower.contains("energy")) domains.add("ENERGY");
+                if (tagLower.contains("通信") || tagLower.contains("telecom")) domains.add("TELECOM");
+            }
+        }
+        
+        if (lower.contains("航空") || lower.contains("aviation") || lower.contains("flight")) domains.add("AVIATION");
+        if (lower.contains("航天") || lower.contains("space") || lower.contains("satellite")) domains.add("SPACE");
+        if (lower.contains("汽车") || lower.contains("automotive") || lower.contains("vehicle")) domains.add("AUTOMOTIVE");
+        if (lower.contains("医疗") || lower.contains("medical") || lower.contains("hospital")) domains.add("MEDICAL");
+        if (lower.contains("工业") || lower.contains("industrial") || lower.contains("factory")) domains.add("INDUSTRIAL");
+        if (lower.contains("消费") || lower.contains("consumer") || lower.contains("smart")) domains.add("CONSUMER");
+        if (lower.contains("能源") || lower.contains("energy") || lower.contains("power")) domains.add("ENERGY");
+        if (lower.contains("通信") || lower.contains("telecom") || lower.contains("5g")) domains.add("TELECOM");
+        
+        return domains.stream().distinct().toList();
+    }
+
+    private List<String> extractSafetyLevels(String text) {
+        if (text == null) return new ArrayList<>();
+        String lower = text.toLowerCase();
+        List<String> levels = new ArrayList<>();
+        
+        if (lower.contains("asil-a")) levels.add("ASIL_A");
+        if (lower.contains("asil-b")) levels.add("ASIL_B");
+        if (lower.contains("asil-c")) levels.add("ASIL_C");
+        if (lower.contains("asil-d")) levels.add("ASIL_D");
+        
+        return levels;
+    }
+
+    private List<String> extractSchedulingPolicies(String text) {
+        if (text == null) return new ArrayList<>();
+        String lower = text.toLowerCase();
+        List<String> policies = new ArrayList<>();
+        
+        if (lower.contains("fifo") || lower.contains("先进先出")) policies.add("FIFO");
+        if (lower.contains("priority") || lower.contains("优先级")) policies.add("PRIORITY");
+        if (lower.contains("round-robin") || lower.contains("轮转")) policies.add("ROUND_ROBIN");
+        if (lower.contains("rate-monotonic") || lower.contains("速率单调")) policies.add("RATE_MONOTONIC");
+        if (lower.contains("edf") || lower.contains("最早截止期")) policies.add("EDF");
+        
+        return policies;
+    }
+
+    private void upsertExistingKnowledgeBase(String agentType) {
+        KnowledgeBase kb = knowledgeBases.get(agentType);
+        if (kb == null) {
+            log.warn("Knowledge base {} not found in memory", agentType);
+            return;
+        }
+        
+        if (!qdrantVectorStore.isAvailable()) {
+            log.warn("Qdrant not available, skipping upsert for {}", agentType);
+            return;
+        }
+        
+        log.info("Re-inserting existing knowledge base {} to Qdrant", agentType);
+        
+        List<Document> docsToUpsert = new ArrayList<>();
+        int generatedEmbeddings = 0;
+        int skippedEmbeddings = 0;
+        
+        for (BasicKnowledge basic : kb.getBasics()) {
+            if (basic.getEmbedding() == null) {
+                try {
+                    float[] embedding = embeddingService.embed(basic.getContent());
+                    if (embedding != null) {
+                        basic.setEmbedding(embedding);
+                        generatedEmbeddings++;
+                    } else {
+                        skippedEmbeddings++;
+                        log.warn("Embedding generation returned null for basic: {}", basic.getId());
+                    }
+                } catch (Exception e) {
+                    skippedEmbeddings++;
+                    log.warn("Failed to generate embedding for basic {}: {}", basic.getId(), e.getMessage());
+                }
+            }
+            if (basic.getEmbedding() != null) {
+                docsToUpsert.add(toDocument(basic, agentType, "basic"));
+            }
+        }
+        
+        for (ExampleKnowledge example : kb.getExamples()) {
+            String semanticContent = (example.getScenario() != null ? example.getScenario() : "") + "\n" + 
+                    (example.getInput() != null ? example.getInput() : "");
+            if (example.getEmbedding() == null) {
+                try {
+                    float[] embedding = embeddingService.embed(semanticContent);
+                    if (embedding != null) {
+                        example.setEmbedding(embedding);
+                        generatedEmbeddings++;
+                    } else {
+                        skippedEmbeddings++;
+                        log.warn("Embedding generation returned null for example: {}", example.getId());
+                    }
+                } catch (Exception e) {
+                    skippedEmbeddings++;
+                    log.warn("Failed to generate embedding for example {}: {}", example.getId(), e.getMessage());
+                }
+            }
+            if (example.getEmbedding() != null) {
+                docsToUpsert.add(toDocument(example, agentType, "example"));
+            }
+        }
+        
+        for (ErrorCorrection ec : kb.getErrorCorrections()) {
+            String semanticContent = (ec.getErrorType() != null ? ec.getErrorType() : "") + "\n" + 
+                    (ec.getErrorDescription() != null ? ec.getErrorDescription() : "") + "\n" + 
+                    (ec.getCorrectionExplanation() != null ? ec.getCorrectionExplanation() : "");
+            if (ec.getEmbedding() == null) {
+                try {
+                    float[] embedding = embeddingService.embed(semanticContent);
+                    if (embedding != null) {
+                        ec.setEmbedding(embedding);
+                        generatedEmbeddings++;
+                    } else {
+                        skippedEmbeddings++;
+                        log.warn("Embedding generation returned null for error correction: {}", ec.getId());
+                    }
+                } catch (Exception e) {
+                    skippedEmbeddings++;
+                    log.warn("Failed to generate embedding for error correction {}: {}", ec.getId(), e.getMessage());
+                }
+            }
+            if (ec.getEmbedding() != null) {
+                docsToUpsert.add(toDocument(ec, agentType, "error_correction"));
+            }
+        }
+        
+        log.info("Existing KB {}: {} docs to upsert, {} embeddings generated, {} skipped", 
+                agentType, docsToUpsert.size(), generatedEmbeddings, skippedEmbeddings);
+        
+        if (!docsToUpsert.isEmpty()) {
+            log.info("Calling upsertBatch for {} with {} documents", agentType, docsToUpsert.size());
+            qdrantVectorStore.upsertBatch(agentType, docsToUpsert);
+            log.info("Re-inserted {} documents to Qdrant for {}", docsToUpsert.size(), agentType);
+        } else {
+            log.warn("No documents to upsert for {} - check if embeddings are being generated", agentType);
+        }
     }
 }

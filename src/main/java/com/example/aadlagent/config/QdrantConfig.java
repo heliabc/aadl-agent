@@ -21,9 +21,12 @@ public class QdrantConfig {
     private String apiKey;
     private int embeddingSize = 384;
     private List<String> collections = Arrays.asList("requirement", "architecture", "module", "aadl");
+    private int maxRetries = 3;
+    private long retryDelayMs = 200;
 
     @PostConstruct
     public void init() {
-        log.info("Qdrant configuration: host={}, port={}", host, port);
+        log.info("Qdrant configuration: host={}, port={}, embeddingSize={}, maxRetries={}, retryDelayMs={}", 
+                host, port, embeddingSize, maxRetries, retryDelayMs);
     }
 }

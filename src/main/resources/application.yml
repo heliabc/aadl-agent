@@ -1,9 +1,16 @@
 server:
   port: 8080
+  tomcat:
+    uri-encoding: UTF-8
 
 spring:
   application:
     name: aadl-agent
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
 
 file:
   input-path: ./input
@@ -11,16 +18,10 @@ file:
 
 ollama:
   base-url: http://localhost:11434
-  chat-model: qwen3:8B
+  chat-model: qwen3:8b
   embedding-model: qwen3-embedding:latest
   timeout: 900000
 
-deepseek:
-  api-key: ""
-  base-url: https://api.deepseek.com
-  chat-model: deepseek-v4-flash
-  embedding-model: deepseek-embedding
-  timeout: 300000
 
 rag:
   top-k: 5
@@ -30,7 +31,7 @@ rag:
 qdrant:
   host: localhost
   port: 6334
-  embedding-size: 384
+  embedding-size: 4096
 
 agent:
   requirement:
@@ -46,6 +47,10 @@ agent:
     temperature: 0.1
     max-tokens: 8192
   aadl:
+    max-retries: 3
+    temperature: 0.1
+    max-tokens: 16384
+  aadl-fixer:
     max-retries: 3
     temperature: 0.1
     max-tokens: 16384

@@ -50,17 +50,14 @@ public class RagService {
         List<Document> results;
 
         if (qdrantVectorStore.isAvailable()) {
-            float[] queryEmbedding = embeddingService.embed(rewrittenQuery);
-            if (queryEmbedding != null) {
-                List<Document> vectorResults = qdrantVectorStore.search(agentType, queryEmbedding, ragConfig.getTopK());
-                List<Document> keywordResults = qdrantVectorStore.keywordSearch(agentType, rewrittenQuery, ragConfig.getTopK());
-                results = rrfFusion.fuse(List.of(vectorResults, keywordResults));
-            } else {
-                results = qdrantVectorStore.keywordSearch(agentType, rewrittenQuery, ragConfig.getTopK());
+            results = searchWithQdrant(rewrittenQuery, agentType);
+            if (results == null || results.isEmpty()) {
+                log.warn("Qdrant search returned empty results, falling back to memory search");
+                results = searchInMemory(rewrittenQuery, agentType);
             }
         } else {
-            List<Document> agentDocuments = knowledgeBaseManager.toDocuments(agentType);
-            results = vectorSearchService.hybridSearch(rewrittenQuery, agentDocuments, ragConfig.getTopK());
+            log.info("Qdrant not available, using memory search");
+            results = searchInMemory(rewrittenQuery, agentType);
         }
 
         List<Document> rerankedResults = reranker.rerank(rewrittenQuery, results);
@@ -76,6 +73,33 @@ public class RagService {
                 .build();
     }
 
+    private List<Document> searchWithQdrant(String query, String agentType) {
+        try {
+            float[] queryEmbedding = embeddingService.embed(query);
+            if (queryEmbedding != null) {
+                List<Document> vectorResults = qdrantVectorStore.search(agentType, queryEmbedding, ragConfig.getTopK());
+                List<Document> keywordResults = qdrantVectorStore.keywordSearch(agentType, query, ragConfig.getTopK());
+                return rrfFusion.fuse(List.of(vectorResults, keywordResults));
+            } else {
+                log.warn("Failed to generate embedding for query, falling back to keyword search");
+                return qdrantVectorStore.keywordSearch(agentType, query, ragConfig.getTopK());
+            }
+        } catch (Exception e) {
+            log.error("Qdrant search failed: {}, falling back to memory search", e.getMessage());
+            return null;
+        }
+    }
+
+    private List<Document> searchInMemory(String query, String agentType) {
+        try {
+            List<Document> agentDocuments = knowledgeBaseManager.toDocuments(agentType);
+            return vectorSearchService.hybridSearch(query, agentDocuments, ragConfig.getTopK());
+        } catch (Exception e) {
+            log.error("Memory search failed: {}", e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
     public SearchResult search(String query) {
         return search(query, "requirement");
     }
@@ -88,11 +112,52 @@ public class RagService {
         }
 
         StringBuilder context = new StringBuilder();
-        context.append("参考知识：\n");
+        
+        List<Document> basics = new ArrayList<>();
+        List<Document> examples = new ArrayList<>();
+        List<Document> errorCorrections = new ArrayList<>();
 
-        for (int i = 0; i < result.getDocuments().size(); i++) {
-            Document doc = result.getDocuments().get(i);
-            context.append(String.format("%d. %s\n", i + 1, doc.getContent()));
+        for (Document doc : result.getDocuments()) {
+            String category = doc.getCategory();
+            if ("basic".equals(category)) {
+                basics.add(doc);
+            } else if ("example".equals(category)) {
+                examples.add(doc);
+            } else if ("error_correction".equals(category)) {
+                errorCorrections.add(doc);
+            } else {
+                basics.add(doc);
+            }
+        }
+
+        if (!basics.isEmpty()) {
+            context.append("【基础知识规范】\n");
+            context.append("以下是相关的基础知识和规范，请在处理时遵循：\n");
+            for (int i = 0; i < basics.size(); i++) {
+                Document doc = basics.get(i);
+                context.append(String.format("%d. %s\n", i + 1, doc.getContent()));
+            }
+            context.append("\n");
+        }
+
+        if (!examples.isEmpty()) {
+            context.append("【正确示例参考】\n");
+            context.append("以下是相关的正确示例，请参考其处理方式和输出格式：\n");
+            for (int i = 0; i < examples.size(); i++) {
+                Document doc = examples.get(i);
+                context.append(String.format("%d. %s\n", i + 1, doc.getContent()));
+            }
+            context.append("\n");
+        }
+
+        if (!errorCorrections.isEmpty()) {
+            context.append("【常见错误及修复】\n");
+            context.append("以下是相关的错误案例和正确修复方式，请避免重复相同错误：\n");
+            for (int i = 0; i < errorCorrections.size(); i++) {
+                Document doc = errorCorrections.get(i);
+                context.append(String.format("%d. %s\n", i + 1, doc.getContent()));
+            }
+            context.append("\n");
         }
 
         return context.toString();

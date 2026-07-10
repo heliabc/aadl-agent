@@ -2,6 +2,7 @@ package com.example.aadlagent.controller;
 
 import com.example.aadlagent.agent.AgentInput;
 import com.example.aadlagent.agent.AgentOutput;
+import com.example.aadlagent.agent.aadl.AadlFixerAgent;
 import com.example.aadlagent.agent.aadl.AadlGeneratorAgent;
 import com.example.aadlagent.agent.architecture.AadlArchitectureAgent;
 import com.example.aadlagent.agent.module.ModuleAnalysisAgent;
@@ -32,6 +33,7 @@ public class RequirementController {
     private final AadlArchitectureAgent architectureAgent;
     private final ModuleAnalysisAgent moduleAnalysisAgent;
     private final AadlGeneratorAgent aadlGeneratorAgent;
+    private final AadlFixerAgent aadlFixerAgent;
     private final DocFileReader docFileReader;
     private final FileConfig fileConfig;
     private final ModelService modelService;
@@ -41,6 +43,7 @@ public class RequirementController {
 
     public RequirementController(RequirementAgent requirementAgent, AadlArchitectureAgent architectureAgent,
                                  ModuleAnalysisAgent moduleAnalysisAgent, AadlGeneratorAgent aadlGeneratorAgent,
+                                 AadlFixerAgent aadlFixerAgent,
                                  DocFileReader docFileReader, FileConfig fileConfig, 
                                  ModelService modelService, DeepSeekConfig deepSeekConfig,
                                  RagService ragService, SessionManager sessionManager) {
@@ -48,6 +51,7 @@ public class RequirementController {
         this.architectureAgent = architectureAgent;
         this.moduleAnalysisAgent = moduleAnalysisAgent;
         this.aadlGeneratorAgent = aadlGeneratorAgent;
+        this.aadlFixerAgent = aadlFixerAgent;
         this.docFileReader = docFileReader;
         this.fileConfig = fileConfig;
         this.modelService = modelService;
@@ -631,6 +635,101 @@ public class RequirementController {
                 response.put("data", output.getContent());
                 response.put("outputFile", outputFileName);
                 log.info("Successfully regenerated AADL: {} + {} -> {}", architectureFileName, modulesFileName, outputFileName);
+            } else {
+                response.put("message", output.getErrorMessage());
+            }
+
+            return ResponseEntity.ok(response);
+
+        } catch (IOException e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "读取文件失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
+    }
+
+    @PostMapping("/fix-aadl")
+    public ResponseEntity<Map<String, Object>> fixAadl(@RequestBody Map<String, Object> request) {
+        String aadlFileName = (String) request.get("aadlFile");
+        String aadlContent = (String) request.get("aadlContent");
+        List<String> errors = (List<String>) request.get("errors");
+        String modelTypeStr = (String) request.get("model");
+        String sessionId = (String) request.get("sessionId");
+
+        if ((aadlFileName == null || aadlFileName.trim().isEmpty()) && 
+            (aadlContent == null || aadlContent.trim().isEmpty())) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "AADL文件名或内容不能为空");
+            return ResponseEntity.badRequest().body(error);
+        }
+
+        if (errors == null || errors.isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "错误列表不能为空");
+            return ResponseEntity.badRequest().body(error);
+        }
+
+        ModelType modelType = parseModelType(modelTypeStr);
+
+        if (sessionId == null || sessionId.trim().isEmpty() || !sessionManager.exists(sessionId)) {
+            sessionId = sessionManager.createSession();
+        }
+
+        try {
+            if (aadlContent == null || aadlContent.trim().isEmpty()) {
+                String aadlFilePath = Paths.get(fileConfig.getAadlPath(), aadlFileName).toString();
+                if (!java.nio.file.Files.exists(java.nio.file.Paths.get(aadlFilePath))) {
+                    Map<String, Object> error = new HashMap<>();
+                    error.put("success", false);
+                    error.put("message", "AADL文件不存在: " + aadlFileName);
+                    return ResponseEntity.badRequest().body(error);
+                }
+                aadlContent = docFileReader.readFile(aadlFilePath);
+            }
+
+            String errorText = String.join("\n", errors);
+            String ragContext = ragService.getEnhancedContext(errorText, "aadl");
+            String sessionContext = sessionManager.buildContext(sessionId, 10);
+            if (sessionContext != null && !sessionContext.isEmpty()) {
+                ragContext = sessionContext + "\n\n" + ragContext;
+            }
+
+            sessionManager.addMessage(sessionId, ChatMessage.user("修复AADL错误: " + errors.size() + " 个问题"));
+
+            AgentInput input = AgentInput.builder()
+                    .sessionId(sessionId)
+                    .content(aadlContent)
+                    .metadata(errorText)
+                    .ragContext(ragContext)
+                    .modelType(modelType)
+                    .build();
+
+            AgentOutput output = aadlFixerAgent.execute(input);
+
+            if (output.isSuccess()) {
+                sessionManager.addMessage(sessionId, ChatMessage.assistant("AADL修复成功", "AadlFixerAgent"));
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", output.isSuccess());
+            response.put("sessionId", output.getSessionId());
+            response.put("executionTime", output.getExecutionTime());
+            response.put("model", modelType.name());
+
+            if (output.isSuccess()) {
+                String outputFileName = aadlFileName;
+                if (outputFileName == null || outputFileName.trim().isEmpty()) {
+                    outputFileName = "fixed_system.aadl";
+                }
+                String outputFilePath = Paths.get(fileConfig.getAadlPath(), outputFileName).toString();
+                docFileReader.writeFile(output.getContent(), outputFilePath);
+
+                response.put("data", output.getContent());
+                response.put("outputFile", outputFileName);
+                log.info("Successfully fixed AADL: {} errors -> {}", errors.size(), outputFileName);
             } else {
                 response.put("message", output.getErrorMessage());
             }

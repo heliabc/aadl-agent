@@ -1,5 +1,6 @@
 package com.example.aadlagent.rag.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,9 +18,15 @@ public class ErrorCorrection {
     private String id;
     private String title;
     private String errorType;
+    
+    @JsonProperty("badBehavior")
     private String errorContent;
+    
     private String errorDescription;
+    
+    @JsonProperty("correctionRule")
     private String correctContent;
+    
     private String correctionExplanation;
     private String suggestion;
     private List<String> tags;

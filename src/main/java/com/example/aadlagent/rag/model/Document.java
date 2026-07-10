@@ -1,4 +1,3 @@
-
 package com.example.aadlagent.rag.model;
 
 import lombok.Data;
@@ -29,4 +28,18 @@ public class Document {
     private float[] embedding;
 
     private double score;
+
+    private String payload;
+
+    private List<String> hardwareInterfaces;
+
+    private List<String> sensors;
+
+    private List<String> actuators;
+
+    private List<String> applicationDomains;
+
+    private List<String> safetyLevels;
+
+    private List<String> schedulingPolicies;
 }

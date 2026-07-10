@@ -1,7 +1,60 @@
 {
   "agentType": "architecture",
-  "basics": [],
-  "examples": [],
-  "errorCorrections": [],
+  "basics": [
+    {
+      "category": "Root_Node_Constraint",
+      "content": "架构树的根节点必须绝对固定为 {\"name\": \"System\", \"type\": \"system\"}，所有其他硬件和软件组件都必须作为其子节点（children）存在。"
+    },
+    {
+      "category": "Component_Type_Mapping",
+      "content": "组件的 type 字段必须严格使用 AADL 标准小写术语：物理设备（传感器/执行器/接口）映射为 'device'；通信通道（SPI/CAN/以太网）映射为 'bus'；计算核心映射为 'processor'；并发执行的功能模块或算法映射为 'thread'；存储部件映射为 'memory'。"
+    },
+    {
+      "category": "Software_Hierarchy_Rule",
+      "content": "软件组件的嵌套必须遵循严格的层次结构：'thread'（任务/算法）必须且只能嵌套在 'process'（进程/分区）下；而 'process' 必须嵌套在 'processor'（处理器）下。绝对不能将 thread 直接放在 processor 或 system 下。"
+    },
+    {
+      "category": "Hardware_Hierarchy_Rule",
+      "content": "硬件组件（'processor', 'memory', 'device', 'bus'）在逻辑架构树中应当作为同级节点，统一放置在顶层 'system' 节点的 children 数组中。绝对不能将硬件组件嵌套在软件组件（如 process 内部）中。"
+    },
+    {
+      "category": "Empty_Children_Omission",
+      "content": "如果一个节点是叶子节点（例如底层的一个 thread 或 device，内部不再包含更小的组件），则必须完全省略 'children' 字段，绝不允许输出 'children': [] 或 'children': null。"
+    }
+  ],
+  "examples": [
+    {
+      "scenario": "基础数据采集与通信系统（软硬件分离与标准嵌套）",
+      "input": "[\n  {\"requirementId\": \"REQ-001\", \"title\": \"数据采集\", \"description\": \"系统定期通过SPI采集传感器数据\"},\n  {\"requirementId\": \"REQ-002\", \"title\": \"数据处理与通信\", \"description\": \"系统对数据滤波后通过以太网发送\"}\n]",
+      "goldenOutput": "{\n  \"name\": \"System\",\n  \"type\": \"system\",\n  \"children\": [\n    {\n      \"name\": \"MainProcessor\",\n      \"type\": \"processor\",\n      \"children\": [\n        {\n          \"name\": \"MainProcess\",\n          \"type\": \"process\",\n          \"children\": [\n            {\"name\": \"DataCollection\", \"type\": \"thread\"},\n            {\"name\": \"DataProcessing\", \"type\": \"thread\"},\n            {\"name\": \"Communication\", \"type\": \"thread\"}\n          ]\n        }\n      ]\n    },\n    {\"name\": \"Sensor\", \"type\": \"device\"},\n    {\"name\": \"SPI\", \"type\": \"bus\"},\n    {\"name\": \"EthernetController\", \"type\": \"device\"}\n  ]\n}"
+    },
+    {
+      "scenario": "闭环控制系统（包含执行器与内存组件提取）",
+      "input": "[\n  {\"requirementId\": \"REQ-010\", \"title\": \"摇杆指令读取\", \"description\": \"系统需实时读取控制面板的摇杆输入信号\"},\n  {\"requirementId\": \"REQ-011\", \"title\": \"PID姿态解算\", \"description\": \"主控芯片根据摇杆指令进行PID姿态解算，解算过程需占用至少2MB内存\"},\n  {\"requirementId\": \"REQ-012\", \"title\": \"电机驱动控制\", \"description\": \"解算结果通过CAN总线发送至伺服电机进行动作执行\"}\n]",
+      "goldenOutput": "{\n  \"name\": \"System\",\n  \"type\": \"system\",\n  \"children\": [\n    {\n      \"name\": \"FlightProcessor\",\n      \"type\": \"processor\",\n      \"children\": [\n        {\n          \"name\": \"ControlProcess\",\n          \"type\": \"process\",\n          \"children\": [\n            {\"name\": \"JoystickReader\", \"type\": \"thread\"},\n            {\"name\": \"PIDCalculator\", \"type\": \"thread\"},\n            {\"name\": \"MotorDriver\", \"type\": \"thread\"}\n          ]\n        }\n      ]\n    },\n    {\"name\": \"ControlPanel\", \"type\": \"device\"},\n    {\"name\": \"ServoMotor\", \"type\": \"device\"},\n    {\"name\": \"CAN_Bus\", \"type\": \"bus\"},\n    {\"name\": \"MainMemory\", \"type\": \"memory\"}\n  ]\n}"
+    }
+  ],
+  "errorCorrections": [
+    {
+      "errorType": "Illegal_Software_Nesting",
+      "badBehavior": "将 thread 直接嵌套在 processor 下，跳过了 process。例如：{\"type\": \"processor\", \"children\": [{\"type\": \"thread\"}]}",
+      "correctionRule": "AADL 规范中，处理器不能直接运行线程。必须在 processor 下先创建一个 type 为 'process' 的节点，然后将 'thread' 放入该 process 的 children 中。"
+    },
+    {
+      "errorType": "Invalid_Type_Value",
+      "badBehavior": "发明了 AADL 规范之外的 type 值。例如：{\"name\": \"Sensor\", \"type\": \"sensor\"} 或 {\"name\": \"SPI\", \"type\": \"interface\"}",
+      "correctionRule": "type 字段的值是强枚举。传感器、接口、执行器统一标记为 'device'；通信链路统一标记为 'bus'；绝对不允许自创 type 名称。"
+    },
+    {
+      "errorType": "Hardware_Inside_Software",
+      "badBehavior": "将硬件设备错放进软件进程中。例如在 type 为 'process' 的 children 里放入了 type 为 'device' 的节点。",
+      "correctionRule": "逻辑越权错误。'device'（如传感器）、'bus'（如总线）属于物理硬件，必须放在最外层 'System' 节点的直接 children 数组中，与 processor 同级。"
+    },
+    {
+      "errorType": "Including_Unnecessary_Fields",
+      "badBehavior": "在 JSON 节点中擅自添加了 description、id 或 properties 等需求中未要求的字段。",
+      "correctionRule": "必须严格遵守 JSON Schema 约束，每个节点对象只能且最多包含 'name', 'type', 'children' 这三个字段，绝对禁止输出多余字段。"
+    }
+  ],
   "lastModified": "2026-07-09T00:00:00"
 }

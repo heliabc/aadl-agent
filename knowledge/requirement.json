@@ -1,7 +1,60 @@
 {
   "agentType": "requirement",
-  "basics": [],
-  "examples": [],
-  "errorCorrections": [],
+  "basics": [
+    {
+      "category": "ID_Generation_Rule",
+      "content": "需求ID必须严格遵循'REQ-XXX'格式，XXX为三位数字且必须从'001'开始连续递增（如：REQ-001, REQ-002）。在同一次生成任务中，绝不允许出现ID断层或重复。"
+    },
+    {
+      "category": "Title_Constraint",
+      "content": "需求标题(title)必须极其精简，字数绝对不能超过20个汉字。推荐使用'动宾结构'或'核心名词+功能'的格式，例如'任务调度功能'或'采集传感器数据'，严禁在标题中写长句。"
+    },
+    {
+      "category": "Priority_Definition",
+      "content": "优先级(priority)只能是严格的'高'、'中'、'低'三个词之一。判定标准：'高'指系统核心功能、安全关键或基础架构（如内核、通信）；'中'指常规业务功能；'低'指优化、日志或附加功能。"
+    },
+    {
+      "category": "Acceptance_Criteria_Rule",
+      "content": "验收标准(acceptanceCriteria)必须遵循SMART原则（具体、可衡量、可验证），不能使用'性能好'、'速度快'等模糊词汇。必须包含具体数值或明确的边界条件，且每个需求至少包含2条验收标准。"
+    },
+    {
+      "category": "Dependency_Extraction",
+      "content": "依赖关系(dependencies)用于描述需求执行的先后顺序或功能依赖。如果原文提到'基于xx功能'、'在xx之后执行'或'依赖xx组件'，必须将其转化为对应需求ID填入该数组。若无明确依赖，严格使用空数组 []，不能填null。"
+    }
+  ],
+  "examples": [
+    {
+      "scenario": "提取基础架构需求（高优先级，无依赖）",
+      "input": "我们的系统需要一个核心的实时任务调度模块。该模块必须支持抢占式优先级调度算法，确保高优先级任务能随时抢占CPU。同时，调度器的上下文切换时间必须小于5微秒，并且需要提供任务创建、挂起和删除的API接口。",
+      "goldenOutput": "[{\"requirementId\": \"REQ-001\", \"title\": \"抢占式任务调度功能\", \"description\": \"系统需实现支持抢占式优先级算法的任务调度模块，提供任务生命周期管理API，保证高优先级任务的实时调度。\", \"priority\": \"高\", \"acceptanceCriteria\": [\"上下文切换时间实测小于5微秒\", \"成功提供任务创建、挂起和删除的API并能被外部调用\", \"高优先级任务到达时能成功打断低优先级任务\"], \"dependencies\": []}]"
+    },
+    {
+      "scenario": "提取硬件交互需求（有依赖关系）",
+      "input": "除了调度，系统还需要通过SPI总线去读取外部温度传感器的数据，每100毫秒读一次。注意，这个读取动作必须在系统初始化和任务调度器完全启动之后才能进行。温度数据的精度需要保留到小数点后两位。",
+      "goldenOutput": "[{\"requirementId\": \"REQ-002\", \"title\": \"SPI温度传感器数据采集\", \"description\": \"系统需通过SPI总线按100ms周期采集外部温度传感器数据，并保证数据精度。\", \"priority\": \"中\", \"acceptanceCriteria\": [\"数据采集周期实测为100ms（误差<1ms）\", \"解析后的温度数据精度达到小数点后两位\"], \"dependencies\": [\"REQ-001\"]}]"
+    }
+  ],
+  "errorCorrections": [
+    {
+      "errorType": "Title_Too_Long",
+      "badBehavior": "将长句直接作为标题填入，如：\"title\": \"系统需要支持抢占式优先级的任务调度功能的设计与实现\"",
+      "correctionRule": "标题必须提炼核心词汇，删除冗余动词和修饰语。正确示例：\"title\": \"抢占式任务调度功能\""
+    },
+    {
+      "errorType": "Vague_Acceptance_Criteria",
+      "badBehavior": "使用无法量化的形容词作为验收标准，如：\"acceptanceCriteria\": [\"调度速度很快\", \"系统运行稳定不崩溃\"]",
+      "correctionRule": "必须从原文中提取或推导出可测试的条件。正确示例：\"acceptanceCriteria\": [\"调度延迟时间小于1ms\", \"连续运行72小时无重启或死机现象\"]"
+    },
+    {
+      "errorType": "Invalid_Enum_Value",
+      "badBehavior": "创造规定范围之外的枚举值，例如：\"priority\": \"极高\" 或 \"priority\": \"紧急\"",
+      "correctionRule": "无论原文用什么词形容急迫程度，\"priority\" 字段的值必须被映射并严格限制为 \"高\"、\"中\" 或 \"低\"。"
+    },
+    {
+      "errorType": "Missing_Dependency_Format",
+      "badBehavior": "在依赖字段中填入中文描述或非ID格式，如：\"dependencies\": [\"任务调度功能\", \"无\"]",
+      "correctionRule": "dependencies数组内部只能包含需求ID字符串或保持为空。正确示例：有依赖写为 [\"REQ-001\"]，无依赖严格写为 []。"
+    }
+  ],
   "lastModified": "2026-07-09T00:00:00"
 }

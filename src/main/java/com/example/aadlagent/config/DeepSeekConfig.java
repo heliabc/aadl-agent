@@ -15,5 +15,5 @@ public class DeepSeekConfig {
 
     private String embeddingModel = "deepseek-embedding";
 
-    private int timeout = 300000;
+    private int timeout = 600000;
 }

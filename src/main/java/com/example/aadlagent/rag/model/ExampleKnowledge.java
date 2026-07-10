@@ -1,5 +1,6 @@
 package com.example.aadlagent.rag.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +19,10 @@ public class ExampleKnowledge {
     private String title;
     private String scenario;
     private String input;
+    
+    @JsonProperty("goldenOutput")
     private String output;
+    
     private String explanation;
     private List<String> tags;
     private LocalDateTime createdAt;

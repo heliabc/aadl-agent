@@ -1,5 +1,8 @@
 package Top_System
-public
+ public
+   -- =======================================
+   -- 顶层系统容器
+   -- =======================================
    system Top_System
    end Top_System;
 
@@ -18,6 +21,9 @@ public
        Actual_Processor_Binding => (reference (MainProcessor)) applies to KernelProcess;
    end Top_System.impl;
 
+   -- =======================================
+   -- 软件组件定义
+   -- =======================================
    process KernelProcess
    end KernelProcess;
 
@@ -79,6 +85,9 @@ public
    thread implementation PerformanceMonitor.impl
    end PerformanceMonitor.impl;
 
+   -- =======================================
+   -- 硬件组件定义
+   -- =======================================
    processor MainProcessor
    end MainProcessor;
    processor implementation MainProcessor.impl
