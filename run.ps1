@@ -24,7 +24,7 @@ Write-Host "  1. 需求分析 (Agent1: 需求条目化)" -ForegroundColor Gray
 Write-Host "  2. 架构生成 (Agent2: AADL架构生成)" -ForegroundColor Gray
 Write-Host "  3. 模块分析 (Agent3: 功能模块分析)" -ForegroundColor Gray
 Write-Host "  4. AADL生成 (Agent4: AADL模型生成)" -ForegroundColor Gray
-Write-Host "  5. AADL再生 (修复语法错误后重新生成)" -ForegroundColor Gray
+Write-Host "  5. AADL修复 (修复语法错误)" -ForegroundColor Gray
 Write-Host "  6. 知识库管理" -ForegroundColor Gray
 
 $actionIdx = 0
@@ -464,89 +464,41 @@ if ($actionIdx -eq 1) {
         Write-Host "========================================" -ForegroundColor Cyan
     }
 } elseif ($actionIdx -eq 5) {
-    $architectureDir = ".\output\architecture"
-    $modulesDir = ".\output\modules"
     $aadlDir = ".\output\aadl"
     
     Write-Host ""
-    Write-Host "获取可用的架构文件..." -ForegroundColor Yellow
+    Write-Host "获取可用的AADL文件..." -ForegroundColor Yellow
     try {
-        $archFiles = Get-ChildItem -Path $architectureDir -File | Where-Object {
-            $_.Extension -eq ".json" -and $_.Name -like "*-architecture.json"
+        $aadlFiles = Get-ChildItem -Path $aadlDir -File | Where-Object {
+            $_.Extension -eq ".aadl"
         } | Select-Object Name, FullName
         
-        $archCount = @($archFiles).Count
-        if ($archCount -eq 0) {
-            Write-Host "output/architecture目录下没有找到架构文件" -ForegroundColor Red
-            Write-Host "请先运行架构生成(操作2)" -ForegroundColor Gray
+        $aadlCount = @($aadlFiles).Count
+        if ($aadlCount -eq 0) {
+            Write-Host "output/aadl目录下没有找到AADL文件" -ForegroundColor Red
+            Write-Host "请先运行AADL生成(操作4)" -ForegroundColor Gray
             exit 1
         }
         
-        Write-Host "找到 $archCount 个架构文件:" -ForegroundColor Green
-        for ($i = 0; $i -lt $archCount; $i++) {
-            Write-Host "  $($i + 1). $($archFiles[$i].Name)" -ForegroundColor Gray
+        Write-Host "找到 $aadlCount 个AADL文件:" -ForegroundColor Green
+        for ($i = 0; $i -lt $aadlCount; $i++) {
+            Write-Host "  $($i + 1). $($aadlFiles[$i].Name)" -ForegroundColor Gray
         }
         Write-Host ""
     } catch {
-        Write-Host "获取架构文件列表失败: $_" -ForegroundColor Red
+        Write-Host "获取AADL文件列表失败: $_" -ForegroundColor Red
         exit 1
     }
 
-    $archIdx = 0
+    $aadlIdx = 0
     do {
-        $choice = Read-Host "请输入架构文件序号 (1-$archCount)"
-    } while (-not [int]::TryParse($choice, [ref]$archIdx) -or $archIdx -lt 1 -or $archIdx -gt $archCount)
+        $choice = Read-Host "请输入要修复的AADL文件序号 (1-$aadlCount)"
+    } while (-not [int]::TryParse($choice, [ref]$aadlIdx) -or $aadlIdx -lt 1 -or $aadlIdx -gt $aadlCount)
 
-    $selectedArchFile = $archFiles[$archIdx - 1].Name
-
-    Write-Host ""
-    Write-Host "选择的架构文件: $selectedArchFile" -ForegroundColor Cyan
-    Write-Host ""
-
-    Write-Host "获取可用的模块分析文件..." -ForegroundColor Yellow
-    try {
-        $moduleFiles = Get-ChildItem -Path $modulesDir -File | Where-Object {
-            $_.Extension -eq ".json" -and $_.Name -like "*-modules.json"
-        } | Select-Object Name, FullName
-        
-        $moduleCount = @($moduleFiles).Count
-        if ($moduleCount -eq 0) {
-            Write-Host "output/modules目录下没有找到模块分析文件" -ForegroundColor Red
-            Write-Host "请先运行模块分析(操作3)" -ForegroundColor Gray
-            exit 1
-        }
-        
-        Write-Host "找到 $moduleCount 个模块分析文件:" -ForegroundColor Green
-        for ($i = 0; $i -lt $moduleCount; $i++) {
-            Write-Host "  $($i + 1). $($moduleFiles[$i].Name)" -ForegroundColor Gray
-        }
-        Write-Host ""
-    } catch {
-        Write-Host "获取模块分析文件列表失败: $_" -ForegroundColor Red
-        exit 1
-    }
-
-    $moduleIdx = 0
-    do {
-        $choice = Read-Host "请输入模块分析文件序号 (1-$moduleCount)"
-    } while (-not [int]::TryParse($choice, [ref]$moduleIdx) -or $moduleIdx -lt 1 -or $moduleIdx -gt $moduleCount)
-
-    $selectedModuleFile = $moduleFiles[$moduleIdx - 1].Name
+    $selectedAadlFile = $aadlFiles[$aadlIdx - 1].Name
 
     Write-Host ""
-    Write-Host "选择的模块分析文件: $selectedModuleFile" -ForegroundColor Cyan
-    Write-Host ""
-
-    $aadlFileName = $selectedArchFile -replace "-architecture\.json$", ".aadl"
-    $aadlFilePath = Join-Path $aadlDir $aadlFileName
-    
-    $previousAadl = ""
-    if (Test-Path $aadlFilePath) {
-        $previousAadl = Get-Content $aadlFilePath -Raw -Encoding UTF8
-        Write-Host "检测到已存在的AADL文件，将作为上下文进行再生" -ForegroundColor Yellow
-    } else {
-        Write-Host "未检测到已存在的AADL文件，将基于架构和模块重新生成" -ForegroundColor Gray
-    }
+    Write-Host "选择的AADL文件: $selectedAadlFile" -ForegroundColor Cyan
     Write-Host ""
 
     Write-Host "请输入检测到的语法错误（每行一个，空行结束）:" -ForegroundColor Yellow
@@ -559,6 +511,11 @@ if ($actionIdx -eq 1) {
         $errors += $line
     }
     Write-Host ""
+
+    if ($errors.Count -eq 0) {
+        Write-Host "未输入任何错误，无法进行修复" -ForegroundColor Red
+        exit 1
+    }
 
     Write-Host "选择模型类型:" -ForegroundColor Yellow
     Write-Host "  1. DeepSeek (在线API)" -ForegroundColor Gray
@@ -575,16 +532,14 @@ if ($actionIdx -eq 1) {
     }
 
     Write-Host ""
-    Write-Host "开始AADL再生..." -ForegroundColor Yellow
-    Write-Host "架构文件: $selectedArchFile" -ForegroundColor Gray
-    Write-Host "模块文件: $selectedModuleFile" -ForegroundColor Gray
+    Write-Host "开始修复AADL语法错误..." -ForegroundColor Yellow
+    Write-Host "AADL文件: $selectedAadlFile" -ForegroundColor Gray
+    Write-Host "错误数量: $($errors.Count)" -ForegroundColor Gray
     Write-Host "模型: $model" -ForegroundColor Gray
     Write-Host ""
 
     $bodyObj = @{
-        architectureFile = $selectedArchFile
-        modulesFile = $selectedModuleFile
-        previousAadl = $previousAadl
+        aadlFile = $selectedAadlFile
         errors = $errors
         model = $model
     }
@@ -594,18 +549,18 @@ if ($actionIdx -eq 1) {
         $webClient = New-Object System.Net.WebClient
         $webClient.Encoding = [System.Text.Encoding]::UTF8
         $webClient.Headers.Add("Content-Type", "application/json; charset=utf-8")
-        $resultJson = $webClient.UploadString("$apiUrl/regenerate-aadl", "POST", $body)
+        $resultJson = $webClient.UploadString("$apiUrl/fix-aadl", "POST", $body)
         $result = $resultJson | ConvertFrom-Json
         
         Write-Host ""
         if ($result.success) {
-            Write-Host "AADL模型再生成功!" -ForegroundColor Green
+            Write-Host "AADL语法错误修复成功!" -ForegroundColor Green
             Write-Host "  输出文件: output/aadl/$($result.outputFile)" -ForegroundColor Cyan
             Write-Host "  耗时: $($result.executionTime)ms" -ForegroundColor Gray
             Write-Host ""
             Write-Host "========================================" -ForegroundColor Cyan
         } else {
-            Write-Host "AADL模型再生失败!" -ForegroundColor Red
+            Write-Host "AADL语法错误修复失败!" -ForegroundColor Red
             Write-Host "  错误: $($result.message)" -ForegroundColor Gray
             Write-Host ""
             Write-Host "========================================" -ForegroundColor Cyan

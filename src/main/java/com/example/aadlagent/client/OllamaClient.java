@@ -78,7 +78,7 @@ public class OllamaClient implements LlmClient {
 
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", config.getEmbeddingModel());
-        requestBody.put("prompt", text);
+        requestBody.put("input", text);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -95,14 +95,35 @@ public class OllamaClient implements LlmClient {
 
             if (response.getStatusCode().is2xxSuccessful()) {
                 EmbeddingResponse embeddingResponse = response.getBody();
-                if (embeddingResponse != null && embeddingResponse.getEmbedding() != null) {
-                    List<Float> embeddingList = embeddingResponse.getEmbedding();
-                    float[] embedding = new float[embeddingList.size()];
-                    for (int i = 0; i < embeddingList.size(); i++) {
-                        embedding[i] = embeddingList.get(i);
-                    }
-                    return embedding;
+                
+                if (embeddingResponse == null) {
+                    log.error("Ollama returned null response body");
+                    return null;
                 }
+                
+                log.debug("Ollama embedding response: model={}, embedding={}, usage={}", 
+                        embeddingResponse.getModel(),
+                        embeddingResponse.getEmbedding() != null ? embeddingResponse.getEmbedding().size() + " elements" : "null",
+                        embeddingResponse.getUsage());
+                
+                if (embeddingResponse.getEmbedding() == null) {
+                    log.error("Ollama returned null embedding");
+                    return null;
+                }
+                
+                List<Float> embeddingList = embeddingResponse.getEmbedding();
+                if (embeddingList.isEmpty()) {
+                    log.error("Ollama returned empty embedding list");
+                    return null;
+                }
+                
+                float[] embedding = new float[embeddingList.size()];
+                for (int i = 0; i < embeddingList.size(); i++) {
+                    embedding[i] = embeddingList.get(i);
+                }
+                
+                log.debug("Successfully generated embedding of dimension: {}", embedding.length);
+                return embedding;
             }
             log.error("Ollama embedding request failed with status: {}", response.getStatusCode());
             return null;

@@ -38,6 +38,8 @@ public class DocFileReader {
             return readTxtFile(file);
         } else if (fileName.endsWith(".json")) {
             return readTxtFile(file);
+        } else if (fileName.endsWith(".aadl")) {
+            return readTxtFile(file);
         } else {
             throw new IOException("不支持的文件格式: " + fileName);
         }

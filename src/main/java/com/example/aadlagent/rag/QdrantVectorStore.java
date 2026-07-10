@@ -325,6 +325,11 @@ public class QdrantVectorStore {
             return new ArrayList<>();
         }
 
+        if (queryVector == null || queryVector.length == 0) {
+            log.warn("Query vector is null or empty, returning empty results for {}", collectionName);
+            return new ArrayList<>();
+        }
+
         try {
             ensureCollectionExists(collectionName);
             
