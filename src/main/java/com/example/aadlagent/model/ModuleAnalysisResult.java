@@ -25,6 +25,9 @@ public class ModuleAnalysisResult {
         @JsonProperty("module_name")
         private String moduleName;
 
+        @JsonProperty("satisfied_requirements")
+        private List<String> satisfiedRequirements;
+
         @JsonProperty("component_hierarchy")
         private List<String> componentHierarchy;
 
