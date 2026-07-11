@@ -1,5 +1,7 @@
 package com.example.aadlagent.client.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -9,6 +11,7 @@ import lombok.Builder;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ChatResponse {
 
     private String model;
@@ -17,6 +20,7 @@ public class ChatResponse {
 
     private boolean done;
 
+    @JsonProperty("done_reason")
     private String doneReason;
 
     private Usage usage;
@@ -25,9 +29,15 @@ public class ChatResponse {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Usage {
-        private int promptTokens;
-        private int completionTokens;
-        private int totalTokens;
+        @JsonProperty("prompt_eval_count")
+        private Integer promptEvalCount;
+
+        @JsonProperty("eval_count")
+        private Integer evalCount;
+
+        @JsonProperty("total_tokens")
+        private Integer totalTokens;
     }
 }

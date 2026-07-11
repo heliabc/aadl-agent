@@ -52,6 +52,15 @@ public class OllamaClient implements LlmClient {
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
 
         try {
+            ResponseEntity<String> rawResponse = restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    request,
+                    String.class
+            );
+            
+            log.debug("Ollama chat raw response (status={}): {}", rawResponse.getStatusCode(), rawResponse.getBody());
+
             ResponseEntity<ChatResponse> response = restTemplate.exchange(
                     url,
                     HttpMethod.POST,
@@ -61,8 +70,17 @@ public class OllamaClient implements LlmClient {
 
             if (response.getStatusCode().is2xxSuccessful()) {
                 ChatResponse chatResponse = response.getBody();
-                if (chatResponse != null && chatResponse.getMessage() != null) {
-                    return chatResponse.getMessage().getContent();
+                if (chatResponse != null) {
+                    log.debug("Ollama chat parsed response: model={}, done={}, message=null={}", 
+                            chatResponse.getModel(), chatResponse.isDone(), 
+                            chatResponse.getMessage() == null);
+                    
+                    if (chatResponse.getMessage() != null) {
+                        String content = chatResponse.getMessage().getContent();
+                        log.debug("Ollama chat message content: null={}, length={}", 
+                                content == null, content != null ? content.length() : -1);
+                        return content;
+                    }
                 }
             }
             log.error("Ollama chat request failed with status: {}", response.getStatusCode());

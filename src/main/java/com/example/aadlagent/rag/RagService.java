@@ -43,9 +43,15 @@ public class RagService {
     public SearchResult search(String query, String agentType) {
         long startTime = System.currentTimeMillis();
 
-        log.info("Starting RAG search for query: {} (agentType: {})", query, agentType);
+        log.info("Starting RAG search for query (len={}, agentType={}): {}", 
+                query != null ? query.length() : -1, agentType, 
+                query != null && query.length() > 100 ? query.substring(0, 100) + "..." : query);
 
         String rewrittenQuery = queryRewriter.rewrite(query);
+        
+        log.info("Rewritten query (len={}): {}", 
+                rewrittenQuery != null ? rewrittenQuery.length() : -1, 
+                rewrittenQuery != null && rewrittenQuery.length() > 100 ? rewrittenQuery.substring(0, 100) + "..." : rewrittenQuery);
 
         List<Document> results;
 
@@ -75,7 +81,15 @@ public class RagService {
 
     private List<Document> searchWithQdrant(String query, String agentType) {
         try {
+            log.debug("Generating embedding for query (len={}, agentType={})", 
+                    query != null ? query.length() : -1, agentType);
+            
             float[] queryEmbedding = embeddingService.embed(query);
+            
+            log.info("Embedding generation result: null={}, length={}", 
+                    queryEmbedding == null, 
+                    queryEmbedding != null ? queryEmbedding.length : -1);
+            
             if (queryEmbedding != null && queryEmbedding.length > 0) {
                 log.debug("Generated query embedding with dimension: {}", queryEmbedding.length);
                 List<Document> vectorResults = qdrantVectorStore.search(agentType, queryEmbedding, ragConfig.getTopK());
