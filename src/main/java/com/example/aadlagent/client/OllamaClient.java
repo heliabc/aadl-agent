@@ -74,6 +74,11 @@ public class OllamaClient implements LlmClient {
     }
 
     public float[] embed(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            log.warn("Input text is empty, skipping embedding generation");
+            return null;
+        }
+
         String url = config.getBaseUrl() + "/api/embed";
 
         Map<String, Object> requestBody = new HashMap<>();
@@ -86,23 +91,14 @@ public class OllamaClient implements LlmClient {
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
 
         try {
-            ResponseEntity<String> rawResponse = restTemplate.exchange(
+            ResponseEntity<EmbeddingResponse> response = restTemplate.exchange(
                     url,
                     HttpMethod.POST,
                     request,
-                    String.class
+                    EmbeddingResponse.class
             );
 
-            if (rawResponse.getStatusCode().is2xxSuccessful()) {
-                log.debug("Ollama embedding raw response: {}", rawResponse.getBody());
-                
-                ResponseEntity<EmbeddingResponse> response = restTemplate.exchange(
-                        url,
-                        HttpMethod.POST,
-                        request,
-                        EmbeddingResponse.class
-                );
-                
+            if (response.getStatusCode().is2xxSuccessful()) {
                 EmbeddingResponse embeddingResponse = response.getBody();
                 
                 if (embeddingResponse == null) {
@@ -110,32 +106,35 @@ public class OllamaClient implements LlmClient {
                     return null;
                 }
                 
-                log.debug("Ollama embedding response: model={}, embeddings={}, usage={}", 
+                log.debug("Ollama embedding response: model={}, embeddings count={}, usage={}",
                         embeddingResponse.getModel(),
-                        embeddingResponse.getEmbeddings() != null ? embeddingResponse.getEmbeddings().size() + " arrays" : "null",
+                        embeddingResponse.getEmbeddings() != null ? embeddingResponse.getEmbeddings().size() : "null",
                         embeddingResponse.getUsage());
                 
                 if (embeddingResponse.getEmbeddings() == null || embeddingResponse.getEmbeddings().isEmpty()) {
-                    log.error("Ollama returned null or empty embeddings");
+                    log.error("Ollama returned null or empty embeddings container");
                     return null;
                 }
                 
                 List<Float> embeddingList = embeddingResponse.getEmbeddings().get(0);
                 if (embeddingList == null || embeddingList.isEmpty()) {
-                    log.error("Ollama returned empty embedding list");
+                    log.error("The first embedding vector is null or empty");
                     return null;
                 }
                 
                 float[] embedding = new float[embeddingList.size()];
                 for (int i = 0; i < embeddingList.size(); i++) {
-                    embedding[i] = embeddingList.get(i);
+                    Float value = embeddingList.get(i);
+                    embedding[i] = (value != null) ? value : 0.0f;
                 }
                 
                 log.debug("Successfully generated embedding of dimension: {}", embedding.length);
                 return embedding;
             }
-            log.error("Ollama embedding request failed with status: {}", rawResponse.getStatusCode());
+            
+            log.error("Ollama embedding request failed with status: {}", response.getStatusCode());
             return null;
+            
         } catch (RestClientException e) {
             log.error("Ollama embedding request exception: {}", e.getMessage(), e);
             return null;

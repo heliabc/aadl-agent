@@ -20,7 +20,13 @@ public class EmbeddingService {
             return null;
         }
         try {
-            return ollamaClient.embed(text);
+            float[] embedding = ollamaClient.embed(text);
+            if (embedding == null || embedding.length == 0) {
+                log.warn("Embedding generation returned null or empty array");
+                return null;
+            }
+            log.debug("Generated embedding of dimension: {}", embedding.length);
+            return embedding;
         } catch (Exception e) {
             log.error("Failed to generate embedding: {}", e.getMessage());
             return null;
