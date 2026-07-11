@@ -185,7 +185,7 @@ public class QdrantVectorStore {
             String url = getBaseUrl() + "/collections/" + collectionName + "/points";
             
             Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("upsert", Collections.singletonList(buildPoint(document)));
+            requestBody.put("points", Collections.singletonList(buildPoint(document)));
             
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, createHeaders());
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.PUT, request, String.class);
@@ -216,7 +216,7 @@ public class QdrantVectorStore {
             for (Document document : documents) {
                 points.add(buildPoint(document));
             }
-            requestBody.put("upsert", points);
+            requestBody.put("points", points);
             
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, createHeaders());
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.PUT, request, String.class);
