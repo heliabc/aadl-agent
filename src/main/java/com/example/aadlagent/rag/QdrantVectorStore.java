@@ -2,21 +2,19 @@ package com.example.aadlagent.rag;
 
 import com.example.aadlagent.config.QdrantConfig;
 import com.example.aadlagent.rag.model.Document;
-import dev.langchain4j.data.document.Metadata;
-import dev.langchain4j.data.embedding.Embedding;
-import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.store.embedding.EmbeddingMatch;
-import dev.langchain4j.store.embedding.qdrant.QdrantEmbeddingStore;
 import io.qdrant.client.QdrantClient;
 import io.qdrant.client.QdrantGrpcClient;
+import io.qdrant.client.ValueFactory;
 import io.qdrant.client.grpc.Collections;
+import io.qdrant.client.grpc.JsonWithGlance.Value;
+import io.qdrant.client.grpc.Points.*;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import jakarta.annotation.PostConstruct;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -24,12 +22,13 @@ import java.util.stream.Collectors;
 public class QdrantVectorStore {
 
     private final QdrantConfig qdrantConfig;
-    private final ConcurrentHashMap<String, QdrantEmbeddingStore> stores = new ConcurrentHashMap<>();
     private QdrantClient qdrantClient;
     private volatile boolean available = false;
+    private final RestTemplate restTemplate;
 
     public QdrantVectorStore(QdrantConfig qdrantConfig) {
         this.qdrantConfig = qdrantConfig;
+        this.restTemplate = new RestTemplate();
     }
 
     @PostConstruct
@@ -85,7 +84,7 @@ public class QdrantVectorStore {
             if (result instanceof List) {
                 List<?> list = (List<?>) result;
                 if (list.isEmpty()) {
-                    return java.util.Collections.emptyList();
+                    return Collections.emptyList();
                 }
                 if (list.get(0) instanceof String) {
                     return (List<String>) list;
@@ -95,7 +94,7 @@ public class QdrantVectorStore {
                             .collect(Collectors.toList());
                 }
             }
-            return java.util.Collections.emptyList();
+            return Collections.emptyList();
         }, "listCollections");
     }
 
@@ -182,26 +181,62 @@ public class QdrantVectorStore {
         T execute() throws Exception;
     }
 
-    private QdrantEmbeddingStore getStore(String collectionName) {
-        ensureCollectionExists(collectionName);
-        
-        return stores.computeIfAbsent(collectionName, name -> {
-            QdrantEmbeddingStore store = QdrantEmbeddingStore.builder()
-                    .collectionName(name)
-                    .host(qdrantConfig.getHost())
-                    .port(qdrantConfig.getPort())
-                    .apiKey(qdrantConfig.getApiKey())
-                    .useTls(qdrantConfig.isUseTls())
-                    .build();
-            log.debug("Created Qdrant store for collection: {}", name);
-            return store;
-        });
-    }
-
     public boolean isAvailable() {
         return available && qdrantClient != null;
     }
 
+    /**
+     * 原生客户端：构建保存到 Qdrant 中的 Metadata Payload
+     */
+    private Map<String, Value> buildPayload(Document document) {
+        Map<String, Value> payload = new HashMap<>();
+        payload.put("text", ValueFactory.value(document.getContent() != null ? document.getContent() : ""));
+        payload.put("title", ValueFactory.value(document.getTitle() != null ? document.getTitle() : ""));
+        payload.put("source", ValueFactory.value(document.getSource() != null ? document.getSource() : ""));
+        payload.put("category", ValueFactory.value(document.getCategory() != null ? document.getCategory() : ""));
+        payload.put("payload", ValueFactory.value(document.getPayload() != null ? document.getPayload() : ""));
+        
+        if (document.getTags() != null && !document.getTags().isEmpty()) {
+            payload.put("tags", ValueFactory.value(document.getTags()));
+        }
+        if (document.getHardwareInterfaces() != null && !document.getHardwareInterfaces().isEmpty()) {
+            payload.put("hardwareInterfaces", ValueFactory.value(document.getHardwareInterfaces()));
+        }
+        if (document.getSensors() != null && !document.getSensors().isEmpty()) {
+            payload.put("sensors", ValueFactory.value(document.getSensors()));
+        }
+        if (document.getActuators() != null && !document.getActuators().isEmpty()) {
+            payload.put("actuators", ValueFactory.value(document.getActuators()));
+        }
+        if (document.getApplicationDomains() != null && !document.getApplicationDomains().isEmpty()) {
+            payload.put("applicationDomains", ValueFactory.value(document.getApplicationDomains()));
+        }
+        if (document.getSafetyLevels() != null && !document.getSafetyLevels().isEmpty()) {
+            payload.put("safetyLevels", ValueFactory.value(document.getSafetyLevels()));
+        }
+        if (document.getSchedulingPolicies() != null && !document.getSchedulingPolicies().isEmpty()) {
+            payload.put("schedulingPolicies", ValueFactory.value(document.getSchedulingPolicies()));
+        }
+        
+        return payload;
+    }
+
+    /**
+     * 辅助解析 UUID 的 ID 构建工具
+     */
+    private PointId parsePointId(String docId) {
+        try {
+            UUID.fromString(docId);
+            return PointId.newBuilder().setUuid(docId).build();
+        } catch (IllegalArgumentException e) {
+            // 如果不是标准的 UUID 格式，则采用一致性哈希将其转换为确定性的 UUID
+            return PointId.newBuilder().setUuid(UUID.nameUUIDFromBytes(docId.getBytes()).toString()).build();
+        }
+    }
+
+    /**
+     * 去 LangChain4j：原生 SDK 写入单条数据
+     */
     public void upsert(String collectionName, Document document) {
         if (!available) {
             log.debug("Qdrant not available, skipping upsert");
@@ -212,19 +247,22 @@ public class QdrantVectorStore {
             ensureCollectionExists(collectionName);
             
             retryWithBackoff(() -> {
-                QdrantEmbeddingStore store = getStore(collectionName);
-                
-                Embedding embedding = Embedding.from(document.getEmbedding());
-                
-                Map<String, String> metadataMap = buildMetadataMap(document);
-                Metadata metadata = Metadata.from(metadataMap);
-                
-                TextSegment segment = TextSegment.from(
-                    document.getContent() != null ? document.getContent() : "",
-                    metadata
-                );
-                
-                store.add(embedding, segment);
+                PointId pointId = parsePointId(document.getId());
+
+                List<Float> vectorList = new ArrayList<>(document.getEmbedding().length);
+                for (float v : document.getEmbedding()) {
+                    vectorList.add(v);
+                }
+
+                PointStruct point = PointStruct.newBuilder()
+                        .setId(pointId)
+                        .setVectors(Vectors.newBuilder()
+                                .setVector(Vector.newBuilder().addAllData(vectorList).build())
+                                .build())
+                        .putAllPayload(buildPayload(document))
+                        .build();
+
+                qdrantClient.upsertAsync(collectionName, java.util.Collections.singletonList(point)).get();
                 return null;
             }, "upsert-" + document.getId());
             
@@ -234,6 +272,9 @@ public class QdrantVectorStore {
         }
     }
 
+    /**
+     * 去 LangChain4j：原生 SDK 批量写入数据
+     */
     public void upsertBatch(String collectionName, List<Document> documents) {
         if (!available) {
             log.debug("Qdrant not available, skipping batch upsert");
@@ -244,68 +285,38 @@ public class QdrantVectorStore {
             ensureCollectionExists(collectionName);
             
             retryWithBackoff(() -> {
-                QdrantEmbeddingStore store = getStore(collectionName);
-                
-                List<Embedding> embeddings = new ArrayList<>();
-                List<TextSegment> segments = new ArrayList<>();
-                
+                List<PointStruct> points = new ArrayList<>();
                 for (Document document : documents) {
-                    Embedding embedding = Embedding.from(document.getEmbedding());
-                    
-                    Map<String, String> metadataMap = buildMetadataMap(document);
-                    Metadata metadata = Metadata.from(metadataMap);
-                    
-                    TextSegment segment = TextSegment.from(
-                        document.getContent() != null ? document.getContent() : "",
-                        metadata
-                    );
-                    
-                    embeddings.add(embedding);
-                    segments.add(segment);
+                    PointId pointId = parsePointId(document.getId());
+
+                    List<Float> vectorList = new ArrayList<>(document.getEmbedding().length);
+                    for (float v : document.getEmbedding()) {
+                        vectorList.add(v);
+                    }
+
+                    PointStruct point = PointStruct.newBuilder()
+                            .setId(pointId)
+                            .setVectors(Vectors.newBuilder()
+                                    .setVector(Vector.newBuilder().addAllData(vectorList).build())
+                                    .build())
+                            .putAllPayload(buildPayload(document))
+                            .build();
+                    points.add(point);
                 }
                 
-                store.addAll(embeddings, segments);
+                qdrantClient.upsertAsync(collectionName, points).get();
                 return null;
             }, "upsertBatch-" + collectionName);
             
-            log.debug("Batch upserted {} documents to collection {}", documents.size(), collectionName);
+            log.info("Batch upserted {} documents to collection {}", documents.size(), collectionName);
         } catch (Exception e) {
             log.error("Failed to batch upsert to {}: {}", collectionName, e.getMessage());
         }
     }
 
-    private Map<String, String> buildMetadataMap(Document document) {
-        Map<String, String> metadataMap = new HashMap<>();
-        metadataMap.put("title", document.getTitle() != null ? document.getTitle() : "");
-        metadataMap.put("source", document.getSource() != null ? document.getSource() : "");
-        metadataMap.put("category", document.getCategory() != null ? document.getCategory() : "");
-        metadataMap.put("payload", document.getPayload() != null ? document.getPayload() : "");
-        
-        if (document.getTags() != null && !document.getTags().isEmpty()) {
-            metadataMap.put("tags", String.join(",", document.getTags()));
-        }
-        if (document.getHardwareInterfaces() != null && !document.getHardwareInterfaces().isEmpty()) {
-            metadataMap.put("hardwareInterfaces", String.join(",", document.getHardwareInterfaces()));
-        }
-        if (document.getSensors() != null && !document.getSensors().isEmpty()) {
-            metadataMap.put("sensors", String.join(",", document.getSensors()));
-        }
-        if (document.getActuators() != null && !document.getActuators().isEmpty()) {
-            metadataMap.put("actuators", String.join(",", document.getActuators()));
-        }
-        if (document.getApplicationDomains() != null && !document.getApplicationDomains().isEmpty()) {
-            metadataMap.put("applicationDomains", String.join(",", document.getApplicationDomains()));
-        }
-        if (document.getSafetyLevels() != null && !document.getSafetyLevels().isEmpty()) {
-            metadataMap.put("safetyLevels", String.join(",", document.getSafetyLevels()));
-        }
-        if (document.getSchedulingPolicies() != null && !document.getSchedulingPolicies().isEmpty()) {
-            metadataMap.put("schedulingPolicies", String.join(",", document.getSchedulingPolicies()));
-        }
-        
-        return metadataMap;
-    }
-
+    /**
+     * 原生 SDK：物理删除单条数据
+     */
     public void delete(String collectionName, String documentId) {
         if (!available) {
             log.debug("Qdrant not available, skipping delete");
@@ -313,12 +324,21 @@ public class QdrantVectorStore {
         }
 
         try {
-            log.warn("Delete operation not supported in QdrantEmbeddingStore 0.30.0");
+            PointId pointId = parsePointId(documentId);
+            PointsSelector selector = PointsSelector.newBuilder()
+                    .setPoints(PointsIdsList.newBuilder().addPoints(pointId).build())
+                    .build();
+
+            qdrantClient.deleteAsync(collectionName, selector).get();
+            log.info("Deleted document {} from {}", documentId, collectionName);
         } catch (Exception e) {
             log.error("Failed to delete document from {}: {}", collectionName, e.getMessage());
         }
     }
 
+    /**
+     * 基于官方 REST API 实现的高效、无 Bug 向量检索
+     */
     public List<Document> search(String collectionName, float[] queryVector, int topK) {
         if (!available) {
             log.debug("Qdrant not available, returning empty results");
@@ -330,26 +350,114 @@ public class QdrantVectorStore {
             return new ArrayList<>();
         }
 
-        log.error("SEARCH DEBUG: collection={}, vector length={}", collectionName, queryVector.length);
+        return searchViaRestApi(collectionName, queryVector, topK);
+    }
 
+    private List<Document> searchViaRestApi(String collectionName, float[] queryVector, int topK) {
         try {
             ensureCollectionExists(collectionName);
             
-            QdrantEmbeddingStore store = getStore(collectionName);
-            Embedding queryEmbedding = Embedding.from(queryVector);
-            
-            log.error("SEARCH DEBUG: Embedding dimension={}", queryEmbedding.dimension());
-            
-            List<EmbeddingMatch<TextSegment>> results = store.findRelevant(queryEmbedding, topK);
-            
-            return results.stream()
-                    .map(this::parseDocument)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
+            String scheme = qdrantConfig.isUseTls() ? "https" : "http";
+            String url = scheme + "://" + qdrantConfig.getHost() + ":" + qdrantConfig.getPort() 
+                    + "/collections/" + collectionName + "/points/search";
 
+            List<Float> vectorList = new ArrayList<>(queryVector.length);
+            for (float v : queryVector) {
+                vectorList.add(v);
+            }
+
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("vector", vectorList);
+            requestBody.put("limit", topK);
+            requestBody.put("with_payload", true);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            if (qdrantConfig.getApiKey() != null && !qdrantConfig.getApiKey().isEmpty()) {
+                headers.set("api-key", qdrantConfig.getApiKey());
+            }
+
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
+
+            ResponseEntity<Map> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    request,
+                    Map.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                List<Map<String, Object>> resultList = (List<Map<String, Object>>) response.getBody().get("result");
+                
+                if (resultList == null || resultList.isEmpty()) {
+                    log.debug("Qdrant REST API returned empty results for collection: {}", collectionName);
+                    return new ArrayList<>();
+                }
+
+                List<Document> documents = new ArrayList<>();
+                
+                for (Map<String, Object> point : resultList) {
+                    Double score = (Double) point.get("score");
+                    String id = point.get("id").toString();
+                    Map<String, Object> payload = (Map<String, Object>) point.get("payload");
+                    
+                    Document doc = parsePayloadToDocument(id, score, payload);
+                    if (doc != null) {
+                        documents.add(doc);
+                    }
+                }
+                
+                log.debug("Qdrant REST API returned {} documents for collection: {}", documents.size(), collectionName);
+                return documents;
+            }
+            
+            log.warn("Qdrant REST API returned non-success status: {}", response.getStatusCode());
+            
         } catch (Exception e) {
-            log.error("Failed to search in " + collectionName + " failed", e);
-            return new ArrayList<>();
+            log.error("Failed to search Qdrant via REST API for {}: {}", collectionName, e.getMessage());
+        }
+        
+        return new ArrayList<>();
+    }
+
+    private Document parsePayloadToDocument(String id, Double score, Map<String, Object> payload) {
+        if (payload == null) {
+            return null;
+        }
+        
+        try {
+            String content = payload.get("text") != null ? payload.get("text").toString() : 
+                           (payload.get("content") != null ? payload.get("content").toString() : "");
+            
+            if (content.isEmpty()) {
+                return null;
+            }
+            
+            Document document = new Document();
+            document.setId(id);
+            document.setContent(content);
+            document.setScore(score != null ? score.floatValue() : 0.0f);
+            
+            if (payload.containsKey("title")) {
+                document.setTitle(payload.get("title").toString());
+            }
+            if (payload.containsKey("category")) {
+                document.setCategory(payload.get("category").toString());
+            }
+            if (payload.containsKey("agent_type")) {
+                document.setAgentType(payload.get("agent_type").toString());
+            }
+            if (payload.containsKey("source")) {
+                document.setSource(payload.get("source").toString());
+            }
+            if (payload.containsKey("payload")) {
+                document.setPayload(payload.get("payload").toString());
+            }
+            
+            return document;
+        } catch (Exception e) {
+            log.warn("Failed to parse payload to document: {}", e.getMessage());
+            return null;
         }
     }
 
@@ -358,37 +466,59 @@ public class QdrantVectorStore {
             log.debug("Qdrant not available, returning empty results");
             return new ArrayList<>();
         }
-
+        // 预留给关键词全文匹配检索
         return new ArrayList<>();
     }
 
+    /**
+     * 原生 SDK：查询集合中的文档点总数
+     */
     public long count(String collectionName) {
         if (!available) {
             return 0;
         }
 
         try {
-            QdrantEmbeddingStore store = getStore(collectionName);
-            return 0;
+            CountResult result = qdrantClient.countAsync(collectionName, null, true).get();
+            return result.getCount();
         } catch (Exception e) {
             log.error("Failed to count points in {}: {}", collectionName, e.getMessage());
             return 0;
         }
     }
 
+    /**
+     * 原生 SDK：采用 Scroll 滚动技术获取集合中前 100 条文档
+     */
     public List<Document> getAllDocuments(String collectionName) {
         if (!available) {
             return new ArrayList<>();
         }
 
         try {
-            QdrantEmbeddingStore store = getStore(collectionName);
-            List<EmbeddingMatch<TextSegment>> results = store.findRelevant(Embedding.from(new float[qdrantConfig.getEmbeddingSize()]), 100);
+            ensureCollectionExists(collectionName);
             
-            return results.stream()
-                    .map(this::parseDocument)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
+            ScrollPoints scrollPoints = ScrollPoints.newBuilder()
+                    .setWithPayload(WithPayloadSelector.newBuilder().setEnable(true).build())
+                    .setLimit(100)
+                    .build();
+
+            ScrollResponse response = qdrantClient.scrollAsync(collectionName, scrollPoints).get();
+            List<RetrievedPoint> points = response.getResultList();
+            
+            List<Document> documents = new ArrayList<>();
+            for (RetrievedPoint point : points) {
+                String id = point.getId().getUuid();
+                if (id == null || id.isEmpty()) {
+                    id = String.valueOf(point.getId().getNum());
+                }
+                
+                Document doc = parseGrpcPayloadToDocument(id, point.getPayloadMap());
+                if (doc != null) {
+                    documents.add(doc);
+                }
+            }
+            return documents;
 
         } catch (Exception e) {
             log.error("Failed to get all documents from {}: {}", collectionName, e.getMessage());
@@ -396,6 +526,9 @@ public class QdrantVectorStore {
         }
     }
 
+    /**
+     * 原生 SDK 彻底清除集合数据（最彻底的清除方式为直接物理删除集合并重建）
+     */
     public void clearCollection(String collectionName) {
         if (!available) {
             log.debug("Qdrant not available, skipping clear");
@@ -403,63 +536,76 @@ public class QdrantVectorStore {
         }
 
         try {
-            log.warn("Clear collection operation not supported in QdrantEmbeddingStore 0.30.0");
+            if (collectionExists(collectionName)) {
+                qdrantClient.deleteCollectionAsync(collectionName).get();
+                log.info("Physically deleted collection for clearing: {}", collectionName);
+            }
+            ensureCollectionExists(collectionName);
+            log.info("Cleared and recreated collection successfully: {}", collectionName);
         } catch (Exception e) {
             log.error("Failed to clear collection {}: {}", collectionName, e.getMessage());
         }
     }
 
-    private Document parseDocument(EmbeddingMatch<TextSegment> match) {
+    /**
+     * 原生 gRPC 荷载转换为内部 Document DTO
+     */
+    private Document parseGrpcPayloadToDocument(String id, Map<String, Value> payload) {
+        if (payload == null || payload.isEmpty()) {
+            return null;
+        }
+        
         try {
-            TextSegment segment = match.embedded();
-            
-            Metadata metadata = segment.metadata();
-            String title = metadata != null ? metadata.getString("title") : "";
-            String source = metadata != null ? metadata.getString("source") : "";
-            String category = metadata != null ? metadata.getString("category") : "";
-            String tagsStr = metadata != null ? metadata.getString("tags") : "";
-            String payload = metadata != null ? metadata.getString("payload") : "";
-            
-            List<String> tags = parseList(tagsStr);
-            
-            float[] embedding = null;
-            if (match.embedding() != null) {
-                float[] vector = match.embedding().vector();
-                embedding = Arrays.copyOf(vector, vector.length);
+            String content = getGrpcString(payload, "text");
+            if (content.isEmpty()) {
+                content = getGrpcString(payload, "content");
             }
-            
-            Document.DocumentBuilder builder = Document.builder()
-                    .id(UUID.randomUUID().toString())
-                    .content(segment.text())
-                    .payload(payload)
-                    .title(title)
-                    .source(source)
-                    .category(category)
-                    .tags(tags)
-                    .embedding(embedding)
-                    .score(match.score());
-            
-            if (metadata != null) {
-                builder.hardwareInterfaces(parseList(metadata.getString("hardwareInterfaces")));
-                builder.sensors(parseList(metadata.getString("sensors")));
-                builder.actuators(parseList(metadata.getString("actuators")));
-                builder.applicationDomains(parseList(metadata.getString("applicationDomains")));
-                builder.safetyLevels(parseList(metadata.getString("safetyLevels")));
-                builder.schedulingPolicies(parseList(metadata.getString("schedulingPolicies")));
+            if (content.isEmpty()) {
+                return null;
             }
-            
-            return builder.build();
 
+            Document doc = new Document();
+            doc.setId(id);
+            doc.setContent(content);
+            doc.setScore(1.0f); // 默认相似度得分占位
+            doc.setTitle(getGrpcString(payload, "title"));
+            doc.setSource(getGrpcString(payload, "source"));
+            doc.setCategory(getGrpcString(payload, "category"));
+            doc.setPayload(getGrpcString(payload, "payload"));
+
+            doc.setTags(parseGrpcList(payload.get("tags")));
+            doc.setHardwareInterfaces(parseGrpcList(payload.get("hardwareInterfaces")));
+            doc.setSensors(parseGrpcList(payload.get("sensors")));
+            doc.setActuators(parseGrpcList(payload.get("actuators")));
+            doc.setApplicationDomains(parseGrpcList(payload.get("applicationDomains")));
+            doc.setSafetyLevels(parseGrpcList(payload.get("safetyLevels")));
+            doc.setSchedulingPolicies(parseGrpcList(payload.get("schedulingPolicies")));
+
+            return doc;
         } catch (Exception e) {
-            log.error("Failed to parse document: {}", e.getMessage());
+            log.warn("Failed to parse gRPC payload to Document: {}", e.getMessage());
             return null;
         }
     }
 
-    private List<String> parseList(String value) {
-        if (value == null || value.isEmpty()) {
+    private String getGrpcString(Map<String, Value> payload, String key) {
+        Value val = payload.get(key);
+        return val != null ? val.getStringValue() : "";
+    }
+
+    private List<String> parseGrpcList(Value value) {
+        if (value == null) {
             return new ArrayList<>();
         }
-        return Arrays.asList(value.split(","));
+        if (value.hasListValue()) {
+            return value.getListValue().getValuesList().stream()
+                    .map(Value::getStringValue)
+                    .collect(Collectors.toList());
+        }
+        String str = value.getStringValue();
+        if (str != null && !str.isEmpty()) {
+            return Arrays.asList(str.split(","));
+        }
+        return new ArrayList<>();
     }
 }
