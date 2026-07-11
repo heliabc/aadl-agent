@@ -30,7 +30,7 @@ rag:
 
 qdrant:
   host: localhost
-  port: 6334
+  port: 6333
   embedding-size: 4096
 
 agent:

@@ -23,6 +23,8 @@ public class Document {
 
     private String category;
 
+    private String agentType;
+
     private List<String> tags;
 
     private float[] embedding;
