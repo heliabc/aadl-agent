@@ -330,7 +330,7 @@ public class QdrantVectorStore {
             return new ArrayList<>();
         }
 
-        log.info("Searching Qdrant collection '{}' with vector dimension: {}", collectionName, queryVector.length);
+        log.error("SEARCH DEBUG: collection={}, vector length={}", collectionName, queryVector.length);
 
         try {
             ensureCollectionExists(collectionName);
@@ -338,7 +338,7 @@ public class QdrantVectorStore {
             QdrantEmbeddingStore store = getStore(collectionName);
             Embedding queryEmbedding = Embedding.from(queryVector);
             
-            log.info("Created Embedding object from vector: dim={}", queryEmbedding.dimension());
+            log.error("SEARCH DEBUG: Embedding dimension={}", queryEmbedding.dimension());
             
             List<EmbeddingMatch<TextSegment>> results = store.findRelevant(queryEmbedding, topK);
             
