@@ -9,28 +9,54 @@ import org.springframework.stereotype.Service;
 public class EmbeddingService {
 
     private final OllamaClient ollamaClient;
+    private static final int MAX_RETRIES = 3;
+    private static final int RETRY_DELAY_MS = 200;
 
     public EmbeddingService(OllamaClient ollamaClient) {
         this.ollamaClient = ollamaClient;
     }
 
     public float[] embed(String text) {
-        if (!ollamaClient.isAvailable()) {
-            log.warn("Ollama not available, cannot generate embedding");
+        if (text == null || text.trim().isEmpty()) {
+            log.warn("Input text is empty, cannot generate embedding");
             return null;
         }
-        try {
-            float[] embedding = ollamaClient.embed(text);
-            if (embedding == null || embedding.length == 0) {
-                log.warn("Embedding generation returned null or empty array");
-                return null;
+
+        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                float[] embedding = ollamaClient.embed(text);
+                if (embedding != null && embedding.length > 0) {
+                    log.debug("Generated embedding of dimension: {} (attempt {})", embedding.length, attempt);
+                    return embedding;
+                }
+                
+                log.warn("Embedding generation returned null or empty array (attempt {}/{})", attempt, MAX_RETRIES);
+                
+                if (attempt < MAX_RETRIES) {
+                    try {
+                        Thread.sleep(RETRY_DELAY_MS);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+                
+            } catch (Exception e) {
+                log.warn("Failed to generate embedding (attempt {}/{}): {}", attempt, MAX_RETRIES, e.getMessage());
+                
+                if (attempt < MAX_RETRIES) {
+                    try {
+                        Thread.sleep(RETRY_DELAY_MS);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
             }
-            log.debug("Generated embedding of dimension: {}", embedding.length);
-            return embedding;
-        } catch (Exception e) {
-            log.error("Failed to generate embedding: {}", e.getMessage());
-            return null;
         }
+        
+        log.error("Embedding generation failed after {} attempts for text: {}", MAX_RETRIES, text.length() > 50 ? text.substring(0, 50) + "..." : text);
+        return null;
     }
 
     public boolean isAvailable() {

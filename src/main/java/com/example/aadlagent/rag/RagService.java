@@ -76,12 +76,13 @@ public class RagService {
     private List<Document> searchWithQdrant(String query, String agentType) {
         try {
             float[] queryEmbedding = embeddingService.embed(query);
-            if (queryEmbedding != null) {
+            if (queryEmbedding != null && queryEmbedding.length > 0) {
+                log.debug("Generated query embedding with dimension: {}", queryEmbedding.length);
                 List<Document> vectorResults = qdrantVectorStore.search(agentType, queryEmbedding, ragConfig.getTopK());
                 List<Document> keywordResults = qdrantVectorStore.keywordSearch(agentType, query, ragConfig.getTopK());
                 return rrfFusion.fuse(List.of(vectorResults, keywordResults));
             } else {
-                log.warn("Failed to generate embedding for query, falling back to keyword search");
+                log.warn("Failed to generate valid embedding for query (null or empty), falling back to keyword search");
                 return qdrantVectorStore.keywordSearch(agentType, query, ragConfig.getTopK());
             }
         } catch (Exception e) {

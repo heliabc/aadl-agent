@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 public class QueryRewriter {
 
     private final OllamaClient ollamaClient;
+    private static final int MAX_RETRIES = 3;
+    private static final int RETRY_DELAY_MS = 200;
 
     private static final String REWRITE_PROMPT = """
 你是一个专业的查询重构助手。你的任务是优化用户的查询语句，使其更适合进行信息检索。
@@ -31,24 +33,66 @@ public class QueryRewriter {
 
     public String rewrite(String query) {
         if (query == null || query.trim().isEmpty()) {
+            log.warn("Input query is null or empty, returning as-is");
             return query;
         }
 
-        log.info("Rewriting query: {}", query);
+        String trimmedQuery = query.trim();
+        log.info("Rewriting query: {}", trimmedQuery);
 
-        String prompt = String.format(REWRITE_PROMPT, query);
-        String rewritten = ollamaClient.chat(prompt, 0.3, 512);
-
-        if (rewritten != null && !rewritten.trim().isEmpty()) {
-            log.info("Rewritten query: {}", rewritten);
-            return rewritten.trim();
+        if (!ollamaClient.isAvailable()) {
+            log.warn("Ollama not available for query rewriting, returning original query");
+            return trimmedQuery;
         }
 
-        return query;
+        String prompt = String.format(REWRITE_PROMPT, trimmedQuery);
+
+        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                String rewritten = ollamaClient.chat(prompt, 0.3, 512);
+
+                if (rewritten != null && !rewritten.trim().isEmpty()) {
+                    String result = rewritten.trim();
+                    log.info("Rewritten query (attempt {}): {}", attempt, result);
+                    return result;
+                }
+
+                log.warn("Query rewriting returned empty result (attempt {}/{})", attempt, MAX_RETRIES);
+
+                if (attempt < MAX_RETRIES) {
+                    try {
+                        Thread.sleep(RETRY_DELAY_MS);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+
+            } catch (Exception e) {
+                log.warn("Query rewriting failed (attempt {}/{}): {}", attempt, MAX_RETRIES, e.getMessage());
+
+                if (attempt < MAX_RETRIES) {
+                    try {
+                        Thread.sleep(RETRY_DELAY_MS);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            }
+        }
+
+        log.warn("Query rewriting failed after {} attempts, returning original query", MAX_RETRIES);
+        return trimmedQuery;
     }
 
     public String[] decompose(String query) {
-        log.info("Decomposing query: {}", query);
+        if (query == null || query.trim().isEmpty()) {
+            return new String[]{query};
+        }
+
+        String trimmedQuery = query.trim();
+        log.info("Decomposing query: {}", trimmedQuery);
 
         String prompt = String.format("""
 你是一个专业的查询分解助手。请将以下查询分解为2-4个更具体的子查询，每个子查询针对一个独立的意图。
@@ -56,7 +100,7 @@ public class QueryRewriter {
 输入：%s
 
 请输出子查询列表，每行一个，不要包含序号。
-""", query);
+""", trimmedQuery);
 
         String decomposed = ollamaClient.chat(prompt, 0.3, 512);
 
@@ -64,6 +108,6 @@ public class QueryRewriter {
             return decomposed.trim().split("\\n");
         }
 
-        return new String[]{query};
+        return new String[]{trimmedQuery};
     }
 }
