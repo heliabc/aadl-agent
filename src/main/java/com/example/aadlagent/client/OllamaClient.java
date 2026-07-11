@@ -74,7 +74,7 @@ public class OllamaClient implements LlmClient {
     }
 
     public float[] embed(String text) {
-        String url = config.getBaseUrl() + "/api/embeddings";
+        String url = config.getBaseUrl() + "/api/embed";
 
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", config.getEmbeddingModel());
@@ -86,14 +86,23 @@ public class OllamaClient implements LlmClient {
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
 
         try {
-            ResponseEntity<EmbeddingResponse> response = restTemplate.exchange(
+            ResponseEntity<String> rawResponse = restTemplate.exchange(
                     url,
                     HttpMethod.POST,
                     request,
-                    EmbeddingResponse.class
+                    String.class
             );
 
-            if (response.getStatusCode().is2xxSuccessful()) {
+            if (rawResponse.getStatusCode().is2xxSuccessful()) {
+                log.debug("Ollama embedding raw response: {}", rawResponse.getBody());
+                
+                ResponseEntity<EmbeddingResponse> response = restTemplate.exchange(
+                        url,
+                        HttpMethod.POST,
+                        request,
+                        EmbeddingResponse.class
+                );
+                
                 EmbeddingResponse embeddingResponse = response.getBody();
                 
                 if (embeddingResponse == null) {
@@ -101,18 +110,18 @@ public class OllamaClient implements LlmClient {
                     return null;
                 }
                 
-                log.debug("Ollama embedding response: model={}, embedding={}, usage={}", 
+                log.debug("Ollama embedding response: model={}, embeddings={}, usage={}", 
                         embeddingResponse.getModel(),
-                        embeddingResponse.getEmbedding() != null ? embeddingResponse.getEmbedding().size() + " elements" : "null",
+                        embeddingResponse.getEmbeddings() != null ? embeddingResponse.getEmbeddings().size() + " arrays" : "null",
                         embeddingResponse.getUsage());
                 
-                if (embeddingResponse.getEmbedding() == null) {
-                    log.error("Ollama returned null embedding");
+                if (embeddingResponse.getEmbeddings() == null || embeddingResponse.getEmbeddings().isEmpty()) {
+                    log.error("Ollama returned null or empty embeddings");
                     return null;
                 }
                 
-                List<Float> embeddingList = embeddingResponse.getEmbedding();
-                if (embeddingList.isEmpty()) {
+                List<Float> embeddingList = embeddingResponse.getEmbeddings().get(0);
+                if (embeddingList == null || embeddingList.isEmpty()) {
                     log.error("Ollama returned empty embedding list");
                     return null;
                 }
@@ -125,7 +134,7 @@ public class OllamaClient implements LlmClient {
                 log.debug("Successfully generated embedding of dimension: {}", embedding.length);
                 return embedding;
             }
-            log.error("Ollama embedding request failed with status: {}", response.getStatusCode());
+            log.error("Ollama embedding request failed with status: {}", rawResponse.getStatusCode());
             return null;
         } catch (RestClientException e) {
             log.error("Ollama embedding request exception: {}", e.getMessage(), e);

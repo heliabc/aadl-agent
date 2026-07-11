@@ -15,7 +15,7 @@ public class EmbeddingResponse {
 
     private String model;
 
-    private List<Float> embedding;
+    private List<List<Float>> embeddings;
 
     private Usage usage;
 

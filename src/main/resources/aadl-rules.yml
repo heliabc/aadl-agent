@@ -21,7 +21,9 @@ global:
     2. 不要生成需求模板中未定义的连接、端口、属性、线程、进程、设备、总线或数据。
     3. 所有 AADL 标识符必须使用英文和下划线，不要输出中文标识符。
     4. 绝对禁止使用 AADL 强保留关键字（如 system, process, thread, processor, memory, device, bus, data，不区分大小写）作为包名或组件名。必须加前缀或后缀（如 Top_System, Main_Process）。
-    5. 【最高优先级规则】所有组件（system/process/thread/processor/memory/device/bus/data/subprogram等）必须严格按照以下格式定义，缺一不可：
+    5. package 名称必须使用 {项目名}_Arch 格式（如：EmbeddedRT_Arch），严禁使用 System、App、Main 等单个单词。
+    6. 顶层系统名称必须使用 Top_{项目名} 或 {项目名}_Top 格式（如：Top_EmbeddedRT），严禁使用 System、App、Main 等单个单词。
+    7. 【最高优先级规则】所有组件（system/process/thread/processor/memory/device/bus/data/subprogram等）必须严格按照以下格式定义，缺一不可：
        第一步：类型声明（必须有 end 闭合！）
          组件类型 组件名
          end 组件名;
@@ -47,26 +49,31 @@ rules:
     title: 整体包结构
     always: true
     content: |
-      package 系统英文名
+      package 项目名_Arch 或 领域名_Arch (如: EmbeddedRT_Arch, FlightCtrl_Arch, Vehicle_Arch)
       public
         -- 所有组件声明、组件实现、数据、程序均放在 public 中
-      end 系统英文名;
+      end 项目名_Arch;
+      
+      命名规则：
+      1. package 名称必须以项目或领域名称开头，使用下划线连接。
+      2. 严禁使用单个单词如 System、App、Main 作为 package 名称。
+      3. 推荐格式：{项目/领域名}_Arch（如：EmbeddedRT_Arch）。
 
   - id: top_system
     title: 顶层系统模板
     always: true
     content: |
-      system 系统名
-      end 系统名;
+      system Top_{项目名} 或 {项目名}_Top (如: Top_EmbeddedRT, EmbeddedRT_Top)
+      end Top_{项目名};
 
-      system implementation 系统名.impl
+      system implementation Top_{项目名}.impl
       subcomponents
         系统管理器名 : device 系统管理器名.impl;
         系统模块名 : system 系统模块名.impl;
         子系统名 : system 子系统名.impl;
         设备名 : device 设备名.impl;
         总线实例名 : bus 总线类型名.impl;
-      end 系统名.impl;
+      end Top_{项目名}.impl;
 
       规则：
       1. 顶层系统表示整个系统。
@@ -79,6 +86,7 @@ rules:
       8. 如果需求中给出 N 个总线，则在顶层系统实现中生成 N 个 bus 子组件。
       9. 总线实例命名为 总线类型名_1、总线类型名_2、...、总线类型名_N。
       10. 如果需求中总线为 0 个，则不要生成 bus。
+      11. 顶层系统名称必须使用前缀 Top_ 或后缀 _Top，严禁使用 System、App、Main 等单独单词。
 
   - id: system_manager
     title: 系统管理器模板
