@@ -348,7 +348,7 @@ public class QdrantVectorStore {
                     .collect(Collectors.toList());
 
         } catch (Exception e) {
-            log.error("Failed to search in {}: {}", collectionName, e.getMessage());
+            log.error("Failed to search in " + collectionName + " failed", e);
             return new ArrayList<>();
         }
     }
