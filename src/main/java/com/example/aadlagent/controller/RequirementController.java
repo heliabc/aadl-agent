@@ -14,11 +14,17 @@ import com.example.aadlagent.config.FileConfig;
 import com.example.aadlagent.rag.RagService;
 import com.example.aadlagent.session.ChatMessage;
 import com.example.aadlagent.session.SessionManager;
+import com.example.aadlagent.service.TraceabilityService;
 import com.example.aadlagent.util.DocFileReader;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,13 +46,15 @@ public class RequirementController {
     private final DeepSeekConfig deepSeekConfig;
     private final RagService ragService;
     private final SessionManager sessionManager;
+    private final TraceabilityService traceabilityService;
 
     public RequirementController(RequirementAgent requirementAgent, AadlArchitectureAgent architectureAgent,
                                  ModuleAnalysisAgent moduleAnalysisAgent, AadlGeneratorAgent aadlGeneratorAgent,
                                  AadlFixerAgent aadlFixerAgent,
                                  DocFileReader docFileReader, FileConfig fileConfig, 
                                  ModelService modelService, DeepSeekConfig deepSeekConfig,
-                                 RagService ragService, SessionManager sessionManager) {
+                                 RagService ragService, SessionManager sessionManager,
+                                 TraceabilityService traceabilityService) {
         this.requirementAgent = requirementAgent;
         this.architectureAgent = architectureAgent;
         this.moduleAnalysisAgent = moduleAnalysisAgent;
@@ -58,6 +66,7 @@ public class RequirementController {
         this.deepSeekConfig = deepSeekConfig;
         this.ragService = ragService;
         this.sessionManager = sessionManager;
+        this.traceabilityService = traceabilityService;
     }
 
     @PostMapping("/analyze")
@@ -111,6 +120,7 @@ public class RequirementController {
 
         if (output.isSuccess()) {
             response.put("data", output.getContent());
+            traceabilityService.addRequirementTraceability(sessionId, requirementDoc, output.getContent());
         } else {
             response.put("message", output.getErrorMessage());
         }
@@ -514,6 +524,7 @@ public class RequirementController {
 
                 response.put("data", output.getContent());
                 response.put("outputFile", outputFileName);
+                traceabilityService.addAadlTraceability(sessionId, output.getContent());
                 log.info("Successfully generated AADL: {} + {} -> {}", architectureFileName, modulesFileName, outputFileName);
             } else {
                 response.put("message", output.getErrorMessage());
@@ -811,5 +822,53 @@ public class RequirementController {
             }
         }
         return ModelType.OLLAMA;
+    }
+
+    @GetMapping("/traceability/excel")
+    public ResponseEntity<Resource> downloadTraceabilityExcel(@RequestParam String sessionId) {
+        try {
+            String filePath = traceabilityService.generateExcelFile(sessionId);
+            File file = new File(filePath);
+            FileSystemResource resource = new FileSystemResource(file);
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getName() + "\"")
+                    .body(resource);
+        } catch (IOException e) {
+            log.error("生成追溯Excel文件失败: {}", e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        } catch (IllegalArgumentException e) {
+            log.warn("无效的会话ID: {}", sessionId);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/traceability/csv")
+    public ResponseEntity<Resource> downloadTraceabilityCsv(@RequestParam String sessionId) {
+        try {
+            String filePath = traceabilityService.generateCsvFile(sessionId);
+            File file = new File(filePath);
+            FileSystemResource resource = new FileSystemResource(file);
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getName() + "\"")
+                    .body(resource);
+        } catch (IOException e) {
+            log.error("生成追溯CSV文件失败: {}", e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        } catch (IllegalArgumentException e) {
+            log.warn("无效的会话ID: {}", sessionId);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/traceability/records")
+    public ResponseEntity<Map<String, Object>> getTraceabilityRecords(@RequestParam String sessionId) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("records", traceabilityService.getRecords(sessionId));
+        return ResponseEntity.ok(response);
     }
 }
