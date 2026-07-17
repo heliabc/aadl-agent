@@ -1,5 +1,7 @@
 package com.example.aadlagent.service;
 
+import com.example.aadlagent.client.LlmClient;
+import com.example.aadlagent.client.OllamaClient;
 import com.example.aadlagent.model.Requirement;
 import com.example.aadlagent.model.TraceabilityRecord;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -17,9 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
@@ -27,11 +27,16 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TraceabilityService {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final OllamaClient ollamaClient;
 
     @Value("${app.output.directory:./output}")
     private String outputDirectory;
 
     private final ConcurrentHashMap<String, List<TraceabilityRecord>> traceabilityRecords = new ConcurrentHashMap<>();
+
+    public TraceabilityService(OllamaClient ollamaClient) {
+        this.ollamaClient = ollamaClient;
+    }
 
     public void addRequirementTraceability(String sessionId, String originalRequirement, String requirementsJson) {
         try {
@@ -298,51 +303,316 @@ public class TraceabilityService {
                 return;
             }
 
-            List<String> aadlComponents = parseAadlComponents(aadlContent);
+            List<TraceabilityRecord> requirementRecords = new ArrayList<>();
+            for (TraceabilityRecord r : records) {
+                if ("REQUIREMENT".equals(r.getTraceType())) {
+                    requirementRecords.add(r);
+                }
+            }
+
+            if (requirementRecords.isEmpty()) {
+                log.warn("没有找到需求级追溯记录");
+                return;
+            }
+
+            List<AadlComponentInfo> components = parseAadlComponentsWithInfo(aadlContent);
             
-            for (TraceabilityRecord record : records) {
-                if ("REQUIREMENT".equals(record.getTraceType())) {
-                    for (String component : aadlComponents) {
-                        if (matchesRequirement(record, component)) {
-                            TraceabilityRecord aadlRecord = TraceabilityRecord.builder()
-                                    .id(UUID.randomUUID().toString())
-                                    .originalRequirement(record.getOriginalRequirement())
-                                    .requirementId(record.getRequirementId())
-                                    .requirementTitle(record.getRequirementTitle())
-                                    .requirementDescription(record.getRequirementDescription())
-                                    .aadlComponent(component)
-                                    .aadlCode(truncate(extractComponentCode(aadlContent, component), 2000))
-                                    .traceType("AADL")
-                                    .source("AadlAgent")
-                                    .build();
-                            records.add(aadlRecord);
+            if (components.isEmpty()) {
+                log.warn("没有解析到 AADL 组件");
+                return;
+            }
+
+            List<TraceabilityMapping> mappings = generateMappingsWithLlm(requirementRecords, components);
+            
+            for (TraceabilityMapping mapping : mappings) {
+                TraceabilityRecord aadlRecord = TraceabilityRecord.builder()
+                        .id(UUID.randomUUID().toString())
+                        .originalRequirement(mapping.getOriginalRequirement())
+                        .requirementId(mapping.getRequirementId())
+                        .requirementTitle(mapping.getRequirementTitle())
+                        .requirementDescription(mapping.getRequirementDescription())
+                        .aadlComponent(mapping.getAadlComponent())
+                        .aadlCode(truncate(mapping.getAadlCode(), 2000))
+                        .traceType("AADL")
+                        .source("LLM")
+                        .build();
+                records.add(aadlRecord);
+            }
+            
+            log.info("添加了 {} 条 AADL 追溯记录，会话ID: {}", mappings.size(), sessionId);
+        } catch (Exception e) {
+            log.error("添加 AADL 追溯记录失败: {}", e.getMessage());
+            fallbackToSimpleMapping(sessionId, aadlContent);
+        }
+    }
+
+    private List<TraceabilityMapping> generateMappingsWithLlm(List<TraceabilityRecord> requirements, List<AadlComponentInfo> components) {
+        List<TraceabilityMapping> mappings = new ArrayList<>();
+        
+        StringBuilder requirementsText = new StringBuilder();
+        for (int i = 0; i < requirements.size(); i++) {
+            TraceabilityRecord req = requirements.get(i);
+            requirementsText.append(i + 1).append(". ")
+                    .append(req.getRequirementId()).append(": ")
+                    .append(req.getRequirementTitle())
+                    .append("\n   描述: ").append(req.getRequirementDescription())
+                    .append("\n   原始需求: ").append(truncate(req.getOriginalRequirement(), 150))
+                    .append("\n\n");
+        }
+
+        StringBuilder componentsText = new StringBuilder();
+        for (int i = 0; i < components.size(); i++) {
+            AadlComponentInfo comp = components.get(i);
+            componentsText.append(i + 1).append(". ")
+                    .append(comp.getName())
+                    .append(" (").append(comp.getType()).append(")")
+                    .append("\n   代码摘要: ").append(truncate(comp.getCode(), 200))
+                    .append("\n\n");
+        }
+
+        String prompt = """
+                请分析以下需求与AADL组件之间的追溯关系。
+                
+                需求列表：
+                %s
+                
+                AADL组件列表：
+                %s
+                
+                请找出每个需求对应的AADL组件（一个需求可能对应多个组件，一个组件也可能对应多个需求）。
+                
+                请以JSON格式输出，格式如下：
+                [
+                  {
+                    "requirementIndex": 需求编号,
+                    "requirementId": "需求ID",
+                    "requirementTitle": "需求标题",
+                    "requirementDescription": "需求描述",
+                    "originalRequirement": "原始需求文本",
+                    "componentIndex": 组件编号,
+                    "aadlComponent": "组件名称",
+                    "aadlType": "组件类型",
+                    "mappingReason": "映射原因（简要说明为什么这个需求对应这个组件）"
+                  }
+                ]
+                
+                注意：
+                1. 只输出JSON数组，不要输出其他任何内容
+                2. requirementIndex和componentIndex对应上面列表中的编号（从1开始）
+                3. 如果一个需求没有对应任何组件，也请输出，但componentIndex设为0，aadlComponent设为""
+                """.formatted(requirementsText.toString(), componentsText.toString());
+
+        try {
+            log.info("调用LLM进行AADL追溯分析，需求数: {}, 组件数: {}", requirements.size(), components.size());
+            
+            String response = ollamaClient.chat(prompt, 0.1, 4096);
+            
+            if (response != null && !response.trim().isEmpty()) {
+                String jsonStr = extractJsonFromResponse(response);
+                
+                List<Map<String, Object>> rawMappings = objectMapper.readValue(jsonStr, 
+                        new TypeReference<List<Map<String, Object>>>() {});
+                
+                for (Map<String, Object> raw : rawMappings) {
+                    int reqIdx = ((Number) raw.get("requirementIndex")).intValue() - 1;
+                    int compIdx = ((Number) raw.get("componentIndex")).intValue() - 1;
+                    
+                    if (reqIdx >= 0 && reqIdx < requirements.size()) {
+                        TraceabilityRecord req = requirements.get(reqIdx);
+                        String aadlComponent = "";
+                        String aadlCode = "";
+                        
+                        if (compIdx >= 0 && compIdx < components.size()) {
+                            AadlComponentInfo comp = components.get(compIdx);
+                            aadlComponent = comp.getName();
+                            aadlCode = comp.getCode();
                         }
+                        
+                        mappings.add(new TraceabilityMapping(
+                                req.getOriginalRequirement(),
+                                req.getRequirementId(),
+                                req.getRequirementTitle(),
+                                req.getRequirementDescription(),
+                                aadlComponent,
+                                aadlCode
+                        ));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("LLM追溯分析失败，将使用简单匹配作为降级: {}", e.getMessage());
+        }
+        
+        return mappings.isEmpty() ? generateSimpleMappings(requirements, components) : mappings;
+    }
+
+    private List<TraceabilityMapping> generateSimpleMappings(List<TraceabilityRecord> requirements, List<AadlComponentInfo> components) {
+        List<TraceabilityMapping> mappings = new ArrayList<>();
+        
+        for (TraceabilityRecord req : requirements) {
+            List<AadlComponentInfo> matchedComponents = new ArrayList<>();
+            String reqText = (req.getRequirementTitle() + " " + req.getRequirementDescription()).toLowerCase();
+            
+            for (AadlComponentInfo comp : components) {
+                if (reqText.contains(comp.getName().toLowerCase()) || 
+                    comp.getName().toLowerCase().contains(req.getRequirementTitle().toLowerCase().substring(0, Math.min(req.getRequirementTitle().length(), 5)))) {
+                    matchedComponents.add(comp);
+                }
+            }
+            
+            if (matchedComponents.isEmpty()) {
+                for (AadlComponentInfo comp : components) {
+                    double score = calculateSimilarity(reqText, comp.getName().toLowerCase());
+                    if (score > 0.3) {
+                        matchedComponents.add(comp);
                     }
                 }
             }
             
-            log.info("添加了 AADL 追溯记录，会话ID: {}", sessionId);
+            if (matchedComponents.isEmpty()) {
+                mappings.add(new TraceabilityMapping(
+                        req.getOriginalRequirement(),
+                        req.getRequirementId(),
+                        req.getRequirementTitle(),
+                        req.getRequirementDescription(),
+                        "",
+                        ""
+                ));
+            } else {
+                for (AadlComponentInfo comp : matchedComponents) {
+                    mappings.add(new TraceabilityMapping(
+                            req.getOriginalRequirement(),
+                            req.getRequirementId(),
+                            req.getRequirementTitle(),
+                            req.getRequirementDescription(),
+                            comp.getName(),
+                            comp.getCode()
+                    ));
+                }
+            }
+        }
+        
+        return mappings;
+    }
+
+    private void fallbackToSimpleMapping(String sessionId, String aadlContent) {
+        try {
+            List<TraceabilityRecord> records = traceabilityRecords.get(sessionId);
+            if (records == null) return;
+
+            List<TraceabilityRecord> requirementRecords = new ArrayList<>();
+            for (TraceabilityRecord r : records) {
+                if ("REQUIREMENT".equals(r.getTraceType())) {
+                    requirementRecords.add(r);
+                }
+            }
+
+            List<AadlComponentInfo> components = parseAadlComponentsWithInfo(aadlContent);
+            List<TraceabilityMapping> mappings = generateSimpleMappings(requirementRecords, components);
+            
+            for (TraceabilityMapping mapping : mappings) {
+                if (mapping.getAadlComponent() != null && !mapping.getAadlComponent().isEmpty()) {
+                    TraceabilityRecord aadlRecord = TraceabilityRecord.builder()
+                            .id(UUID.randomUUID().toString())
+                            .originalRequirement(mapping.getOriginalRequirement())
+                            .requirementId(mapping.getRequirementId())
+                            .requirementTitle(mapping.getRequirementTitle())
+                            .requirementDescription(mapping.getRequirementDescription())
+                            .aadlComponent(mapping.getAadlComponent())
+                            .aadlCode(truncate(mapping.getAadlCode(), 2000))
+                            .traceType("AADL")
+                            .source("SimpleMapping")
+                            .build();
+                    records.add(aadlRecord);
+                }
+            }
+            
+            log.info("降级：使用简单匹配添加了 {} 条 AADL 追溯记录", mappings.size());
         } catch (Exception e) {
-            log.error("添加 AADL 追溯记录失败: {}", e.getMessage());
+            log.error("降级匹配也失败了: {}", e.getMessage());
         }
     }
 
-    private List<String> parseAadlComponents(String aadlContent) {
-        List<String> components = new ArrayList<>();
+    private String extractJsonFromResponse(String response) {
+        int start = response.indexOf('[');
+        int end = response.lastIndexOf(']');
+        
+        if (start != -1 && end != -1 && end > start) {
+            return response.substring(start, end + 1);
+        }
+        
+        start = response.indexOf('{');
+        end = response.lastIndexOf('}');
+        
+        if (start != -1 && end != -1 && end > start) {
+            return "[" + response.substring(start, end + 1) + "]";
+        }
+        
+        return response;
+    }
+
+    private List<AadlComponentInfo> parseAadlComponentsWithInfo(String aadlContent) {
+        List<AadlComponentInfo> components = new ArrayList<>();
         String[] lines = aadlContent.split("\n");
         
+        String currentComponentName = null;
+        String currentComponentType = null;
+        StringBuilder currentCode = new StringBuilder();
+        int braceCount = 0;
+        boolean inComponent = false;
+        
         for (String line : lines) {
-            line = line.trim();
-            if (line.startsWith("system ") || line.startsWith("process ") || 
-                line.startsWith("thread ") || line.startsWith("device ") ||
-                line.startsWith("component ") || line.startsWith("subsystem ")) {
-                String[] parts = line.split("\\s+");
-                if (parts.length >= 2) {
-                    String name = parts[1];
-                    if (name.endsWith("{")) {
-                        name = name.substring(0, name.length() - 1);
-                    }
-                    components.add(name);
+            String trimmedLine = line.trim();
+            
+            if (!inComponent) {
+                if (trimmedLine.startsWith("system ")) {
+                    currentComponentType = "system";
+                    currentComponentName = parseComponentName(trimmedLine);
+                    inComponent = true;
+                    braceCount = countOccurrences(trimmedLine, '{');
+                    currentCode.append(line).append("\n");
+                } else if (trimmedLine.startsWith("process ")) {
+                    currentComponentType = "process";
+                    currentComponentName = parseComponentName(trimmedLine);
+                    inComponent = true;
+                    braceCount = countOccurrences(trimmedLine, '{');
+                    currentCode.append(line).append("\n");
+                } else if (trimmedLine.startsWith("thread ")) {
+                    currentComponentType = "thread";
+                    currentComponentName = parseComponentName(trimmedLine);
+                    inComponent = true;
+                    braceCount = countOccurrences(trimmedLine, '{');
+                    currentCode.append(line).append("\n");
+                } else if (trimmedLine.startsWith("device ")) {
+                    currentComponentType = "device";
+                    currentComponentName = parseComponentName(trimmedLine);
+                    inComponent = true;
+                    braceCount = countOccurrences(trimmedLine, '{');
+                    currentCode.append(line).append("\n");
+                } else if (trimmedLine.startsWith("component ")) {
+                    currentComponentType = "component";
+                    currentComponentName = parseComponentName(trimmedLine);
+                    inComponent = true;
+                    braceCount = countOccurrences(trimmedLine, '{');
+                    currentCode.append(line).append("\n");
+                } else if (trimmedLine.startsWith("subsystem ")) {
+                    currentComponentType = "subsystem";
+                    currentComponentName = parseComponentName(trimmedLine);
+                    inComponent = true;
+                    braceCount = countOccurrences(trimmedLine, '{');
+                    currentCode.append(line).append("\n");
+                }
+            } else {
+                currentCode.append(line).append("\n");
+                braceCount += countOccurrences(line, '{');
+                braceCount -= countOccurrences(line, '}');
+                
+                if (braceCount <= 0 && currentComponentName != null) {
+                    components.add(new AadlComponentInfo(currentComponentName, currentComponentType, currentCode.toString()));
+                    currentComponentName = null;
+                    currentComponentType = null;
+                    currentCode = new StringBuilder();
+                    inComponent = false;
                 }
             }
         }
@@ -350,29 +620,16 @@ public class TraceabilityService {
         return components;
     }
 
-    private String extractComponentCode(String aadlContent, String componentName) {
-        StringBuilder code = new StringBuilder();
-        String[] lines = aadlContent.split("\n");
-        boolean inComponent = false;
-        int braceCount = 0;
-        
-        for (String line : lines) {
-            if (line.trim().contains(componentName) && (line.contains("{") || line.contains(":"))) {
-                inComponent = true;
+    private String parseComponentName(String line) {
+        String[] parts = line.split("\\s+");
+        if (parts.length >= 2) {
+            String name = parts[1];
+            if (name.endsWith("{")) {
+                name = name.substring(0, name.length() - 1);
             }
-            
-            if (inComponent) {
-                code.append(line).append("\n");
-                braceCount += countOccurrences(line, '{');
-                braceCount -= countOccurrences(line, '}');
-                
-                if (braceCount <= 0) {
-                    break;
-                }
-            }
+            return name;
         }
-        
-        return code.toString().trim();
+        return "";
     }
 
     private int countOccurrences(String str, char c) {
@@ -385,14 +642,47 @@ public class TraceabilityService {
         return count;
     }
 
-    private boolean matchesRequirement(TraceabilityRecord record, String component) {
-        String title = record.getRequirementTitle().toLowerCase();
-        String desc = record.getRequirementDescription() != null ? record.getRequirementDescription().toLowerCase() : "";
-        String comp = component.toLowerCase();
-        
-        return title.contains(comp) || desc.contains(comp) || 
-               comp.contains(title.substring(0, Math.min(title.length(), 10)).toLowerCase()) ||
-               comp.contains(title.split("\\s+")[0].toLowerCase());
+    private static class AadlComponentInfo {
+        private final String name;
+        private final String type;
+        private final String code;
+
+        public AadlComponentInfo(String name, String type, String code) {
+            this.name = name;
+            this.type = type;
+            this.code = code;
+        }
+
+        public String getName() { return name; }
+        public String getType() { return type; }
+        public String getCode() { return code; }
+    }
+
+    private static class TraceabilityMapping {
+        private final String originalRequirement;
+        private final String requirementId;
+        private final String requirementTitle;
+        private final String requirementDescription;
+        private final String aadlComponent;
+        private final String aadlCode;
+
+        public TraceabilityMapping(String originalRequirement, String requirementId, 
+                                   String requirementTitle, String requirementDescription,
+                                   String aadlComponent, String aadlCode) {
+            this.originalRequirement = originalRequirement;
+            this.requirementId = requirementId;
+            this.requirementTitle = requirementTitle;
+            this.requirementDescription = requirementDescription;
+            this.aadlComponent = aadlComponent;
+            this.aadlCode = aadlCode;
+        }
+
+        public String getOriginalRequirement() { return originalRequirement; }
+        public String getRequirementId() { return requirementId; }
+        public String getRequirementTitle() { return requirementTitle; }
+        public String getRequirementDescription() { return requirementDescription; }
+        public String getAadlComponent() { return aadlComponent; }
+        public String getAadlCode() { return aadlCode; }
     }
 
     public String generateExcelFile(String sessionId) throws IOException {
