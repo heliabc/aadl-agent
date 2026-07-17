@@ -1007,13 +1007,69 @@
             
             try {
                 await runRequirement();
-                await runArchitecture();
-                await runModule();
-                await runAadl();
+                
+                if (!fileNames.Requirement) {
+                    throw new Error('需求分析未生成输出文件');
+                }
+                await runArchitectureFullFlow(fileNames.Requirement);
+                
+                if (!fileNames.Architecture) {
+                    throw new Error('架构设计未生成输出文件');
+                }
+                await runModuleFullFlow(fileNames.Requirement, fileNames.Architecture);
+                
+                if (!fileNames.Module) {
+                    throw new Error('模块分析未生成输出文件');
+                }
+                await runAadlFullFlow(fileNames.Architecture, fileNames.Module);
+                
                 addTimeline('✅ 完整流程完成！', 'success');
             } catch (error) {
                 addTimeline('❌ 流程中断: ' + error.message, 'error');
             }
+        }
+
+        async function runArchitectureFullFlow(requirementFileName) {
+            await executeModule('Architecture', async () => {
+                const response = await fetch(`${API_BASE}/requirement/generate-architecture`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fileName: requirementFileName, model: currentModel, sessionId: sessionId })
+                });
+                return await response.json();
+            }, { fileName: requirementFileName });
+        }
+
+        async function runModuleFullFlow(requirementFileName, architectureFileName) {
+            await executeModule('Module', async () => {
+                const response = await fetch(`${API_BASE}/requirement/analyze-modules`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        requirementsFile: requirementFileName, 
+                        architectureFile: architectureFileName, 
+                        model: currentModel, 
+                        sessionId: sessionId 
+                    })
+                });
+                return await response.json();
+            }, { requirementsFileName: requirementFileName, architectureFileName: architectureFileName });
+        }
+
+        async function runAadlFullFlow(architectureFileName, moduleFileName) {
+            await executeModule('Aadl', async () => {
+                const response = await fetch(`${API_BASE}/requirement/generate-aadl`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        architectureFile: architectureFileName, 
+                        modulesFile: moduleFileName, 
+                        model: currentModel, 
+                        sessionId: sessionId 
+                    })
+                });
+                return await response.json();
+            }, { architectureFileName: architectureFileName, moduleFileName: moduleFileName });
         }
 
         async function runRequirement() {

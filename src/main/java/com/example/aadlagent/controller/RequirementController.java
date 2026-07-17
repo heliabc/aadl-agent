@@ -121,6 +121,16 @@ public class RequirementController {
         if (output.isSuccess()) {
             response.put("data", output.getContent());
             traceabilityService.addRequirementTraceability(sessionId, requirementDoc, output.getContent());
+            
+            String outputFileName = "requirements_" + sessionId.substring(0, 8) + ".json";
+            String outputFilePath = Paths.get(fileConfig.getRequirementsPath(), outputFileName).toString();
+            try {
+                docFileReader.writeFile(output.getContent(), outputFilePath);
+                response.put("outputFile", outputFileName);
+                log.info("Saved requirements file: {}", outputFilePath);
+            } catch (IOException e) {
+                log.warn("Failed to save requirements file: {}", e.getMessage());
+            }
         } else {
             response.put("message", output.getErrorMessage());
         }

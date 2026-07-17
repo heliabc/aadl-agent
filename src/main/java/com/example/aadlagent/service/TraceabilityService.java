@@ -39,14 +39,14 @@ public class TraceabilityService {
             
             List<TraceabilityRecord> records = traceabilityRecords.computeIfAbsent(sessionId, k -> new ArrayList<>());
             
-            List<String> originalParagraphs = splitIntoParagraphs(originalRequirement);
+            List<String> originalSentences = splitIntoSentences(originalRequirement);
             
             for (Requirement req : requirements) {
-                String matchedParagraph = findBestMatchingParagraph(req, originalParagraphs);
+                String matchedSentence = findBestMatchingSentence(req, originalSentences);
                 
                 TraceabilityRecord record = TraceabilityRecord.builder()
                         .id(UUID.randomUUID().toString())
-                        .originalRequirement(truncate(matchedParagraph, 1000))
+                        .originalRequirement(truncate(matchedSentence, 800))
                         .requirementId(req.getRequirementId())
                         .requirementTitle(req.getTitle())
                         .requirementDescription(req.getDescription())
@@ -62,53 +62,99 @@ public class TraceabilityService {
         }
     }
 
-    private List<String> splitIntoParagraphs(String text) {
-        List<String> paragraphs = new ArrayList<>();
+    private List<String> splitIntoSentences(String text) {
+        List<String> sentences = new ArrayList<>();
         
-        String[] rawParagraphs = text.split("\\n\\s*\\n");
-        for (String p : rawParagraphs) {
-            p = p.trim();
-            if (!p.isEmpty()) {
-                paragraphs.add(p);
+        String[] rawSentences = text.split("(?<=[。！？\\.!?])\\s*");
+        
+        for (String s : rawSentences) {
+            s = s.trim();
+            if (!s.isEmpty()) {
+                sentences.add(s);
             }
         }
         
-        if (paragraphs.isEmpty()) {
-            String[] lines = text.split("\\n");
-            for (String line : lines) {
-                line = line.trim();
-                if (!line.isEmpty()) {
-                    paragraphs.add(line);
+        if (sentences.isEmpty()) {
+            String[] rawParagraphs = text.split("\\n\\s*\\n");
+            for (String p : rawParagraphs) {
+                p = p.trim();
+                if (!p.isEmpty()) {
+                    sentences.add(p);
                 }
             }
         }
         
-        if (paragraphs.isEmpty()) {
-            paragraphs.add(text);
+        if (sentences.isEmpty()) {
+            String[] lines = text.split("\\n");
+            for (String line : lines) {
+                line = line.trim();
+                if (!line.isEmpty()) {
+                    sentences.add(line);
+                }
+            }
         }
         
-        return paragraphs;
+        if (sentences.isEmpty()) {
+            sentences.add(text);
+        }
+        
+        List<String> mergedSentences = new ArrayList<>();
+        for (int i = 0; i < sentences.size(); i++) {
+            String sentence = sentences.get(i);
+            if (sentence.length() < 15 && i < sentences.size() - 1) {
+                String nextSentence = sentences.get(i + 1);
+                mergedSentences.add(sentence + " " + nextSentence);
+                i++;
+            } else {
+                mergedSentences.add(sentence);
+            }
+        }
+        
+        return mergedSentences;
     }
 
-    private String findBestMatchingParagraph(Requirement req, List<String> paragraphs) {
-        if (paragraphs == null || paragraphs.isEmpty()) {
+    private String findBestMatchingSentence(Requirement req, List<String> sentences) {
+        if (sentences == null || sentences.isEmpty()) {
             return "";
         }
         
         String reqText = (req.getTitle() + " " + (req.getDescription() != null ? req.getDescription() : "")).toLowerCase();
         
         double bestScore = 0.0;
-        String bestParagraph = paragraphs.get(0);
+        String bestSentence = sentences.get(0);
+        int bestSentenceIndex = 0;
         
-        for (String paragraph : paragraphs) {
-            double score = calculateSimilarity(reqText, paragraph.toLowerCase());
+        for (int i = 0; i < sentences.size(); i++) {
+            String sentence = sentences.get(i);
+            double score = calculateSimilarity(reqText, sentence.toLowerCase());
+            
             if (score > bestScore) {
                 bestScore = score;
-                bestParagraph = paragraph;
+                bestSentence = sentence;
+                bestSentenceIndex = i;
             }
         }
         
-        return bestParagraph;
+        if (bestScore < 0.05 && sentences.size() > 1) {
+            String prevSentence = bestSentenceIndex > 0 ? sentences.get(bestSentenceIndex - 1) : "";
+            String nextSentence = bestSentenceIndex < sentences.size() - 1 ? sentences.get(bestSentenceIndex + 1) : "";
+            
+            if (!prevSentence.isEmpty()) {
+                double prevScore = calculateSimilarity(reqText, prevSentence.toLowerCase());
+                if (prevScore > bestScore) {
+                    return prevSentence;
+                }
+            }
+            
+            if (!nextSentence.isEmpty()) {
+                double nextScore = calculateSimilarity(reqText, nextSentence.toLowerCase());
+                if (nextScore > bestScore) {
+                    return nextSentence;
+                }
+            }
+        }
+        
+        return bestSentence;
     }
 
     private double calculateSimilarity(String text1, String text2) {
@@ -116,34 +162,132 @@ public class TraceabilityService {
             return 0.0;
         }
         
-        String[] words1 = text1.split("[\\s,，。；;、]+");
-        String[] words2 = text2.split("[\\s,，。；;、]+");
+        List<String> words1 = tokenize(text1);
+        List<String> words2 = tokenize(text2);
         
-        if (words1.length == 0 || words2.length == 0) {
+        if (words1.isEmpty() || words2.isEmpty()) {
             return 0.0;
         }
         
-        int commonWords = 0;
+        double jaccardScore = calculateJaccardSimilarity(words1, words2);
+        
+        double substringScore = calculateSubstringSimilarity(text1, text2);
+        
+        double exactMatchScore = calculateExactMatchScore(words1, words2);
+        
+        double orderScore = calculateOrderScore(words1, words2);
+        
+        double combinedScore = (jaccardScore * 0.4) + (substringScore * 0.3) + (exactMatchScore * 0.2) + (orderScore * 0.1);
+        
+        return Math.min(combinedScore, 1.0);
+    }
+
+    private List<String> tokenize(String text) {
+        List<String> tokens = new ArrayList<>();
+        
+        String[] rawTokens = text.split("[\\s,，。；;、！？？：:()【】《》<>\\-]+");
+        for (String token : rawTokens) {
+            token = token.trim();
+            if (token.length() >= 2) {
+                tokens.add(token);
+            }
+        }
+        
+        List<String> ngrams = generateNgrams(text, 2);
+        for (String ngram : ngrams) {
+            if (!tokens.contains(ngram)) {
+                tokens.add(ngram);
+            }
+        }
+        
+        return tokens;
+    }
+
+    private List<String> generateNgrams(String text, int n) {
+        List<String> ngrams = new ArrayList<>();
+        text = text.replaceAll("[\\s,，。；;、！？：:()【】《》<>\\-]+", "");
+        
+        for (int i = 0; i <= text.length() - n; i++) {
+            ngrams.add(text.substring(i, i + n));
+        }
+        
+        return ngrams;
+    }
+
+    private double calculateJaccardSimilarity(List<String> words1, List<String> words2) {
+        int intersection = 0;
+        int union = words1.size() + words2.size();
+        
         for (String word1 : words1) {
-            if (word1.length() >= 2) {
+            for (String word2 : words2) {
+                if (word1.equals(word2) || word1.contains(word2) || word2.contains(word1)) {
+                    intersection++;
+                    break;
+                }
+            }
+        }
+        
+        union -= intersection;
+        
+        return union == 0 ? 0.0 : (double) intersection / union;
+    }
+
+    private double calculateSubstringSimilarity(String text1, String text2) {
+        double score = 0.0;
+        int matchCount = 0;
+        
+        for (int i = 0; i < text1.length() - 2; i++) {
+            String substring = text1.substring(i, i + 3);
+            if (text2.contains(substring)) {
+                matchCount++;
+            }
+        }
+        
+        if (text1.length() > 3) {
+            score = (double) matchCount / (text1.length() - 2);
+        }
+        
+        if (text2.contains(text1) || text1.contains(text2)) {
+            score += 0.3;
+        }
+        
+        return Math.min(score, 1.0);
+    }
+
+    private double calculateExactMatchScore(List<String> words1, List<String> words2) {
+        int exactMatches = 0;
+        int longWordCount = 0;
+        
+        for (String word1 : words1) {
+            if (word1.length() >= 3) {
+                longWordCount++;
                 for (String word2 : words2) {
-                    if (word2.length() >= 2 && word2.contains(word1)) {
-                        commonWords++;
+                    if (word1.equals(word2)) {
+                        exactMatches++;
                         break;
                     }
                 }
             }
         }
         
-        int maxLength = Math.max(words1.length, words2.length);
+        return longWordCount == 0 ? 0.0 : (double) exactMatches / longWordCount;
+    }
+
+    private double calculateOrderScore(List<String> words1, List<String> words2) {
+        int orderMatches = 0;
+        int possibleMatches = 0;
         
-        double keywordScore = (double) commonWords / maxLength;
-        
-        if (text2.contains(text1) || text1.contains(text2.substring(0, Math.min(text2.length(), 20)))) {
-            keywordScore += 0.3;
+        for (int i = 0; i < words1.size() - 1; i++) {
+            for (int j = 0; j < words2.size() - 1; j++) {
+                if (words1.get(i).equals(words2.get(j)) && words1.get(i + 1).equals(words2.get(j + 1))) {
+                    orderMatches++;
+                    break;
+                }
+            }
+            possibleMatches++;
         }
         
-        return Math.min(keywordScore, 1.0);
+        return possibleMatches == 0 ? 0.0 : (double) orderMatches / possibleMatches;
     }
 
     public void addAadlTraceability(String sessionId, String aadlContent) {
