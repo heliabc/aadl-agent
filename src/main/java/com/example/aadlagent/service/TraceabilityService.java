@@ -39,10 +39,14 @@ public class TraceabilityService {
             
             List<TraceabilityRecord> records = traceabilityRecords.computeIfAbsent(sessionId, k -> new ArrayList<>());
             
+            List<String> originalParagraphs = splitIntoParagraphs(originalRequirement);
+            
             for (Requirement req : requirements) {
+                String matchedParagraph = findBestMatchingParagraph(req, originalParagraphs);
+                
                 TraceabilityRecord record = TraceabilityRecord.builder()
                         .id(UUID.randomUUID().toString())
-                        .originalRequirement(truncate(originalRequirement, 2000))
+                        .originalRequirement(truncate(matchedParagraph, 1000))
                         .requirementId(req.getRequirementId())
                         .requirementTitle(req.getTitle())
                         .requirementDescription(req.getDescription())
@@ -56,6 +60,90 @@ public class TraceabilityService {
         } catch (Exception e) {
             log.error("添加需求追溯记录失败: {}", e.getMessage());
         }
+    }
+
+    private List<String> splitIntoParagraphs(String text) {
+        List<String> paragraphs = new ArrayList<>();
+        
+        String[] rawParagraphs = text.split("\\n\\s*\\n");
+        for (String p : rawParagraphs) {
+            p = p.trim();
+            if (!p.isEmpty()) {
+                paragraphs.add(p);
+            }
+        }
+        
+        if (paragraphs.isEmpty()) {
+            String[] lines = text.split("\\n");
+            for (String line : lines) {
+                line = line.trim();
+                if (!line.isEmpty()) {
+                    paragraphs.add(line);
+                }
+            }
+        }
+        
+        if (paragraphs.isEmpty()) {
+            paragraphs.add(text);
+        }
+        
+        return paragraphs;
+    }
+
+    private String findBestMatchingParagraph(Requirement req, List<String> paragraphs) {
+        if (paragraphs == null || paragraphs.isEmpty()) {
+            return "";
+        }
+        
+        String reqText = (req.getTitle() + " " + (req.getDescription() != null ? req.getDescription() : "")).toLowerCase();
+        
+        double bestScore = 0.0;
+        String bestParagraph = paragraphs.get(0);
+        
+        for (String paragraph : paragraphs) {
+            double score = calculateSimilarity(reqText, paragraph.toLowerCase());
+            if (score > bestScore) {
+                bestScore = score;
+                bestParagraph = paragraph;
+            }
+        }
+        
+        return bestParagraph;
+    }
+
+    private double calculateSimilarity(String text1, String text2) {
+        if (text1.isEmpty() || text2.isEmpty()) {
+            return 0.0;
+        }
+        
+        String[] words1 = text1.split("[\\s,，。；;、]+");
+        String[] words2 = text2.split("[\\s,，。；;、]+");
+        
+        if (words1.length == 0 || words2.length == 0) {
+            return 0.0;
+        }
+        
+        int commonWords = 0;
+        for (String word1 : words1) {
+            if (word1.length() >= 2) {
+                for (String word2 : words2) {
+                    if (word2.length() >= 2 && word2.contains(word1)) {
+                        commonWords++;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        int maxLength = Math.max(words1.length, words2.length);
+        
+        double keywordScore = (double) commonWords / maxLength;
+        
+        if (text2.contains(text1) || text1.contains(text2.substring(0, Math.min(text2.length(), 20)))) {
+            keywordScore += 0.3;
+        }
+        
+        return Math.min(keywordScore, 1.0);
     }
 
     public void addAadlTraceability(String sessionId, String aadlContent) {
