@@ -1558,24 +1558,54 @@
                     document.getElementById('statusTraceability').className = 'module-status-badge completed';
                     document.getElementById('statusTraceability').textContent = '已完成';
                     
-                    let html = '<table style="width:100%; border-collapse: collapse; font-size: 0.75rem;">';
-                    html += '<tr style="background: #e9ecef;">';
-                    html += '<th style="border: 1px solid #dee2e6; padding: 6px;">需求ID</th>';
-                    html += '<th style="border: 1px solid #dee2e6; padding: 6px;">需求标题</th>';
-                    html += '<th style="border: 1px solid #dee2e6; padding: 6px;">AADL组件</th>';
-                    html += '<th style="border: 1px solid #dee2e6; padding: 6px;">追溯类型</th>';
-                    html += '</tr>';
+                    const reqToOriginal = data.records.filter(r => r.traceLevel === 'REQ_TO_ORIGINAL');
+                    const aadlToReq = data.records.filter(r => r.traceLevel === 'AADL_TO_REQ');
                     
-                    data.records.forEach(record => {
-                        html += '<tr>';
-                        html += `<td style="border: 1px solid #dee2e6; padding: 6px;">${record.requirementId || '-'}</td>`;
-                        html += `<td style="border: 1px solid #dee2e6; padding: 6px;">${record.requirementTitle || '-'}</td>`;
-                        html += `<td style="border: 1px solid #dee2e6; padding: 6px;">${record.aadlComponent || '-'}</td>`;
-                        html += `<td style="border: 1px solid #dee2e6; padding: 6px;">${record.traceType || '-'}</td>`;
+                    let html = '<div style="margin-bottom: 20px;">';
+                    
+                    if (reqToOriginal.length > 0) {
+                        html += '<h4 style="margin-bottom: 10px; color: #007bff;">📋 第一部分：条目化需求 → 原始需求</h4>';
+                        html += '<table style="width:100%; border-collapse: collapse; font-size: 0.75rem; margin-bottom: 15px;">';
+                        html += '<tr style="background: #e3f2fd;">';
+                        html += '<th style="border: 1px solid #bbdefb; padding: 6px;">需求ID</th>';
+                        html += '<th style="border: 1px solid #bbdefb; padding: 6px;">需求标题</th>';
+                        html += '<th style="border: 1px solid #bbdefb; padding: 6px;">对应原始需求</th>';
                         html += '</tr>';
-                    });
+                        
+                        reqToOriginal.forEach(record => {
+                            html += '<tr>';
+                            html += `<td style="border: 1px solid #bbdefb; padding: 6px;">${record.requirementId || '-'}</td>`;
+                            html += `<td style="border: 1px solid #bbdefb; padding: 6px;">${record.requirementTitle || '-'}</td>`;
+                            html += `<td style="border: 1px solid #bbdefb; padding: 6px; max-width: 300px; word-break: break-all;">${record.originalRequirement || '-'}</td>`;
+                            html += '</tr>';
+                        });
+                        
+                        html += '</table>';
+                    }
                     
-                    html += '</table>';
+                    if (aadlToReq.length > 0) {
+                        html += '<h4 style="margin-bottom: 10px; color: #28a745;">🔗 第二部分：AADL组件 → 条目化需求</h4>';
+                        html += '<table style="width:100%; border-collapse: collapse; font-size: 0.75rem;">';
+                        html += '<tr style="background: #d4edda;">';
+                        html += '<th style="border: 1px solid #c3e6cb; padding: 6px;">需求ID</th>';
+                        html += '<th style="border: 1px solid #c3e6cb; padding: 6px;">需求标题</th>';
+                        html += '<th style="border: 1px solid #c3e6cb; padding: 6px;">AADL组件</th>';
+                        html += '<th style="border: 1px solid #c3e6cb; padding: 6px;">来源</th>';
+                        html += '</tr>';
+                        
+                        aadlToReq.forEach(record => {
+                            html += '<tr>';
+                            html += `<td style="border: 1px solid #c3e6cb; padding: 6px;">${record.requirementId || '-'}</td>`;
+                            html += `<td style="border: 1px solid #c3e6cb; padding: 6px;">${record.requirementTitle || '-'}</td>`;
+                            html += `<td style="border: 1px solid #c3e6cb; padding: 6px;">${record.aadlComponent || '-'}</td>`;
+                            html += `<td style="border: 1px solid #c3e6cb; padding: 6px;">${record.source || '-'}</td>`;
+                            html += '</tr>';
+                        });
+                        
+                        html += '</table>';
+                    }
+                    
+                    html += '</div>';
                     document.getElementById('contentTraceability').innerHTML = html;
                 } else {
                     alert('没有找到追溯记录，请先运行需求分析和AADL生成');

@@ -55,13 +55,13 @@ public class TraceabilityService {
                         .requirementId(req.getRequirementId())
                         .requirementTitle(req.getTitle())
                         .requirementDescription(req.getDescription())
-                        .traceType("REQUIREMENT")
+                        .traceLevel(TraceabilityRecord.TRACE_LEVEL_REQ_TO_ORIGINAL)
                         .source("RequirementAgent")
                         .build();
                 records.add(record);
             }
             
-            log.info("添加了 {} 条需求追溯记录，会话ID: {}", requirements.size(), sessionId);
+            log.info("添加了 {} 条需求→原始需求追溯记录，会话ID: {}", requirements.size(), sessionId);
         } catch (Exception e) {
             log.error("添加需求追溯记录失败: {}", e.getMessage());
         }
@@ -333,13 +333,13 @@ public class TraceabilityService {
                         .requirementDescription(mapping.getRequirementDescription())
                         .aadlComponent(mapping.getAadlComponent())
                         .aadlCode(truncate(mapping.getAadlCode(), 2000))
-                        .traceType("AADL")
+                        .traceLevel(TraceabilityRecord.TRACE_LEVEL_AADL_TO_REQ)
                         .source("LLM")
                         .build();
                 records.add(aadlRecord);
             }
             
-            log.info("添加了 {} 条 AADL 追溯记录，会话ID: {}", mappings.size(), sessionId);
+            log.info("添加了 {} 条 AADL→需求追溯记录，会话ID: {}", mappings.size(), sessionId);
         } catch (Exception e) {
             log.error("添加 AADL 追溯记录失败: {}", e.getMessage());
             fallbackToSimpleMapping(sessionId, aadlContent);
@@ -520,14 +520,14 @@ public class TraceabilityService {
                             .requirementDescription(mapping.getRequirementDescription())
                             .aadlComponent(mapping.getAadlComponent())
                             .aadlCode(truncate(mapping.getAadlCode(), 2000))
-                            .traceType("AADL")
+                            .traceLevel(TraceabilityRecord.TRACE_LEVEL_AADL_TO_REQ)
                             .source("SimpleMapping")
                             .build();
                     records.add(aadlRecord);
                 }
             }
             
-            log.info("降级：使用简单匹配添加了 {} 条 AADL 追溯记录", mappings.size());
+            log.info("降级：使用简单匹配添加了 {} 条 AADL→需求追溯记录", mappings.size());
         } catch (Exception e) {
             log.error("降级匹配也失败了: {}", e.getMessage());
         }

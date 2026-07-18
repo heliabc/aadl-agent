@@ -11,6 +11,9 @@ import lombok.Builder;
 @Builder
 public class TraceabilityRecord {
 
+    public static final String TRACE_LEVEL_REQ_TO_ORIGINAL = "REQ_TO_ORIGINAL";
+    public static final String TRACE_LEVEL_AADL_TO_REQ = "AADL_TO_REQ";
+
     private String id;
 
     private String originalRequirement;
@@ -25,7 +28,7 @@ public class TraceabilityRecord {
 
     private String aadlCode;
 
-    private String traceType;
+    private String traceLevel;
 
     private String source;
 }
