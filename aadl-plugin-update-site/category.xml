@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <description url="http://www.example.com">
+      AADL Generator Update Site
+   </description>
+
+   <category-def name="com.example.aadlplugin.category" label="AADL Generator">
+      <description>AADL Generator plugins</description>
+   </category-def>
+
+   <feature url="features/com.example.aadlplugin.feature_1.0.0.jar" id="com.example.aadlplugin.feature" version="1.0.0">
+      <category name="com.example.aadlplugin.category"/>
+   </feature>
+</site>

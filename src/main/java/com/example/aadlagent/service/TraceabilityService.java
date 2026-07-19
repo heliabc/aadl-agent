@@ -305,7 +305,7 @@ public class TraceabilityService {
 
             List<TraceabilityRecord> requirementRecords = new ArrayList<>();
             for (TraceabilityRecord r : records) {
-                if ("REQUIREMENT".equals(r.getTraceType())) {
+                if (TraceabilityRecord.TRACE_LEVEL_REQ_TO_ORIGINAL.equals(r.getTraceLevel())) {
                     requirementRecords.add(r);
                 }
             }
@@ -502,7 +502,7 @@ public class TraceabilityService {
 
             List<TraceabilityRecord> requirementRecords = new ArrayList<>();
             for (TraceabilityRecord r : records) {
-                if ("REQUIREMENT".equals(r.getTraceType())) {
+                if (TraceabilityRecord.TRACE_LEVEL_REQ_TO_ORIGINAL.equals(r.getTraceLevel())) {
                     requirementRecords.add(r);
                 }
             }
@@ -726,7 +726,7 @@ public class TraceabilityService {
                 row.createCell(4).setCellValue(record.getRequirementDescription());
                 row.createCell(5).setCellValue(record.getAadlComponent());
                 row.createCell(6).setCellValue(record.getAadlCode());
-                row.createCell(7).setCellValue(record.getTraceType());
+                row.createCell(7).setCellValue(record.getTraceLevel());
                 row.createCell(8).setCellValue(record.getSource());
             }
             
@@ -767,7 +767,7 @@ public class TraceabilityService {
                 writer.write(escapeCsv(record.getRequirementDescription()) + ",");
                 writer.write(escapeCsv(record.getAadlComponent()) + ",");
                 writer.write(escapeCsv(record.getAadlCode()) + ",");
-                writer.write(escapeCsv(record.getTraceType()) + ",");
+                writer.write(escapeCsv(record.getTraceLevel()) + ",");
                 writer.write(escapeCsv(record.getSource()) + "\n");
             }
         }

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <!-- 视图（Views）扩展点 -->
+   <extension
+         point="org.eclipse.ui.views">
+      <view
+            id="com.example.aadlplugin.view.RequirementView"
+            name="Requirements Analysis"
+            class="com.example.aadlplugin.view.RequirementView"
+            category="org.osate.views">
+      </view>
+      <view
+            id="com.example.aadlplugin.view.TraceabilityView"
+            name="Traceability Matrix"
+            class="com.example.aadlplugin.view.TraceabilityView"
+            category="org.osate.views">
+      </view>
+   </extension>
+
+   <!-- 针对 AADL 项目（IProject）的右键菜单 -->
+   <extension
+         point="org.eclipse.ui.popupMenus">
+      <objectContribution
+            adaptable="true"
+            id="com.example.aadlplugin.project.popup"
+            objectClass="org.eclipse.core.resources.IProject">
+         <action
+               id="com.example.aadlplugin.action.popup.generateAadl"
+               label="Generate AADL from Requirements"
+               class="com.example.aadlplugin.action.GenerateAadlAction">
+         </action>
+         <action
+               id="com.example.aadlplugin.action.popup.viewTraceability"
+               label="View Traceability Matrix"
+               class="com.example.aadlplugin.action.ViewTraceabilityAction">
+         </action>
+         <action
+               id="com.example.aadlplugin.action.popup.clearSession"
+               label="Clear Session"
+               class="com.example.aadlplugin.action.ClearSessionAction">
+         </action>
+      </objectContribution>
+   </extension>
+
+   <!-- 针对具体的 *.aadl 文件的右键菜单 -->
+   <extension
+         point="org.eclipse.ui.popupMenus">
+      <objectContribution
+            adaptable="true"
+            id="com.example.aadlplugin.popup"
+            nameFilter="*.aadl"
+            objectClass="org.eclipse.core.resources.IFile">
+         <action
+               id="com.example.aadlplugin.action.fixAadl"
+               label="Fix AADL Syntax Errors"
+               class="com.example.aadlplugin.action.FixAadlAction">
+         </action>
+      </objectContribution>
+   </extension>
+</plugin>

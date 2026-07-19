@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?pde version="3.8"?><target name="AADL Plugin Target" sequenceNumber="1">
+  <locations>
+    <location includeAllPlatforms="false" includeConfigurePhase="false" includeMode="planner" includeSource="true" type="InstallableUnit">
+      <unit id="org.eclipse.platform.ide"/>
+      <unit id="org.eclipse.platform.sdk"/>
+      <unit id="org.eclipse.rcp.sdk.id"/>
+      <repository location="https://download.eclipse.org/releases/latest"/>
+    </location>
+    <location includeAllPlatforms="false" includeConfigurePhase="false" includeMode="planner" includeSource="true" type="InstallableUnit">
+      <unit id="org.osgi.core"/>
+      <repository location="https://download.eclipse.org/tools/orbit/downloads/drops/S20230515155128/repository"/>
+    </location>
+    <location includeAllPlatforms="false" includeConfigurePhase="false" includeMode="planner" includeSource="true" type="InstallableUnit">
+      <unit id="org.eclipse.emf.sdk"/>
+      <repository location="https://download.eclipse.org/modeling/emf/emf/builds/release/latest"/>
+    </location>
+    <location includeAllPlatforms="false" includeConfigurePhase="false" includeMode="planner" includeSource="true" type="InstallableUnit">
+      <unit id="org.eclipse.xtext.sdk"/>
+      <repository location="https://download.eclipse.org/modeling/tmf/xtext/updates/releases/latest"/>
+    </location>
+    <location includeAllPlatforms="false" includeConfigurePhase="false" includeMode="planner" includeSource="true" type="InstallableUnit">
+      <unit id="org.osate.aadl2"/>
+      <unit id="org.osate.aadl2.modelsupport"/>
+      <unit id="org.osate.xtext.aadl2"/>
+      <unit id="org.osate.ui"/>
+      <repository location="https://download.osate.org/osate/stable/latest"/>
+    </location>
+    <location includeAllPlatforms="false" includeConfigurePhase="false" includeMode="planner" includeSource="true" type="InstallableUnit">
+      <unit id="org.apache.commons.lang3"/>
+      <unit id="org.apache.commons.collections4"/>
+      <repository location="https://download.eclipse.org/tools/orbit/downloads/drops/S20230515155128/repository"/>
+    </location>
+  </locations>
+</target>

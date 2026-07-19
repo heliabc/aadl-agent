@@ -72,6 +72,23 @@
             color: white;
         }
 
+        .mode-option {
+            padding: 4px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            background: #f8f9fa;
+            border: 1px solid var(--border-color);
+        }
+
+        .mode-option:hover { border-color: var(--primary-color); }
+        .mode-option.selected {
+            border-color: var(--secondary-color);
+            background: var(--secondary-color);
+            color: white;
+        }
+
         .module-card {
             background: var(--card-bg);
             border-radius: 16px;
@@ -430,8 +447,23 @@
         </div>
 
         <div class="session-info">
+            <span>运行模式:</span>
+            <span class="mode-option selected" data-mode="new">新会话</span>
+            <span class="mode-option" data-mode="incremental">增量更新</span>
+            <span>|</span>
             <span>会话 ID: <span id="sessionIdDisplay">-</span></span>
+            <span>|</span>
             <span>当前模型: <span id="currentModelDisplay">OLLAMA</span></span>
+        </div>
+
+        <div id="sessionSelectorContainer" style="display: none; margin-bottom: 16px;">
+            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">选择要更新的会话：</div>
+            <select id="sessionSelector" class="file-selector" style="width: auto; min-width: 300px;">
+                <option value="">请选择会话...</option>
+            </select>
+            <div style="font-size: 0.75rem; color: var(--warning-color); margin-top: 4px;">
+                💡 增量更新模式下，输入框中填写修改内容（如"将任务调度优先级从高改为中"）
+            </div>
         </div>
 
         <div class="timeline" id="timeline"></div>
@@ -458,17 +490,14 @@
                 <div id="inputTextRequirement">
                     <textarea id="textRequirement" placeholder="请输入系统需求描述...
 
-示例：
+示例（新会话）：
 设计一个嵌入式实时系统，包含以下功能：
 1. 数据采集模块：采集传感器数据，采样频率100Hz
 2. 数据处理模块：对采集数据进行滤波和分析
 3. 通信模块：支持以太网和串口通信
-4. 实时控制模块：根据处理结果控制执行器
 
-非功能需求：
-- 响应时间小于10ms
-- 系统可靠性达到99.99%
-- 支持故障容错和自动恢复"></textarea>
+示例（增量更新）：
+将任务调度优先级从高改为中；增加USB通信模块；移除看门狗定时器"></textarea>
                     <div class="input-hint">提示：输入详细的系统需求描述，包括功能需求和非功能需求</div>
                 </div>
 
@@ -846,6 +875,7 @@
         let currentModel = 'OLLAMA';
         let sessionId = null;
         let isRunning = false;
+        let currentMode = 'new';
 
         let results = {
             Requirement: null,
@@ -878,6 +908,49 @@
                 document.getElementById('currentModelDisplay').textContent = currentModel;
             });
         });
+
+        document.querySelectorAll('.mode-option').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.mode-option').forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                currentMode = option.dataset.mode;
+                
+                const selectorContainer = document.getElementById('sessionSelectorContainer');
+                if (currentMode === 'incremental') {
+                    selectorContainer.style.display = 'block';
+                    loadSessionList();
+                } else {
+                    selectorContainer.style.display = 'none';
+                    sessionId = null;
+                    document.getElementById('sessionIdDisplay').textContent = '-';
+                }
+            });
+        });
+
+        document.getElementById('sessionSelector').addEventListener('change', (e) => {
+            sessionId = e.target.value;
+            document.getElementById('sessionIdDisplay').textContent = sessionId;
+        });
+
+        async function loadSessionList() {
+            const selector = document.getElementById('sessionSelector');
+            selector.innerHTML = '<option value="">请选择会话...</option>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/session/list`);
+                const data = await response.json();
+                if (data.sessionIds) {
+                    data.sessionIds.forEach(sid => {
+                        const option = document.createElement('option');
+                        option.value = sid;
+                        option.textContent = sid;
+                        selector.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load sessions:', error);
+            }
+        }
 
         document.querySelectorAll('.input-tab').forEach(tab => {
             tab.addEventListener('click', () => {
