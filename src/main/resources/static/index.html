@@ -462,7 +462,7 @@
                 <option value="">请选择会话...</option>
             </select>
             <div style="font-size: 0.75rem; color: var(--warning-color); margin-top: 4px;">
-                💡 增量更新模式下，输入框中填写修改内容（如"将任务调度优先级从高改为中"）
+                提示：增量更新模式下，输入框中填写修改内容（如"将任务调度优先级从高改为中"）
             </div>
         </div>
 
@@ -471,20 +471,19 @@
         <div class="module-card" id="cardRequirement">
             <div class="module-header">
                 <div class="module-title">
-                    <span style="font-size: 1.25rem;">📋</span>
                     <h2>需求分析</h2>
                 </div>
                 <span class="module-status-badge waiting" id="statusRequirement">等待</span>
             </div>
             
             <div class="dependency-info">
-                💡 输入：原始需求描述（文本或文件）
+                [提示] 输入：原始需求描述（文本或文件）
             </div>
 
             <div class="module-input-section">
                 <div class="input-tabs">
-                    <div class="input-tab active" data-tab="text" data-module="Requirement">📝 输入文本</div>
-                    <div class="input-tab" data-tab="file" data-module="Requirement">📁 上传文件</div>
+                    <div class="input-tab active" data-tab="text" data-module="Requirement">输入文本</div>
+                    <div class="input-tab" data-tab="file" data-module="Requirement">上传文件</div>
                 </div>
                 
                 <div id="inputTextRequirement">
@@ -503,7 +502,6 @@
 
                 <div id="inputFileRequirement" style="display: none;">
                     <div class="file-upload-area" id="uploadRequirement">
-                        <div class="file-upload-icon">📄</div>
                         <div class="file-upload-text">点击或拖拽文件到此处上传</div>
                         <div class="file-upload-hint">支持 .txt, .doc, .docx, .json 格式</div>
                         <input type="file" id="fileInputRequirement" accept=".txt,.doc,.docx,.json">
@@ -514,17 +512,17 @@
 
             <div class="action-bar">
                 <button class="btn btn-primary" id="btnRequirement">
-                    <span>▶ 运行需求分析</span>
+                    <span>运行需求分析</span>
                 </button>
                 <button class="btn btn-secondary" id="btnClearRequirement">
-                    <span>🔄 清空</span>
+                    <span>清空</span>
                 </button>
             </div>
 
             <div class="result-section" id="resultRequirement">
                 <div class="result-header">
-                    <h4>📋 需求分析结果</h4>
-                    <button class="copy-btn" id="copyRequirementBtn" title="复制结果">📋</button>
+                    <h4>需求分析结果</h4>
+                    <button class="copy-btn" id="copyRequirementBtn" title="复制结果">复制</button>
                 </div>
                 <div class="result-content" id="contentRequirement"></div>
                 <div class="result-meta">
@@ -537,21 +535,20 @@
         <div class="module-card" id="cardArchitecture">
             <div class="module-header">
                 <div class="module-title">
-                    <span style="font-size: 1.25rem;">🏗️</span>
                     <h2>架构设计</h2>
                 </div>
                 <span class="module-status-badge waiting" id="statusArchitecture">等待</span>
             </div>
 
             <div class="dependency-info">
-                💡 输入：需求分析结果（JSON格式）
+                [提示] 输入：需求分析结果（JSON格式）
             </div>
 
             <div class="module-input-section">
                 <div class="input-tabs">
-                    <div class="input-tab active" data-tab="text" data-module="Architecture">📝 输入文本</div>
-                    <div class="input-tab" data-tab="file" data-module="Architecture">📁 上传文件</div>
-                    <div class="input-tab" data-tab="previous" data-module="Architecture">🔗 使用上一步结果</div>
+                    <div class="input-tab active" data-tab="text" data-module="Architecture">输入文本</div>
+                    <div class="input-tab" data-tab="file" data-module="Architecture">上传文件</div>
+                    <div class="input-tab" data-tab="previous" data-module="Architecture">使用上一步结果</div>
                 </div>
                 
                 <div id="inputTextArchitecture">
@@ -561,7 +558,6 @@
 
                 <div id="inputFileArchitecture" style="display: none;">
                     <div class="file-upload-area" id="uploadArchitecture">
-                        <div class="file-upload-icon">📄</div>
                         <div class="file-upload-text">点击或拖拽文件到此处上传</div>
                         <div class="file-upload-hint">支持 .json 格式</div>
                         <input type="file" id="fileInputArchitecture" accept=".json">
@@ -581,17 +577,17 @@
 
             <div class="action-bar">
                 <button class="btn btn-primary" id="btnArchitecture">
-                    <span>▶ 运行架构设计</span>
+                    <span>运行架构设计</span>
                 </button>
                 <button class="btn btn-secondary" id="btnClearArchitecture">
-                    <span>🔄 清空</span>
+                    <span>清空</span>
                 </button>
             </div>
 
             <div class="result-section" id="resultArchitecture">
                 <div class="result-header">
-                    <h4>🏗️ 架构设计结果</h4>
-                    <button class="copy-btn" id="copyArchitectureBtn" title="复制结果">📋</button>
+                    <h4>架构设计结果</h4>
+                    <button class="copy-btn" id="copyArchitectureBtn" title="复制结果">复制</button>
                 </div>
                 <div class="result-content" id="contentArchitecture"></div>
                 <div class="result-meta">
@@ -604,21 +600,20 @@
         <div class="module-card" id="cardModule">
             <div class="module-header">
                 <div class="module-title">
-                    <span style="font-size: 1.25rem;">🧩</span>
                     <h2>模块分析</h2>
                 </div>
                 <span class="module-status-badge waiting" id="statusModule">等待</span>
             </div>
 
             <div class="dependency-info">
-                💡 输入：需求分析结果 + 架构设计结果（均为JSON格式）
+                [提示] 输入：需求分析结果 + 架构设计结果（均为JSON格式）
             </div>
 
             <div class="module-input-section">
                 <div class="input-tabs">
-                    <div class="input-tab active" data-tab="text" data-module="Module">📝 输入文本</div>
-                    <div class="input-tab" data-tab="file" data-module="Module">📁 上传文件</div>
-                    <div class="input-tab" data-tab="previous" data-module="Module">🔗 使用上一步结果</div>
+                    <div class="input-tab active" data-tab="text" data-module="Module">输入文本</div>
+                    <div class="input-tab" data-tab="file" data-module="Module">上传文件</div>
+                    <div class="input-tab" data-tab="previous" data-module="Module">使用上一步结果</div>
                 </div>
                 
                 <div id="inputTextModule">
@@ -632,7 +627,6 @@
                 <div id="inputFileModule" style="display: none;">
                     <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">需求分析文件</div>
                     <div class="file-upload-area" id="uploadModuleRequirements">
-                        <div class="file-upload-icon">📄</div>
                         <div class="file-upload-text">点击或拖拽文件到此处上传</div>
                         <div class="file-upload-hint">支持 .json 格式</div>
                         <input type="file" id="fileInputModuleRequirements" accept=".json">
@@ -641,7 +635,6 @@
 
                     <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; margin-top: 16px;">架构设计文件</div>
                     <div class="file-upload-area" id="uploadModuleArchitecture">
-                        <div class="file-upload-icon">📄</div>
                         <div class="file-upload-text">点击或拖拽文件到此处上传</div>
                         <div class="file-upload-hint">支持 .json 格式</div>
                         <input type="file" id="fileInputModuleArchitecture" accept=".json">
@@ -661,17 +654,17 @@
 
             <div class="action-bar">
                 <button class="btn btn-primary" id="btnModule">
-                    <span>▶ 运行模块分析</span>
+                    <span>运行模块分析</span>
                 </button>
                 <button class="btn btn-secondary" id="btnClearModule">
-                    <span>🔄 清空</span>
+                    <span>清空</span>
                 </button>
             </div>
 
             <div class="result-section" id="resultModule">
                 <div class="result-header">
-                    <h4>🧩 模块分析结果</h4>
-                    <button class="copy-btn" id="copyModuleBtn" title="复制结果">📋</button>
+                    <h4>模块分析结果</h4>
+                    <button class="copy-btn" id="copyModuleBtn" title="复制结果">复制</button>
                 </div>
                 <div class="result-content" id="contentModule"></div>
                 <div class="result-meta">
@@ -684,21 +677,20 @@
         <div class="module-card" id="cardAadl">
             <div class="module-header">
                 <div class="module-title">
-                    <span style="font-size: 1.25rem;">📝</span>
                     <h2>AADL 生成</h2>
                 </div>
                 <span class="module-status-badge waiting" id="statusAadl">等待</span>
             </div>
 
             <div class="dependency-info">
-                💡 输入：架构设计结果 + 模块分析结果（均为JSON格式）
+                [提示] 输入：架构设计结果 + 模块分析结果（均为JSON格式）
             </div>
 
             <div class="module-input-section">
                 <div class="input-tabs">
-                    <div class="input-tab active" data-tab="text" data-module="Aadl">📝 输入文本</div>
-                    <div class="input-tab" data-tab="file" data-module="Aadl">📁 上传文件</div>
-                    <div class="input-tab" data-tab="previous" data-module="Aadl">🔗 使用上一步结果</div>
+                    <div class="input-tab active" data-tab="text" data-module="Aadl">输入文本</div>
+                    <div class="input-tab" data-tab="file" data-module="Aadl">上传文件</div>
+                    <div class="input-tab" data-tab="previous" data-module="Aadl">使用上一步结果</div>
                 </div>
                 
                 <div id="inputTextAadl">
@@ -712,7 +704,6 @@
                 <div id="inputFileAadl" style="display: none;">
                     <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">架构设计文件</div>
                     <div class="file-upload-area" id="uploadAadlArchitecture">
-                        <div class="file-upload-icon">📄</div>
                         <div class="file-upload-text">点击或拖拽文件到此处上传</div>
                         <div class="file-upload-hint">支持 .json 格式</div>
                         <input type="file" id="fileInputAadlArchitecture" accept=".json">
@@ -721,7 +712,6 @@
 
                     <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; margin-top: 16px;">模块分析文件</div>
                     <div class="file-upload-area" id="uploadAadlModules">
-                        <div class="file-upload-icon">📄</div>
                         <div class="file-upload-text">点击或拖拽文件到此处上传</div>
                         <div class="file-upload-hint">支持 .json 格式</div>
                         <input type="file" id="fileInputAadlModules" accept=".json">
@@ -741,17 +731,17 @@
 
             <div class="action-bar">
                 <button class="btn btn-primary" id="btnAadl">
-                    <span>▶ 运行 AADL 生成</span>
+                    <span>运行 AADL 生成</span>
                 </button>
                 <button class="btn btn-secondary" id="btnClearAadl">
-                    <span>🔄 清空</span>
+                    <span>清空</span>
                 </button>
             </div>
 
             <div class="result-section" id="resultAadl">
                 <div class="result-header">
-                    <h4>📝 AADL 模型代码</h4>
-                    <button class="copy-btn" id="copyAadlBtn" title="复制代码">📋</button>
+                    <h4>AADL 模型代码</h4>
+                    <button class="copy-btn" id="copyAadlBtn" title="复制代码">复制</button>
                 </div>
                 <div class="result-content aadl" id="contentAadl"></div>
                 <div class="result-meta">
@@ -764,20 +754,19 @@
         <div class="module-card" id="cardFix">
             <div class="module-header">
                 <div class="module-title">
-                    <span style="font-size: 1.25rem;">🔧</span>
                     <h2>AADL 错误修正</h2>
                 </div>
                 <span class="module-status-badge waiting" id="statusFix">等待</span>
             </div>
 
             <div class="dependency-info">
-                💡 输入：AADL 代码 + 错误列表
+                [提示] 输入：AADL 代码 + 错误列表
             </div>
 
             <div class="module-input-section">
                 <div class="input-tabs">
-                    <div class="input-tab active" data-tab="text" data-module="Fix">📝 输入文本</div>
-                    <div class="input-tab" data-tab="previous" data-module="Fix">🔗 使用上一步结果</div>
+                    <div class="input-tab active" data-tab="text" data-module="Fix">输入文本</div>
+                    <div class="input-tab" data-tab="previous" data-module="Fix">使用上一步结果</div>
                 </div>
                 
                 <div id="inputTextFix">
@@ -807,17 +796,17 @@
 
             <div class="action-bar">
                 <button class="btn btn-primary" id="btnFix">
-                    <span>🔧 修正 AADL</span>
+                    <span>修正 AADL</span>
                 </button>
                 <button class="btn btn-secondary" id="btnClearFix">
-                    <span>🔄 清空</span>
+                    <span>清空</span>
                 </button>
             </div>
 
             <div class="result-section" id="resultFix">
                 <div class="result-header">
-                    <h4>✅ 修正后的 AADL 代码</h4>
-                    <button class="copy-btn" id="copyFixBtn" title="复制代码">📋</button>
+                    <h4>修正后的 AADL 代码</h4>
+                    <button class="copy-btn" id="copyFixBtn" title="复制代码">复制</button>
                 </div>
                 <div class="result-content aadl" id="contentFix"></div>
                 <div class="result-meta">
@@ -829,31 +818,30 @@
         <div class="module-card" id="cardTraceability">
             <div class="module-header">
                 <div class="module-title">
-                    <span style="font-size: 1.25rem;">🔗</span>
                     <h2>需求追溯矩阵</h2>
                 </div>
                 <span class="module-status-badge waiting" id="statusTraceability">等待</span>
             </div>
 
             <div class="dependency-info">
-                💡 生成需求与AADL组件之间的追溯关系，支持 Excel 和 CSV 格式导出
+                [提示] 生成需求与AADL组件之间的追溯关系，支持 Excel 和 CSV 格式导出
             </div>
 
             <div class="action-bar">
                 <button class="btn btn-primary" id="btnDownloadExcel">
-                    <span>📊 下载 Excel 追溯矩阵</span>
+                    <span>下载 Excel 追溯矩阵</span>
                 </button>
                 <button class="btn btn-secondary" id="btnDownloadCsv">
-                    <span>📄 下载 CSV 追溯矩阵</span>
+                    <span>下载 CSV 追溯矩阵</span>
                 </button>
                 <button class="btn btn-secondary" id="btnViewTraceability">
-                    <span>👁️ 查看追溯记录</span>
+                    <span>查看追溯记录</span>
                 </button>
             </div>
 
             <div class="result-section" id="resultTraceability">
                 <div class="result-header">
-                    <h4>🔗 追溯记录列表</h4>
+                    <h4>追溯记录列表</h4>
                 </div>
                 <div class="result-content" id="contentTraceability"></div>
             </div>
@@ -861,10 +849,10 @@
 
         <div class="action-bar" style="justify-content: center; margin-top: 32px; margin-bottom: 32px;">
             <button class="btn btn-primary" id="btnFullFlow" style="font-size: 1rem; padding: 14px 32px;">
-                <span>🚀 完整流程（需求分析 → AADL生成）</span>
+                <span>完整流程（需求分析 → AADL生成）</span>
             </button>
             <button class="btn btn-secondary" id="btnResetAll" style="font-size: 1rem; padding: 14px 24px;">
-                <span>🔄 重置全部</span>
+                <span>重置全部</span>
             </button>
         </div>
     </div>
@@ -1076,7 +1064,7 @@
         async function runFullFlow() {
             if (isRunning) return;
             
-            addTimeline('🚀 开始完整流程：需求分析 → 架构设计 → 模块分析 → AADL生成');
+            addTimeline('开始完整流程：需求分析 → 架构设计 → 模块分析 → AADL生成');
             
             try {
                 await runRequirement();
@@ -1096,9 +1084,9 @@
                 }
                 await runAadlFullFlow(fileNames.Architecture, fileNames.Module);
                 
-                addTimeline('✅ 完整流程完成！', 'success');
+                addTimeline('完整流程完成！', 'success');
             } catch (error) {
-                addTimeline('❌ 流程中断: ' + error.message, 'error');
+                addTimeline('流程中断: ' + error.message, 'error');
             }
         }
 
@@ -1390,14 +1378,14 @@
                     const contentEl = document.getElementById(`content${moduleId}`);
                     contentEl.textContent = data.data;
 
-                    document.getElementById(`time${moduleId}`).textContent = `⏱️ 执行时间: ${data.executionTime}ms`;
+                    document.getElementById(`time${moduleId}`).textContent = `执行时间: ${data.executionTime}ms`;
                     
                     if (document.getElementById(`outputFile${moduleId}`)) {
-                        document.getElementById(`outputFile${moduleId}`).textContent = data.outputFile ? `📁 输出文件: ${data.outputFile}` : '';
+                        document.getElementById(`outputFile${moduleId}`).textContent = data.outputFile ? `输出文件: ${data.outputFile}` : '';
                     }
 
                     setModuleStatus(moduleId, 'completed');
-                    addTimeline(`✅ ${getModuleName(moduleId)}完成${data.outputFile ? ' -> ' + data.outputFile : ''}`, 'success');
+                    addTimeline(`${getModuleName(moduleId)}完成${data.outputFile ? ' -> ' + data.outputFile : ''}`, 'success');
                     
                     updatePreviousData();
                 } else {
@@ -1405,7 +1393,7 @@
                     contentEl.innerHTML = `<div class="error-message">${data.message}</div>`;
                     
                     setModuleStatus(moduleId, 'failed');
-                    addTimeline(`❌ ${getModuleName(moduleId)}失败: ${data.message}`, 'error');
+                    addTimeline(`${getModuleName(moduleId)}失败: ${data.message}`, 'error');
                     
                     throw new Error(data.message);
                 }
@@ -1557,10 +1545,10 @@
                 await navigator.clipboard.writeText(content);
                 const btn = document.getElementById(btnId);
                 btn.classList.add('copied');
-                btn.textContent = '✅';
+                btn.textContent = '已复制';
                 setTimeout(() => {
                     btn.classList.remove('copied');
-                    btn.textContent = '📋';
+                    btn.textContent = '复制';
                 }, 2000);
             } catch {
                 alert('复制失败');
@@ -1637,7 +1625,7 @@
                     let html = '<div style="margin-bottom: 20px;">';
                     
                     if (reqToOriginal.length > 0) {
-                        html += '<h4 style="margin-bottom: 10px; color: #007bff;">📋 第一部分：条目化需求 → 原始需求</h4>';
+                        html += '<h4 style="margin-bottom: 10px; color: #007bff;">第一部分：条目化需求 → 原始需求</h4>';
                         html += '<table style="width:100%; border-collapse: collapse; font-size: 0.75rem; margin-bottom: 15px;">';
                         html += '<tr style="background: #e3f2fd;">';
                         html += '<th style="border: 1px solid #bbdefb; padding: 6px;">需求ID</th>';
@@ -1657,7 +1645,7 @@
                     }
                     
                     if (aadlToReq.length > 0) {
-                        html += '<h4 style="margin-bottom: 10px; color: #28a745;">🔗 第二部分：AADL组件 → 条目化需求</h4>';
+                        html += '<h4 style="margin-bottom: 10px; color: #28a745;">第二部分：AADL组件 → 条目化需求</h4>';
                         html += '<table style="width:100%; border-collapse: collapse; font-size: 0.75rem;">';
                         html += '<tr style="background: #d4edda;">';
                         html += '<th style="border: 1px solid #c3e6cb; padding: 6px;">需求ID</th>';
