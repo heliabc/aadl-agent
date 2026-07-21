@@ -6,6 +6,7 @@ import com.example.aadlagent.agent.AgentOutput;
 import com.example.aadlagent.client.LlmClient;
 import com.example.aadlagent.client.ModelService;
 import com.example.aadlagent.client.ModelType;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -361,7 +363,7 @@ public class AadlFixerAgent implements Agent<AgentInput, AgentOutput> {
         try {
             ObjectMapper mapper = new ObjectMapper();
             List<Map<String, Object>> errorList = mapper.readValue(jsonErrors, 
-                    new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {});
+                    new TypeReference<List<Map<String, Object>>>() {});
             
             StringBuilder formatted = new StringBuilder();
             for (int i = 0; i < errorList.size(); i++) {

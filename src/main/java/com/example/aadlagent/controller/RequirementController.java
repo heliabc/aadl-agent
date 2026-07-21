@@ -64,6 +64,7 @@ public class RequirementController {
         this.moduleAnalysisAgent = moduleAnalysisAgent;
         this.aadlGeneratorAgent = aadlGeneratorAgent;
         this.aadlFixerAgent = aadlFixerAgent;
+        this.aadlErrorParserAgent = aadlErrorParserAgent;
         this.docFileReader = docFileReader;
         this.fileConfig = fileConfig;
         this.modelService = modelService;

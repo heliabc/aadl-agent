@@ -18,7 +18,7 @@ file:
 
 ollama:
   base-url: http://localhost:11434
-  chat-model: qwen3:32b-instruct-q4_K_M
+  chat-model: qwen3:32b
   embedding-model: qwen3-embedding:latest
   timeout: 900000
 
