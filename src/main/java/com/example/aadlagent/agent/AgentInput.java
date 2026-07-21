@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,4 +24,17 @@ public class AgentInput {
     private String ragContext;
 
     private ModelType modelType;
+
+    private transient AtomicBoolean cancelled;
+
+    public boolean isCancelled() {
+        return cancelled != null && cancelled.get();
+    }
+
+    public void setCancelled(boolean cancelled) {
+        if (this.cancelled == null) {
+            this.cancelled = new AtomicBoolean();
+        }
+        this.cancelled.set(cancelled);
+    }
 }

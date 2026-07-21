@@ -73,6 +73,11 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
         String systemPrompt = prompt.buildPrompt(architectureJson, modulesJson, input.getRagContext());
         log.info("Prompt构建完成，长度: {} 字符", systemPrompt.length());
 
+        if (input.isCancelled()) {
+            log.info("任务已取消，AadlGeneratorAgent停止执行");
+            return AgentOutput.cancelled(input.getSessionId());
+        }
+
         log.info("----------------------------------------");
         log.info("正在调用大模型... (类型: {}, 模型: {})", modelType.name(), llmClient.getModelName());
 
@@ -81,6 +86,11 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
         long llmTime = System.currentTimeMillis() - llmStartTime;
 
         log.info("LLM调用完成，耗时: {}ms", llmTime);
+
+        if (input.isCancelled()) {
+            log.info("任务已取消，AadlGeneratorAgent停止执行");
+            return AgentOutput.cancelled(input.getSessionId());
+        }
 
         if (llmResponse == null || llmResponse.trim().isEmpty()) {
             long executionTime = System.currentTimeMillis() - startTime;

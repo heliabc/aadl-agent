@@ -14,6 +14,7 @@ import com.example.aadlagent.config.FileConfig;
 import com.example.aadlagent.rag.RagService;
 import com.example.aadlagent.session.ChatMessage;
 import com.example.aadlagent.session.SessionManager;
+import com.example.aadlagent.service.TaskCancellationService;
 import com.example.aadlagent.service.TraceabilityService;
 import com.example.aadlagent.util.DocFileReader;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +48,7 @@ public class RequirementController {
     private final RagService ragService;
     private final SessionManager sessionManager;
     private final TraceabilityService traceabilityService;
+    private final TaskCancellationService cancellationService;
 
     public RequirementController(RequirementAgent requirementAgent, AadlArchitectureAgent architectureAgent,
                                  ModuleAnalysisAgent moduleAnalysisAgent, AadlGeneratorAgent aadlGeneratorAgent,
@@ -54,7 +56,7 @@ public class RequirementController {
                                  DocFileReader docFileReader, FileConfig fileConfig, 
                                  ModelService modelService, DeepSeekConfig deepSeekConfig,
                                  RagService ragService, SessionManager sessionManager,
-                                 TraceabilityService traceabilityService) {
+                                 TraceabilityService traceabilityService, TaskCancellationService cancellationService) {
         this.requirementAgent = requirementAgent;
         this.architectureAgent = architectureAgent;
         this.moduleAnalysisAgent = moduleAnalysisAgent;
@@ -67,6 +69,7 @@ public class RequirementController {
         this.ragService = ragService;
         this.sessionManager = sessionManager;
         this.traceabilityService = traceabilityService;
+        this.cancellationService = cancellationService;
     }
 
     @PostMapping("/analyze")
@@ -99,14 +102,19 @@ public class RequirementController {
 
         sessionManager.addMessage(sessionId, ChatMessage.user(requirementDoc));
 
+        java.util.concurrent.atomic.AtomicBoolean cancellationFlag = cancellationService.registerTask(sessionId);
+
         AgentInput input = AgentInput.builder()
                 .sessionId(sessionId)
                 .content(requirementDoc)
                 .modelType(modelType)
                 .ragContext(ragContext)
+                .cancelled(cancellationFlag)
                 .build();
 
         AgentOutput output = requirementAgent.execute(input);
+
+        cancellationService.unregisterTask(sessionId);
 
         if (output.isSuccess()) {
             sessionManager.addMessage(sessionId, ChatMessage.assistant(output.getContent(), "RequirementAgent"));
@@ -309,14 +317,19 @@ public class RequirementController {
 
             sessionManager.addMessage(sessionId, ChatMessage.user("生成架构: " + fileName));
 
+            java.util.concurrent.atomic.AtomicBoolean cancellationFlag = cancellationService.registerTask(sessionId);
+
             AgentInput input = AgentInput.builder()
                     .sessionId(sessionId)
                     .content(requirementsJson)
                     .modelType(modelType)
                     .ragContext(ragContext)
+                    .cancelled(cancellationFlag)
                     .build();
 
             AgentOutput output = architectureAgent.execute(input);
+
+            cancellationService.unregisterTask(sessionId);
 
             if (output.isSuccess()) {
                 sessionManager.addMessage(sessionId, ChatMessage.assistant("架构生成成功", "AadlArchitectureAgent"));
@@ -406,15 +419,20 @@ public class RequirementController {
 
             sessionManager.addMessage(sessionId, ChatMessage.user("分析模块: " + requirementsFileName + " + " + architectureFileName));
 
+            java.util.concurrent.atomic.AtomicBoolean cancellationFlag = cancellationService.registerTask(sessionId);
+
             AgentInput input = AgentInput.builder()
                     .sessionId(sessionId)
                     .content(requirementsJson)
                     .metadata(architectureJson)
                     .modelType(modelType)
                     .ragContext(ragContext)
+                    .cancelled(cancellationFlag)
                     .build();
 
             AgentOutput output = moduleAnalysisAgent.execute(input);
+
+            cancellationService.unregisterTask(sessionId);
             
             if (output.isSuccess()) {
                 sessionManager.addMessage(sessionId, ChatMessage.assistant("模块分析成功", "ModuleAnalysisAgent"));
@@ -504,15 +522,20 @@ public class RequirementController {
 
             sessionManager.addMessage(sessionId, ChatMessage.user("生成AADL: " + architectureFileName + " + " + modulesFileName));
 
+            java.util.concurrent.atomic.AtomicBoolean cancellationFlag = cancellationService.registerTask(sessionId);
+
             AgentInput input = AgentInput.builder()
                     .sessionId(sessionId)
                     .content(architectureJson)
                     .metadata(modulesJson)
                     .modelType(modelType)
                     .ragContext(ragContext)
+                    .cancelled(cancellationFlag)
                     .build();
 
             AgentOutput output = aadlGeneratorAgent.execute(input);
+
+            cancellationService.unregisterTask(sessionId);
             
             if (output.isSuccess()) {
                 sessionManager.addMessage(sessionId, ChatMessage.assistant("AADL生成成功", "AadlGeneratorAgent"));
@@ -625,15 +648,20 @@ public class RequirementController {
 
             sessionManager.addMessage(sessionId, ChatMessage.user("修复AADL错误: " + (errors != null ? errors.size() : 0) + " 个问题"));
 
+            java.util.concurrent.atomic.AtomicBoolean cancellationFlag = cancellationService.registerTask(sessionId);
+
             AgentInput input = AgentInput.builder()
                     .sessionId(sessionId)
                     .content(architectureJson)
                     .metadata(modulesJson)
                     .ragContext(ragContext)
                     .modelType(modelType)
+                    .cancelled(cancellationFlag)
                     .build();
 
             AgentOutput output = aadlGeneratorAgent.execute(input);
+
+            cancellationService.unregisterTask(sessionId);
             
             if (output.isSuccess()) {
                 sessionManager.addMessage(sessionId, ChatMessage.assistant("AADL修复成功", "AadlGeneratorAgent"));
@@ -720,15 +748,20 @@ public class RequirementController {
 
             sessionManager.addMessage(sessionId, ChatMessage.user("修复AADL错误: " + errors.size() + " 个问题"));
 
+            java.util.concurrent.atomic.AtomicBoolean cancellationFlag = cancellationService.registerTask(sessionId);
+
             AgentInput input = AgentInput.builder()
                     .sessionId(sessionId)
                     .content(aadlContent)
                     .metadata(errorText)
                     .ragContext(ragContext)
                     .modelType(modelType)
+                    .cancelled(cancellationFlag)
                     .build();
 
             AgentOutput output = aadlFixerAgent.execute(input);
+
+            cancellationService.unregisterTask(sessionId);
 
             if (output.isSuccess()) {
                 sessionManager.addMessage(sessionId, ChatMessage.assistant("AADL修复成功", "AadlFixerAgent"));

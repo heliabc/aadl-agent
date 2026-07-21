@@ -2,6 +2,7 @@ package com.example.aadlagent.controller;
 
 import com.example.aadlagent.session.ChatMessage;
 import com.example.aadlagent.session.SessionManager;
+import com.example.aadlagent.service.TaskCancellationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,9 +17,11 @@ import java.util.Map;
 public class SessionController {
 
     private final SessionManager sessionManager;
+    private final TaskCancellationService cancellationService;
 
-    public SessionController(SessionManager sessionManager) {
+    public SessionController(SessionManager sessionManager, TaskCancellationService cancellationService) {
         this.sessionManager = sessionManager;
+        this.cancellationService = cancellationService;
     }
 
     @PostMapping("/create")
@@ -95,6 +98,32 @@ public class SessionController {
         response.put("success", true);
         response.put("count", sessionManager.getSessionCount());
         response.put("sessionIds", sessionManager.getAllSessionIds());
+        
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{sessionId}/cancel")
+    public ResponseEntity<Map<String, Object>> cancelTask(@PathVariable String sessionId) {
+        log.info("收到任务取消请求，sessionId: {}", sessionId);
+        
+        cancellationService.cancelTask(sessionId);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("sessionId", sessionId);
+        response.put("message", "任务取消请求已发送");
+        
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{sessionId}/cancelled")
+    public ResponseEntity<Map<String, Object>> isTaskCancelled(@PathVariable String sessionId) {
+        boolean cancelled = cancellationService.isCancelled(sessionId);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("sessionId", sessionId);
+        response.put("cancelled", cancelled);
         
         return ResponseEntity.ok(response);
     }

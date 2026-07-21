@@ -1,6 +1,5 @@
 package com.example.aadlagent.service;
 
-import com.example.aadlagent.client.LlmClient;
 import com.example.aadlagent.client.OllamaClient;
 import com.example.aadlagent.model.Requirement;
 import com.example.aadlagent.model.TraceabilityRecord;
@@ -21,34 +20,54 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Service
 public class TraceabilityService {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final Map<String, List<TraceabilityRecord>> traceabilityRecords = new ConcurrentHashMap<>();
+    
     private final OllamaClient ollamaClient;
-
+    
     @Value("${app.output.directory:./output}")
     private String outputDirectory;
-
-    private final ConcurrentHashMap<String, List<TraceabilityRecord>> traceabilityRecords = new ConcurrentHashMap<>();
 
     public TraceabilityService(OllamaClient ollamaClient) {
         this.ollamaClient = ollamaClient;
     }
 
+    private static final Pattern BULLET_PATTERN = Pattern.compile("^([\\-\\*•+>]|\\d+[\\.\\)）、]|\\([a-zA-Z0-9]+\\)|[一二三四五六七八九十]+[、]).*");
+    private static final Pattern NUMBER_UNIT_PATTERN = Pattern.compile("\\d+(?:\\.\\d+)?\\s*(?:微秒|毫秒|秒|KB|MB|GB|%|层|位|px|hz|khz|mhz)?", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PUNCTUATION_SPLIT = Pattern.compile("(?<=[。！？；\\.!?;])\\s*");
+    private static final Pattern TOKEN_CLEAN_PATTERN = Pattern.compile("[\\s,，。；;、！？？：:()【】《》<>\\-]+");
+
+    private static final Set<String> STOP_WORDS = new HashSet<>(Arrays.asList(
+            "的", "了", "在", "是", "我", "有", "和", "人", "这", "主", "以", "对于", "关于", "一个", "个", "中"
+    ));
+
     public void addRequirementTraceability(String sessionId, String originalRequirement, String requirementsJson) {
+        if (sessionId == null || originalRequirement == null || requirementsJson == null) {
+            log.warn("输入参数存在空值，跳过追溯记录添加");
+            return;
+        }
+
         try {
             List<Requirement> requirements = objectMapper.readValue(requirementsJson, new TypeReference<List<Requirement>>() {});
-            
-            List<TraceabilityRecord> records = traceabilityRecords.computeIfAbsent(sessionId, k -> new ArrayList<>());
-            
+            if (requirements == null || requirements.isEmpty()) {
+                return;
+            }
+
+            List<TraceabilityRecord> records = traceabilityRecords.computeIfAbsent(sessionId, k -> Collections.synchronizedList(new ArrayList<>()));
             List<String> originalSentences = splitIntoSentences(originalRequirement);
-            
+
+            Map<String, Double> localIdfWeights = calculateLocalIdf(originalSentences);
+
             for (Requirement req : requirements) {
-                String matchedSentence = findBestMatchingSentence(req, originalSentences);
-                
+                String matchedSentence = findBestMatchingSentence(req, originalSentences, localIdfWeights);
+
                 TraceabilityRecord record = TraceabilityRecord.builder()
                         .id(UUID.randomUUID().toString())
                         .originalRequirement(truncate(matchedSentence, 800))
@@ -60,239 +79,194 @@ public class TraceabilityService {
                         .build();
                 records.add(record);
             }
-            
-            log.info("添加了 {} 条需求→原始需求追溯记录，会话ID: {}", requirements.size(), sessionId);
+
+            log.info("成功添加了 {} 条追溯记录，会话ID: {}", requirements.size(), sessionId);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            log.error("解析需求JSON失败: {}", e.getMessage());
         } catch (Exception e) {
-            log.error("添加需求追溯记录失败: {}", e.getMessage());
+            log.error("添加需求追溯记录时发生未知异常: ", e);
         }
     }
 
     private List<String> splitIntoSentences(String text) {
         List<String> sentences = new ArrayList<>();
-        
-        String[] rawSentences = text.split("(?<=[。！？\\.!?])\\s*");
-        
-        for (String s : rawSentences) {
-            s = s.trim();
-            if (!s.isEmpty()) {
-                sentences.add(s);
-            }
+        if (text == null || text.trim().isEmpty()) {
+            return sentences;
         }
-        
-        if (sentences.isEmpty()) {
-            String[] rawParagraphs = text.split("\\n\\s*\\n");
-            for (String p : rawParagraphs) {
-                p = p.trim();
-                if (!p.isEmpty()) {
-                    sentences.add(p);
+
+        text = text.replace("\r\n", "\n").replace("\r", "\n");
+        String[] lines = text.split("\n");
+
+        for (String line : lines) {
+            line = line.trim();
+            if (line.isEmpty()) {
+                continue;
+            }
+
+            if (isBulletPoint(line)) {
+                sentences.add(line);
+            } else {
+                String[] parts = PUNCTUATION_SPLIT.split(line);
+                for (String part : parts) {
+                    String trimmedPart = part.trim();
+                    if (!trimmedPart.isEmpty()) {
+                        sentences.add(trimmedPart);
+                    }
                 }
             }
         }
-        
-        if (sentences.isEmpty()) {
-            String[] lines = text.split("\\n");
-            for (String line : lines) {
-                line = line.trim();
-                if (!line.isEmpty()) {
-                    sentences.add(line);
-                }
-            }
-        }
-        
-        if (sentences.isEmpty()) {
-            sentences.add(text);
-        }
-        
+
         List<String> mergedSentences = new ArrayList<>();
         for (int i = 0; i < sentences.size(); i++) {
-            String sentence = sentences.get(i);
-            if (sentence.length() < 15 && i < sentences.size() - 1) {
-                String nextSentence = sentences.get(i + 1);
-                mergedSentences.add(sentence + " " + nextSentence);
+            String current = sentences.get(i);
+            
+            if (shouldMergeWithNext(current, i, sentences)) {
+                mergedSentences.add(current + " " + sentences.get(i + 1));
                 i++;
             } else {
-                mergedSentences.add(sentence);
+                mergedSentences.add(current);
             }
         }
-        
+
         return mergedSentences;
     }
 
-    private String findBestMatchingSentence(Requirement req, List<String> sentences) {
+    private boolean isBulletPoint(String line) {
+        return BULLET_PATTERN.matcher(line).matches();
+    }
+
+    private boolean shouldMergeWithNext(String s, int index, List<String> all) {
+        if (s.length() >= 15) return false;
+        if (index >= all.size() - 1) return false;
+        if (isBulletPoint(s)) return false;
+        if (s.contains("：") || s.contains(":")) return false;
+        return true;
+    }
+
+    private Map<String, Double> calculateLocalIdf(List<String> sentences) {
+        Map<String, Integer> docFrequency = new HashMap<>();
+        int totalDocs = sentences.size();
+
+        for (String sentence : sentences) {
+            Set<String> uniqueTokens = tokenizeToSet(sentence.toLowerCase());
+            for (String token : uniqueTokens) {
+                docFrequency.put(token, docFrequency.getOrDefault(token, 0) + 1);
+            }
+        }
+
+        Map<String, Double> weights = new HashMap<>();
+        for (Map.Entry<String, Integer> entry : docFrequency.entrySet()) {
+            double idf = Math.log((double) (totalDocs + 1) / (entry.getValue() + 0.5));
+            weights.put(entry.getKey(), Math.max(idf, 0.2));
+        }
+        return weights;
+    }
+
+    private String findBestMatchingSentence(Requirement req, List<String> sentences, Map<String, Double> localIdfWeights) {
         if (sentences == null || sentences.isEmpty()) {
             return "";
         }
-        
-        String reqText = (req.getTitle() + " " + (req.getDescription() != null ? req.getDescription() : "")).toLowerCase();
-        
-        double bestScore = 0.0;
+
+        String desc = req.getDescription() != null ? req.getDescription() : "";
+        String reqText = (req.getTitle() + " " + desc).toLowerCase();
+
+        Set<String> reqNumbers = extractNumbersAndUnits(reqText);
+
+        double bestScore = -1.0;
         String bestSentence = sentences.get(0);
-        int bestSentenceIndex = 0;
-        
-        for (int i = 0; i < sentences.size(); i++) {
-            String sentence = sentences.get(i);
-            double score = calculateSimilarity(reqText, sentence.toLowerCase());
+
+        for (String sentence : sentences) {
+            String candidateLower = sentence.toLowerCase();
             
-            if (score > bestScore) {
-                bestScore = score;
+            double similarity = calculateWeightedSimilarity(reqText, candidateLower, localIdfWeights);
+
+            Set<String> candidateNumbers = extractNumbersAndUnits(candidateLower);
+            double numberPenaltyOrBonus = calculateNumberScore(reqNumbers, candidateNumbers);
+
+            double finalScore = similarity + numberPenaltyOrBonus;
+
+            if (finalScore > bestScore) {
+                bestScore = finalScore;
                 bestSentence = sentence;
-                bestSentenceIndex = i;
             }
         }
-        
-        if (bestScore < 0.05 && sentences.size() > 1) {
-            String prevSentence = bestSentenceIndex > 0 ? sentences.get(bestSentenceIndex - 1) : "";
-            String nextSentence = bestSentenceIndex < sentences.size() - 1 ? sentences.get(bestSentenceIndex + 1) : "";
-            
-            if (!prevSentence.isEmpty()) {
-                double prevScore = calculateSimilarity(reqText, prevSentence.toLowerCase());
-                if (prevScore > bestScore) {
-                    return prevSentence;
-                }
-            }
-            
-            if (!nextSentence.isEmpty()) {
-                double nextScore = calculateSimilarity(reqText, nextSentence.toLowerCase());
-                if (nextScore > bestScore) {
-                    return nextSentence;
-                }
-            }
-        }
-        
+
         return bestSentence;
     }
 
-    private double calculateSimilarity(String text1, String text2) {
-        if (text1.isEmpty() || text2.isEmpty()) {
-            return 0.0;
-        }
-        
-        List<String> words1 = tokenize(text1);
-        List<String> words2 = tokenize(text2);
-        
+    private double calculateWeightedSimilarity(String text1, String text2, Map<String, Double> weights) {
+        Set<String> words1 = tokenizeToSet(text1);
+        Set<String> words2 = tokenizeToSet(text2);
+
         if (words1.isEmpty() || words2.isEmpty()) {
             return 0.0;
         }
-        
-        double jaccardScore = calculateJaccardSimilarity(words1, words2);
-        
-        double substringScore = calculateSubstringSimilarity(text1, text2);
-        
-        double exactMatchScore = calculateExactMatchScore(words1, words2);
-        
-        double orderScore = calculateOrderScore(words1, words2);
-        
-        double combinedScore = (jaccardScore * 0.4) + (substringScore * 0.3) + (exactMatchScore * 0.2) + (orderScore * 0.1);
-        
-        return Math.min(combinedScore, 1.0);
+
+        double intersectionWeight = 0.0;
+        double unionWeight = 0.0;
+
+        Set<String> allWords = new HashSet<>(words1);
+        allWords.addAll(words2);
+
+        for (String word : allWords) {
+            double weight = weights.getOrDefault(word, 1.0);
+            boolean in1 = words1.contains(word);
+            boolean in2 = words2.contains(word);
+
+            if (in1 && in2) {
+                intersectionWeight += weight;
+            }
+            unionWeight += weight;
+        }
+
+        return unionWeight == 0 ? 0.0 : intersectionWeight / unionWeight;
     }
 
-    private List<String> tokenize(String text) {
-        List<String> tokens = new ArrayList<>();
-        
-        String[] rawTokens = text.split("[\\s,，。；;、！？？：:()【】《》<>\\-]+");
+    private double calculateNumberScore(Set<String> reqNumbers, Set<String> candidateNumbers) {
+        if (reqNumbers.isEmpty() && candidateNumbers.isEmpty()) {
+            return 0.0;
+        }
+
+        Set<String> common = new HashSet<>(reqNumbers);
+        common.retainAll(candidateNumbers);
+
+        if (!reqNumbers.isEmpty() && common.isEmpty()) {
+            return -0.3;
+        }
+
+        return common.size() * 0.25;
+    }
+
+    private Set<String> extractNumbersAndUnits(String text) {
+        Set<String> numbers = new HashSet<>();
+        Matcher matcher = NUMBER_UNIT_PATTERN.matcher(text);
+        while (matcher.find()) {
+            numbers.add(matcher.group().replaceAll("\\s+", ""));
+        }
+        return numbers;
+    }
+
+    private Set<String> tokenizeToSet(String text) {
+        Set<String> tokens = new HashSet<>();
+        String[] rawTokens = TOKEN_CLEAN_PATTERN.split(text);
         for (String token : rawTokens) {
-            token = token.trim();
-            if (token.length() >= 2) {
-                tokens.add(token);
+            String trimmed = token.trim();
+            if (trimmed.length() >= 2 && !STOP_WORDS.contains(trimmed)) {
+                tokens.add(trimmed);
             }
         }
         
-        List<String> ngrams = generateNgrams(text, 2);
-        for (String ngram : ngrams) {
-            if (!tokens.contains(ngram)) {
-                tokens.add(ngram);
-            }
-        }
-        
+        tokens.addAll(generateNgrams(text, 2));
         return tokens;
     }
 
     private List<String> generateNgrams(String text, int n) {
         List<String> ngrams = new ArrayList<>();
-        text = text.replaceAll("[\\s,，。；;、！？：:()【】《》<>\\-]+", "");
-        
-        for (int i = 0; i <= text.length() - n; i++) {
-            ngrams.add(text.substring(i, i + n));
+        String cleaned = TOKEN_CLEAN_PATTERN.matcher(text).replaceAll("");
+        for (int i = 0; i <= cleaned.length() - n; i++) {
+            ngrams.add(cleaned.substring(i, i + n));
         }
-        
         return ngrams;
-    }
-
-    private double calculateJaccardSimilarity(List<String> words1, List<String> words2) {
-        int intersection = 0;
-        int union = words1.size() + words2.size();
-        
-        for (String word1 : words1) {
-            for (String word2 : words2) {
-                if (word1.equals(word2) || word1.contains(word2) || word2.contains(word1)) {
-                    intersection++;
-                    break;
-                }
-            }
-        }
-        
-        union -= intersection;
-        
-        return union == 0 ? 0.0 : (double) intersection / union;
-    }
-
-    private double calculateSubstringSimilarity(String text1, String text2) {
-        double score = 0.0;
-        int matchCount = 0;
-        
-        for (int i = 0; i < text1.length() - 2; i++) {
-            String substring = text1.substring(i, i + 3);
-            if (text2.contains(substring)) {
-                matchCount++;
-            }
-        }
-        
-        if (text1.length() > 3) {
-            score = (double) matchCount / (text1.length() - 2);
-        }
-        
-        if (text2.contains(text1) || text1.contains(text2)) {
-            score += 0.3;
-        }
-        
-        return Math.min(score, 1.0);
-    }
-
-    private double calculateExactMatchScore(List<String> words1, List<String> words2) {
-        int exactMatches = 0;
-        int longWordCount = 0;
-        
-        for (String word1 : words1) {
-            if (word1.length() >= 3) {
-                longWordCount++;
-                for (String word2 : words2) {
-                    if (word1.equals(word2)) {
-                        exactMatches++;
-                        break;
-                    }
-                }
-            }
-        }
-        
-        return longWordCount == 0 ? 0.0 : (double) exactMatches / longWordCount;
-    }
-
-    private double calculateOrderScore(List<String> words1, List<String> words2) {
-        int orderMatches = 0;
-        int possibleMatches = 0;
-        
-        for (int i = 0; i < words1.size() - 1; i++) {
-            for (int j = 0; j < words2.size() - 1; j++) {
-                if (words1.get(i).equals(words2.get(j)) && words1.get(i + 1).equals(words2.get(j + 1))) {
-                    orderMatches++;
-                    break;
-                }
-            }
-            possibleMatches++;
-        }
-        
-        return possibleMatches == 0 ? 0.0 : (double) orderMatches / possibleMatches;
     }
 
     public void addAadlTraceability(String sessionId, String aadlContent) {
@@ -640,6 +614,23 @@ public class TraceabilityService {
             }
         }
         return count;
+    }
+
+    private double calculateSimilarity(String text1, String text2) {
+        Set<String> words1 = tokenizeToSet(text1);
+        Set<String> words2 = tokenizeToSet(text2);
+        
+        if (words1.isEmpty() || words2.isEmpty()) {
+            return 0.0;
+        }
+        
+        Set<String> intersection = new HashSet<>(words1);
+        intersection.retainAll(words2);
+        
+        Set<String> union = new HashSet<>(words1);
+        union.addAll(words2);
+        
+        return union.isEmpty() ? 0.0 : (double) intersection.size() / union.size();
     }
 
     private static class AadlComponentInfo {

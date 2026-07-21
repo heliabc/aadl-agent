@@ -22,6 +22,8 @@ public class AgentOutput {
 
     private long executionTime;
 
+    private boolean cancelled;
+
     public static AgentOutput success(String sessionId, String content, long executionTime) {
         return AgentOutput.builder()
                 .sessionId(sessionId)
@@ -36,6 +38,15 @@ public class AgentOutput {
                 .sessionId(sessionId)
                 .success(false)
                 .errorMessage(errorMessage)
+                .build();
+    }
+
+    public static AgentOutput cancelled(String sessionId) {
+        return AgentOutput.builder()
+                .sessionId(sessionId)
+                .success(false)
+                .errorMessage("任务已被取消")
+                .cancelled(true)
                 .build();
     }
 }
