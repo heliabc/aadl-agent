@@ -5,6 +5,7 @@ system_prompt: |
 
 task_description: |
   请分析以下AADL代码和错误列表，对代码进行精确修复。
+  错误列表可能是结构化的JSON格式或原始文本格式，请都能正确处理。
 
 fix_guidelines:
   content: |
@@ -16,27 +17,44 @@ fix_guidelines:
     5. 添加缺失的分号和end语句
     6. 修复端口类型不匹配问题
     7. 确保package名称与end语句一致
+    8. 注意错误中提供的行号和组件名称，精确定位问题
+    9. 根据错误类型采取相应的修复策略
 
 common_fixes:
-  - title: 缺少分号
+  - title: 缺少分号 (MISSING_SEMICOLON)
     error_type: 语法错误
     error_example: 'component thread SensorReader is features DataOut: out data port SensorData end SensorReader'
     fix_solution: 在语句末尾添加分号
 
-  - title: 缺少end语句
+  - title: 缺少end语句 (MISSING_END)
     error_type: 语法错误
     error_example: 'component thread SensorReader is features DataOut: out data port SensorData;'
     fix_solution: 在组件定义末尾添加 end SensorReader;
 
-  - title: 端口类型不匹配
+  - title: 端口类型不匹配 (TYPE_MISMATCH)
     error_type: 语义错误
     error_example: connections port Sensor.DataOut -> Processor.ControlIn;
     fix_solution: 确保连接的端口类型一致，数据端口只能连接到数据端口
 
-  - title: package名称不匹配
+  - title: package名称不匹配 (VALIDATION_ERROR)
     error_type: 语法错误
     error_example: package MySystem ... end WrongName;
     fix_solution: 确保end语句中的名称与package名称一致
+
+  - title: 未定义组件 (UNDEFINED_COMPONENT)
+    error_type: 语义错误
+    error_example: 'subcomponents MyComp: system NonExistent.impl;'
+    fix_solution: 添加组件声明或修改引用的组件名称
+
+  - title: 连接语法错误 (INVALID_CONNECTION)
+    error_type: 语法错误
+    error_example: 'connections port A.X -> B.Y;'
+    fix_solution: 检查端口是否存在，确保连接语法正确
+
+  - title: 标识符无效 (INVALID_IDENTIFIER)
+    error_type: 语法错误
+    error_example: 'system system'
+    fix_solution: 修改标识符名称，避免使用AADL保留关键字
 
 output_instruction: |
   请只输出修复后的完整AADL代码，不要包含任何解释或说明。

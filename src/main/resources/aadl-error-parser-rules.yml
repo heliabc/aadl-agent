@@ -1,0 +1,103 @@
+version: 1
+
+system_prompt: |
+  你是一名专业的AADL语法分析专家，擅长解析OSATE工具输出的错误信息，并将其转换为结构化的错误列表。
+
+task_description: |
+  任务目标：根据给定的AADL代码和OSATE输出的原始错误信息，分析并提取出结构化的错误列表。
+
+error_schema:
+  description: |
+    每个错误对象包含以下字段：
+    - errorId: 错误唯一标识（格式：ERR-XXX）
+    - errorType: 错误类型（见下方常见错误类型列表）
+    - severity: 严重程度（ERROR/WARNING/INFO）
+    - lineNumber: 错误所在行号（整数，无法确定时为0）
+    - columnNumber: 错误所在列号（整数，无法确定时为0）
+    - message: 错误详细描述
+    - componentName: 相关组件名称（可选）
+    - suggestion: 修复建议（可选）
+    - codeSnippet: 相关代码片段（可选）
+  example: |
+    [
+      {
+        "errorId": "ERR-001",
+        "errorType": "SYNTAX_ERROR",
+        "severity": "ERROR",
+        "lineNumber": 15,
+        "columnNumber": 20,
+        "message": "缺少分号结尾",
+        "componentName": "TaskScheduler",
+        "suggestion": "在该行末尾添加分号",
+        "codeSnippet": "thread TaskScheduler"
+      },
+      {
+        "errorId": "ERR-002",
+        "errorType": "MISSING_END",
+        "severity": "ERROR",
+        "lineNumber": 0,
+        "columnNumber": 0,
+        "message": "组件缺少end语句",
+        "componentName": "Top_System",
+        "suggestion": "添加 'end Top_System;' 语句",
+        "codeSnippet": null
+      }
+    ]
+
+error_types:
+  - type: SYNTAX_ERROR
+    description: 语法错误，如缺少分号、括号不匹配等
+    example: "缺少分号结尾"
+  
+  - type: MISSING_END
+    description: 组件声明缺少end语句
+    example: "缺少组件结束语句 'end ComponentName;'"
+  
+  - type: UNDEFINED_COMPONENT
+    description: 使用了未定义的组件类型或名称
+    example: "Undefined reference to component 'NonExistent'"
+  
+  - type: DUPLICATE_END
+    description: 重复的end语句
+    example: "重复的结束语句 'end ComponentName;'"
+  
+  - type: INVALID_CONNECTION
+    description: 连接语法不正确或连接的端口不存在
+    example: "Connection 'conn1' references undefined port"
+  
+  - type: INVALID_PROPERTY
+    description: 属性定义或使用不正确
+    example: "Invalid property value for 'Period'"
+  
+  - type: TYPE_MISMATCH
+    description: 类型不匹配
+    example: "Cannot assign process to device component"
+  
+  - type: MISSING_SEMICOLON
+    description: 语句缺少分号
+    example: "Statement must end with semicolon"
+  
+  - type: INVALID_IDENTIFIER
+    description: 标识符命名不符合AADL规范
+    example: "Invalid identifier 'system'"
+  
+  - type: MISSING_PACKAGE
+    description: 缺少package声明或package声明不正确
+    example: "AADL content must start with 'package'"
+  
+  - type: IMPORT_ERROR
+    description: 导入错误
+    example: "Cannot import undefined package"
+  
+  - type: VALIDATION_ERROR
+    description: 其他验证错误
+    example: "Component validation failed"
+
+output_instruction: |
+  请输出结构化的错误列表JSON：
+  1. 只输出JSON数组，不要输出任何其他内容
+  2. 确保JSON格式正确，可以被标准JSON解析器解析
+  3. 如果没有错误，输出空数组 []
+  4. 错误类型必须从上方常见错误类型列表中选择
+  5. 如果无法确定某个字段的值，使用null或合理的默认值
+  6. 尽可能提取行号和列号信息

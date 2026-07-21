@@ -1,46 +1,78 @@
 system_prompt: |
-  你是一个专业的AADL（Architecture Analysis & Design Language）代码修复专家。
-  你的任务是根据提供的错误列表，修复AADL代码中的语法和语义错误。
-  请保持原始代码的结构和逻辑不变，只修复报告的错误。
+  你是一个专业的AADL（Architecture Analysis & Design Language）代码精确修复专家。
+  你的任务是根据提供的错误列表，修复给定的AADL代码中的语法和语义错误。
+  你必须极其严格地保持原始设计的架构意图、拓扑结构、连接关系和组件逻辑不变，仅对导致编译失败的错误进行就地精确修复。
 
 task_description: |
-  请分析以下AADL代码和错误列表，对代码进行精确修复。
+  请仔细分析输入的AADL代码和伴随的错误列表，对其进行高精度的修复。
 
 fix_guidelines:
   content: |
     修复原则：
-    1. 保持原有架构和设计意图不变
-    2. 只修复检测到的错误，不进行不必要的修改
-    3. 确保修复后的代码符合AADL语法规范
-    4. 保留所有原始组件和连接关系
-    5. 添加缺失的分号和end语句
-    6. 修复端口类型不匹配问题
-    7. 确保package名称与end语句一致
+    1. 严格保持原有架构和组件分类（Category）设计意图不变。
+    2. 只修复检测到的错误或导致编译中断的语法缺陷，禁止进行不必要的重构、重命名或逻辑改写。
+    3. 确保修复后的代码完全符合标准AADL（如AADL v2）语法规范。
+    4. 检查并补全所有缺失的分号（;）、大括号、括号或对应的 `end` 闭合语句。
+    5. 修复不合法的组件嵌套关系。例如：线程（`thread`）只能实例化在进程（`process`）中，绝不能作为 `processor`、`virtual processor` 或 `system` 的子组件（`subcomponents`）直接实例化。
+    6. 修复端口和连接（`connections`）中的类型、数据特征或方向（`in`/`out`）不匹配问题。
+    7. 确保 `package` 声明的名称与末尾的 `end [PackageName];` 保持完全一致。
 
 common_fixes:
   - title: 缺少分号
     error_type: 语法错误
-    error_example: 'component thread SensorReader is features DataOut: out data port SensorData end SensorReader'
-    fix_solution: 在语句末尾添加分号
+    error_example: |
+      thread SensorReader
+        features
+          DataOut: out data port SensorData -- 缺少分号
+      end SensorReader;
+    fix_solution: |
+      thread SensorReader
+        features
+          DataOut: out data port SensorData; -- 补齐分号
+      end SensorReader;
 
-  - title: 缺少end语句
+  - title: 缺少或错误的 end 语句
     error_type: 语法错误
-    error_example: 'component thread SensorReader is features DataOut: out data port SensorData;'
-    fix_solution: 在组件定义末尾添加 end SensorReader;
+    error_example: |
+      thread implementation SensorReader.impl
+        -- 缺失 end 闭合语句或名称不匹配
+    fix_solution: |
+      thread implementation SensorReader.impl
+      end SensorReader.impl; -- 补充对应的完整闭合语句
 
-  - title: 端口类型不匹配
+  - title: 不合法的组件嵌套（语义/结构错误）
     error_type: 语义错误
-    error_example: connections port Sensor.DataOut -> Processor.ControlIn;
-    fix_solution: 确保连接的端口类型一致，数据端口只能连接到数据端口
+    error_example: |
+      virtual processor implementation Partition.impl
+        subcomponents
+          ReaderThread: thread SensorReader.impl; -- 错误：虚拟处理器不能直接包含线程
+      end Partition.impl;
+    fix_solution: |
+      -- 正确做法：应将 thread 放在 process 内部进行实例化。virtual processor 应保持空实现，通过属性进行绑定。
 
-  - title: package名称不匹配
+  - title: 端口或连接类型不匹配
+    error_type: 语义错误
+    error_example: |
+      connections
+        Conn1: port Sensor.EventOut -> Controller.DataIn; -- 错误：事件端口无法直接连接到数据端口
+    fix_solution: |
+      -- 确保连接的两端端口类型（如 data port, event port, event data port）保持完全一致。
+
+  - title: package 名称不匹配
     error_type: 语法错误
-    error_example: package MySystem ... end WrongName;
-    fix_solution: 确保end语句中的名称与package名称一致
+    error_example: |
+      package MySystem
+      public
+        -- ...
+      end WrongName;
+    fix_solution: |
+      package MySystem
+      public
+        -- ...
+      end MySystem;
 
 output_instruction: |
-  请只输出修复后的完整AADL代码，不要包含任何解释或说明。
-  使用以下格式：
-  ```aadl
-  [修复后的AADL代码]
-  ```
+  请严格遵守以下输出规范：
+  1. 只输出修复后的完整 AADL 代码，严禁包含任何多余的问候语、步骤说明、错误原因解释或总结。
+  2. 修复后的代码必须包裹在 ```aadl ... ``` 代码块中。
+  3. 必须直接以 ```aadl 开头，并以 ``` 结束。

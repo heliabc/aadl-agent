@@ -1,5 +1,6 @@
 package com.example.aadlplugin;
 
+import com.example.aadlplugin.agent.aadl.AadlErrorParserAgent;
 import com.example.aadlplugin.agent.aadl.AadlFixerAgent;
 import com.example.aadlplugin.agent.aadl.AadlGeneratorAgent;
 import com.example.aadlplugin.agent.architecture.AadlArchitectureAgent;
@@ -38,6 +39,7 @@ public class Activator extends AbstractUIPlugin {
     private ModuleAnalysisAgent moduleAnalysisAgent;
     private AadlGeneratorAgent aadlGeneratorAgent;
     private AadlFixerAgent aadlFixerAgent;
+    private AadlErrorParserAgent aadlErrorParserAgent;
 
     private static final Logger log = Logger.getLogger(Activator.class.getName());
 
@@ -86,7 +88,8 @@ public class Activator extends AbstractUIPlugin {
             VectorSearchService vectorSearchService = new VectorSearchService(embeddingService, ragConfig);
             vectorSearchService.init();
 
-            knowledgeBaseManager = new KnowledgeBaseManager(embeddingService, qdrantVectorStore);
+            knowledgeBaseManager = new KnowledgeBaseManager(embeddingService, qdrantVectorStore, 
+                    pluginStatePath, true);
             knowledgeBaseManager.init();
 
             ragService = new RagService(queryRewriter, qdrantVectorStore, vectorSearchService, 
@@ -100,6 +103,7 @@ public class Activator extends AbstractUIPlugin {
             moduleAnalysisAgent = new ModuleAnalysisAgent(modelService);
             aadlGeneratorAgent = new AadlGeneratorAgent(modelService);
             aadlFixerAgent = new AadlFixerAgent(modelService);
+            aadlErrorParserAgent = new AadlErrorParserAgent(modelService);
 
             log.info("AADL Plugin services initialized successfully");
         } catch (Exception e) {
@@ -160,6 +164,10 @@ public class Activator extends AbstractUIPlugin {
 
     public AadlFixerAgent getAadlFixerAgent() {
         return aadlFixerAgent;
+    }
+
+    public AadlErrorParserAgent getAadlErrorParserAgent() {
+        return aadlErrorParserAgent;
     }
 
     public String executeAgent(String requirement, ModelType modelType) {

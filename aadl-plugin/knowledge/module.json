@@ -1,0 +1,55 @@
+{
+  "agentType": "module",
+  "basics": [
+    {
+      "category": "Hierarchy_Path_Extraction",
+      "content": "组件层次(component_hierarchy)必须是一条从AADL架构树根节点到当前模块节点的精确完整路径。数组的第一个元素永远是'System'，最后一个元素是该模块在架构树中的名称(name)。绝不允许捏造架构树中不存在的层级或节点名称。"
+    },
+    {
+      "category": "Sub_Components_Logic",
+      "content": "内部子组件(sub_components)的提取必须严格依据AADL架构树。如果当前模块对应的是一个叶子节点（如 type 为 'thread' 或 'device'），则必须输出空数组 []；如果当前模块对应的是复合节点（如 'process' 或 'system'），则填入该节点在树中 children 数组内的直接子节点名称。"
+    },
+    {
+      "category": "Requirement_Traceability",
+      "content": "模块功能说明(function_description)必须具备双向追溯能力。描述的开头必须明确声明实现了哪个或哪些需求，固定格式为：'实现REQ-XXX，[具体功能描述]'。功能描述内容必须忠实于输入的需求描述，不可自行发散捏造不存在的技术指标。"
+    },
+    {
+      "category": "Related_Components_Inference",
+      "content": "关联组件(related_components)需要基于需求语义和系统工程常识进行推理。关联组件通常包括：1. 需求中明确提到的硬件设备或总线（如Sensor、SPI）；2. 同一个 Process 下进行数据交互的其他 Thread（如数据采集需要关联数据处理）；3. 依赖的底层服务（如调度器依赖定时器硬件）。如果没有明确关联，则输出空数组 []。"
+    },
+    {
+      "category": "Format_Strictness",
+      "content": "必须严格输出纯 JSON 对象，不能包含Markdown标记。对于没有数据的数组字段（如 sub_components 或 related_components），必须严格使用空数组 []，绝对不允许输出 null 或直接省略该字段。"
+    }
+  ],
+  "examples": [
+    {
+      "scenario": "核心软件模块分析（提取底层Thread，关联系统基础服务）",
+      "input": "【需求】[{\"requirementId\": \"REQ-001\", \"description\": \"系统应支持多任务并发执行，采用抢占式优先级调度算法，并提供任务创建、删除、挂起和恢复的API接口\"}]\n【AADL树】{\"name\": \"System\", \"children\": [{\"name\": \"MainProcessor\", \"children\": [{\"name\": \"KernelProcess\", \"children\": [{\"name\": \"TaskScheduler\"}, {\"name\": \"TimerManager\"}]}]}]}",
+      "goldenOutput": "{\n  \"modules\": [\n    {\n      \"module_name\": \"任务调度模块\",\n      \"component_hierarchy\": [\"System\", \"MainProcessor\", \"KernelProcess\", \"TaskScheduler\"],\n      \"sub_components\": [],\n      \"function_description\": \"实现REQ-001，支持多任务并发执行，采用抢占式优先级调度算法，确保高优先级任务能够及时响应，并提供任务创建、删除、挂起和恢复的API接口\",\n      \"related_components\": [\"TimerManager\", \"HardwareTimer\", \"InterruptHandler\"]\n    }\n  ]\n}"
+    },
+    {
+      "scenario": "跨软硬件边界的功能模块分析（提取Thread并关联Device和Bus）",
+      "input": "【需求】[{\"requirementId\": \"REQ-005\", \"description\": \"系统需每隔100ms通过I2C总线读取一次陀螺仪传感器的数据\"}]\n【AADL树】{\"name\": \"System\", \"children\": [{\"name\": \"FlightProcessor\", \"children\": [{\"name\": \"FlightProcess\", \"children\": [{\"name\": \"GyroReader\"}]}]}, {\"name\": \"GyroSensor\"}, {\"name\": \"I2C_Bus\"}]}",
+      "goldenOutput": "{\n  \"modules\": [\n    {\n      \"module_name\": \"陀螺仪数据读取模块\",\n      \"component_hierarchy\": [\"System\", \"FlightProcessor\", \"FlightProcess\", \"GyroReader\"],\n      \"sub_components\": [],\n      \"function_description\": \"实现REQ-005，按照100ms的周期频率，通过I2C总线实时读取陀螺仪传感器的姿态数据\",\n      \"related_components\": [\"GyroSensor\", \"I2C_Bus\", \"TimerManager\"]\n    }\n  ]\n}"
+    }
+  ],
+  "errorCorrections": [
+    {
+      "errorType": "Hierarchy_Hallucination",
+      "badBehavior": "捏造了 AADL 树中根本不存在的路径。例如树中只有 [System -> CPU -> Process -> Thread]，模型却输出了 [\"System\", \"SoftwareLayer\", \"Thread\"]。",
+      "correctionRule": "component_hierarchy 必须且只能从输入的 AADL JSON 树中提取节点 name。严禁根据自然语言常识自行脑补中间层级，必须 100% 忠实于架构树的物理拓扑。"
+    },
+    {
+      "errorType": "Confusing_Sub_And_Related",
+      "badBehavior": "将模块交互的其他组件错填入 sub_components 中。例如将 'I2C_Bus' 填入了 'GyroReader' 线程的 sub_components 中。",
+      "correctionRule": "sub_components 表示的是'包含'关系（父子关系），通常叶子节点（如 Thread）该字段必为空 []。与其他组件的交互、通信或依赖关系必须统一填入 related_components（兄弟或跨层关系）中。"
+    },
+    {
+      "errorType": "Missing_Requirement_Trace",
+      "badBehavior": "在 function_description 中直接描述功能，忘记了关联需求编号。例如直接写：\"负责读取传感器数据并滤波\"。",
+      "correctionRule": "强制追溯原则：每个模块的功能描述都必须以 '实现REQ-XXX，' 开头，以此建立架构设计对原始需求的追溯矩阵（Traceability Matrix）。"
+    }
+  ],
+  "lastModified": "2026-07-09T00:00:00"
+}

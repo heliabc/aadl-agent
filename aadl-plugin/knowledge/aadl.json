@@ -1,0 +1,117 @@
+{
+  "agentType": "aadl",
+  "basics": [
+    {
+      "category": "Strict_Syntax_Closure",
+      "content": "AADL的每一个组件（system/process/thread/processor/memory/device/bus等）都必须包含独立的类型声明和实现声明。并且，两者必须严格使用 'end 组件名;' 闭合。绝对不允许只有开头没有 end。规范示例：'thread Task1 \n end Task1; \n thread implementation Task1.impl \n end Task1.impl;'"
+    },
+    {
+      "category": "Keyword_Avoidance",
+      "content": "绝对禁止使用 AADL 的保留关键字（如 system, process, thread, processor, memory, device, bus, data）直接作为组件的标识符(名称)。遇到重名情况必须加前缀或后缀，例如顶层系统必须命名为 'Top_System'，而不能叫 'System'。"
+    },
+    {
+      "category": "Logical_to_Physical_Transformation",
+      "content": "【核心架构转换规则】在输入的JSON逻辑树中，软件进程(process)可能被嵌套在处理器(processor)的 children 中。但在生成 AADL 代码时，严禁在 processor 的 subcomponents 中直接写 process！正确的做法是：将 process 和 processor 都声明在顶层 Top_System 的 subcomponents 中，并在 Top_System 的 properties 块中使用 'Actual_Processor_Binding => (reference (处理器实例名)) applies to 进程实例名;' 进行物理绑定。"
+    },
+    {
+      "category": "Metadata_Integration",
+      "content": "输入的功能模块元数据（如 satisfied_requirements 和 function_description）必须转化为 AADL 代码中的标准注释。在对应组件的类型声明或 implementation 声明上方，使用 '--' 开头添加注释，明确说明该组件实现了哪些需求以及核心功能。"
+    },
+    {
+      "category": "Implementation_Suffix",
+      "content": "所有组件的实现（implementation）名称，必须统一采用 '组件名.impl' 的格式，例如 'system implementation Top_System.impl'。实例化时的语法为 '实例名 : 组件类型 组件名.impl;'。"
+    },
+    {
+      "category": "Port_Type_Specification",
+      "content": "端口类型分为：data port（数据端口）、event port（事件端口）、event data port（事件数据端口）。数据端口只能连接到数据端口，事件端口只能连接到事件端口。连接语法：connections port <source> -> <target>; 或 bus <source> -> <target>;"
+    },
+    {
+      "category": "Semicolon_Requirement",
+      "content": "所有AADL语句必须以分号结尾，包括组件定义、端口定义、连接定义、属性定义等。AADL支持单行注释，以 '--' 开头。"
+    },
+    {
+      "category": "Package_Structure",
+      "content": "AADL文件必须以 'package PackageName' 开头，以 'end PackageName;' 结尾。package名称与end语句中的名称必须完全匹配。"
+    }
+  ],
+  "examples": [
+    {
+      "scenario": "单处理器单进程架构生成（展示标准的类型声明、注释生成与软硬件绑定）",
+      "input": "【架构JSON】{\"name\": \"System\", \"type\": \"system\", \"children\": [{\"name\": \"MainCPU\", \"type\": \"processor\", \"children\": [{\"name\": \"KernelProcess\", \"type\": \"process\", \"children\": [{\"name\": \"TaskScheduler\", \"type\": \"thread\"}]}]}]}\n【模块JSON】[{\"module_name\": \"任务调度模块\", \"component_hierarchy\": [\"System\", \"MainCPU\", \"KernelProcess\", \"TaskScheduler\"], \"function_description\": \"实现REQ-001，提供抢占式任务调度\"}]",
+      "goldenOutput": "package OS_Arch\npublic\n  -- 实现REQ-001，提供抢占式任务调度\n  thread TaskScheduler\n  end TaskScheduler;\n  thread implementation TaskScheduler.impl\n  end TaskScheduler.impl;\n\n  process KernelProcess\n  end KernelProcess;\n  process implementation KernelProcess.impl\n    subcomponents\n      TaskScheduler_Inst : thread TaskScheduler.impl;\n  end KernelProcess.impl;\n\n  processor MainCPU\n  end MainCPU;\n  processor implementation MainCPU.impl\n  end MainCPU.impl;\n\n  system Top_System\n  end Top_System;\n  system implementation Top_System.impl\n    subcomponents\n      CPU_Inst : processor MainCPU.impl;\n      Kernel_Inst : process KernelProcess.impl;\n    properties\n      Actual_Processor_Binding => (reference (CPU_Inst)) applies to Kernel_Inst;\n  end Top_System.impl;\nend OS_Arch;"
+    },
+    {
+      "scenario": "带端口连接的传感器系统",
+      "input": "【架构JSON】{\"name\": \"System\", \"type\": \"system\", \"children\": [{\"name\": \"MainProcessor\", \"type\": \"processor\", \"children\": [{\"name\": \"ControlProcess\", \"type\": \"process\", \"children\": [{\"name\": \"DataReader\", \"type\": \"thread\"}]}]}, {\"name\": \"Sensor\", \"type\": \"device\"}]}\n【模块JSON】[{\"module_name\": \"数据采集模块\", \"component_hierarchy\": [\"System\", \"MainProcessor\", \"ControlProcess\", \"DataReader\"], \"function_description\": \"从传感器读取数据\"}]",
+      "goldenOutput": "package SensorSystem\npublic\n  thread DataReader\n    features\n      SensorData: in data port;\n  end DataReader;\n  thread implementation DataReader.impl\n  end DataReader.impl;\n\n  process ControlProcess\n  end ControlProcess;\n  process implementation ControlProcess.impl\n    subcomponents\n      Reader_Inst : thread DataReader.impl;\n  end ControlProcess.impl;\n\n  processor MainProcessor\n  end MainProcessor;\n  processor implementation MainProcessor.impl\n  end MainProcessor.impl;\n\n  device Sensor\n    features\n      DataOut: out data port;\n  end Sensor;\n  device implementation Sensor.impl\n  end Sensor.impl;\n\n  system Top_System\n  end Top_System;\n  system implementation Top_System.impl\n    subcomponents\n      CPU_Inst : processor MainProcessor.impl;\n      Process_Inst : process ControlProcess.impl;\n      Sensor_Inst : device Sensor.impl;\n    connections\n      port Sensor_Inst.DataOut -> Process_Inst.Reader_Inst.SensorData;\n    properties\n      Actual_Processor_Binding => (reference (CPU_Inst)) applies to Process_Inst;\n  end Top_System.impl;\nend SensorSystem;"
+    },
+    {
+      "scenario": "带总线连接的多处理器系统",
+      "input": "【架构JSON】{\"name\": \"System\", \"type\": \"system\", \"children\": [{\"name\": \"ECU1\", \"type\": \"processor\", \"children\": [{\"name\": \"ControlProcess\", \"type\": \"process\", \"children\": [{\"name\": \"CommTask\", \"type\": \"thread\"}]}]}, {\"name\": \"ECU2\", \"type\": \"processor\", \"children\": [{\"name\": \"MonitorProcess\", \"type\": \"process\", \"children\": [{\"name\": \"MonitorTask\", \"type\": \"thread\"}]}]}, {\"name\": \"CANBus\", \"type\": \"bus\"}]}\n【模块JSON】[]",
+      "goldenOutput": "package VehicleSystem\npublic\n  thread CommTask\n    features\n      CANPort: in bus port;\n  end CommTask;\n  thread implementation CommTask.impl\n  end CommTask.impl;\n\n  thread MonitorTask\n    features\n      CANPort: in bus port;\n  end MonitorTask;\n  thread implementation MonitorTask.impl\n  end MonitorTask.impl;\n\n  process ControlProcess\n  end ControlProcess;\n  process implementation ControlProcess.impl\n    subcomponents\n      Comm_Inst : thread CommTask.impl;\n  end ControlProcess.impl;\n\n  process MonitorProcess\n  end MonitorProcess;\n  process implementation MonitorProcess.impl\n    subcomponents\n      Monitor_Inst : thread MonitorTask.impl;\n  end MonitorProcess.impl;\n\n  processor ECU1\n    features\n      CANPort: in bus port;\n  end ECU1;\n  processor implementation ECU1.impl\n  end ECU1.impl;\n\n  processor ECU2\n    features\n      CANPort: in bus port;\n  end ECU2;\n  processor implementation ECU2.impl\n  end ECU2.impl;\n\n  bus CANBus\n    properties\n      Speed: real := 500.0;\n  end CANBus;\n  bus implementation CANBus.impl\n  end CANBus.impl;\n\n  system Top_System\n  end Top_System;\n  system implementation Top_System.impl\n    subcomponents\n      ECU1_Inst : processor ECU1.impl;\n      ECU2_Inst : processor ECU2.impl;\n      Bus_Inst : bus CANBus.impl;\n      Control_Inst : process ControlProcess.impl;\n      Monitor_Inst : process MonitorProcess.impl;\n    connections\n      bus ECU1_Inst.CANPort -> Bus_Inst;\n      bus ECU2_Inst.CANPort -> Bus_Inst;\n    properties\n      Actual_Processor_Binding => (reference (ECU1_Inst)) applies to Control_Inst;\n      Actual_Processor_Binding => (reference (ECU2_Inst)) applies to Monitor_Inst;\n  end Top_System.impl;\nend VehicleSystem;"
+    }
+  ],
+  "errorCorrections": [
+    {
+      "errorType": "Missing_End_Statement",
+      "badBehavior": "声明了组件类型但忘记闭合。如：'thread TaskScheduler \n thread implementation TaskScheduler.impl \n end TaskScheduler.impl;'",
+      "correctionRule": "【致命语法错误】任何组件的类型声明绝不能省略！必须补充 'end TaskScheduler;'。正确的结构永远是 4 行：声明开头 -> 声明闭合(end) -> 实现开头 -> 实现闭合(end)。"
+    },
+    {
+      "errorType": "Hardware_Software_Illegal_Nesting",
+      "badBehavior": "在处理器的实现中嵌套进程。如：'processor implementation MainCPU.impl \n subcomponents \n KernelProcess : process KernelProcess.impl; \n end MainCPU.impl;'",
+      "correctionRule": "【严重语义错误】物理硬件内部不能直接包含软件实体。软件 process 必须移出 processor，放到顶层 system 的 subcomponents 中，并使用 Actual_Processor_Binding 属性完成绑定关系。"
+    },
+    {
+      "errorType": "Markdown_Formatting_Output",
+      "badBehavior": "在生成的 AADL 源码前后加上了 ```aadl 和 ``` 这样的 Markdown 代码块标记，或者输出了“好的，以下是为您生成的代码：”等自然语言。",
+      "correctionRule": "代码生成 Agent 必须作为纯粹的代码编译器运行。只允许输出合法的纯文本 AADL 源码。绝对禁止输出任何 Markdown 标记或自然语言对话，第一行必须是 'package' 关键字。"
+    },
+    {
+      "errorType": "Missing_Semicolon",
+      "badBehavior": "语句末尾缺少分号。如：'component thread SensorReader is features DataOut: out data port'",
+      "correctionRule": "【语法错误】所有AADL语句必须以分号结尾。修复方案：在语句末尾添加分号。"
+    },
+    {
+      "errorType": "Package_Name_Mismatch",
+      "badBehavior": "package名称与end语句中的名称不匹配。如：'package MySystem ... end WrongName;'",
+      "correctionRule": "【语法错误】确保end语句中的名称与package名称完全一致。"
+    },
+    {
+      "errorType": "Port_Type_Mismatch",
+      "badBehavior": "连接的端口类型不匹配。如：数据端口连接到事件端口",
+      "correctionRule": "【语义错误】数据端口只能连接到数据端口，事件端口只能连接到事件端口。修复方案：修改端口类型使其一致，或使用event data port。"
+    },
+    {
+      "errorType": "Missing_Package_Declaration",
+      "badBehavior": "AADL文件缺少package声明。如：'system MainSystem is ... end MainSystem;'",
+      "correctionRule": "【语法错误】AADL文件必须以 'package PackageName' 开头。修复方案：在文件开头添加package声明，并在结尾添加对应的end语句。"
+    },
+    {
+      "errorType": "Duplicate_Component_Definition",
+      "badBehavior": "同一组件被重复定义。如：'component thread SensorReader is ... end SensorReader;' 出现两次",
+      "correctionRule": "【语义错误】每个组件名称必须唯一。修复方案：删除重复定义，或重命名其中一个组件。"
+    },
+    {
+      "errorType": "Nonexistent_Port_Reference",
+      "badBehavior": "连接引用了不存在的端口。如：'connections port Sensor.Nonexistent -> Processor.Input;'",
+      "correctionRule": "【语义错误】确保源端口和目标端口都已在对应组件中定义。"
+    },
+    {
+      "errorType": "Bus_Connection_Syntax",
+      "badBehavior": "总线连接缺少bus关键字。如：'connections port ECU.CANPort -> CANBus;'（CANPort是bus port）",
+      "correctionRule": "【语法错误】总线端口连接必须使用bus关键字。修复方案：改为 'connections bus ECU.CANPort -> CANBus;'。"
+    },
+    {
+      "errorType": "Event_Connection_Missing_Keyword",
+      "badBehavior": "事件端口连接缺少event关键字。如：'connections port DA.Trigger -> Ctrl.CommandOut;'（Trigger是event port）",
+      "correctionRule": "【语法错误】事件端口连接必须使用event关键字。修复方案：改为 'connections event port DA.Trigger -> Ctrl.CommandOut;'。"
+    },
+    {
+      "errorType": "Port_Direction_Error",
+      "badBehavior": "端口方向错误。如：'features DataIn: out data port;'（输入端口使用了out）",
+      "correctionRule": "【语义错误】输入端口必须使用in，输出端口必须使用out。修复方案：修改为 'features DataIn: in data port;'。"
+    }
+  ],
+  "lastModified": "2026-07-10T00:00:00"
+}

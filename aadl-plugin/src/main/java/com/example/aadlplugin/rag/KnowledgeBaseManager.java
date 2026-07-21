@@ -4,6 +4,7 @@ import com.example.aadlplugin.rag.model.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.*;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -16,7 +17,6 @@ public class KnowledgeBaseManager {
     
     private static final Logger log = Logger.getLogger(KnowledgeBaseManager.class.getName());
 
-    private static final String KNOWLEDGE_ROOT = "./knowledge";
     private static final String[] AGENT_TYPES = {"requirement", "architecture", "module", "aadl"};
 
     private final EmbeddingService embeddingService;
@@ -25,12 +25,24 @@ public class KnowledgeBaseManager {
     private final ConcurrentHashMap<String, KnowledgeBase> knowledgeBases = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Long> lastModifiedTimes = new ConcurrentHashMap<>();
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    
+    private Path knowledgeRootPath;
+    private boolean useResourceLoader;
 
     public KnowledgeBaseManager(EmbeddingService embeddingService, QdrantVectorStore qdrantVectorStore) {
+        this(embeddingService, qdrantVectorStore, Paths.get("./knowledge"), false);
+    }
+
+    public KnowledgeBaseManager(EmbeddingService embeddingService, QdrantVectorStore qdrantVectorStore, 
+                                Path knowledgeRootPath, boolean useResourceLoader) {
         this.embeddingService = embeddingService;
         this.qdrantVectorStore = qdrantVectorStore;
+        this.knowledgeRootPath = knowledgeRootPath;
+        this.useResourceLoader = useResourceLoader;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
+        log.info(String.format("KnowledgeBaseManager initialized with root: %s, useResourceLoader: %s", 
+                knowledgeRootPath.toAbsolutePath(), useResourceLoader));
     }
 
     public void init() {
@@ -81,9 +93,10 @@ public class KnowledgeBaseManager {
 
     private void loadAllKnowledgeBases() {
         try {
-            Path rootPath = Paths.get(KNOWLEDGE_ROOT);
-            if (!Files.exists(rootPath)) {
-                Files.createDirectories(rootPath);
+            if (!useResourceLoader) {
+                if (!Files.exists(knowledgeRootPath)) {
+                    Files.createDirectories(knowledgeRootPath);
+                }
             }
 
             for (String agentType : AGENT_TYPES) {
@@ -96,7 +109,12 @@ public class KnowledgeBaseManager {
     }
 
     private void loadKnowledgeBase(String agentType) {
-        Path kbPath = Paths.get(KNOWLEDGE_ROOT, agentType + ".json");
+        if (useResourceLoader) {
+            loadKnowledgeBaseFromResource(agentType);
+            return;
+        }
+
+        Path kbPath = knowledgeRootPath.resolve(agentType + ".json");
         
         if (!Files.exists(kbPath)) {
             KnowledgeBase kb = KnowledgeBase.builder()
@@ -361,9 +379,65 @@ public class KnowledgeBaseManager {
                 .build();
     }
 
+    private void loadKnowledgeBaseFromResource(String agentType) {
+        String resourcePath = "knowledge/" + agentType + ".json";
+        
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream(resourcePath)) {
+            if (is == null) {
+                log.warning(String.format("Knowledge base resource not found: %s", resourcePath));
+                KnowledgeBase kb = KnowledgeBase.builder()
+                        .agentType(agentType)
+                        .basics(new ArrayList<>())
+                        .examples(new ArrayList<>())
+                        .errorCorrections(new ArrayList<>())
+                        .lastModified(LocalDateTime.now())
+                        .build();
+                knowledgeBases.put(agentType, kb);
+                return;
+            }
+
+            String json = new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            KnowledgeBase kb = convertLegacyFormat(json, agentType);
+            
+            if (kb == null) {
+                kb = KnowledgeBase.builder()
+                        .agentType(agentType)
+                        .basics(new ArrayList<>())
+                        .examples(new ArrayList<>())
+                        .errorCorrections(new ArrayList<>())
+                        .lastModified(LocalDateTime.now())
+                        .build();
+            }
+            
+            kb.setAgentType(agentType);
+            knowledgeBases.put(agentType, kb);
+            
+            log.info(String.format("Loaded KB for %s from resource: %d basics, %d examples, %d corrections", 
+                    agentType,
+                    kb.getBasics() != null ? kb.getBasics().size() : 0,
+                    kb.getExamples() != null ? kb.getExamples().size() : 0,
+                    kb.getErrorCorrections() != null ? kb.getErrorCorrections().size() : 0));
+
+            if (qdrantVectorStore.isAvailable()) {
+                upsertExistingKnowledgeBase(agentType);
+            }
+            
+        } catch (Exception e) {
+            log.severe(String.format("Failed to load knowledge base %s from resource: %s", agentType, e.getMessage()));
+            KnowledgeBase kb = KnowledgeBase.builder()
+                    .agentType(agentType)
+                    .basics(new ArrayList<>())
+                    .examples(new ArrayList<>())
+                    .errorCorrections(new ArrayList<>())
+                    .lastModified(LocalDateTime.now())
+                    .build();
+            knowledgeBases.put(agentType, kb);
+        }
+    }
+
     private void saveKnowledgeBase(String agentType) {
         try {
-            Path kbPath = Paths.get(KNOWLEDGE_ROOT, agentType + ".json");
+            Path kbPath = knowledgeRootPath.resolve(agentType + ".json");
             KnowledgeBase kb = knowledgeBases.getOrDefault(agentType, createEmptyKnowledgeBase(agentType));
             kb.setLastModified(LocalDateTime.now());
             String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(kb);
@@ -376,12 +450,16 @@ public class KnowledgeBaseManager {
     }
 
     private void startFileWatcher() {
+        if (useResourceLoader) {
+            log.info("File watcher skipped because using resource loader");
+            return;
+        }
+        
         try {
             WatchService watchService = FileSystems.getDefault().newWatchService();
-            Path rootPath = Paths.get(KNOWLEDGE_ROOT);
             
-            if (Files.exists(rootPath)) {
-                rootPath.register(watchService, 
+            if (Files.exists(knowledgeRootPath)) {
+                knowledgeRootPath.register(watchService, 
                     StandardWatchEventKinds.ENTRY_MODIFY,
                     StandardWatchEventKinds.ENTRY_CREATE,
                     StandardWatchEventKinds.ENTRY_DELETE);

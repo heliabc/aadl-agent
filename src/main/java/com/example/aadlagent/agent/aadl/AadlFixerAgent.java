@@ -6,6 +6,7 @@ import com.example.aadlagent.agent.AgentOutput;
 import com.example.aadlagent.client.LlmClient;
 import com.example.aadlagent.client.ModelService;
 import com.example.aadlagent.client.ModelType;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -67,8 +68,11 @@ public class AadlFixerAgent implements Agent<AgentInput, AgentOutput> {
         log.info("错误列表长度: {} 字符", errors.length());
         log.info("配置参数: temperature={}, maxTokens={}", temperature, maxTokens);
 
+        String structuredErrors = normalizeErrors(errors);
+        log.info("错误格式: {}", isJsonFormat(errors) ? "结构化JSON" : "原始文本");
+
         log.info("正在构建Prompt...");
-        String systemPrompt = prompt.buildPrompt(aadlContent, errors, input.getRagContext());
+        String systemPrompt = prompt.buildPrompt(aadlContent, structuredErrors, input.getRagContext());
         log.info("Prompt构建完成，长度: {} 字符", systemPrompt.length());
 
         if (input.isCancelled()) {
@@ -338,6 +342,53 @@ public class AadlFixerAgent implements Agent<AgentInput, AgentOutput> {
         }
         if (lines.length > 20) {
             log.info("  ... (共 {} 行)", lines.length);
+        }
+    }
+
+    private boolean isJsonFormat(String text) {
+        String trimmed = text.trim();
+        return trimmed.startsWith("[") || trimmed.startsWith("{");
+    }
+
+    private String normalizeErrors(String errors) {
+        if (isJsonFormat(errors)) {
+            return formatJsonErrors(errors);
+        }
+        return errors;
+    }
+
+    private String formatJsonErrors(String jsonErrors) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            List<Map<String, Object>> errorList = mapper.readValue(jsonErrors, 
+                    new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {});
+            
+            StringBuilder formatted = new StringBuilder();
+            for (int i = 0; i < errorList.size(); i++) {
+                Map<String, Object> error = errorList.get(i);
+                formatted.append(i + 1).append(". ")
+                        .append(error.get("errorType")).append(" - ")
+                        .append(error.get("message"));
+                
+                if (error.containsKey("lineNumber") && error.get("lineNumber") != null) {
+                    formatted.append(" (行: ").append(error.get("lineNumber")).append(")");
+                }
+                
+                if (error.containsKey("componentName") && error.get("componentName") != null) {
+                    formatted.append(" [").append(error.get("componentName")).append("]");
+                }
+                
+                if (error.containsKey("suggestion") && error.get("suggestion") != null) {
+                    formatted.append("\n   建议: ").append(error.get("suggestion"));
+                }
+                
+                formatted.append("\n");
+            }
+            
+            return formatted.toString();
+        } catch (Exception e) {
+            log.warn("Failed to parse JSON errors, using raw text: {}", e.getMessage());
+            return jsonErrors;
         }
     }
 

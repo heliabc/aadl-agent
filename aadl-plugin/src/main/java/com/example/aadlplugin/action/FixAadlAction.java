@@ -1,14 +1,14 @@
 package com.example.aadlplugin.action;
 
 import com.example.aadlplugin.Activator;
+import com.example.aadlplugin.agent.aadl.AadlErrorParserAgent;
 import com.example.aadlplugin.agent.aadl.AadlFixerAgent;
 import com.example.aadlplugin.agent.AgentInput;
 import com.example.aadlplugin.agent.AgentOutput;
 import com.example.aadlplugin.client.ModelType;
+import com.example.aadlplugin.dialog.FixAadlInputDialog;
 import org.eclipse.core.resources.IFile;
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.action.IAction;
-import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -39,34 +39,57 @@ public class FixAadlAction implements IObjectActionDelegate {
         try {
             String aadlContent = new String(selectedFile.getContents().readAllBytes(), StandardCharsets.UTF_8);
             
-            InputDialog dialog = new InputDialog(
-                    shell,
-                    "Fix AADL Errors",
-                    "请输入AADL文件的错误列表（每行一个错误）:",
-                    "",
-                    null);
+            FixAadlInputDialog dialog = new FixAadlInputDialog(shell);
 
             if (dialog.open() != org.eclipse.jface.window.Window.OK) {
                 return;
             }
 
-            String errors = dialog.getValue();
+            String rawErrors = dialog.getErrorList();
 
-            AadlFixerAgent agent = Activator.getDefault().getAadlFixerAgent();
-            AgentInput input = AgentInput.builder()
-                    .content(aadlContent)
-                    .metadata(errors)
-                    .modelType(ModelType.OLLAMA)
-                    .build();
-
-            AgentOutput output = agent.execute(input);
-
-            if (!output.isSuccess()) {
-                MessageDialog.openError(shell, "Error", output.getErrorMessage());
+            if (rawErrors == null || rawErrors.trim().isEmpty()) {
+                MessageDialog.openError(shell, "Error", "错误信息不能为空");
                 return;
             }
 
-            String fixedContent = output.getContent();
+            // 第一步：解析错误
+            AadlErrorParserAgent parserAgent = Activator.getDefault().getAadlErrorParserAgent();
+            AgentInput parserInput = AgentInput.builder()
+                    .content(aadlContent)
+                    .metadata(rawErrors)
+                    .modelType(ModelType.OLLAMA)
+                    .build();
+
+            MessageDialog.openInformation(shell, "Info", "正在解析错误信息...");
+            
+            AgentOutput parserOutput = parserAgent.execute(parserInput);
+
+            if (!parserOutput.isSuccess()) {
+                MessageDialog.openError(shell, "Error", "解析错误信息失败:\n" + parserOutput.getErrorMessage());
+                return;
+            }
+
+            String parsedErrors = parserOutput.getContent();
+            MessageDialog.openInformation(shell, "Info", "错误解析完成！\n解析出的错误信息:\n" + parsedErrors);
+
+            // 第二步：修复AADL
+            AadlFixerAgent fixerAgent = Activator.getDefault().getAadlFixerAgent();
+            AgentInput fixerInput = AgentInput.builder()
+                    .content(aadlContent)
+                    .metadata(parsedErrors)
+                    .modelType(ModelType.OLLAMA)
+                    .build();
+
+            MessageDialog.openInformation(shell, "Info", "正在修复AADL文件...");
+
+            AgentOutput fixerOutput = fixerAgent.execute(fixerInput);
+
+            if (!fixerOutput.isSuccess()) {
+                MessageDialog.openError(shell, "Error", "修复AADL文件失败:\n" + fixerOutput.getErrorMessage());
+                return;
+            }
+
+            String fixedContent = fixerOutput.getContent();
 
             InputStream is = new java.io.ByteArrayInputStream(fixedContent.getBytes(StandardCharsets.UTF_8));
             selectedFile.setContents(is, true, false, null);
