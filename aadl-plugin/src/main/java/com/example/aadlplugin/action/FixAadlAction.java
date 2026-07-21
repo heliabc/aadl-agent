@@ -1,5 +1,6 @@
 package com.example.aadlplugin.action;
 
+import com.example.aadlplugin.Activator;
 import com.example.aadlplugin.agent.aadl.AadlFixerAgent;
 import com.example.aadlplugin.agent.AgentInput;
 import com.example.aadlplugin.agent.AgentOutput;
@@ -51,9 +52,10 @@ public class FixAadlAction implements IObjectActionDelegate {
 
             String errors = dialog.getValue();
 
-            AadlFixerAgent agent = new AadlFixerAgent();
+            AadlFixerAgent agent = Activator.getDefault().getAadlFixerAgent();
             AgentInput input = AgentInput.builder()
-                    .content(aadlContent + "\n\n错误列表:\n" + errors)
+                    .content(aadlContent)
+                    .metadata(errors)
                     .modelType(ModelType.OLLAMA)
                     .build();
 

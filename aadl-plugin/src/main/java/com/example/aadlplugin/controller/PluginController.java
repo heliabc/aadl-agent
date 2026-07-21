@@ -38,6 +38,11 @@ public class PluginController {
         try {
             String sessionId = existingSessionId != null ? existingSessionId : UUID.randomUUID().toString();
             sessionManager.createSession(sessionId);
+            
+            String requirementSummary = requirement.length() > 100 ? requirement.substring(0, 100) + "..." : requirement;
+            sessionManager.setSessionName(sessionId, requirementSummary);
+            sessionManager.setSessionRequirementSummary(sessionId, requirementSummary);
+            sessionManager.setSessionModelType(sessionId, modelType.name());
 
             AgentInput reqInput = AgentInput.builder()
                     .sessionId(sessionId)
@@ -54,6 +59,16 @@ public class PluginController {
 
             String reqContent = reqOutput.getContent();
             traceabilityService.addRequirementTraceability(sessionId, requirement, reqContent);
+            
+            try {
+                com.fasterxml.jackson.databind.JsonNode reqJson = objectMapper.readTree(reqContent);
+                com.fasterxml.jackson.databind.JsonNode requirementsArray = reqJson.get("requirements");
+                if (requirementsArray != null && requirementsArray.isArray()) {
+                    sessionManager.setSessionRequirementCount(sessionId, requirementsArray.size());
+                }
+            } catch (Exception e) {
+                sessionManager.setSessionRequirementCount(sessionId, 0);
+            }
 
             String reqFileName = "requirements_" + sessionId.substring(0, 8) + ".json";
             Path reqPath = Paths.get(fileConfig.getRequirementsPath(), reqFileName).toAbsolutePath().normalize();
@@ -132,6 +147,8 @@ public class PluginController {
                 Files.createDirectories(aadlParent);
             }
             Files.writeString(aadlPath, aadlContent);
+            
+            sessionManager.setSessionHasAadlGenerated(sessionId, true);
 
             response.put("success", true);
             response.put("data", aadlContent);

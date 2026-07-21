@@ -1,6 +1,7 @@
 package com.example.aadlplugin.action;
 
 import com.example.aadlplugin.Activator;
+import com.example.aadlplugin.dialog.TraceabilityMatrixDialog;
 import com.example.aadlplugin.model.TraceabilityRecord;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -62,7 +63,7 @@ public class ViewTraceabilityAction implements IObjectActionDelegate {
                     .toList();
 
             if (!reqToOriginal.isEmpty()) {
-                html.append("<h4 style='color: #007bff;'>📋 条目化需求 → 原始需求</h4>");
+                html.append("<h4 style='color: #007bff;'>条目化需求 → 原始需求</h4>");
                 html.append("<table border='1' cellpadding='5' cellspacing='0'>");
                 html.append("<tr><th>需求ID</th><th>需求标题</th><th>对应原始需求</th></tr>");
                 reqToOriginal.forEach(r -> {
@@ -76,7 +77,7 @@ public class ViewTraceabilityAction implements IObjectActionDelegate {
             }
 
             if (!aadlToReq.isEmpty()) {
-                html.append("<h4 style='color: #28a745;'>🔗 AADL组件 → 条目化需求</h4>");
+                html.append("<h4 style='color: #28a745;'>AADL组件 → 条目化需求</h4>");
                 html.append("<table border='1' cellpadding='5' cellspacing='0'>");
                 html.append("<tr><th>需求ID</th><th>需求标题</th><th>AADL组件</th><th>来源</th></tr>");
                 aadlToReq.forEach(r -> {
@@ -92,27 +93,7 @@ public class ViewTraceabilityAction implements IObjectActionDelegate {
 
             html.append("</body></html>");
 
-            org.eclipse.jface.dialogs.Dialog dialog = new org.eclipse.jface.dialogs.Dialog(shell) {
-                @Override
-                protected void configureShell(org.eclipse.swt.widgets.Shell newShell) {
-                    super.configureShell(newShell);
-                    newShell.setText("Traceability Matrix");
-                    org.eclipse.swt.graphics.Rectangle screenBounds = newShell.getDisplay().getPrimaryMonitor().getBounds();
-                    int width = (int) (screenBounds.width * 0.85);
-                    int height = (int) (screenBounds.height * 0.8);
-                    newShell.setSize(width, height);
-                    newShell.setLocation((screenBounds.width - width) / 2, (screenBounds.height - height) / 2);
-                }
-                
-                @Override
-                protected org.eclipse.swt.widgets.Control createDialogArea(org.eclipse.swt.widgets.Composite parent) {
-                    org.eclipse.swt.widgets.Composite composite = (org.eclipse.swt.widgets.Composite) super.createDialogArea(parent);
-                    composite.setLayout(new org.eclipse.swt.layout.FillLayout());
-                    org.eclipse.swt.browser.Browser browser = new org.eclipse.swt.browser.Browser(composite, org.eclipse.swt.SWT.NONE);
-                    browser.setText(html.toString());
-                    return composite;
-                }
-            };
+            TraceabilityMatrixDialog dialog = new TraceabilityMatrixDialog(shell, html.toString());
             dialog.open();
 
         } catch (Exception e) {

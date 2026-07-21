@@ -13,6 +13,7 @@ public class SessionManager {
     private static final int MAX_SESSIONS = 100;
 
     private final Map<String, Deque<ChatMessage>> sessions = new ConcurrentHashMap<>();
+    private final Map<String, SessionMetadata> sessionMetadata = new ConcurrentHashMap<>();
     private String currentSessionId;
 
     public SessionManager() {
@@ -23,6 +24,10 @@ public class SessionManager {
             return createSession();
         }
         sessions.put(sessionId, new ConcurrentLinkedDeque<>());
+        SessionMetadata metadata = new SessionMetadata();
+        metadata.setSessionId(sessionId);
+        metadata.setName("会话 " + sessionId.substring(0, Math.min(8, sessionId.length())));
+        sessionMetadata.put(sessionId, metadata);
         this.currentSessionId = sessionId;
         log.info(String.format("Created new session with id: %s", sessionId));
         return sessionId;
@@ -31,8 +36,58 @@ public class SessionManager {
     public String createSession() {
         String sessionId = "SES-" + UUID.randomUUID().toString().substring(0, 8);
         sessions.put(sessionId, new ConcurrentLinkedDeque<>());
+        SessionMetadata metadata = new SessionMetadata();
+        metadata.setSessionId(sessionId);
+        metadata.setName("会话 " + sessionId.substring(4));
+        sessionMetadata.put(sessionId, metadata);
         log.info(String.format("Created new session: %s", sessionId));
         return sessionId;
+    }
+    
+    public void setSessionName(String sessionId, String name) {
+        SessionMetadata metadata = sessionMetadata.get(sessionId);
+        if (metadata != null) {
+            metadata.setName(name);
+            log.info(String.format("Renamed session %s to: %s", sessionId, name));
+        }
+    }
+    
+    public void setSessionRequirementSummary(String sessionId, String summary) {
+        SessionMetadata metadata = sessionMetadata.get(sessionId);
+        if (metadata != null) {
+            metadata.setRequirementSummary(summary);
+        }
+    }
+    
+    public void setSessionModelType(String sessionId, String modelType) {
+        SessionMetadata metadata = sessionMetadata.get(sessionId);
+        if (metadata != null) {
+            metadata.setModelType(modelType);
+        }
+    }
+    
+    public void setSessionRequirementCount(String sessionId, int count) {
+        SessionMetadata metadata = sessionMetadata.get(sessionId);
+        if (metadata != null) {
+            metadata.setRequirementCount(count);
+        }
+    }
+    
+    public void setSessionHasAadlGenerated(String sessionId, boolean hasGenerated) {
+        SessionMetadata metadata = sessionMetadata.get(sessionId);
+        if (metadata != null) {
+            metadata.setHasAadlGenerated(hasGenerated);
+        }
+    }
+    
+    public SessionMetadata getSessionMetadata(String sessionId) {
+        return sessionMetadata.get(sessionId);
+    }
+    
+    public List<SessionMetadata> getAllSessionMetadata() {
+        List<SessionMetadata> metadataList = new ArrayList<>(sessionMetadata.values());
+        metadataList.sort((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()));
+        return metadataList;
     }
 
     public boolean exists(String sessionId) {
@@ -98,11 +153,13 @@ public class SessionManager {
 
     public void removeSession(String sessionId) {
         sessions.remove(sessionId);
+        sessionMetadata.remove(sessionId);
         log.info(String.format("Removed session: %s", sessionId));
     }
 
     public void deleteSession(String sessionId) {
         sessions.remove(sessionId);
+        sessionMetadata.remove(sessionId);
         log.info(String.format("Deleted session: %s", sessionId));
     }
 

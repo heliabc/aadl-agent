@@ -2,6 +2,7 @@ package com.example.aadlplugin.action;
 
 import com.example.aadlplugin.Activator;
 import com.example.aadlplugin.client.ModelType;
+import com.example.aadlplugin.dialog.AadlResultDialog;
 import com.example.aadlplugin.dialog.RequirementInputDialog;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -59,8 +60,10 @@ public class GenerateAadlAction implements IObjectActionDelegate {
 
             if (node.get("success").asBoolean()) {
                 String aadlContent = node.get("data").asText();
+                String outputFile = node.has("outputFile") ? node.get("outputFile").asText() : "";
                 saveAadlFile(aadlContent);
-                MessageDialog.openInformation(shell, "Success", "AADL模型生成成功！\n\n" + aadlContent);
+                AadlResultDialog resultDialog = new AadlResultDialog(shell, aadlContent, outputFile);
+                resultDialog.open();
             } else {
                 MessageDialog.openError(shell, "Error", node.get("message").asText());
             }
@@ -110,8 +113,6 @@ public class GenerateAadlAction implements IObjectActionDelegate {
 
             InputStream is = new java.io.ByteArrayInputStream(aadlContent.getBytes(StandardCharsets.UTF_8));
             aadlFile.create(is, true, null);
-
-            MessageDialog.openInformation(shell, "File Saved", "AADL文件已保存到:\n" + aadlFile.getFullPath());
 
         } catch (CoreException e) {
             MessageDialog.openError(shell, "Error", "保存AADL文件失败:\n" + e.getMessage());

@@ -1,6 +1,7 @@
 package com.example.aadlplugin.dialog;
 
 import com.example.aadlplugin.Activator;
+import com.example.aadlplugin.session.SessionMetadata;
 import com.example.aadlplugin.util.DocFileReader;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -16,7 +17,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
-import java.util.Set;
+import java.util.List;
 
 public class RequirementInputDialog extends Dialog {
 
@@ -26,7 +27,9 @@ public class RequirementInputDialog extends Dialog {
     private Button selectFileButton;
     private Button newSessionButton;
     private Button incrementalButton;
+    private Button viewHistoryButton;
     private Combo sessionCombo;
+    private Text sessionInfoText;
     private String requirement;
     private String model = "OLLAMA";
     private String sessionId;
@@ -73,6 +76,21 @@ public class RequirementInputDialog extends Dialog {
         sessionCombo.setLayoutData(gd);
         loadSessionList();
 
+        viewHistoryButton = new Button(container, SWT.PUSH);
+        viewHistoryButton.setText("查看会话详情");
+        gd = new GridData(SWT.RIGHT, SWT.CENTER, false, false);
+        gd.horizontalSpan = 2;
+        viewHistoryButton.setLayoutData(gd);
+        viewHistoryButton.setEnabled(false);
+        viewHistoryButton.addListener(SWT.Selection, e -> viewSessionHistory());
+
+        sessionInfoText = new Text(container, SWT.MULTI | SWT.BORDER | SWT.V_SCROLL | SWT.READ_ONLY);
+        gd = new GridData(SWT.FILL, SWT.FILL, true, false);
+        gd.widthHint = 500;
+        gd.heightHint = 80;
+        gd.horizontalSpan = 2;
+        sessionInfoText.setLayoutData(gd);
+
         Label modelLabel = new Label(container, SWT.NONE);
         modelLabel.setText("选择模型:");
         gd = new GridData(SWT.LEFT, SWT.CENTER, false, false);
@@ -97,7 +115,7 @@ public class RequirementInputDialog extends Dialog {
         requirementText = new Text(container, SWT.MULTI | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
         gd = new GridData(SWT.FILL, SWT.FILL, true, true);
         gd.widthHint = 500;
-        gd.heightHint = 300;
+        gd.heightHint = 250;
         gd.horizontalSpan = 2;
         requirementText.setLayoutData(gd);
 
@@ -107,34 +125,76 @@ public class RequirementInputDialog extends Dialog {
         selectFileButton.addListener(SWT.Selection, e -> selectFile());
 
         Label hintLabel = new Label(container, SWT.NONE);
-        hintLabel.setText("提示：新会话模式下输入完整需求；增量更新模式下输入修改内容（如\"将任务调度优先级从高改为中\"）");
+        hintLabel.setText("提示：新会话模式下输入完整需求；增量更新模式下输入修改内容");
         gd = new GridData(SWT.LEFT, SWT.CENTER, false, false);
         gd.horizontalSpan = 2;
         hintLabel.setLayoutData(gd);
 
         newSessionButton.addListener(SWT.Selection, e -> updateModeUI());
         incrementalButton.addListener(SWT.Selection, e -> updateModeUI());
+        sessionCombo.addListener(SWT.Selection, e -> updateSessionInfo());
 
         return container;
     }
 
     private void loadSessionList() {
         sessionCombo.removeAll();
-        Set<String> sessions = Activator.getDefault().getTraceabilityService().getAllSessionIds();
+        List<SessionMetadata> sessions = Activator.getDefault().getSessionManager().getAllSessionMetadata();
         if (!sessions.isEmpty()) {
-            sessionCombo.setItems(sessions.toArray(new String[0]));
+            for (SessionMetadata metadata : sessions) {
+                String displayText = String.format("%s - %s (%s, %d条需求)",
+                        metadata.getName(),
+                        metadata.getCreatedAtFormatted(),
+                        metadata.getModelType() != null ? metadata.getModelType() : "未知",
+                        metadata.getRequirementCount());
+                sessionCombo.add(displayText, metadata.getSessionId().hashCode());
+            }
             sessionCombo.select(0);
+            updateSessionInfo();
+        }
+    }
+
+    private void updateSessionInfo() {
+        sessionInfoText.setText("");
+        if (!sessionCombo.getEnabled()) {
+            return;
+        }
+        int index = sessionCombo.getSelectionIndex();
+        if (index < 0) {
+            return;
+        }
+        List<SessionMetadata> sessions = Activator.getDefault().getSessionManager().getAllSessionMetadata();
+        if (index < sessions.size()) {
+            SessionMetadata metadata = sessions.get(index);
+            StringBuilder info = new StringBuilder();
+            info.append("会话名称: ").append(metadata.getName()).append("\n");
+            info.append("会话ID: ").append(metadata.getSessionId()).append("\n");
+            info.append("创建时间: ").append(metadata.getCreatedAtFormatted()).append("\n");
+            info.append("最后修改: ").append(metadata.getLastModifiedFormatted()).append("\n");
+            info.append("模型类型: ").append(metadata.getModelType() != null ? metadata.getModelType() : "未知").append("\n");
+            info.append("需求数量: ").append(metadata.getRequirementCount()).append("\n");
+            info.append("AADL生成: ").append(metadata.isHasAadlGenerated() ? "是" : "否").append("\n");
+            if (metadata.getRequirementSummary() != null && !metadata.getRequirementSummary().isEmpty()) {
+                info.append("\n需求摘要: ").append(metadata.getRequirementSummary());
+            }
+            sessionInfoText.setText(info.toString());
+            sessionId = metadata.getSessionId();
         }
     }
 
     private void updateModeUI() {
         boolean incremental = incrementalButton.getSelection();
         sessionCombo.setEnabled(incremental);
+        viewHistoryButton.setEnabled(incremental && sessionCombo.getItemCount() > 0);
         selectFileButton.setEnabled(!incremental);
+        sessionInfoText.setEnabled(incremental);
         if (incremental) {
             requirementText.setMessage("请输入修改内容...");
+            updateSessionInfo();
         } else {
             requirementText.setMessage("请输入完整需求描述...");
+            sessionInfoText.setText("");
+            sessionId = null;
         }
     }
 
@@ -156,11 +216,24 @@ public class RequirementInputDialog extends Dialog {
         }
     }
 
+    private void viewSessionHistory() {
+        int index = sessionCombo.getSelectionIndex();
+        if (index < 0) {
+            return;
+        }
+        List<SessionMetadata> sessions = Activator.getDefault().getSessionManager().getAllSessionMetadata();
+        if (index < sessions.size()) {
+            SessionMetadata metadata = sessions.get(index);
+            SessionHistoryDialog historyDialog = new SessionHistoryDialog(getShell(), metadata.getSessionId());
+            historyDialog.open();
+        }
+    }
+
     @Override
     protected void configureShell(Shell newShell) {
         super.configureShell(newShell);
         newShell.setText("AADL Generator - 需求输入");
-        newShell.setSize(600, 500);
+        newShell.setSize(600, 650);
     }
 
     @Override
@@ -178,8 +251,8 @@ public class RequirementInputDialog extends Dialog {
             model = "DEEPSEEK";
         }
         isIncremental = incrementalButton.getSelection();
-        if (isIncremental) {
-            sessionId = sessionCombo.getText();
+        if (!isIncremental) {
+            sessionId = null;
         }
         super.okPressed();
     }
