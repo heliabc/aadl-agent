@@ -40,7 +40,7 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
     @Value("${agent.requirement.max-tokens:8192}")
     private int maxTokens;
 
-    @Value("${agent.requirement.chunk-size:2000}")
+    @Value("${agent.requirement.chunk-size:2500}")
     private int chunkSize;
 
     @Value("${agent.requirement.overlap-percent:15}")
@@ -154,19 +154,61 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
         }
     }
 
+    private static class PatternConfig {
+        String name;
+        Pattern pattern;
+        boolean isParameter;
+        String category;
+        String anchorType;
+
+        PatternConfig(String name, String regex, boolean isParameter, String category, String anchorType) {
+            this.name = name;
+            this.pattern = Pattern.compile(regex);
+            this.isParameter = isParameter;
+            this.category = category;
+            this.anchorType = anchorType;
+        }
+    }
+
+    private static final List<PatternConfig> PATTERNS = Arrays.asList(
+            new PatternConfig("clock", "(\\d+\\.?\\d*)\\s*([kKMG]?[Hh]z)", true, "时钟频率", "PARAMETER"),
+            new PatternConfig("time", "(\\d+\\.?\\d*)\\s*(毫秒|微秒|纳秒|秒|ms|us|μs|ns|s)", true, "时间参数", "PARAMETER"),
+            new PatternConfig("memory", "(\\d+\\.?\\d*)\\s*([kKMG]?[Bb](yte)?)", true, "内存大小", "PARAMETER"),
+            new PatternConfig("baud", "(\\d+\\.?\\d*)\\s*([kKMG]?[Bb]ps)", true, "波特率", "PARAMETER"),
+            new PatternConfig("deadline", "(截止|响应|执行|反应)时间\\s*[:：=]?\\s*(\\d+\\.?\\d*)\\s*(ms|us|μs|ns|s|毫秒|微秒)", true, "截止时间", "PARAMETER"),
+            new PatternConfig("period", "(周期|period)\\s*[:：=]?\\s*(\\d+\\.?\\d*)\\s*(ms|毫秒|Hz)", true, "周期", "PARAMETER"),
+            new PatternConfig("jitter", "(抖动|jitter)\\s*[:：=]?\\s*(不超过|≤|<)?\\s*(\\d+\\.?\\d*)\\s*(ms|us|μs)", true, "抖动", "PARAMETER"),
+            new PatternConfig("priority", "(优先级|priority)\\s*[:：=]?\\s*(\\d+|[高H中M低L])", true, "优先级", "PARAMETER"),
+            new PatternConfig("abbr", "([A-Z]{2,6})\\s*[（(]\\s*([^）)]{1,30})\\s*[）)]", false, "缩写", "TERMINOLOGY"),
+            new PatternConfig("iface", "(CAN|UART|SPI|I2C|I2S|GPIO|PWM|ADC|DAC|USB|Ethernet|PCIe?|SDIO|FlexRay|LIN|RS232|RS485)\\s*(\\d*)", false, "接口协议", "INTERFACE"),
+            new PatternConfig("safety", "(DAL-[A-E]|ASIL\\s*[A-D]|SIL\\s*[1-4])", false, "安全等级", "CONSTRAINT"),
+            new PatternConfig("assume", "(假设|前提|假定)\\s*[:：]?\\s*(.{10,200}?)(?=[。；！\\n]|$)", false, "假设前提", "ASSUMPTION"),
+            new PatternConfig("limit", "(不超过|不低于|≥|≤|max|min|最大|最小)\\s*[:：]?\\s*(\\d+\\.?\\d*)\\s*(ms|us|MHz|KB|%)", true, "限制条件", "CONSTRAINT"),
+            new PatternConfig("constraint", "(必须|不得|禁止|严禁|应当|不应|务必)\\s+(.{1,50}?)(?=[。；！\\n]|$)", false, "约束条件", "CONSTRAINT")
+    );
+
     private Stage0Result executeStage0(String document, LlmClient llmClient) {
         long startTime = System.currentTimeMillis();
         List<GlobalAnchor> anchors = new ArrayList<>();
 
-        // 规则优先：使用正则提取全局锚点
-        anchors.addAll(extractTerminology(document));
-        anchors.addAll(extractConstraints(document));
-        anchors.addAll(extractSystemParameters(document));
-        anchors.addAll(extractExternalInterfaces(document));
-        anchors.addAll(extractAssumptions(document));
-
-        // LLM辅助：补充提取
-        anchors.addAll(extractAdditionalAnchorsWithLlm(document, llmClient));
+        // 完全正则匹配提取全局锚点
+        int idCounter = 1;
+        for (PatternConfig config : PATTERNS) {
+            Matcher matcher = config.pattern.matcher(document);
+            while (matcher.find()) {
+                String content = matcher.group(0).trim();
+                String anchorId = config.isParameter ? "PARAM-" + String.format("%03d", idCounter++) 
+                                                     : getAnchorIdByType(config.anchorType, idCounter++);
+                
+                anchors.add(GlobalAnchor.builder()
+                        .anchorId(anchorId)
+                        .anchorType(config.anchorType)
+                        .content(content)
+                        .source("正则提取")
+                        .category(config.category)
+                        .build());
+            }
+        }
 
         // 生成全局上下文卡片（压缩至200-300字）
         String contextCard = buildContextCard(anchors);
@@ -178,142 +220,19 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
                 .build();
     }
 
-    private List<GlobalAnchor> extractTerminology(String document) {
-        List<GlobalAnchor> anchors = new ArrayList<>();
-        Pattern pattern = Pattern.compile("([A-Za-z][A-Za-z0-9_]*)(\\s*=\\s*|\\s+定义为\\s+|\\s+表示\\s+|\\s+是指\\s+)(.+?)(?=\\.|\\n|;)");
-        Matcher matcher = pattern.matcher(document);
-        int count = 0;
-        while (matcher.find() && count < 10) {
-            anchors.add(GlobalAnchor.builder()
-                    .anchorId("TERM-" + String.format("%03d", count + 1))
-                    .anchorType("TERMINOLOGY")
-                    .content(matcher.group(1) + " = " + matcher.group(3).trim())
-                    .source("正则提取")
-                    .category("术语")
-                    .build());
-            count++;
+    private String getAnchorIdByType(String type, int counter) {
+        switch (type) {
+            case "TERMINOLOGY":
+                return "TERM-" + String.format("%03d", counter);
+            case "CONSTRAINT":
+                return "CONST-" + String.format("%03d", counter);
+            case "INTERFACE":
+                return "IFACE-" + String.format("%03d", counter);
+            case "ASSUMPTION":
+                return "ASSUMP-" + String.format("%03d", counter);
+            default:
+                return "OTHER-" + String.format("%03d", counter);
         }
-        return anchors;
-    }
-
-    private List<GlobalAnchor> extractConstraints(String document) {
-        List<GlobalAnchor> anchors = new ArrayList<>();
-        Pattern pattern = Pattern.compile("(必须|不得|禁止|严禁|应当|不应)\\s+(.+?)(?=\\.|\\n|;)");
-        Matcher matcher = pattern.matcher(document);
-        int count = 0;
-        while (matcher.find() && count < 20) {
-            anchors.add(GlobalAnchor.builder()
-                    .anchorId("CONST-" + String.format("%03d", count + 1))
-                    .anchorType("CONSTRAINT")
-                    .content(matcher.group(0).trim())
-                    .source("正则提取")
-                    .category("约束")
-                    .build());
-            count++;
-        }
-        return anchors;
-    }
-
-    private List<GlobalAnchor> extractSystemParameters(String document) {
-        List<GlobalAnchor> anchors = new ArrayList<>();
-        Pattern[] patterns = {
-                Pattern.compile("(时钟频率|主频|时钟)\\s*[：:]?\\s*(\\d+\\.?\\d*\\s*(MHz|GHz|kHz|Hz))"),
-                Pattern.compile("(内存|RAM|ROM|存储)\\s*[：:]?\\s*(\\d+\\.?\\d*\\s*(MB|GB|KB))"),
-                Pattern.compile("(采样频率|速率|刷新率)\\s*[：:]?\\s*(\\d+\\.?\\d*\\s*(Hz|kHz|MHz))"),
-                Pattern.compile("(延迟|响应时间|周期)\\s*[：:]?\\s*(\\d+\\.?\\d*\\s*(ms|μs|ns|秒))")
-        };
-        int count = 0;
-        for (Pattern pattern : patterns) {
-            Matcher matcher = pattern.matcher(document);
-            while (matcher.find() && count < 15) {
-                anchors.add(GlobalAnchor.builder()
-                        .anchorId("PARAM-" + String.format("%03d", count + 1))
-                        .anchorType("PARAMETER")
-                        .content(matcher.group(0).trim())
-                        .source("正则提取")
-                        .category("系统参数")
-                        .build());
-                count++;
-            }
-        }
-        return anchors;
-    }
-
-    private List<GlobalAnchor> extractExternalInterfaces(String document) {
-        List<GlobalAnchor> anchors = new ArrayList<>();
-        Pattern pattern = Pattern.compile("(接口|端口|协议|通信)\\s*[：:]?\\s*([A-Za-z0-9_-]+)");
-        Matcher matcher = pattern.matcher(document);
-        int count = 0;
-        while (matcher.find() && count < 10) {
-            anchors.add(GlobalAnchor.builder()
-                    .anchorId("IFACE-" + String.format("%03d", count + 1))
-                    .anchorType("INTERFACE")
-                    .content(matcher.group(0).trim())
-                    .source("正则提取")
-                    .category("外部接口")
-                    .build());
-            count++;
-        }
-        return anchors;
-    }
-
-    private List<GlobalAnchor> extractAssumptions(String document) {
-        List<GlobalAnchor> anchors = new ArrayList<>();
-        Pattern pattern = Pattern.compile("(假设|假定|前提|依赖)\\s*[：:]?\\s*(.+?)(?=\\.|\\n|;)");
-        Matcher matcher = pattern.matcher(document);
-        int count = 0;
-        while (matcher.find() && count < 10) {
-            anchors.add(GlobalAnchor.builder()
-                    .anchorId("ASSUMP-" + String.format("%03d", count + 1))
-                    .anchorType("ASSUMPTION")
-                    .content(matcher.group(0).trim())
-                    .source("正则提取")
-                    .category("假设")
-                    .build());
-            count++;
-        }
-        return anchors;
-    }
-
-    private List<GlobalAnchor> extractAdditionalAnchorsWithLlm(String document, LlmClient llmClient) {
-        List<GlobalAnchor> anchors = new ArrayList<>();
-        try {
-            String prompt = """
-                    请从以下需求文档中提取全局锚点信息。只输出JSON格式，不要其他解释。
-                    
-                    锚点类型：
-                    - TERMINOLOGY: 术语/缩写
-                    - CONSTRAINT: 全局约束（必须/不得）
-                    - PARAMETER: 系统级参数
-                    - INTERFACE: 外部接口
-                    - ASSUMPTION: 假设与依赖
-                    
-                    输出格式：
-                    [
-                      {"anchorId": "ID", "anchorType": "类型", "content": "内容", "source": "LLM", "category": "分类"}
-                    ]
-                    
-                    文档内容：
-                    """ + document.substring(0, Math.min(document.length(), 2000));
-
-            String response = llmClient.chat(prompt, 0.1, 2048);
-            if (response != null && !response.trim().isEmpty()) {
-                List<Map<String, Object>> llmAnchors = parseJsonList(response);
-                int startId = 100;
-                for (Map<String, Object> item : llmAnchors) {
-                    anchors.add(GlobalAnchor.builder()
-                            .anchorId("LLM-" + String.format("%03d", startId++))
-                            .anchorType((String) item.getOrDefault("anchorType", "OTHER"))
-                            .content((String) item.getOrDefault("content", ""))
-                            .source("LLM提取")
-                            .category((String) item.getOrDefault("category", "其他"))
-                            .build());
-                }
-            }
-        } catch (Exception e) {
-            log.warn("LLM辅助提取锚点失败，跳过: {}", e.getMessage());
-        }
-        return anchors;
     }
 
     private String buildContextCard(List<GlobalAnchor> anchors) {
@@ -342,54 +261,55 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
         long startTime = System.currentTimeMillis();
         List<DocumentChunk> chunks = new ArrayList<>();
 
-        // 按文档标题层级进行语义切分
-        String[] lines = document.split("\n");
+        // 直接按字符长度分割
         int chunkId = 1;
-        int currentLine = 0;
+        int currentPos = 0;
         int overlapSize = (int) (chunkSize * overlapPercent / 100.0);
+        int docLength = document.length();
 
-        while (currentLine < lines.length) {
-            StringBuilder chunkContent = new StringBuilder();
-            int charCount = 0;
-            int startLine = currentLine;
-            String sectionId = "SEC-" + String.format("%03d", chunkId);
-            String sectionTitle = "";
-
-            // 查找章节标题
-            if (currentLine < lines.length) {
-                String line = lines[currentLine].trim();
-                if (line.matches("^#{1,3}\\s+.+") || line.matches("^[\\d.]+\\s+.+")) {
-                    sectionTitle = line;
-                    chunkContent.append(line).append("\n");
-                    charCount += line.length();
-                    currentLine++;
+        while (currentPos < docLength) {
+            // 确定分块结束位置
+            int endPos = Math.min(currentPos + chunkSize, docLength);
+            
+            // 尝试在句末分割，避免截断句子
+            if (endPos < docLength) {
+                // 向前查找最近的句末标点
+                int lastPunctuation = -1;
+                for (int i = endPos; i > Math.max(currentPos, endPos - 200); i--) {
+                    char c = document.charAt(i);
+                    if (c == '。' || c == '！' || c == '？' || c == ';' || c == '\n' || c == '\r') {
+                        lastPunctuation = i;
+                        break;
+                    }
+                }
+                if (lastPunctuation > currentPos) {
+                    endPos = lastPunctuation + 1;
                 }
             }
 
-            // 填充内容直到达到chunkSize
-            while (currentLine < lines.length && charCount < chunkSize) {
-                String line = lines[currentLine];
-                chunkContent.append(line).append("\n");
-                charCount += line.length();
-                currentLine++;
-            }
-
+            // 提取分块内容
+            String chunkContent = document.substring(currentPos, endPos);
+            
             // 创建分块（注入全局上下文卡片）
-            String injectedContent = contextCard + "\n\n【当前章节内容】\n" + chunkContent.toString();
+            String injectedContent = contextCard + "\n\n【当前内容】\n" + chunkContent;
             
             chunks.add(DocumentChunk.builder()
                     .chunkId(chunkId)
                     .content(injectedContent)
-                    .sectionId(sectionId)
-                    .sectionTitle(sectionTitle)
-                    .startLine(startLine + 1)
-                    .endLine(currentLine)
+                    .sectionId("SEC-" + String.format("%03d", chunkId))
+                    .sectionTitle("分块 " + chunkId)
+                    .startLine(1)
+                    .endLine(1)
                     .build());
 
-            // 回退实现重叠（保留10%-15%）
-            if (currentLine < lines.length) {
-                int overlapLines = (int) ((currentLine - startLine) * overlapPercent / 100.0);
-                currentLine = Math.max(startLine + 1, currentLine - overlapLines);
+            // 计算下一个分块的起始位置（带重叠）
+            int stepSize = endPos - currentPos;
+            int overlapStep = (int) (stepSize * overlapPercent / 100.0);
+            currentPos = endPos - overlapStep;
+            
+            // 防止无限循环
+            if (currentPos >= endPos) {
+                currentPos = endPos;
             }
 
             chunkId++;
