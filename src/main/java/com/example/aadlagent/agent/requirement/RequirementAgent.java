@@ -261,34 +261,40 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
         long startTime = System.currentTimeMillis();
         List<DocumentChunk> chunks = new ArrayList<>();
 
-        // 直接按字符长度分割
+        // 直接按字符长度分割，每块固定chunkSize
         int chunkId = 1;
         int currentPos = 0;
-        int overlapSize = (int) (chunkSize * overlapPercent / 100.0);
         int docLength = document.length();
 
         while (currentPos < docLength) {
-            // 确定分块结束位置
+            // 确定分块结束位置（固定chunkSize）
             int endPos = Math.min(currentPos + chunkSize, docLength);
             
-            // 尝试在句末分割，避免截断句子
+            // 检查最后一句是否完整，如果不完整则向后扩展到句末（最后一个分块不需要扩展）
             if (endPos < docLength) {
-                // 向前查找最近的句末标点
-                int lastPunctuation = -1;
-                for (int i = endPos; i > Math.max(currentPos, endPos - 200); i--) {
-                    char c = document.charAt(i);
-                    if (c == '。' || c == '！' || c == '？' || c == ';' || c == '\n' || c == '\r') {
-                        lastPunctuation = i;
-                        break;
+                char lastChar = document.charAt(endPos - 1);
+                // 如果最后一个字符不是句末标点，向后查找直到句末
+                if (lastChar != '。' && lastChar != '！' && lastChar != '？' && 
+                    lastChar != ';' && lastChar != '；' && lastChar != '\n') {
+                    // 向后查找最近的句末标点
+                    for (int i = endPos; i < Math.min(docLength, endPos + 200); i++) {
+                        char c = document.charAt(i);
+                        if (c == '。' || c == '！' || c == '？' || c == ';' || c == '；') {
+                            endPos = i + 1;
+                            break;
+                        }
                     }
-                }
-                if (lastPunctuation > currentPos) {
-                    endPos = lastPunctuation + 1;
                 }
             }
 
             // 提取分块内容
-            String chunkContent = document.substring(currentPos, endPos);
+            String chunkContent = document.substring(currentPos, endPos).trim();
+            
+            // 跳过空内容
+            if (chunkContent.isEmpty()) {
+                currentPos++;
+                continue;
+            }
             
             // 创建分块（注入全局上下文卡片）
             String injectedContent = contextCard + "\n\n【当前内容】\n" + chunkContent;
@@ -302,16 +308,8 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
                     .endLine(1)
                     .build());
 
-            // 计算下一个分块的起始位置（带重叠）
-            int stepSize = endPos - currentPos;
-            int overlapStep = (int) (stepSize * overlapPercent / 100.0);
-            currentPos = endPos - overlapStep;
-            
-            // 防止无限循环
-            if (currentPos >= endPos) {
-                currentPos = endPos;
-            }
-
+            // 下一个分块直接从endPos开始，不回退（无重叠）
+            currentPos = endPos;
             chunkId++;
         }
 
