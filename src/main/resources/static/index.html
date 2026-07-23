@@ -524,7 +524,47 @@
                     <h4>需求分析结果</h4>
                     <button class="copy-btn" id="copyRequirementBtn" title="复制结果">复制</button>
                 </div>
-                <div class="result-content" id="contentRequirement"></div>
+                
+                <!-- 阶段0：全局锚点 -->
+                <div id="stage0Result" style="display: none; margin-bottom: 16px;">
+                    <div style="font-size: 0.85rem; font-weight: 600; color: var(--primary-color); margin-bottom: 8px;">阶段0：全局锚点提取</div>
+                    <div class="result-content" id="contentStage0"></div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;" id="timeStage0"></div>
+                </div>
+                
+                <!-- 阶段1：分块信息 -->
+                <div id="stage1Result" style="display: none; margin-bottom: 16px;">
+                    <div style="font-size: 0.85rem; font-weight: 600; color: var(--primary-color); margin-bottom: 8px;">阶段1：文档分块</div>
+                    <div class="result-content" id="contentStage1"></div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;" id="timeStage1"></div>
+                </div>
+                
+                <!-- 阶段2：分块提取结果 -->
+                <div id="stage2Result" style="display: none; margin-bottom: 16px;">
+                    <div style="font-size: 0.85rem; font-weight: 600; color: var(--primary-color); margin-bottom: 8px;">阶段2：条目化提取</div>
+                    <div class="result-content" id="contentStage2"></div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;" id="timeStage2"></div>
+                </div>
+                
+                <!-- 阶段3：合并与冲突 -->
+                <div id="stage3Result" style="display: none; margin-bottom: 16px;">
+                    <div style="font-size: 0.85rem; font-weight: 600; color: var(--primary-color); margin-bottom: 8px;">阶段3：合并与校验</div>
+                    <div class="result-content" id="contentStage3"></div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;" id="timeStage3"></div>
+                    
+                    <!-- 冲突警告 -->
+                    <div id="conflictsWarning" style="display: none; margin-top: 8px; background: rgba(255,193,7,0.05); border-left: 4px solid var(--warning-color); padding: 8px; border-radius: 0 6px 6px 0;">
+                        <div style="font-size: 0.8rem; font-weight: 600; color: var(--warning-color); margin-bottom: 4px;">⚠️ 检测到冲突（需要人工复核）</div>
+                        <div id="conflictsList" style="font-size: 0.75rem; color: var(--text-primary);"></div>
+                    </div>
+                </div>
+                
+                <!-- 最终需求列表 -->
+                <div style="margin-top: 16px;">
+                    <div style="font-size: 0.85rem; font-weight: 600; color: var(--success-color); margin-bottom: 8px;">📋 最终需求列表</div>
+                    <div class="result-content" id="contentRequirement"></div>
+                </div>
+                
                 <div class="result-meta">
                     <span id="timeRequirement"></span>
                     <span id="outputFileRequirement"></span>
@@ -887,6 +927,8 @@ Invalid connection syntax	example.aadl	/model	Line 38	Error"></textarea>
             Aadl: null,
             Fix: null
         };
+
+        let requirementAnalysisResult = null;
 
         let fileNames = {
             Requirement: null,
@@ -1558,21 +1600,25 @@ Invalid connection syntax	example.aadl	/model	Line 38	Error"></textarea>
                 document.getElementById('sessionIdDisplay').textContent = sessionId;
 
                 if (data.success) {
-                    results[moduleId] = data.data;
-                    
-                    if (data.outputFile) {
-                        fileNames[moduleId] = data.outputFile;
-                    } else if (!fileNames[moduleId] && params.fileName) {
-                        fileNames[moduleId] = params.fileName;
-                    }
+                    if (moduleId === 'Requirement') {
+                        processRequirementResult(data.data);
+                    } else {
+                        results[moduleId] = data.data;
+                        
+                        if (data.outputFile) {
+                            fileNames[moduleId] = data.outputFile;
+                        } else if (!fileNames[moduleId] && params.fileName) {
+                            fileNames[moduleId] = params.fileName;
+                        }
 
-                    const contentEl = document.getElementById(`content${moduleId}`);
-                    contentEl.textContent = data.data;
+                        const contentEl = document.getElementById(`content${moduleId}`);
+                        contentEl.textContent = data.data;
 
-                    document.getElementById(`time${moduleId}`).textContent = `执行时间: ${data.executionTime}ms`;
-                    
-                    if (document.getElementById(`outputFile${moduleId}`)) {
-                        document.getElementById(`outputFile${moduleId}`).textContent = data.outputFile ? `输出文件: ${data.outputFile}` : '';
+                        document.getElementById(`time${moduleId}`).textContent = `执行时间: ${data.executionTime}ms`;
+                        
+                        if (document.getElementById(`outputFile${moduleId}`)) {
+                            document.getElementById(`outputFile${moduleId}`).textContent = data.outputFile ? `输出文件: ${data.outputFile}` : '';
+                        }
                     }
 
                     setModuleStatus(moduleId, 'completed');
@@ -1597,24 +1643,150 @@ Invalid connection syntax	example.aadl	/model	Line 38	Error"></textarea>
             }
         }
 
+        function processRequirementResult(data) {
+            requirementAnalysisResult = data;
+            
+            // 阶段0：全局锚点
+            if (data.stage0) {
+                document.getElementById('stage0Result').style.display = 'block';
+                document.getElementById('timeStage0').textContent = `阶段耗时: ${data.stage0.executionTime}ms`;
+                
+                if (data.stage0.anchors && data.stage0.anchors.length > 0) {
+                    let html = '<ul style="margin: 0; padding-left: 20px;">';
+                    data.stage0.anchors.forEach(anchor => {
+                        html += `<li style="margin-bottom: 4px;"><strong>${anchor.anchorId}</strong> [${anchor.category}]: ${anchor.content}</li>`;
+                    });
+                    html += '</ul>';
+                    document.getElementById('contentStage0').innerHTML = html;
+                } else {
+                    document.getElementById('contentStage0').textContent = '未提取到全局锚点';
+                }
+                
+                // 显示全局上下文卡片
+                if (data.stage0.contextCard) {
+                    document.getElementById('contentStage0').innerHTML += 
+                        '<div style="margin-top: 8px; padding: 8px; background: #f8f9fa; border-radius: 6px; font-size: 0.8rem;">' +
+                        '<strong>全局上下文卡片：</strong><br>' + data.stage0.contextCard + '</div>';
+                }
+            }
+            
+            // 阶段1：分块信息
+            if (data.stage1) {
+                document.getElementById('stage1Result').style.display = 'block';
+                document.getElementById('timeStage1').textContent = `阶段耗时: ${data.stage1.executionTime}ms`;
+                
+                if (data.stage1.chunks && data.stage1.chunks.length > 0) {
+                    let html = '<ul style="margin: 0; padding-left: 20px;">';
+                    data.stage1.chunks.forEach(chunk => {
+                        html += `<li style="margin-bottom: 4px;"><strong>${chunk.sectionId}</strong>: ${chunk.sectionTitle || '(无标题)'} (行 ${chunk.startLine}-${chunk.endLine})</li>`;
+                    });
+                    html += '</ul>';
+                    document.getElementById('contentStage1').innerHTML = html;
+                } else {
+                    document.getElementById('contentStage1').textContent = '未分块';
+                }
+            }
+            
+            // 阶段2：分块提取结果
+            if (data.stage2) {
+                document.getElementById('stage2Result').style.display = 'block';
+                document.getElementById('timeStage2').textContent = `阶段耗时: ${data.stage2.executionTime}ms`;
+                
+                if (data.stage2.chunkResults && data.stage2.chunkResults.length > 0) {
+                    let html = '<div>';
+                    data.stage2.chunkResults.forEach((chunkReqs, index) => {
+                        if (chunkReqs.length > 0) {
+                            html += `<div style="margin-bottom: 8px;"><strong>分块 ${index + 1}：${chunkReqs.length} 条需求</strong></div>`;
+                            html += '<ul style="margin: 0; padding-left: 20px;">';
+                            chunkReqs.forEach(req => {
+                                html += `<li style="margin-bottom: 4px;">${req.title || req.requirementId}</li>`;
+                            });
+                            html += '</ul>';
+                        }
+                    });
+                    html += '</div>';
+                    document.getElementById('contentStage2').innerHTML = html;
+                } else {
+                    document.getElementById('contentStage2').textContent = '未提取到需求';
+                }
+            }
+            
+            // 阶段3：合并与冲突
+            if (data.stage3) {
+                document.getElementById('stage3Result').style.display = 'block';
+                document.getElementById('timeStage3').textContent = `阶段耗时: ${data.stage3.executionTime}ms`;
+                
+                if (data.stage3.mergedRequirements && data.stage3.mergedRequirements.length > 0) {
+                    document.getElementById('contentStage3').textContent = 
+                        `合并完成，共 ${data.stage3.mergedRequirements.length} 条需求`;
+                } else {
+                    document.getElementById('contentStage3').textContent = '无合并结果';
+                }
+                
+                // 冲突警告
+                if (data.stage3.conflicts && data.stage3.conflicts.length > 0) {
+                    document.getElementById('conflictsWarning').style.display = 'block';
+                    let conflictHtml = '';
+                    data.stage3.conflicts.forEach(conflict => {
+                        conflictHtml += `<div style="margin-bottom: 4px;"><strong>${conflict.conflictId}</strong>: ${conflict.description}`;
+                        if (conflict.conflictingValues) {
+                            conflictHtml += ` (冲突值: ${conflict.conflictingValues.join(', ')})`;
+                        }
+                        conflictHtml += '</div>';
+                    });
+                    document.getElementById('conflictsList').innerHTML = conflictHtml;
+                } else {
+                    document.getElementById('conflictsWarning').style.display = 'none';
+                }
+            }
+            
+            // 最终需求列表（用于后续模块）
+            const mergedRequirements = data.stage3 ? data.stage3.mergedRequirements : [];
+            results['Requirement'] = JSON.stringify(mergedRequirements, null, 2);
+            
+            // 显示最终需求列表
+            if (mergedRequirements && mergedRequirements.length > 0) {
+                let html = '<ul style="margin: 0; padding-left: 20px;">';
+                mergedRequirements.forEach(req => {
+                    html += `<li style="margin-bottom: 8px;">
+                        <strong>${req.requirementId}</strong>: ${req.title}
+                        <span style="color: var(--text-secondary); font-size: 0.75rem;"> [${req.priority}]</span>
+                        <br><span style="font-size: 0.8rem; color: var(--text-secondary);">${req.description}</span>
+                        ${req.globalRef && req.globalRef.length > 0 ? 
+                            '<br><span style="font-size: 0.75rem; color: var(--info-color);">全局锚点: ' + req.globalRef.join(', ') + '</span>' : ''}
+                    </li>`;
+                });
+                html += '</ul>';
+                document.getElementById('contentRequirement').innerHTML = html;
+            } else {
+                document.getElementById('contentRequirement').textContent = '未提取到需求';
+            }
+            
+            // 更新总执行时间
+            document.getElementById('timeRequirement').textContent = `总执行时间: ${data.totalExecutionTime || 0}ms`;
+        }
+
         function getActiveTab(moduleId) {
             const activeTab = document.querySelector(`.input-tab.active[data-module="${moduleId}"]`);
             return activeTab ? activeTab.dataset.tab : 'text';
         }
 
         function updatePreviousData() {
+            const reqLen = results.Requirement ? results.Requirement.length : 0;
+            const archLen = results.Architecture ? results.Architecture.length : 0;
+            
             if (results.Requirement) {
                 document.getElementById('previousDataArchitecture').innerHTML = 
-                    `已就绪：${results.Requirement.length} 字符<br><span class="link-to-previous" onclick="scrollToModule('Requirement')">查看需求分析结果 →</span>`;
+                    `已就绪：${reqLen} 字符<br><span class="link-to-previous" onclick="scrollToModule('Requirement')">查看需求分析结果 →</span>`;
                 document.getElementById('previousDataModule').innerHTML = 
-                    `已就绪：需求分析(${results.Requirement.length}字符) + 架构设计(${results.Architecture ? results.Architecture.length : 0}字符)<br>
+                    `已就绪：需求分析(${reqLen}字符) + 架构设计(${archLen}字符)<br>
                     <span class="link-to-previous" onclick="scrollToModule('Requirement')">查看需求分析 →</span> | 
                     <span class="link-to-previous" onclick="scrollToModule('Architecture')">查看架构设计 →</span>`;
             }
             
             if (results.Architecture) {
                 document.getElementById('previousDataModule').innerHTML = 
-                    `已就绪：需求分析(${results.Requirement ? results.Requirement.length : 0}字符) + 架构设计(${results.Architecture.length}字符)<br>
+                    `已就绪：需求分析(${reqLen}字符) + 架构设计(${archLen}字符)<br>
                     <span class="link-to-previous" onclick="scrollToModule('Requirement')">查看需求分析 →</span> | 
                     <span class="link-to-previous" onclick="scrollToModule('Architecture')">查看架构设计 →</span>`;
                 document.getElementById('previousDataAadl').innerHTML = 
