@@ -35,8 +35,10 @@ C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlage
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\controller\SessionController.java
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\model\AadlArchitectureModel.java
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\model\AadlModelResult.java
+C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\model\GlobalAnchor.java
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\model\ModuleAnalysisResult.java
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\model\Requirement.java
+C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\model\RequirementAnalysisResult.java
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\model\TraceabilityRecord.java
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\rag\EmbeddingService.java
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\rag\KnowledgeBaseManager.java

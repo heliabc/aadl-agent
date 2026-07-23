@@ -14,6 +14,7 @@ output_format: |
   - priority: 优先级，取值为"高"、"中"或"低"
   - acceptanceCriteria: 验收标准数组，包含具体、可衡量的完成标准（至少2条）
   - dependencies: 相关依赖数组，指出与其他需求或系统的关联，如果没有依赖则为空数组
+  - globalRef: 全局锚点引用数组，列出该需求受哪些全局锚点影响（如CONST-001, PARAM-002），如果没有关联则为空数组
 
 format_example: |
   [
@@ -27,7 +28,8 @@ format_example: |
               "连续输入错误密码3次后，账户被锁定15分钟",
               "勾选记住密码后，下次访问自动填充登录信息"
           ],
-          "dependencies": ["REQ-002"]
+          "dependencies": ["REQ-002"],
+          "globalRef": ["CONST-001"]
       }
   ]
 
@@ -40,6 +42,8 @@ strict_rules: |
   6. 需求标题必须简洁明了，突出核心功能
   7. 需求描述必须完整，涵盖功能的所有关键点
   8. 如果需求文档中有冲突或模糊的地方，做出合理的推断并在描述中说明
+  9. 必须输出 globalRef 字段，列出该需求受哪些全局锚点影响
+  10. 对于"参见X章"类引用，原样照抄原文，禁止自行解释
 
 example:
   title: 需求条目化示例
@@ -59,7 +63,8 @@ example:
                 "密码强度不符合要求时，系统提示密码强度不足",
                 "注册成功后，系统跳转到登录页面"
             ],
-            "dependencies": []
+            "dependencies": [],
+            "globalRef": ["CONST-001"]
         },
         {
             "requirementId": "REQ-002",
@@ -72,7 +77,8 @@ example:
                 "未验证邮箱的用户登录时收到验证提示",
                 "验证链接过期时间为24小时"
             ],
-            "dependencies": ["REQ-001"]
+            "dependencies": ["REQ-001"],
+            "globalRef": ["CONST-002"]
         }
     ]
 

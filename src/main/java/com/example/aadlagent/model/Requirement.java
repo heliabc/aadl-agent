@@ -25,4 +25,6 @@ public class Requirement {
     private List<String> acceptanceCriteria;
 
     private List<String> dependencies;
+
+    private List<String> globalRef;
 }
