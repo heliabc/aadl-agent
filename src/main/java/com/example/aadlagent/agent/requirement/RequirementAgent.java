@@ -79,12 +79,11 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
                 .build();
 
         try {
-            // 阶段0：预处理——抽离"全局锚点"
-            log.info("\n\n========== 阶段0：预处理——抽离全局锚点 ==========");
+            // 阶段0：预处理——生成全局上下文卡片
+            log.info("\n\n========== 阶段0：预处理——生成全局上下文卡片 ==========");
             Stage0Result stage0 = executeStage0(requirementDoc, llmClient);
             analysisResult.setStage0(stage0);
-            log.info("阶段0完成，耗时: {}ms，提取锚点: {} 个", stage0.getExecutionTime(), 
-                    stage0.getAnchors() != null ? stage0.getAnchors().size() : 0);
+            log.info("阶段0完成，耗时: {}ms", stage0.getExecutionTime());
             log.info("全局上下文卡片:\n{}", stage0.getContextCard());
 
             if (input.isCancelled()) {
@@ -120,7 +119,7 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
 
             // 阶段3：合并与校验——机械拼接，杜绝幻觉融合
             log.info("\n\n========== 阶段3：合并与校验——机械拼接 ==========");
-            Stage3Result stage3 = executeStage3(stage2.getChunkResults(), stage0.getAnchors());
+            Stage3Result stage3 = executeStage3(stage2.getChunkResults());
             analysisResult.setStage3(stage3);
             log.info("阶段3完成，耗时: {}ms，合并后需求: {} 条，冲突: {} 个", 
                     stage3.getExecutionTime(),
@@ -157,102 +156,75 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
     private static class PatternConfig {
         String name;
         Pattern pattern;
-        boolean isParameter;
         String category;
-        String anchorType;
 
-        PatternConfig(String name, String regex, boolean isParameter, String category, String anchorType) {
+        PatternConfig(String name, String regex, String category) {
             this.name = name;
             this.pattern = Pattern.compile(regex);
-            this.isParameter = isParameter;
             this.category = category;
-            this.anchorType = anchorType;
         }
     }
 
     private static final List<PatternConfig> PATTERNS = Arrays.asList(
-            new PatternConfig("clock", "(\\d+\\.?\\d*)\\s*([kKMG]?[Hh]z)", true, "时钟频率", "PARAMETER"),
-            new PatternConfig("time", "(\\d+\\.?\\d*)\\s*(毫秒|微秒|纳秒|秒|ms|us|μs|ns|s)", true, "时间参数", "PARAMETER"),
-            new PatternConfig("memory", "(\\d+\\.?\\d*)\\s*([kKMG]?[Bb](yte)?)", true, "内存大小", "PARAMETER"),
-            new PatternConfig("baud", "(\\d+\\.?\\d*)\\s*([kKMG]?[Bb]ps)", true, "波特率", "PARAMETER"),
-            new PatternConfig("deadline", "(截止|响应|执行|反应)时间\\s*[:：=]?\\s*(\\d+\\.?\\d*)\\s*(ms|us|μs|ns|s|毫秒|微秒)", true, "截止时间", "PARAMETER"),
-            new PatternConfig("period", "(周期|period)\\s*[:：=]?\\s*(\\d+\\.?\\d*)\\s*(ms|毫秒|Hz)", true, "周期", "PARAMETER"),
-            new PatternConfig("jitter", "(抖动|jitter)\\s*[:：=]?\\s*(不超过|≤|<)?\\s*(\\d+\\.?\\d*)\\s*(ms|us|μs)", true, "抖动", "PARAMETER"),
-            new PatternConfig("priority", "(优先级|priority)\\s*[:：=]?\\s*(\\d+|[高H中M低L])", true, "优先级", "PARAMETER"),
-            new PatternConfig("abbr", "([A-Z]{2,6})\\s*[（(]\\s*([^）)]{1,30})\\s*[）)]", false, "缩写", "TERMINOLOGY"),
-            new PatternConfig("iface", "(CAN|UART|SPI|I2C|I2S|GPIO|PWM|ADC|DAC|USB|Ethernet|PCIe?|SDIO|FlexRay|LIN|RS232|RS485)\\s*(\\d*)", false, "接口协议", "INTERFACE"),
-            new PatternConfig("safety", "(DAL-[A-E]|ASIL\\s*[A-D]|SIL\\s*[1-4])", false, "安全等级", "CONSTRAINT"),
-            new PatternConfig("assume", "(假设|前提|假定)\\s*[:：]?\\s*(.{10,200}?)(?=[。；！\\n]|$)", false, "假设前提", "ASSUMPTION"),
-            new PatternConfig("limit", "(不超过|不低于|≥|≤|max|min|最大|最小)\\s*[:：]?\\s*(\\d+\\.?\\d*)\\s*(ms|us|MHz|KB|%)", true, "限制条件", "CONSTRAINT"),
-            new PatternConfig("constraint", "(必须|不得|禁止|严禁|应当|不应|务必)\\s+(.{1,50}?)(?=[。；！\\n]|$)", false, "约束条件", "CONSTRAINT")
+            new PatternConfig("clock", "(\\d+\\.?\\d*)\\s*([kKMG]?[Hh]z)", "时钟频率"),
+            new PatternConfig("time", "(\\d+\\.?\\d*)\\s*(毫秒|微秒|纳秒|秒|ms|us|μs|ns|s)", "时间参数"),
+            new PatternConfig("memory", "(\\d+\\.?\\d*)\\s*([kKMG]?[Bb](yte)?)", "内存大小"),
+            new PatternConfig("baud", "(\\d+\\.?\\d*)\\s*([kKMG]?[Bb]ps)", "波特率"),
+            new PatternConfig("deadline", "(截止|响应|执行|反应)时间\\s*[:：=]?\\s*(\\d+\\.?\\d*)\\s*(ms|us|μs|ns|s|毫秒|微秒)", "截止时间"),
+            new PatternConfig("period", "(周期|period)\\s*[:：=]?\\s*(\\d+\\.?\\d*)\\s*(ms|毫秒|Hz)", "周期"),
+            new PatternConfig("jitter", "(抖动|jitter)\\s*[:：=]?\\s*(不超过|≤|<)?\\s*(\\d+\\.?\\d*)\\s*(ms|us|μs)", "抖动"),
+            new PatternConfig("priority", "(优先级|priority)\\s*[:：=]?\\s*(\\d+|[高H中M低L])", "优先级"),
+            new PatternConfig("abbr", "([A-Z]{2,6})\\s*[（(]\\s*([^）)]{1,30})\\s*[）)]", "缩写"),
+            new PatternConfig("iface", "(CAN|UART|SPI|I2C|I2S|GPIO|PWM|ADC|DAC|USB|Ethernet|PCIe?|SDIO|FlexRay|LIN|RS232|RS485)\\s*(\\d*)", "接口协议"),
+            new PatternConfig("safety", "(DAL-[A-E]|ASIL\\s*[A-D]|SIL\\s*[1-4])", "安全等级"),
+            new PatternConfig("assume", "(假设|前提|假定)\\s*[:：]?\\s*(.{10,200}?)(?=[。；！\\n]|$)", "假设前提"),
+            new PatternConfig("limit", "(不超过|不低于|≥|≤|max|min|最大|最小)\\s*[:：]?\\s*(\\d+\\.?\\d*)\\s*(ms|us|MHz|KB|%)", "限制条件"),
+            new PatternConfig("constraint", "(必须|不得|禁止|严禁|应当|不应|务必)\\s+(.{1,50}?)(?=[。；！\\n]|$)", "约束条件")
     );
 
     private Stage0Result executeStage0(String document, LlmClient llmClient) {
         long startTime = System.currentTimeMillis();
-        List<GlobalAnchor> anchors = new ArrayList<>();
 
-        // 完全正则匹配提取全局锚点
-        int idCounter = 1;
-        for (PatternConfig config : PATTERNS) {
-            Matcher matcher = config.pattern.matcher(document);
-            while (matcher.find()) {
-                String content = matcher.group(0).trim();
-                String anchorId = config.isParameter ? "PARAM-" + String.format("%03d", idCounter++) 
-                                                     : getAnchorIdByType(config.anchorType, idCounter++);
-                
-                anchors.add(GlobalAnchor.builder()
-                        .anchorId(anchorId)
-                        .anchorType(config.anchorType)
-                        .content(content)
-                        .source("正则提取")
-                        .category(config.category)
-                        .build());
-            }
-        }
-
-        // 生成全局上下文卡片（压缩至200-300字）
-        String contextCard = buildContextCard(anchors);
+        // 正则匹配提取信息，直接生成上下文卡片
+        String contextCard = buildContextCard(document);
 
         return Stage0Result.builder()
-                .anchors(anchors)
                 .contextCard(contextCard)
                 .executionTime(System.currentTimeMillis() - startTime)
                 .build();
     }
 
-    private String getAnchorIdByType(String type, int counter) {
-        switch (type) {
-            case "TERMINOLOGY":
-                return "TERM-" + String.format("%03d", counter);
-            case "CONSTRAINT":
-                return "CONST-" + String.format("%03d", counter);
-            case "INTERFACE":
-                return "IFACE-" + String.format("%03d", counter);
-            case "ASSUMPTION":
-                return "ASSUMP-" + String.format("%03d", counter);
-            default:
-                return "OTHER-" + String.format("%03d", counter);
-        }
-    }
-
-    private String buildContextCard(List<GlobalAnchor> anchors) {
+    private String buildContextCard(String document) {
         StringBuilder card = new StringBuilder();
         card.append("【全局上下文卡片】\n");
 
-        Map<String, List<GlobalAnchor>> grouped = anchors.stream()
-                .collect(Collectors.groupingBy(GlobalAnchor::getCategory));
+        Map<String, List<String>> grouped = new HashMap<>();
+        
+        for (PatternConfig config : PATTERNS) {
+            Matcher matcher = config.pattern.matcher(document);
+            while (matcher.find()) {
+                String content = matcher.group(0).trim();
+                grouped.computeIfAbsent(config.category, k -> new ArrayList<>()).add(content);
+            }
+        }
 
-        for (Map.Entry<String, List<GlobalAnchor>> entry : grouped.entrySet()) {
+        for (Map.Entry<String, List<String>> entry : grouped.entrySet()) {
             card.append("- ").append(entry.getKey()).append(":\n");
-            for (GlobalAnchor anchor : entry.getValue()) {
-                card.append("  * ").append(anchor.getAnchorId()).append(": ").append(anchor.getContent()).append("\n");
+            int count = 0;
+            for (String content : entry.getValue()) {
+                if (count >= 5) {  // 每个类别最多显示5条
+                    card.append("  * ...(共").append(entry.getValue().size()).append("条)\n");
+                    break;
+                }
+                card.append("  * ").append(content).append("\n");
+                count++;
             }
         }
 
         // 压缩至200-300字
         String result = card.toString();
         if (result.length() > 300) {
-            result = result.substring(0, 300) + "...\n[注：完整锚点见阶段0输出]";
+            result = result.substring(0, 300) + "...\n[注：完整信息见阶段0输出]";
         }
         return result;
     }
@@ -381,7 +353,7 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
         return Collections.emptyList();
     }
 
-    private Stage3Result executeStage3(List<List<Requirement>> chunkResults, List<GlobalAnchor> anchors) {
+    private Stage3Result executeStage3(List<List<Requirement>> chunkResults) {
         long startTime = System.currentTimeMillis();
 
         // 机械拼接：按原始顺序合并所有需求
@@ -398,7 +370,7 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
         }
 
         // 冲突检测（规则驱动）
-        List<Conflict> conflicts = detectConflicts(mergedRequirements, anchors);
+        List<Conflict> conflicts = detectConflicts(mergedRequirements);
 
         return Stage3Result.builder()
                 .mergedRequirements(mergedRequirements)
@@ -407,53 +379,30 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
                 .build();
     }
 
-    private List<Conflict> detectConflicts(List<Requirement> requirements, List<GlobalAnchor> anchors) {
+    private List<Conflict> detectConflicts(List<Requirement> requirements) {
         List<Conflict> conflicts = new ArrayList<>();
 
-        // 按全局锚点分组检查
-        Map<String, List<Requirement>> groupedByAnchor = new HashMap<>();
+        // 检查所有需求之间的数值约束冲突
+        List<String> allConstraints = new ArrayList<>();
+        List<String> allReqIds = new ArrayList<>();
+        
         for (Requirement req : requirements) {
-            if (req.getGlobalRef() != null) {
-                for (String anchorId : req.getGlobalRef()) {
-                    groupedByAnchor.computeIfAbsent(anchorId, k -> new ArrayList<>()).add(req);
-                }
+            Pattern numPattern = Pattern.compile("(≤|<|≥|>|==|=)\\s*(\\d+\\.?\\d*\\s*(ms|μs|ns|秒|MHz|GHz|MB|GB|Hz))");
+            Matcher matcher = numPattern.matcher(req.getDescription());
+            while (matcher.find()) {
+                allConstraints.add(matcher.group(0));
+                allReqIds.add(req.getRequirementId());
             }
         }
 
-        // 检查同一锚点下的矛盾约束
-        for (Map.Entry<String, List<Requirement>> entry : groupedByAnchor.entrySet()) {
-            String anchorId = entry.getKey();
-            List<Requirement> reqs = entry.getValue();
-            
-            if (reqs.size() >= 2) {
-                // 检查数值约束冲突
-                List<String> conflictingValues = new ArrayList<>();
-                List<String> conflictingIds = new ArrayList<>();
-                
-                for (Requirement req : reqs) {
-                    // 提取描述中的数值约束
-                    Pattern numPattern = Pattern.compile("(≤|<|≥|>|==|=)\\s*(\\d+\\.?\\d*\\s*(ms|μs|ns|秒|MHz|GHz|MB|GB|Hz))");
-                    Matcher matcher = numPattern.matcher(req.getDescription());
-                    while (matcher.find()) {
-                        String constraint = matcher.group(0);
-                        conflictingValues.add(constraint);
-                        conflictingIds.add(req.getRequirementId());
-                    }
-                }
-
-                if (conflictingValues.size() >= 2) {
-                    // 检查是否存在矛盾
-                    if (hasContradiction(conflictingValues)) {
-                        conflicts.add(Conflict.builder()
-                                .conflictId("CONFLICT-" + String.format("%03d", conflicts.size() + 1))
-                                .anchorId(anchorId)
-                                .description("对锚点 " + anchorId + " 存在矛盾约束")
-                                .conflictingRequirementIds(conflictingIds)
-                                .conflictingValues(conflictingValues)
-                                .build());
-                    }
-                }
-            }
+        // 检查是否存在矛盾
+        if (allConstraints.size() >= 2 && hasContradiction(allConstraints)) {
+            conflicts.add(Conflict.builder()
+                    .conflictId("CONFLICT-" + String.format("%03d", conflicts.size() + 1))
+                    .description("检测到数值约束冲突")
+                    .conflictingRequirementIds(allReqIds)
+                    .conflictingValues(allConstraints)
+                    .build());
         }
 
         return conflicts;

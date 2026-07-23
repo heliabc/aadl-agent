@@ -1646,27 +1646,17 @@ Invalid connection syntax	example.aadl	/model	Line 38	Error"></textarea>
         function processRequirementResult(data) {
             requirementAnalysisResult = data;
             
-            // 阶段0：全局锚点
+            // 阶段0：全局上下文卡片
             if (data.stage0) {
                 document.getElementById('stage0Result').style.display = 'block';
                 document.getElementById('timeStage0').textContent = `阶段耗时: ${data.stage0.executionTime}ms`;
                 
-                if (data.stage0.anchors && data.stage0.anchors.length > 0) {
-                    let html = '<ul style="margin: 0; padding-left: 20px;">';
-                    data.stage0.anchors.forEach(anchor => {
-                        html += `<li style="margin-bottom: 4px;"><strong>${anchor.anchorId}</strong> [${anchor.category}]: ${anchor.content}</li>`;
-                    });
-                    html += '</ul>';
-                    document.getElementById('contentStage0').innerHTML = html;
-                } else {
-                    document.getElementById('contentStage0').textContent = '未提取到全局锚点';
-                }
-                
-                // 显示全局上下文卡片
                 if (data.stage0.contextCard) {
-                    document.getElementById('contentStage0').innerHTML += 
-                        '<div style="margin-top: 8px; padding: 8px; background: #f8f9fa; border-radius: 6px; font-size: 0.8rem;">' +
-                        '<strong>全局上下文卡片：</strong><br>' + data.stage0.contextCard + '</div>';
+                    document.getElementById('contentStage0').innerHTML = 
+                        '<div style="padding: 8px; background: #f8f9fa; border-radius: 6px; font-size: 0.85rem; white-space: pre-wrap;">' +
+                        data.stage0.contextCard + '</div>';
+                } else {
+                    document.getElementById('contentStage0').textContent = '未生成全局上下文卡片';
                 }
             }
             

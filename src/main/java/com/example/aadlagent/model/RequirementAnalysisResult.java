@@ -31,7 +31,6 @@ public class RequirementAnalysisResult {
     @AllArgsConstructor
     @Builder
     public static class Stage0Result {
-        private List<GlobalAnchor> anchors;
         private String contextCard;
         private long executionTime;
     }
