@@ -18,7 +18,7 @@ file:
 
 ollama:
   base-url: http://localhost:11434
-  chat-model: batiai/qwen3.6-27b:iq4
+  chat-model: qwen3:8b
   embedding-model: qwen3-embedding:latest
   timeout: 900000
 
@@ -57,6 +57,6 @@ agent:
     max-tokens: 16384
   rewrite:
     model-type: OLLAMA
-    ollama-model-name: ""
+    ollama-model-name: "qwen3:8b"
     temperature: 0.3
     max-tokens: 512
