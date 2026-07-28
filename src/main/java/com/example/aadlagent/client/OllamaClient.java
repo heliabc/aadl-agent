@@ -87,7 +87,7 @@ public class OllamaClient implements LlmClient {
                         String content = chatResponse.getMessage().getContent();
                         log.debug("Ollama chat message content: null={}, length={}", 
                                 content == null, content != null ? content.length() : -1);
-                        return content;
+                        return cleanThinkingContent(content);
                     }
                 }
             }
@@ -193,5 +193,23 @@ public class OllamaClient implements LlmClient {
     @Override
     public String getModelName() {
         return config.getChatModel();
+    }
+
+    /**
+     * 移除 qwen3 等模型在 content 中返回的 <think>...</think> 思考标签及其内容。
+     * 这些标签会干扰后续的 JSON 提取与解析。
+     */
+    private String cleanThinkingContent(String content) {
+        if (content == null) {
+            return null;
+        }
+        // 移除完整的 <think>...</think> 块（包括跨行内容）
+        String result = content.replaceAll("(?s)<think>.*?</think>", "");
+        // 处理未闭合的 <think> 标签（输出被截断，只有开始标签没有结束标签）
+        int thinkStart = result.indexOf("<think>");
+        if (thinkStart >= 0) {
+            result = result.substring(0, thinkStart);
+        }
+        return result.trim();
     }
 }
