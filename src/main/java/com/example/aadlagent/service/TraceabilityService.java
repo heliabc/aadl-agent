@@ -55,7 +55,30 @@ public class TraceabilityService {
         }
 
         try {
-            List<Requirement> requirements = objectMapper.readValue(requirementsJson, new TypeReference<List<Requirement>>() {});
+            // 尝试解析为完整的分析结果对象
+            Map<String, Object> resultMap = objectMapper.readValue(requirementsJson, new TypeReference<Map<String, Object>>() {});
+            
+            List<Requirement> requirements = null;
+            
+            // 检查是否包含阶段3结果
+            if (resultMap.containsKey("stage3")) {
+                Map<String, Object> stage3 = (Map<String, Object>) resultMap.get("stage3");
+                if (stage3.containsKey("mergedRequirements")) {
+                    String requirementsJsonStr = objectMapper.writeValueAsString(stage3.get("mergedRequirements"));
+                    requirements = objectMapper.readValue(requirementsJsonStr, new TypeReference<List<Requirement>>() {});
+                }
+            }
+            
+            // 如果没有阶段3，尝试直接解析为需求列表
+            if (requirements == null || requirements.isEmpty()) {
+                try {
+                    requirements = objectMapper.readValue(requirementsJson, new TypeReference<List<Requirement>>() {});
+                } catch (Exception e) {
+                    log.warn("无法解析需求JSON，格式不匹配");
+                    return;
+                }
+            }
+            
             if (requirements == null || requirements.isEmpty()) {
                 return;
             }

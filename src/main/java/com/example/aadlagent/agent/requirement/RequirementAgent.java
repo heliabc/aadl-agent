@@ -89,56 +89,92 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
                 .build();
 
         try {
-            // 阶段0：预处理——生成全局上下文卡片
-            log.info("\n\n========== 阶段0：预处理——生成全局上下文卡片 ==========");
-            Stage0Result stage0 = executeStage0(cleanedDoc, llmClient);
-            analysisResult.setStage0(stage0);
-            log.info("阶段0完成，耗时: {}ms", stage0.getExecutionTime());
-            log.info("全局上下文卡片:\n{}", stage0.getContextCard());
-
-            if (input.isCancelled()) {
-                log.info("任务已取消，RequirementAgent停止执行");
-                return AgentOutput.cancelled(input.getSessionId());
-            }
-
-            // 阶段1：分层分块——注入全局视野
-            log.info("\n\n========== 阶段1：分层分块——注入全局视野 ==========");
             boolean isDirectProcess = cleanedDoc.length() <= directProcessThreshold;
+            Stage3Result stage3 = null;
+            
             if (isDirectProcess) {
-                log.info("文档长度 {} 字符，小于直接处理阈值 {}，采用直接处理模式", cleanedDoc.length(), directProcessThreshold);
+                // 短文本直接处理：跳过阶段0和阶段1，直接调用LLM提取需求
+                log.info("\n\n========== 短文本直接处理模式 ==========");
+                log.info("文档长度 {} 字符，小于直接处理阈值 {}，直接调用LLM", cleanedDoc.length(), directProcessThreshold);
+                
+                // 直接创建包含完整文档的分块
+                List<DocumentChunk> chunks = Collections.singletonList(
+                    DocumentChunk.builder()
+                            .chunkId(1)
+                            .content(cleanedDoc)
+                            .sectionId("SEC-001")
+                            .sectionTitle("完整文档")
+                            .startLine(1)
+                            .endLine(1)
+                            .build()
+                );
+                
+                // 阶段2：条目化提取
+                log.info("\n\n========== 阶段2：条目化提取 ==========");
+                Stage2Result stage2 = executeStage2(chunks, llmClient, input);
+                analysisResult.setStage2(stage2);
+                int totalRequirements = stage2.getChunkResults().stream()
+                        .mapToInt(List::size)
+                        .sum();
+                log.info("阶段2完成，耗时: {}ms，提取需求总数: {} 条", stage2.getExecutionTime(), totalRequirements);
+                
+                // 阶段3：合并与校验
+                log.info("\n\n========== 阶段3：合并与校验 ==========");
+                stage3 = executeStage3(stage2.getChunkResults(), "");
+                analysisResult.setStage3(stage3);
+                log.info("阶段3完成，耗时: {}ms，合并后需求: {} 条，冲突: {} 个", 
+                        stage3.getExecutionTime(),
+                        stage3.getMergedRequirements() != null ? stage3.getMergedRequirements().size() : 0,
+                        stage3.getConflicts() != null ? stage3.getConflicts().size() : 0);
+            } else {
+                // 长文本处理：执行完整流程
+                // 阶段0：预处理——生成全局上下文卡片
+                log.info("\n\n========== 阶段0：预处理——生成全局上下文卡片 ==========");
+                Stage0Result stage0 = executeStage0(cleanedDoc, llmClient);
+                analysisResult.setStage0(stage0);
+                log.info("阶段0完成，耗时: {}ms", stage0.getExecutionTime());
+                log.info("全局上下文卡片:\n{}", stage0.getContextCard());
+
+                if (input.isCancelled()) {
+                    log.info("任务已取消，RequirementAgent停止执行");
+                    return AgentOutput.cancelled(input.getSessionId());
+                }
+
+                // 阶段1：分层分块——注入全局视野
+                log.info("\n\n========== 阶段1：分层分块——注入全局视野 ==========");
+                Stage1Result stage1 = executeStage1(cleanedDoc, stage0.getContextCard(), isDirectProcess);
+                analysisResult.setStage1(stage1);
+                log.info("阶段1完成，耗时: {}ms，分块数量: {} 个", stage1.getExecutionTime(), 
+                        stage1.getChunks() != null ? stage1.getChunks().size() : 0);
+
+                if (input.isCancelled()) {
+                    log.info("任务已取消，RequirementAgent停止执行");
+                    return AgentOutput.cancelled(input.getSessionId());
+                }
+
+                // 阶段2：条目化提取——显式绑定全局引用
+                log.info("\n\n========== 阶段2：条目化提取——显式绑定全局引用 ==========");
+                Stage2Result stage2 = executeStage2(stage1.getChunks(), llmClient, input);
+                analysisResult.setStage2(stage2);
+                int totalRequirements = stage2.getChunkResults().stream()
+                        .mapToInt(List::size)
+                        .sum();
+                log.info("阶段2完成，耗时: {}ms，提取需求总数: {} 条", stage2.getExecutionTime(), totalRequirements);
+
+                if (input.isCancelled()) {
+                    log.info("任务已取消，RequirementAgent停止执行");
+                    return AgentOutput.cancelled(input.getSessionId());
+                }
+
+                // 阶段3：合并与校验——机械拼接，杜绝幻觉融合
+                log.info("\n\n========== 阶段3：合并与校验——机械拼接 ==========");
+                stage3 = executeStage3(stage2.getChunkResults(), stage0.getContextCard());
+                analysisResult.setStage3(stage3);
+                log.info("阶段3完成，耗时: {}ms，合并后需求: {} 条，冲突: {} 个", 
+                        stage3.getExecutionTime(),
+                        stage3.getMergedRequirements() != null ? stage3.getMergedRequirements().size() : 0,
+                        stage3.getConflicts() != null ? stage3.getConflicts().size() : 0);
             }
-            Stage1Result stage1 = executeStage1(cleanedDoc, stage0.getContextCard(), isDirectProcess);
-            analysisResult.setStage1(stage1);
-            log.info("阶段1完成，耗时: {}ms，分块数量: {} 个", stage1.getExecutionTime(), 
-                    stage1.getChunks() != null ? stage1.getChunks().size() : 0);
-
-            if (input.isCancelled()) {
-                log.info("任务已取消，RequirementAgent停止执行");
-                return AgentOutput.cancelled(input.getSessionId());
-            }
-
-            // 阶段2：条目化提取——显式绑定全局引用
-            log.info("\n\n========== 阶段2：条目化提取——显式绑定全局引用 ==========");
-            Stage2Result stage2 = executeStage2(stage1.getChunks(), llmClient, input);
-            analysisResult.setStage2(stage2);
-            int totalRequirements = stage2.getChunkResults().stream()
-                    .mapToInt(List::size)
-                    .sum();
-            log.info("阶段2完成，耗时: {}ms，提取需求总数: {} 条", stage2.getExecutionTime(), totalRequirements);
-
-            if (input.isCancelled()) {
-                log.info("任务已取消，RequirementAgent停止执行");
-                return AgentOutput.cancelled(input.getSessionId());
-            }
-
-            // 阶段3：合并与校验——机械拼接，杜绝幻觉融合
-            log.info("\n\n========== 阶段3：合并与校验——机械拼接 ==========");
-            Stage3Result stage3 = executeStage3(stage2.getChunkResults(), stage0.getContextCard());
-            analysisResult.setStage3(stage3);
-            log.info("阶段3完成，耗时: {}ms，合并后需求: {} 条，冲突: {} 个", 
-                    stage3.getExecutionTime(),
-                    stage3.getMergedRequirements() != null ? stage3.getMergedRequirements().size() : 0,
-                    stage3.getConflicts() != null ? stage3.getConflicts().size() : 0);
 
             if (stage3.getConflicts() != null && !stage3.getConflicts().isEmpty()) {
                 log.warn("检测到冲突:");
