@@ -1602,7 +1602,8 @@ Invalid connection syntax	example.aadl	/model	Line 38	Error"></textarea>
 
                 if (data.success) {
                     if (moduleId === 'Requirement') {
-                        processRequirementResult(data.data);
+                        const reqData = typeof data.data === 'string' ? JSON.parse(data.data) : data.data;
+                        processRequirementResult(reqData);
                         if (data.outputFile) {
                             fileNames['Requirement'] = data.outputFile;
                         }
@@ -1649,6 +1650,12 @@ Invalid connection syntax	example.aadl	/model	Line 38	Error"></textarea>
 
         function processRequirementResult(data) {
             requirementAnalysisResult = data;
+            
+            // 重置所有阶段显示状态，避免上一次运行的残留数据
+            ['stage0Result', 'stage1Result', 'stage2Result', 'stage3Result', 'conflictsWarning'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
             
             // 阶段0：全局上下文卡片
             if (data.stage0) {
