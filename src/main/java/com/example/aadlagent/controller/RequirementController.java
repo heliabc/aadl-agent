@@ -26,6 +26,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -311,8 +313,17 @@ public class RequirementController {
             }
 
             String requirementsJson = docFileReader.readFile(requirementsFilePath);
+            
+            // 提取需求列表（从完整分析结果中）
+            String requirementsListJson = extractRequirementsList(requirementsJson);
+            if (requirementsListJson == null || requirementsListJson.isEmpty()) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "无法从需求文件中提取需求列表");
+                return ResponseEntity.badRequest().body(error);
+            }
 
-            String ragContext = ragService.getEnhancedContext(requirementsJson, "architecture");
+            String ragContext = ragService.getEnhancedContext(requirementsListJson, "architecture");
             String sessionContext = sessionManager.buildContext(sessionId, 10);
             if (sessionContext != null && !sessionContext.isEmpty()) {
                 ragContext = sessionContext + "\n\n" + ragContext;
@@ -324,7 +335,7 @@ public class RequirementController {
 
             AgentInput input = AgentInput.builder()
                     .sessionId(sessionId)
-                    .content(requirementsJson)
+                    .content(requirementsListJson)
                     .modelType(modelType)
                     .ragContext(ragContext)
                     .cancelled(cancellationFlag)
@@ -413,8 +424,17 @@ public class RequirementController {
 
             String requirementsJson = docFileReader.readFile(requirementsFilePath);
             String architectureJson = docFileReader.readFile(architectureFilePath);
+            
+            // 提取需求列表
+            String requirementsListJson = extractRequirementsList(requirementsJson);
+            if (requirementsListJson == null || requirementsListJson.isEmpty()) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "无法从需求文件中提取需求列表");
+                return ResponseEntity.badRequest().body(error);
+            }
 
-            String ragContext = ragService.getEnhancedContext(requirementsJson + "\n" + architectureJson, "module");
+            String ragContext = ragService.getEnhancedContext(requirementsListJson + "\n" + architectureJson, "module");
             String sessionContext = sessionManager.buildContext(sessionId, 10);
             if (sessionContext != null && !sessionContext.isEmpty()) {
                 ragContext = sessionContext + "\n\n" + ragContext;
@@ -426,7 +446,7 @@ public class RequirementController {
 
             AgentInput input = AgentInput.builder()
                     .sessionId(sessionId)
-                    .content(requirementsJson)
+                    .content(requirementsListJson)
                     .metadata(architectureJson)
                     .modelType(modelType)
                     .ragContext(ragContext)
@@ -934,6 +954,31 @@ public class RequirementController {
         response.put("deepSeekBaseUrl", deepSeekConfig.getBaseUrl());
         response.put("deepSeekApiKeyConfigured", deepSeekConfig.getApiKey() != null && !deepSeekConfig.getApiKey().isEmpty());
         return ResponseEntity.ok(response);
+    }
+
+    private String extractRequirementsList(String analysisResultJson) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String, Object> resultMap = mapper.readValue(analysisResultJson, new TypeReference<Map<String, Object>>() {});
+            
+            // 检查是否包含阶段3结果
+            if (resultMap.containsKey("stage3")) {
+                Map<String, Object> stage3 = (Map<String, Object>) resultMap.get("stage3");
+                if (stage3.containsKey("mergedRequirements")) {
+                    return mapper.writeValueAsString(stage3.get("mergedRequirements"));
+                }
+            }
+            
+            // 如果没有阶段3，尝试直接解析为需求列表
+            if (analysisResultJson.trim().startsWith("[")) {
+                return analysisResultJson;
+            }
+            
+            log.warn("无法从需求分析结果中提取需求列表");
+        } catch (Exception e) {
+            log.warn("解析需求分析结果失败: {}", e.getMessage());
+        }
+        return null;
     }
 
     private ModelType parseModelType(String modelTypeStr) {

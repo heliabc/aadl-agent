@@ -32,6 +32,7 @@ com\example\aadlagent\agent\module\ModuleAnalysisAgent.class
 com\example\aadlagent\model\ModuleAnalysisResult$Module.class
 com\example\aadlagent\session\ChatMessage$ChatMessageBuilder.class
 com\example\aadlagent\client\dto\ChatMessage$ChatMessageBuilder.class
+com\example\aadlagent\controller\RequirementController$1.class
 com\example\aadlagent\controller\KnowledgeController.class
 com\example\aadlagent\rag\EmbeddingService.class
 com\example\aadlagent\model\AadlArchitectureModel.class
