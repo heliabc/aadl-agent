@@ -40,10 +40,10 @@ global:
          end TaskScheduler;                      ← 必须有！
          thread implementation TaskScheduler.impl
          end TaskScheduler.impl;
-    8. 【★严重警告★】subcomponents 不能为空：任何 implementation（.impl）的 subcomponents 块中必须至少包含一个子组件声明。如果当前层级确实没有子组件，则必须向上合并到父组件中，或在 subcomponents 中声明至少一个占位子组件（如一个空的 thread 或 data 子组件）。严禁生成空的 subcomponents 块后直接 end。
-    6. 所有 implementation 后缀统一使用 .impl。
-    7. package 名与顶层 system 名保持一致。
-    8. 如果某类结构没有在需求模板中出现，不要因为示例或规则文本主动补充该结构。
+    8.subcomponents 不能为空：任何 implementation（.impl）的 subcomponents 块中必须至少包含一个子组件声明。如果当前层级确实没有子组件，则必须向上合并到父组件中，或在 subcomponents 中声明至少一个占位子组件（如一个空的 thread 或 data 子组件）。严禁生成空的 subcomponents 块后直接 end。
+    9. 所有 implementation 后缀统一使用 .impl。
+    10. package 名与顶层 system 名保持一致。
+    11. 如果某类结构没有在需求模板中出现，不要因为示例或规则文本主动补充该结构。
 
 rules:
   - id: package_structure
@@ -261,10 +261,20 @@ rules:
       anyKeywords: ["设备", "传感器", "控制面板", "油门", "舵", "device"]
     content: |
       device 设备名
+      features
+        数据输入名 : in data port 数据类型名;
+        数据输出名 : out data port 数据类型名;
+        总线访问名 : requires bus access 总线类型名;
       end 设备名;
 
       device implementation 设备名.impl
       end 设备名.impl;
+
+      规则：
+      1. 设备的数据收发通过 features 块中的 in data port / out data port 声明。
+      2. 设备访问总线必须通过 features 块中的 requires bus access 声明，严禁用 in/out 端口代替总线访问。
+      3. requires bus access 指明设备所依赖的总线类型（如 requires bus access CanBus;）。
+      4. 如果需求中没有明确的数据端口或总线访问描述，则 device 类型声明中可以省略 features 块。
 
   - id: bus
     title: 总线模板
@@ -379,9 +389,10 @@ forbidden:
     3. 不要添加自然语言解释，不要输出代码块标记（如 ```aadl）。
     4. 严禁使用 system, process, thread 等关键字直接作为组件名称。
     5. 严禁在 processor、memory、device 等物理硬件的 subcomponents 中直接嵌套 process、thread 等软件组件。
-    6. 【★严重警告★】严禁省略组件类型声明的 end！每个组件类型声明后必须有 "end 组件名;"。
-    7. 【★严重警告★】严禁生成空的 subcomponents 块！任何 implementation（.impl）若包含 subcomponents 关键字，其后必须至少跟随一个子组件声明。对于底层无子组件的 thread/data/subprogram，直接写 "end 组件名.impl;"，不要出现 "subcomponents\nend" 的空块。
+    6. 严重警告:严禁省略组件类型声明的 end！每个组件类型声明后必须有 "end 组件名;"。
+    7. 严重警告:严禁生成空的 subcomponents 块！任何 implementation（.impl）若包含 subcomponents 关键字，其后必须至少跟随一个子组件声明。对于底层无子组件的 thread/data/subprogram，直接写 "end 组件名.impl;"，不要出现 "subcomponents\nend" 的空块。
     8. 严禁忽略需求中明确声明的数据大小约束（如"固定占用8字节"）。凡有字节大小描述的数据组件，必须在 data implementation 的 properties 中声明 Data_Size。
+    9. 严重警告:严禁用 in/out 端口访问总线！device/processor/memory 等组件访问总线时，必须在 features 块中使用 requires bus access 声明（如 requires bus access CanBus;），不得用 in data port / out data port 代替。
 
 example:
   title: AADL生成示例

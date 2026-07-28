@@ -80,54 +80,70 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
         log.info("需求文档长度: {} 字符", requirementDoc.length());
         log.info("配置参数: temperature={}, maxTokens={}, maxRetries={}", temperature, maxTokens, maxRetries);
 
-        // 文本清洗：删除页眉页脚/水印、修订记录、分隔线、引导词、压缩空白、删除零宽字符
-        String cleanedDoc = TextCleaner.clean(requirementDoc);
-        log.info("文本清洗完成，清洗后长度: {} 字符", cleanedDoc.length());
-
         RequirementAnalysisResult analysisResult = RequirementAnalysisResult.builder()
                 .rawInput(requirementDoc)
                 .build();
 
         try {
-            boolean isDirectProcess = cleanedDoc.length() <= directProcessThreshold;
+            boolean isDirectProcess = requirementDoc.length() <= directProcessThreshold;
             Stage3Result stage3 = null;
-            
+
             if (isDirectProcess) {
-                // 短文本直接处理：跳过阶段0和阶段1，直接调用LLM提取需求
+                // 短文本直接处理：不做任何预处理，直接交给LLM分析
                 log.info("\n\n========== 短文本直接处理模式 ==========");
-                log.info("文档长度 {} 字符，小于直接处理阈值 {}，直接调用LLM", cleanedDoc.length(), directProcessThreshold);
-                
-                // 直接创建包含完整文档的分块
-                List<DocumentChunk> chunks = Collections.singletonList(
-                    DocumentChunk.builder()
-                            .chunkId(1)
-                            .content(cleanedDoc)
-                            .sectionId("SEC-001")
-                            .sectionTitle("完整文档")
-                            .startLine(1)
-                            .endLine(1)
-                            .build()
-                );
-                
-                // 阶段2：条目化提取
-                log.info("\n\n========== 阶段2：条目化提取 ==========");
-                Stage2Result stage2 = executeStage2(chunks, llmClient, input);
-                analysisResult.setStage2(stage2);
-                int totalRequirements = stage2.getChunkResults().stream()
-                        .mapToInt(List::size)
-                        .sum();
-                log.info("阶段2完成，耗时: {}ms，提取需求总数: {} 条", stage2.getExecutionTime(), totalRequirements);
-                
-                // 阶段3：合并与校验
-                log.info("\n\n========== 阶段3：合并与校验 ==========");
-                stage3 = executeStage3(stage2.getChunkResults(), "");
+                log.info("文档长度 {} 字符，小于直接处理阈值 {}，直接调用LLM分析", requirementDoc.length(), directProcessThreshold);
+
+                if (input.isCancelled()) {
+                    log.info("任务已取消，RequirementAgent停止执行");
+                    return AgentOutput.cancelled(input.getSessionId());
+                }
+
+                String systemPrompt = prompt.buildPrompt(requirementDoc, input.getRagContext());
+                log.info("Prompt构建完成，长度: {} 字符", systemPrompt.length());
+
+                List<Requirement> requirements = null;
+                for (int attempt = 1; attempt <= maxRetries; attempt++) {
+                    if (input.isCancelled()) {
+                        log.info("任务已取消，RequirementAgent停止执行");
+                        return AgentOutput.cancelled(input.getSessionId());
+                    }
+
+                    log.info("第 {}/{} 次尝试调用LLM...", attempt, maxRetries);
+                    String llmResponse = llmClient.chat(systemPrompt, temperature, maxTokens);
+
+                    if (llmResponse == null || llmResponse.trim().isEmpty()) {
+                        log.warn("第{}次尝试：LLM返回空响应", attempt);
+                        continue;
+                    }
+
+                    log.info("LLM响应长度: {} 字符", llmResponse.length());
+
+                    try {
+                        requirements = parseRequirements(llmResponse);
+                        if (requirements != null && !requirements.isEmpty()) {
+                            break;
+                        }
+                        log.warn("第{}次尝试：解析出的需求列表为空", attempt);
+                    } catch (Exception e) {
+                        log.warn("第{}次尝试解析LLM响应失败: {}", attempt, e.getMessage());
+                    }
+                }
+
+                // 直接构建结果，不执行合并与冲突检测
+                stage3 = Stage3Result.builder()
+                        .mergedRequirements(requirements != null ? requirements : Collections.emptyList())
+                        .conflicts(Collections.emptyList())
+                        .executionTime(0)
+                        .build();
                 analysisResult.setStage3(stage3);
-                log.info("阶段3完成，耗时: {}ms，合并后需求: {} 条，冲突: {} 个", 
-                        stage3.getExecutionTime(),
-                        stage3.getMergedRequirements() != null ? stage3.getMergedRequirements().size() : 0,
-                        stage3.getConflicts() != null ? stage3.getConflicts().size() : 0);
+                log.info("短文本直接处理完成，提取需求: {} 条",
+                        requirements != null ? requirements.size() : 0);
             } else {
                 // 长文本处理：执行完整流程
+                // 文本清洗：删除页眉页脚/水印、修订记录、分隔线、引导词、压缩空白、删除零宽字符
+                String cleanedDoc = TextCleaner.clean(requirementDoc);
+                log.info("文本清洗完成，清洗后长度: {} 字符", cleanedDoc.length());
+
                 // 阶段0：预处理——生成全局上下文卡片
                 log.info("\n\n========== 阶段0：预处理——生成全局上下文卡片 ==========");
                 Stage0Result stage0 = executeStage0(cleanedDoc, llmClient);

@@ -1607,6 +1607,9 @@ Invalid connection syntax	example.aadl	/model	Line 38	Error"></textarea>
                         if (data.outputFile) {
                             fileNames['Requirement'] = data.outputFile;
                         }
+                        if (document.getElementById('outputFileRequirement')) {
+                            document.getElementById('outputFileRequirement').textContent = data.outputFile ? `输出文件: ${data.outputFile}` : '';
+                        }
                     } else {
                         results[moduleId] = data.data;
                         
