@@ -17,11 +17,8 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
 
 import jakarta.annotation.PostConstruct;
-import java.io.InputStream;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -239,72 +236,89 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
         int contextExtendLength;
     }
 
-    @Data
-    private static class ContextPatternsConfig {
-        List<PatternConfig> patterns;
-        CardConfig card;
-    }
-
     private List<PatternConfig> patterns;
     private CardConfig cardConfig;
 
     @PostConstruct
     public void init() {
-        loadPatternsFromConfig();
+        loadPatterns();
     }
 
-    private void loadPatternsFromConfig() {
-        try (InputStream is = getClass().getClassLoader().getResourceAsStream("context-patterns.yml")) {
-            if (is != null) {
-                Yaml yaml = new Yaml();
-                ContextPatternsConfig config = yaml.loadAs(is, ContextPatternsConfig.class);
-                
-                // 编译正则表达式
-                for (PatternConfig patternConfig : config.getPatterns()) {
-                    patternConfig.compile();
-                }
-                
-                this.patterns = config.getPatterns();
-                this.cardConfig = config.getCard();
-                
-                log.info("成功加载 {} 个正则模式配置", patterns.size());
-            } else {
-                log.warn("未找到 context-patterns.yml，使用默认模式");
-                loadDefaultPatterns();
-            }
-        } catch (Exception e) {
-            log.error("加载正则模式配置失败，使用默认模式: {}", e.getMessage());
-            loadDefaultPatterns();
-        }
-    }
-
-    private void loadDefaultPatterns() {
+    private void loadPatterns() {
         this.patterns = Arrays.asList(
+                // 基础参数
                 new PatternConfig("clock", "(\\d+\\.?\\d*)\\s*([kKMG]?[Hh]z)", "时钟频率", "PARAM"),
                 new PatternConfig("time", "(\\d+\\.?\\d*)\\s*(毫秒|微秒|纳秒|秒|ms|us|μs|ns|s)", "时间参数", "PARAM"),
                 new PatternConfig("memory", "(\\d+\\.?\\d*)\\s*([kKMG]?[Bb](yte)?)", "内存大小", "PARAM"),
                 new PatternConfig("baud", "(\\d+\\.?\\d*)\\s*([kKMG]?[Bb]ps)", "波特率", "PARAM"),
+                
+                // 实时性参数
                 new PatternConfig("deadline", "(截止|响应|执行|反应)时间\\s*[:：=]?\\s*(\\d+\\.?\\d*)\\s*(ms|us|μs|ns|s|毫秒|微秒)", "截止时间", "PARAM"),
                 new PatternConfig("period", "(周期|period)\\s*[:：=]?\\s*(\\d+\\.?\\d*)\\s*(ms|毫秒|Hz)", "周期", "PARAM"),
                 new PatternConfig("jitter", "(抖动|jitter)\\s*[:：=]?\\s*(不超过|≤|<)?\\s*(\\d+\\.?\\d*)\\s*(ms|us|μs)", "抖动", "PARAM"),
                 new PatternConfig("priority", "(优先级|priority)\\s*[:：=]?\\s*(\\d+|[高H中M低L])", "优先级", "PARAM"),
-                new PatternConfig("abbr", "([A-Z]{2,6})\\s*[（(]\\s*([^）)]{1,30})\\s*[）)]", "缩写", "ABBR"),
+                
+                // 接口与通信
                 new PatternConfig("iface", "(CAN|UART|SPI|I2C|I2S|GPIO|PWM|ADC|DAC|USB|Ethernet|PCIe?|SDIO|FlexRay|LIN|RS232|RS485)\\s*(\\d*)", "接口协议", "IFACE"),
+                new PatternConfig("protocol", "(TCP|UDP|IPv4|IPv6|HTTP|HTTPS|MQTT|CoAP|WebSocket)\\s*([vV]?\\d+\\.?\\d*)?", "通信协议", "IFACE"),
+                
+                // 安全等级
                 new PatternConfig("safety", "(DAL-[A-E]|ASIL\\s*[A-D]|SIL\\s*[1-4])", "安全等级", "SAFETY"),
-                new PatternConfig("assume", "(假设|前提|假定)\\s*[:：]?\\s*(.{10,200}?)(?=[。；！\\n]|$)", "假设前提", "ASSUMP"),
+                
+                // 约束与限制
+                new PatternConfig("constraint", "(必须|不得|禁止|严禁|应当|不应|务必)\\s+(.{1,50}?)(?=[。；！\\n]|$)", "约束条件", "CONST"),
                 new PatternConfig("limit", "(不超过|不低于|≥|≤|max|min|最大|最小)\\s*[:：]?\\s*(\\d+\\.?\\d*)\\s*(ms|us|MHz|KB|%)", "限制条件", "CONST"),
-                new PatternConfig("constraint", "(必须|不得|禁止|严禁|应当|不应|务必)\\s+(.{1,50}?)(?=[。；！\\n]|$)", "约束条件", "CONST")
+                
+                // 假设前提
+                new PatternConfig("assume", "(假设|前提|假定)\\s*[:：]?\\s*(.{10,200}?)(?=[。；！\\n]|$)", "假设前提", "ASSUMP"),
+                
+                // 缩写定义
+                new PatternConfig("abbr", "([A-Z]{2,6})\\s*[（(]\\s*([^）)]{1,30})\\s*[）)]", "缩写", "ABBR"),
+                
+                // 电源约束
+                new PatternConfig("power", "(功耗|功率|电流|电压|电源)\\s*[:：=]?\\s*(不超过|≤|<|≥|不低于)?\\s*(\\d+\\.?\\d*)\\s*(W|瓦|A|安培|V|伏特|mAh|Wh)", "电源约束", "PARAM"),
+                new PatternConfig("power_mode", "(休眠|待机|低功耗|省电|关机)\\s*(模式|状态)?\\s*[:：]?\\s*(.{5,50}?)(?=[。；！\\n]|$)", "电源模式", "PARAM"),
+                
+                // 温度范围
+                new PatternConfig("temperature", "(工作温度|存储温度|环境温度|温度范围)\\s*[:：=]?\\s*(-?\\d+)\\s*(°C|℃|度)\\s*[~至到-]\\s*(-?\\d+)\\s*(°C|℃|度)", "温度范围", "PARAM"),
+                new PatternConfig("temp_limit", "(温度上限|温度下限|最高温度|最低温度)\\s*[:：=]?\\s*(不超过|≤|<|≥|不低于)?\\s*(-?\\d+)\\s*(°C|℃|度)", "温度限制", "PARAM"),
+                
+                // 可靠性指标
+                new PatternConfig("reliability", "(MTBF|MTTR|可用性|可靠性)\\s*[:：=]?\\s*(\\d+\\.?\\d*)\\s*(小时|年|%|次)", "可靠性指标", "PARAM"),
+                new PatternConfig("fault_tolerance", "(容错|故障恢复|冗余|自愈)\\s*[:：]?\\s*(.{5,100}?)(?=[。；！\\n]|$)", "容错能力", "CONST"),
+                
+                // 认证标准
+                new PatternConfig("certification", "(IEC\\s*61508|ISO\\s*26262|EN\\s*50128|DO\\s*178B|FAA\\s*AC\\s*20-115B|IEC\\s*62304)", "认证标准", "SAFETY"),
+                new PatternConfig("compliance", "(符合|遵循|满足)\\s*(IEC|ISO|EN|DO|FAA|GB|GJB)\\s*[\\d\\-]+\\s*(标准|规范)", "合规要求", "CONST"),
+                
+                // 数据格式
+                new PatternConfig("data_format", "(数据格式|协议格式|编码格式)\\s*[:：=]?\\s*(JSON|XML|CSV|Protobuf|Binary|ASCII|UTF-8)", "数据格式", "PARAM"),
+                
+                // 存储容量
+                new PatternConfig("storage", "(存储容量|Flash|ROM|RAM)\\s*[:：=]?\\s*(\\d+\\.?\\d*)\\s*([kKMG]?[Bb])", "存储容量", "PARAM"),
+                
+                // 网络带宽
+                new PatternConfig("bandwidth", "(带宽|速率)\\s*[:：=]?\\s*(\\d+\\.?\\d*)\\s*(Mbps|Gbps|kbps)", "网络带宽", "PARAM"),
+                
+                // 中断优先级
+                new PatternConfig("interrupt", "(中断|IRQ|中断优先级)\\s*[:：=]?\\s*(\\d+)", "中断优先级", "PARAM"),
+                
+                // 加密要求
+                new PatternConfig("encryption", "(加密|SSL|TLS|AES|RSA|SHA)\\s*[:：=]?\\s*(\\d+\\-?\\d+|版本)?\\s*(算法|协议)", "加密要求", "SAFETY")
         );
         
-        // 编译默认正则表达式
+        // 编译正则表达式
         for (PatternConfig patternConfig : this.patterns) {
             patternConfig.compile();
         }
         
+        // 卡片配置
         this.cardConfig = new CardConfig();
         this.cardConfig.setMaxItemsPerCategory(5);
         this.cardConfig.setMaxCardLength(800);
         this.cardConfig.setContextExtendLength(80);
+        
+        log.info("成功加载 {} 个正则模式", patterns.size());
     }
 
     private Stage0Result executeStage0(String document, LlmClient llmClient) {
