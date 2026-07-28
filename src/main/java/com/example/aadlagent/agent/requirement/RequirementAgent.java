@@ -170,13 +170,12 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
         }
     }
 
-    @Data
     private static class PatternConfig {
-        String name;
-        String regex;
-        Pattern pattern;
-        String category;
-        String anchorPrefix;
+        private String name;
+        private String regex;
+        private Pattern pattern;
+        private String category;
+        private String anchorPrefix;
 
         public PatternConfig() {}
 
@@ -190,6 +189,46 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
 
         public void compile() {
             this.pattern = Pattern.compile(regex);
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getRegex() {
+            return regex;
+        }
+
+        public void setRegex(String regex) {
+            this.regex = regex;
+        }
+
+        public Pattern getPattern() {
+            return pattern;
+        }
+
+        public void setPattern(Pattern pattern) {
+            this.pattern = pattern;
+        }
+
+        public String getCategory() {
+            return category;
+        }
+
+        public void setCategory(String category) {
+            this.category = category;
+        }
+
+        public String getAnchorPrefix() {
+            return anchorPrefix;
+        }
+
+        public void setAnchorPrefix(String anchorPrefix) {
+            this.anchorPrefix = anchorPrefix;
         }
     }
 
@@ -217,8 +256,8 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
     private void loadPatternsFromConfig() {
         try (InputStream is = getClass().getClassLoader().getResourceAsStream("context-patterns.yml")) {
             if (is != null) {
-                Yaml yaml = new Yaml(new Constructor(ContextPatternsConfig.class, new org.yaml.snakeyaml.LoaderOptions()));
-                ContextPatternsConfig config = yaml.load(is);
+                Yaml yaml = new Yaml();
+                ContextPatternsConfig config = yaml.loadAs(is, ContextPatternsConfig.class);
                 
                 // 编译正则表达式
                 for (PatternConfig patternConfig : config.getPatterns()) {
