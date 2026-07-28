@@ -1,6 +1,8 @@
 package com.example.aadlagent.rag;
 
-import com.example.aadlagent.client.OllamaClient;
+import com.example.aadlagent.client.LlmClient;
+import com.example.aadlagent.client.ModelService;
+import com.example.aadlagent.config.RewriteConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -13,7 +15,8 @@ import java.util.stream.Collectors;
 @Component
 public class QueryRewriter {
 
-    private final OllamaClient ollamaClient;
+    private final ModelService modelService;
+    private final RewriteConfig rewriteConfig;
     private static final int MAX_RETRIES = 3;
     private static final int RETRY_DELAY_MS = 200;
 
@@ -41,8 +44,9 @@ public class QueryRewriter {
 原始查询：{}
 """;
 
-    public QueryRewriter(OllamaClient ollamaClient) {
-        this.ollamaClient = ollamaClient;
+    public QueryRewriter(ModelService modelService, RewriteConfig rewriteConfig) {
+        this.modelService = modelService;
+        this.rewriteConfig = rewriteConfig;
     }
 
     /**
@@ -56,16 +60,20 @@ public class QueryRewriter {
         String trimmedQuery = query.trim();
         log.info("Start rewrite raw query: {}", trimmedQuery);
 
-        // Ollama离线直接降级
-        if (!ollamaClient.isAvailable()) {
-            log.warn("Ollama unavailable, skip rewrite, use raw query");
+        // 获取配置的模型客户端
+        LlmClient client = modelService.getClient(rewriteConfig.getModelType());
+        
+        // 模型不可用直接降级
+        if (!client.isAvailable()) {
+            log.warn("Rewrite model {} unavailable, skip rewrite, use raw query", rewriteConfig.getModelType());
             return trimmedQuery;
         }
 
         String prompt = String.format(REWRITE_PROMPT, trimmedQuery);
+        String modelName = rewriteConfig.getOllamaModelName();
         for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
             try {
-                String rewritten = ollamaClient.chat(prompt, 0.3, 512);
+                String rewritten = client.chat(prompt, rewriteConfig.getTemperature(), rewriteConfig.getMaxTokens(), modelName);
                 if (StringUtils.hasText(rewritten)) {
                     String result = rewritten.trim();
                     log.info("Rewrite success, attempt {}, result: {}", attempt, result);
@@ -94,19 +102,23 @@ public class QueryRewriter {
         String trimmedQuery = query.trim();
         log.info("Start decompose raw query: {}", trimmedQuery);
 
-        // Ollama离线降级：不拆分，直接返回原句数组
-        if (!ollamaClient.isAvailable()) {
-            log.warn("Ollama unavailable, skip decompose");
+        // 获取配置的模型客户端
+        LlmClient client = modelService.getClient(rewriteConfig.getModelType());
+        
+        // 模型不可用降级：不拆分，直接返回原句数组
+        if (!client.isAvailable()) {
+            log.warn("Rewrite model {} unavailable, skip decompose", rewriteConfig.getModelType());
             return new String[]{trimmedQuery};
         }
 
         String prompt = String.format(DECOMPOSE_PROMPT, trimmedQuery);
+        String modelName = rewriteConfig.getOllamaModelName();
         String decomposedText = null;
 
         // 和rewrite保持一致重试逻辑
         for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
             try {
-                String resp = ollamaClient.chat(prompt, 0.3, 512);
+                String resp = client.chat(prompt, rewriteConfig.getTemperature(), rewriteConfig.getMaxTokens(), modelName);
                 if (StringUtils.hasText(resp)) {
                     decomposedText = resp;
                     break;

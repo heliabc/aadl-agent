@@ -26,11 +26,19 @@ public class OllamaClient implements LlmClient {
         this.restTemplate = new RestTemplate();
     }
 
+    @Override
     public String chat(String prompt, Double temperature, Integer maxTokens) {
+        return chat(prompt, temperature, maxTokens, null);
+    }
+
+    @Override
+    public String chat(String prompt, Double temperature, Integer maxTokens, String modelName) {
         String url = config.getBaseUrl() + "/api/chat";
 
         Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", config.getChatModel());
+        // 使用指定的模型名称，否则使用默认配置
+        String model = (modelName != null && !modelName.isEmpty()) ? modelName : config.getChatModel();
+        requestBody.put("model", model);
 
         Map<String, String> message = new HashMap<>();
         message.put("role", "user");
@@ -159,6 +167,7 @@ public class OllamaClient implements LlmClient {
         }
     }
 
+    @Override
     public boolean checkModel(String modelName) {
         String url = config.getBaseUrl() + "/api/tags";
 

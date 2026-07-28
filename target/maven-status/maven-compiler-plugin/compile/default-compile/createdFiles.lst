@@ -27,6 +27,7 @@ com\example\aadlagent\rag\model\ExampleKnowledge$ExampleKnowledgeBuilder.class
 com\example\aadlagent\session\ChatMessage.class
 com\example\aadlagent\util\TextCleaner.class
 com\example\aadlagent\agent\aadl\AadlErrorParserAgent.class
+com\example\aadlagent\config\RewriteConfig.class
 com\example\aadlagent\rag\model\ErrorCorrection$ErrorCorrectionBuilder.class
 com\example\aadlagent\agent\module\ModuleAnalysisAgent.class
 com\example\aadlagent\model\ModuleAnalysisResult$Module.class

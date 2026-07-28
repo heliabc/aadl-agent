@@ -303,12 +303,27 @@ public class RequirementController {
         }
 
         try {
-            String requirementsFilePath = Paths.get(fileConfig.getRequirementsPath(), fileName).toString();
+            // 获取绝对路径用于诊断
+            java.nio.file.Path requirementsDir = java.nio.file.Paths.get(fileConfig.getRequirementsPath()).toAbsolutePath().normalize();
+            java.nio.file.Path requirementsFullPath = requirementsDir.resolve(fileName);
+            String requirementsFilePath = requirementsFullPath.toString();
             
-            if (!java.nio.file.Files.exists(java.nio.file.Paths.get(requirementsFilePath))) {
+            log.info("架构生成 - 查找需求文件: fileName={}, requirementsPath={}, fullPath={}", 
+                    fileName, fileConfig.getRequirementsPath(), requirementsFilePath);
+            
+            // 列出目录内容用于诊断
+            try {
+                java.nio.file.Files.list(requirementsDir).limit(20).forEach(path -> {
+                    log.info("架构生成 - 目录文件: {}", path.getFileName());
+                });
+            } catch (Exception e) {
+                log.warn("架构生成 - 无法列出目录内容: {}", e.getMessage());
+            }
+            
+            if (!java.nio.file.Files.exists(requirementsFullPath)) {
                 Map<String, Object> error = new HashMap<>();
                 error.put("success", false);
-                error.put("message", "需求文件不存在，请先运行需求分析: " + fileName);
+                error.put("message", "需求文件不存在，请先运行需求分析: " + fileName + " (搜索路径: " + requirementsFilePath + ")");
                 return ResponseEntity.badRequest().body(error);
             }
 
@@ -405,13 +420,34 @@ public class RequirementController {
         }
 
         try {
-            String requirementsFilePath = Paths.get(fileConfig.getRequirementsPath(), requirementsFileName).toString();
-            String architectureFilePath = Paths.get(fileConfig.getArchitecturePath(), architectureFileName).toString();
+            // 获取绝对路径用于诊断
+            java.nio.file.Path requirementsDir = java.nio.file.Paths.get(fileConfig.getRequirementsPath()).toAbsolutePath().normalize();
+            java.nio.file.Path architectureDir = java.nio.file.Paths.get(fileConfig.getArchitecturePath()).toAbsolutePath().normalize();
+            
+            java.nio.file.Path requirementsFullPath = requirementsDir.resolve(requirementsFileName);
+            java.nio.file.Path architectureFullPath = architectureDir.resolve(architectureFileName);
+            
+            String requirementsFilePath = requirementsFullPath.toString();
+            String architectureFilePath = architectureFullPath.toString();
+            
+            log.info("模块分析 - 查找文件: requirementsFileName={}, architectureFileName={}", 
+                    requirementsFileName, architectureFileName);
+            log.info("模块分析 - requirementsDir={}, architectureDir={}", requirementsDir, architectureDir);
+            
+            // 列出目录内容用于诊断
+            try {
+                log.info("模块分析 - requirements目录文件:");
+                java.nio.file.Files.list(requirementsDir).limit(20).forEach(path -> {
+                    log.info("  {}", path.getFileName());
+                });
+            } catch (Exception e) {
+                log.warn("模块分析 - 无法列出requirements目录内容: {}", e.getMessage());
+            }
 
-            if (!java.nio.file.Files.exists(java.nio.file.Paths.get(requirementsFilePath))) {
+            if (!java.nio.file.Files.exists(requirementsFullPath)) {
                 Map<String, Object> error = new HashMap<>();
                 error.put("success", false);
-                error.put("message", "需求文件不存在: " + requirementsFileName);
+                error.put("message", "需求文件不存在: " + requirementsFileName + " (搜索路径: " + requirementsFilePath + ")");
                 return ResponseEntity.badRequest().body(error);
             }
 

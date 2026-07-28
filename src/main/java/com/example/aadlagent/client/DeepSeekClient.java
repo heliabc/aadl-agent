@@ -39,6 +39,10 @@ public class DeepSeekClient implements LlmClient {
     }
 
     public String chat(String prompt, Double temperature, Integer maxTokens) {
+        return chat(prompt, temperature, maxTokens, null);
+    }
+
+    public String chat(String prompt, Double temperature, Integer maxTokens, String modelName) {
         if (config.getApiKey() == null || config.getApiKey().isEmpty()) {
             log.error("DeepSeek API key is not configured");
             return null;
@@ -47,7 +51,9 @@ public class DeepSeekClient implements LlmClient {
         String url = config.getBaseUrl() + "/chat/completions";
 
         Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", config.getChatModel());
+        // 使用指定的模型名称，否则使用默认配置
+        String model = (modelName != null && !modelName.isEmpty()) ? modelName : config.getChatModel();
+        requestBody.put("model", model);
 
         Map<String, String> message = new HashMap<>();
         message.put("role", "user");
@@ -172,5 +178,11 @@ public class DeepSeekClient implements LlmClient {
     @Override
     public String getModelName() {
         return config.getChatModel();
+    }
+
+    @Override
+    public boolean checkModel(String modelName) {
+        // DeepSeek 不支持模型列表查询，只要API Key配置了就认为可用
+        return isConfigured();
     }
 }
