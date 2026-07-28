@@ -40,6 +40,7 @@ global:
          end TaskScheduler;                      ← 必须有！
          thread implementation TaskScheduler.impl
          end TaskScheduler.impl;
+    8. 【★严重警告★】subcomponents 不能为空：任何 implementation（.impl）的 subcomponents 块中必须至少包含一个子组件声明。如果当前层级确实没有子组件，则必须向上合并到父组件中，或在 subcomponents 中声明至少一个占位子组件（如一个空的 thread 或 data 子组件）。严禁生成空的 subcomponents 块后直接 end。
     6. 所有 implementation 后缀统一使用 .impl。
     7. package 名与顶层 system 名保持一致。
     8. 如果某类结构没有在需求模板中出现，不要因为示例或规则文本主动补充该结构。
@@ -280,13 +281,21 @@ rules:
   - id: data
     title: 数据模板
     trigger:
-      anyKeywords: ["数据", "当前", "目标", "状态", "指令", "data"]
+      anyKeywords: ["数据", "当前", "目标", "状态", "指令", "data", "信号", "帧", "字节", "结构体", "struct", "BrakeSignal"]
     content: |
       data 数据名
       end 数据名;
 
       data implementation 数据名.impl
+        properties
+          -- 数据大小约束：当需求中声明"单帧数据固定占用N字节"或"数据结构大小为N字节"时，必须通过 Data_Size 属性声明
+          Data_Size => N Bytes;
       end 数据名.impl;
+
+      规则：
+      1. 当需求中出现"单帧数据固定占用X字节存储空间与传输带宽"、"数据结构大小为X字节"、"固定帧长度"等描述时，必须在 data implementation 的 properties 中声明 Data_Size 属性。
+      2. 数据组件（如 BrakeSignal、ControlFrame 等）若有明确的字节大小约束，禁止生成空的 data implementation，必须携带对应的 properties 属性。
+      3. 对于结构体/记录类型的数据，若各字段有固定大小，应在 properties 中声明总 Data_Size，确保传输带宽与存储空间约束被完整映射到 AADL 模型中。
 
   - id: subprogram
     title: 程序模板
@@ -309,6 +318,36 @@ rules:
     content: |
       1. 中文名称转换为英文直译，英文名称使用下划线连接。
       2. 严禁使用 System, Process 等 AADL 保留关键字作为名称。
+
+  - id: properties_explanation
+    title: properties 关键字用法说明
+    always: true
+    content: |
+      AADL 中的 properties 关键字用于声明组件的属性值，约束组件的物理特性、运行时行为、资源需求等。
+
+      基本语法：
+        properties
+          属性名 => 属性值;
+          属性名 => 属性值 applies to 目标组件;
+        end;
+
+      常用属性（来自 AADL 标准属性集）：
+        - Data_Size => N Bytes;          -- 数据大小（data 组件用）
+        - Source_Data_Size => N Bytes;   -- 源数据大小（port/connection 用）
+        - Destination_Data_Size => N Bytes; -- 目标数据大小（port/connection 用）
+        - Period => N Ms;                -- 周期（thread 用）
+        - Compute_Execution_Time => N Ms .. M Ms;  -- 计算执行时间范围（thread 用）
+        - Deadline => N Ms;              -- 截止时间（thread 用）
+        - Priority => N;                 -- 优先级（thread 用）
+        - Stack_Size => N Bytes;         -- 栈大小（thread 用）
+        - Max_Queue_Size => N;           -- 最大队列长度（port 用）
+        - Actual_Processor_Binding => reference (处理器名) applies to 软件组件;  -- 处理器绑定
+
+      规则：
+      1. properties 块必须放在 implementation 的 subcomponents 之后、end 之前。
+      2. 每个属性声明以分号结尾。
+      3. 需求中明确声明的数值约束（如"响应时间不超过10ms"、"单帧固定8字节"、"优先级为高"等）必须通过 properties 显式映射到 AADL 模型中，禁止遗漏。
+      4. 当需求中未明确给出具体数值时，不生成 properties 块。
 
 order:
   content: |
@@ -341,6 +380,8 @@ forbidden:
     4. 严禁使用 system, process, thread 等关键字直接作为组件名称。
     5. 严禁在 processor、memory、device 等物理硬件的 subcomponents 中直接嵌套 process、thread 等软件组件。
     6. 【★严重警告★】严禁省略组件类型声明的 end！每个组件类型声明后必须有 "end 组件名;"。
+    7. 【★严重警告★】严禁生成空的 subcomponents 块！任何 implementation（.impl）若包含 subcomponents 关键字，其后必须至少跟随一个子组件声明。对于底层无子组件的 thread/data/subprogram，直接写 "end 组件名.impl;"，不要出现 "subcomponents\nend" 的空块。
+    8. 严禁忽略需求中明确声明的数据大小约束（如"固定占用8字节"）。凡有字节大小描述的数据组件，必须在 data implementation 的 properties 中声明 Data_Size。
 
 example:
   title: AADL生成示例
@@ -394,49 +435,68 @@ example:
        end KernelProcess.impl; 
 
        thread TaskScheduler 
-       end TaskScheduler; 
-       thread implementation TaskScheduler.impl 
-       end TaskScheduler.impl; 
+      end TaskScheduler; 
+      thread implementation TaskScheduler.impl 
+      end TaskScheduler.impl; 
 
-       thread TimerManager 
-       end TimerManager; 
-       thread implementation TimerManager.impl 
-       end TimerManager.impl; 
+      thread TimerManager 
+      end TimerManager; 
+      thread implementation TimerManager.impl 
+      end TimerManager.impl; 
 
-       thread InterruptHandler 
-       end InterruptHandler; 
-       thread implementation InterruptHandler.impl 
-       end InterruptHandler.impl; 
+      thread InterruptHandler 
+      end InterruptHandler; 
+      thread implementation InterruptHandler.impl 
+      end InterruptHandler.impl; 
 
-       thread MemoryManager 
-       end MemoryManager; 
-       thread implementation MemoryManager.impl 
-       end MemoryManager.impl; 
+      thread MemoryManager 
+      end MemoryManager; 
+      thread implementation MemoryManager.impl 
+      end MemoryManager.impl; 
 
-       thread CommunicationManager 
-       end CommunicationManager; 
-       thread implementation CommunicationManager.impl 
-       end CommunicationManager.impl; 
+      thread CommunicationManager 
+      end CommunicationManager; 
+      thread implementation CommunicationManager.impl 
+      end CommunicationManager.impl; 
 
-       thread FileSystem 
-       end FileSystem; 
-       thread implementation FileSystem.impl 
-       end FileSystem.impl; 
+      thread FileSystem 
+      end FileSystem; 
+      thread implementation FileSystem.impl 
+      end FileSystem.impl; 
 
-       thread WatchdogManager 
-       end WatchdogManager; 
-       thread implementation WatchdogManager.impl 
-       end WatchdogManager.impl; 
+      thread WatchdogManager 
+      end WatchdogManager; 
+      thread implementation WatchdogManager.impl 
+      end WatchdogManager.impl; 
 
-       thread FaultDetector 
-       end FaultDetector; 
-       thread implementation FaultDetector.impl 
-       end FaultDetector.impl; 
+      thread FaultDetector 
+      end FaultDetector; 
+      thread implementation FaultDetector.impl 
+      end FaultDetector.impl; 
 
-       thread PerformanceMonitor 
-       end PerformanceMonitor; 
-       thread implementation PerformanceMonitor.impl 
-       end PerformanceMonitor.impl; 
+      thread PerformanceMonitor 
+      end PerformanceMonitor; 
+      thread implementation PerformanceMonitor.impl 
+      end PerformanceMonitor.impl;
+
+      -- =======================================
+      -- 带属性约束的数据组件示例（约束映射）
+      -- =======================================
+      data BrakeSignal
+      end BrakeSignal;
+
+      data implementation BrakeSignal.impl
+        properties
+          Data_Size => 8 Bytes;
+      end BrakeSignal.impl;
+
+      data ControlFrame
+      end ControlFrame;
+
+      data implementation ControlFrame.impl
+        properties
+          Data_Size => 16 Bytes;
+      end ControlFrame.impl; 
 
        -- ======================================= 
        -- 硬件组件定义 (补充了所有的 end) 
