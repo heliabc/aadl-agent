@@ -1603,6 +1603,9 @@ Invalid connection syntax	example.aadl	/model	Line 38	Error"></textarea>
                 if (data.success) {
                     if (moduleId === 'Requirement') {
                         processRequirementResult(data.data);
+                        if (data.outputFile) {
+                            fileNames['Requirement'] = data.outputFile;
+                        }
                     } else {
                         results[moduleId] = data.data;
                         

@@ -289,13 +289,6 @@ public class RequirementController {
         String modelTypeStr = request.get("model");
         String sessionId = request.get("sessionId");
 
-        if (fileName == null || fileName.trim().isEmpty()) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("success", false);
-            error.put("message", "文件名不能为空");
-            return ResponseEntity.badRequest().body(error);
-        }
-
         ModelType modelType = parseModelType(modelTypeStr);
 
         if (sessionId == null || sessionId.trim().isEmpty() || !sessionManager.exists(sessionId)) {
@@ -303,18 +296,25 @@ public class RequirementController {
         }
 
         try {
+            // 如果没有传fileName，通过sessionId自动生成文件名
+            if (fileName == null || fileName.trim().isEmpty()) {
+                fileName = "requirements_" + sessionId.substring(0, 8) + ".json";
+                log.info("架构生成 - 未传fileName，通过sessionId自动生成: {}", fileName);
+            }
+
             // 获取绝对路径用于诊断
             java.nio.file.Path requirementsDir = java.nio.file.Paths.get(fileConfig.getRequirementsPath()).toAbsolutePath().normalize();
             java.nio.file.Path requirementsFullPath = requirementsDir.resolve(fileName);
             String requirementsFilePath = requirementsFullPath.toString();
             
-            log.info("架构生成 - 查找需求文件: fileName={}, requirementsPath={}, fullPath={}", 
-                    fileName, fileConfig.getRequirementsPath(), requirementsFilePath);
+            log.info("架构生成 - 查找需求文件: fileName={}, sessionId={}, requirementsPath={}, fullPath={}", 
+                    fileName, sessionId, fileConfig.getRequirementsPath(), requirementsFilePath);
             
             // 列出目录内容用于诊断
             try {
+                log.info("架构生成 - requirements目录文件列表:");
                 java.nio.file.Files.list(requirementsDir).limit(20).forEach(path -> {
-                    log.info("架构生成 - 目录文件: {}", path.getFileName());
+                    log.info("  {}", path.getFileName());
                 });
             } catch (Exception e) {
                 log.warn("架构生成 - 无法列出目录内容: {}", e.getMessage());
@@ -399,24 +399,20 @@ public class RequirementController {
         String modelTypeStr = request.get("model");
         String sessionId = request.get("sessionId");
 
-        if (requirementsFileName == null || requirementsFileName.trim().isEmpty()) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("success", false);
-            error.put("message", "需求文件名不能为空");
-            return ResponseEntity.badRequest().body(error);
-        }
-
-        if (architectureFileName == null || architectureFileName.trim().isEmpty()) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("success", false);
-            error.put("message", "架构文件名不能为空");
-            return ResponseEntity.badRequest().body(error);
-        }
-
         ModelType modelType = parseModelType(modelTypeStr);
 
         if (sessionId == null || sessionId.trim().isEmpty() || !sessionManager.exists(sessionId)) {
             sessionId = sessionManager.createSession();
+        }
+
+        // 如果没有传文件名，通过sessionId自动生成
+        if (requirementsFileName == null || requirementsFileName.trim().isEmpty()) {
+            requirementsFileName = "requirements_" + sessionId.substring(0, 8) + ".json";
+            log.info("模块分析 - 未传requirementsFile，通过sessionId自动生成: {}", requirementsFileName);
+        }
+        if (architectureFileName == null || architectureFileName.trim().isEmpty()) {
+            architectureFileName = "architecture_" + sessionId.substring(0, 8) + ".json";
+            log.info("模块分析 - 未传architectureFile，通过sessionId自动生成: {}", architectureFileName);
         }
 
         try {
@@ -430,8 +426,8 @@ public class RequirementController {
             String requirementsFilePath = requirementsFullPath.toString();
             String architectureFilePath = architectureFullPath.toString();
             
-            log.info("模块分析 - 查找文件: requirementsFileName={}, architectureFileName={}", 
-                    requirementsFileName, architectureFileName);
+            log.info("模块分析 - 查找文件: requirementsFileName={}, architectureFileName={}, sessionId={}", 
+                    requirementsFileName, architectureFileName, sessionId);
             log.info("模块分析 - requirementsDir={}, architectureDir={}", requirementsDir, architectureDir);
             
             // 列出目录内容用于诊断
@@ -440,8 +436,12 @@ public class RequirementController {
                 java.nio.file.Files.list(requirementsDir).limit(20).forEach(path -> {
                     log.info("  {}", path.getFileName());
                 });
+                log.info("模块分析 - architecture目录文件:");
+                java.nio.file.Files.list(architectureDir).limit(20).forEach(path -> {
+                    log.info("  {}", path.getFileName());
+                });
             } catch (Exception e) {
-                log.warn("模块分析 - 无法列出requirements目录内容: {}", e.getMessage());
+                log.warn("模块分析 - 无法列出目录内容: {}", e.getMessage());
             }
 
             if (!java.nio.file.Files.exists(requirementsFullPath)) {
@@ -451,10 +451,10 @@ public class RequirementController {
                 return ResponseEntity.badRequest().body(error);
             }
 
-            if (!java.nio.file.Files.exists(java.nio.file.Paths.get(architectureFilePath))) {
+            if (!java.nio.file.Files.exists(architectureFullPath)) {
                 Map<String, Object> error = new HashMap<>();
                 error.put("success", false);
-                error.put("message", "架构文件不存在: " + architectureFileName);
+                error.put("message", "架构文件不存在: " + architectureFileName + " (搜索路径: " + architectureFilePath + ")");
                 return ResponseEntity.badRequest().body(error);
             }
 
@@ -994,22 +994,24 @@ public class RequirementController {
 
     private String extractRequirementsList(String analysisResultJson) {
         try {
+            String trimmed = analysisResultJson.trim();
+
+            // 兼容旧格式：直接的需求列表数组（以 [ 开头），优先返回避免反序列化为Map失败
+            if (trimmed.startsWith("[")) {
+                return analysisResultJson;
+            }
+
             ObjectMapper mapper = new ObjectMapper();
             Map<String, Object> resultMap = mapper.readValue(analysisResultJson, new TypeReference<Map<String, Object>>() {});
-            
+
             // 检查是否包含阶段3结果
-            if (resultMap.containsKey("stage3")) {
+            if (resultMap.containsKey("stage3") && resultMap.get("stage3") != null) {
                 Map<String, Object> stage3 = (Map<String, Object>) resultMap.get("stage3");
                 if (stage3.containsKey("mergedRequirements")) {
                     return mapper.writeValueAsString(stage3.get("mergedRequirements"));
                 }
             }
-            
-            // 如果没有阶段3，尝试直接解析为需求列表
-            if (analysisResultJson.trim().startsWith("[")) {
-                return analysisResultJson;
-            }
-            
+
             log.warn("无法从需求分析结果中提取需求列表");
         } catch (Exception e) {
             log.warn("解析需求分析结果失败: {}", e.getMessage());
