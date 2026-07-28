@@ -1,0 +1,156 @@
+# 全局上下文提取正则模式配置
+# 每个模式包含：名称、正则表达式、类别、锚点前缀
+
+patterns:
+  # 基础参数
+  - name: clock
+    regex: "(\\d+\\.?\\d*)\\s*([kKMG]?[Hh]z)"
+    category: 时钟频率
+    anchorPrefix: PARAM
+  - name: time
+    regex: "(\\d+\\.?\\d*)\\s*(毫秒|微秒|纳秒|秒|ms|us|μs|ns|s)"
+    category: 时间参数
+    anchorPrefix: PARAM
+  - name: memory
+    regex: "(\\d+\\.?\\d*)\\s*([kKMG]?[Bb](yte)?)"
+    category: 内存大小
+    anchorPrefix: PARAM
+  - name: baud
+    regex: "(\\d+\\.?\\d*)\\s*([kKMG]?[Bb]ps)"
+    category: 波特率
+    anchorPrefix: PARAM
+  
+  # 实时性参数
+  - name: deadline
+    regex: "(截止|响应|执行|反应)时间\\s*[:：=]?\\s*(\\d+\\.?\\d*)\\s*(ms|us|μs|ns|s|毫秒|微秒)"
+    category: 截止时间
+    anchorPrefix: PARAM
+  - name: period
+    regex: "(周期|period)\\s*[:：=]?\\s*(\\d+\\.?\\d*)\\s*(ms|毫秒|Hz)"
+    category: 周期
+    anchorPrefix: PARAM
+  - name: jitter
+    regex: "(抖动|jitter)\\s*[:：=]?\\s*(不超过|≤|<)?\\s*(\\d+\\.?\\d*)\\s*(ms|us|μs)"
+    category: 抖动
+    anchorPrefix: PARAM
+  - name: priority
+    regex: "(优先级|priority)\\s*[:：=]?\\s*(\\d+|[高H中M低L])"
+    category: 优先级
+    anchorPrefix: PARAM
+  
+  # 接口与通信
+  - name: iface
+    regex: "(CAN|UART|SPI|I2C|I2S|GPIO|PWM|ADC|DAC|USB|Ethernet|PCIe?|SDIO|FlexRay|LIN|RS232|RS485)\\s*(\\d*)"
+    category: 接口协议
+    anchorPrefix: IFACE
+  - name: protocol
+    regex: "(TCP|UDP|IPv4|IPv6|HTTP|HTTPS|MQTT|CoAP|WebSocket)\\s*([vV]?\\d+\\.?\\d*)?"
+    category: 通信协议
+    anchorPrefix: IFACE
+  
+  # 安全等级
+  - name: safety
+    regex: "(DAL-[A-E]|ASIL\\s*[A-D]|SIL\\s*[1-4])"
+    category: 安全等级
+    anchorPrefix: SAFETY
+  
+  # 约束与限制
+  - name: constraint
+    regex: "(必须|不得|禁止|严禁|应当|不应|务必)\\s+(.{1,50}?)(?=[。；！\\n]|$)"
+    category: 约束条件
+    anchorPrefix: CONST
+  - name: limit
+    regex: "(不超过|不低于|≥|≤|max|min|最大|最小)\\s*[:：]?\\s*(\\d+\\.?\\d*)\\s*(ms|us|MHz|KB|%)"
+    category: 限制条件
+    anchorPrefix: CONST
+  
+  # 假设前提
+  - name: assume
+    regex: "(假设|前提|假定)\\s*[:：]?\\s*(.{10,200}?)(?=[。；！\\n]|$)"
+    category: 假设前提
+    anchorPrefix: ASSUMP
+  
+  # 缩写定义
+  - name: abbr
+    regex: "([A-Z]{2,6})\\s*[（(]\\s*([^）)]{1,30})\\s*[）)]"
+    category: 缩写
+    anchorPrefix: ABBR
+  
+  # ============ 领域特定正则 ============
+  
+  # 电源约束
+  - name: power
+    regex: "(功耗|功率|电流|电压|电源)\\s*[:：=]?\\s*(不超过|≤|≤|<|≥|不低于)?\\s*(\\d+\\.?\\d*)\\s*(W|瓦|A|安培|V|伏特|mAh|Wh)"
+    category: 电源约束
+    anchorPrefix: PARAM
+  - name: power_mode
+    regex: "(休眠|待机|低功耗|省电|关机)\\s*(模式|状态)?\\s*[:：]?\\s*(.{5,50}?)(?=[。；！\\n]|$)"
+    category: 电源模式
+    anchorPrefix: PARAM
+  
+  # 温度范围
+  - name: temperature
+    regex: "(工作温度|存储温度|环境温度|温度范围)\\s*[:：=]?\\s*(-?\\d+)\\s*(°C|℃|度)\\s*[~至到-]\\s*(-?\\d+)\\s*(°C|℃|度)"
+    category: 温度范围
+    anchorPrefix: PARAM
+  - name: temp_limit
+    regex: "(温度上限|温度下限|最高温度|最低温度)\\s*[:：=]?\\s*(不超过|≤|<|≥|不低于)?\\s*(-?\\d+)\\s*(°C|℃|度)"
+    category: 温度限制
+    anchorPrefix: PARAM
+  
+  # 可靠性指标
+  - name: reliability
+    regex: "(MTBF|MTTR|可用性|可靠性)\\s*[:：=]?\\s*(\\d+\\.?\\d*)\\s*(小时|年|%|次)"
+    category: 可靠性指标
+    anchorPrefix: PARAM
+  - name: fault_tolerance
+    regex: "(容错|故障恢复|冗余|自愈)\\s*[:：]?\\s*(.{5,100}?)(?=[。；！\\n]|$)"
+    category: 容错能力
+    anchorPrefix: CONST
+  
+  # 认证标准
+  - name: certification
+    regex: "(IEC\\s*61508|ISO\\s*26262|EN\\s*50128|DO\\s*178B|FAA\\s*AC\\s*20-115B|IEC\\s*62304)"
+    category: 认证标准
+    anchorPrefix: SAFETY
+  - name: compliance
+    regex: "(符合|遵循|满足)\\s*(IEC|ISO|EN|DO|FAA|GB|GJB)\\s*[\\d\\-]+\\s*(标准|规范)"
+    category: 合规要求
+    anchorPrefix: CONST
+  
+  
+  # 数据格式
+  - name: data_format
+    regex: "(数据格式|协议格式|编码格式)\\s*[:：=]?\\s*(JSON|XML|CSV|Protobuf|Binary|ASCII|UTF-8)"
+    category: 数据格式
+    anchorPrefix: PARAM
+  
+  # 存储容量
+  - name: storage
+    regex: "(存储容量|Flash|ROM|RAM)\\s*[:：=]?\\s*(\\d+\\.?\\d*)\\s*([kKMG]?[Bb])"
+    category: 存储容量
+    anchorPrefix: PARAM
+  
+  # 网络带宽
+  - name: bandwidth
+    regex: "(带宽|速率)\\s*[:：=]?\\s*(\\d+\\.?\\d*)\\s*(Mbps|Gbps|kbps)"
+    category: 网络带宽
+    anchorPrefix: PARAM
+  
+  # 中断优先级
+  - name: interrupt
+    regex: "(中断|IRQ|中断优先级)\\s*[:：=]?\\s*(\\d+)"
+    category: 中断优先级
+    anchorPrefix: PARAM
+  
+  # 加密要求
+  - name: encryption
+    regex: "(加密|SSL|TLS|AES|RSA|SHA)\\s*[:：=]?\\s*(\\d+\\-?\\d+|版本)?\\s*(算法|协议)"
+    category: 加密要求
+    anchorPrefix: SAFETY
+
+# 上下文卡片配置
+card:
+  max-items-per-category: 5  # 每个类别最多显示的条目数
+  max-card-length: 800  # 上下文卡片最大长度
+  context-extend-length: 80  # 提取上下文时前后扩展的字符数

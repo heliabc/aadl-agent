@@ -22,7 +22,6 @@ ollama:
   embedding-model: qwen3-embedding:latest
   timeout: 900000
 
-
 rag:
   top-k: 5
   rerank-top-k: 3
@@ -38,8 +37,8 @@ agent:
     max-retries: 3
     temperature: 0.1
     max-tokens: 8192
-    chunk-size: 2000
-    overlap-percent: 15
+    chunk-size: 8000
+    direct-process-threshold: 5500
   architecture:
     max-retries: 3
     temperature: 0.1

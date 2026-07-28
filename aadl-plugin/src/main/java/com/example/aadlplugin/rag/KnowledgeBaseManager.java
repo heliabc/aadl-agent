@@ -144,11 +144,12 @@ public class KnowledgeBaseManager {
             String json = Files.readString(kbPath);
             
             KnowledgeBase kb = convertLegacyFormat(json, agentType);
-            log.info(String.format("Loaded KB for %s via legacy format: %d basics, %d examples, %d corrections", 
+            log.info(String.format("Loaded KB for %s via legacy format: %d basics, %d examples, %d corrections, %d code examples", 
                     agentType,
                     kb.getBasics() != null ? kb.getBasics().size() : 0,
                     kb.getExamples() != null ? kb.getExamples().size() : 0,
-                    kb.getErrorCorrections() != null ? kb.getErrorCorrections().size() : 0));
+                    kb.getErrorCorrections() != null ? kb.getErrorCorrections().size() : 0,
+                    kb.getCodeExamples() != null ? kb.getCodeExamples().size() : 0));
             
             if (kb == null) {
                 kb = KnowledgeBase.builder()
@@ -156,18 +157,23 @@ public class KnowledgeBaseManager {
                         .basics(new ArrayList<>())
                         .examples(new ArrayList<>())
                         .errorCorrections(new ArrayList<>())
+                        .codeExamples(new ArrayList<>())
                         .lastModified(LocalDateTime.now())
                         .build();
             }
             
+            // 加载独立的代码示例文件
+            loadCodeExamples(agentType, kb);
+            
             kb.setAgentType(agentType);
 
             boolean qdrantAvailable = qdrantVectorStore.isAvailable();
-            log.info(String.format("Loading knowledge base %s: qdrantAvailable=%s, basics=%d, examples=%d, corrections=%d", 
+            log.info(String.format("Loading knowledge base %s: qdrantAvailable=%s, basics=%d, examples=%d, corrections=%d, codeExamples=%d", 
                     agentType, qdrantAvailable, 
                     kb.getBasics() != null ? kb.getBasics().size() : 0,
                     kb.getExamples() != null ? kb.getExamples().size() : 0,
-                    kb.getErrorCorrections() != null ? kb.getErrorCorrections().size() : 0));
+                    kb.getErrorCorrections() != null ? kb.getErrorCorrections().size() : 0,
+                    kb.getCodeExamples() != null ? kb.getCodeExamples().size() : 0));
             
             List<Document> docsToUpsert = new ArrayList<>();
             int generatedEmbeddings = 0;
@@ -265,9 +271,10 @@ public class KnowledgeBaseManager {
                 log.warning(String.format("Qdrant not available, skipping upsert for %s", agentType));
             }
             
-            log.info(String.format("Loaded knowledge base %s: %d basics, %d examples, %d corrections (qdrant: %s, upserted: %d)", 
+            log.info(String.format("Loaded knowledge base %s: %d basics, %d examples, %d corrections, %d code examples (qdrant: %s, upserted: %d)", 
                     agentType, kb.getBasics().size(), kb.getExamples().size(), 
-                    kb.getErrorCorrections().size(), qdrantAvailable, docsToUpsert.size()));
+                    kb.getErrorCorrections().size(), kb.getCodeExamples().size(),
+                    qdrantAvailable, docsToUpsert.size()));
         } catch (IOException e) {
             log.severe(String.format("Failed to load knowledge base %s: %s", agentType, e.getMessage()));
             knowledgeBases.put(agentType, createEmptyKnowledgeBase(agentType));
@@ -300,12 +307,20 @@ public class KnowledgeBaseManager {
                     String category = node.has("category") ? node.get("category").asText() : null;
                     String content = node.has("content") ? node.get("content").asText() : null;
                     
+                    List<String> tags = new ArrayList<>();
+                    com.fasterxml.jackson.databind.JsonNode tagsNode = node.get("tags");
+                    if (tagsNode != null && tagsNode.isArray()) {
+                        for (com.fasterxml.jackson.databind.JsonNode tagNode : tagsNode) {
+                            tags.add(tagNode.asText());
+                        }
+                    }
+                    
                     kb.getBasics().add(BasicKnowledge.builder()
                             .id("BASIC-" + agentType + "-" + String.format("%03d", index++))
                             .title(category != null ? category : "基本规则")
                             .content(content)
                             .section(category)
-                            .tags(new ArrayList<>())
+                            .tags(tags)
                             .createdAt(now)
                             .updatedAt(now)
                             .build());
@@ -321,6 +336,14 @@ public class KnowledgeBaseManager {
                     String goldenOutput = node.has("goldenOutput") ? node.get("goldenOutput").asText() : null;
                     String explanation = node.has("explanation") ? node.get("explanation").asText() : null;
                     
+                    List<String> tags = new ArrayList<>();
+                    com.fasterxml.jackson.databind.JsonNode tagsNode = node.get("tags");
+                    if (tagsNode != null && tagsNode.isArray()) {
+                        for (com.fasterxml.jackson.databind.JsonNode tagNode : tagsNode) {
+                            tags.add(tagNode.asText());
+                        }
+                    }
+                    
                     kb.getExamples().add(ExampleKnowledge.builder()
                             .id("EXAMPLE-" + agentType + "-" + String.format("%03d", index++))
                             .title(scenario != null ? scenario.substring(0, Math.min(scenario.length(), 30)) : "示例")
@@ -328,7 +351,7 @@ public class KnowledgeBaseManager {
                             .input(input)
                             .output(goldenOutput)
                             .explanation(explanation)
-                            .tags(new ArrayList<>())
+                            .tags(tags)
                             .createdAt(now)
                             .updatedAt(now)
                             .build());
@@ -343,6 +366,14 @@ public class KnowledgeBaseManager {
                     String badBehavior = node.has("badBehavior") ? node.get("badBehavior").asText() : null;
                     String correctionRule = node.has("correctionRule") ? node.get("correctionRule").asText() : null;
                     
+                    List<String> tags = new ArrayList<>();
+                    com.fasterxml.jackson.databind.JsonNode tagsNode = node.get("tags");
+                    if (tagsNode != null && tagsNode.isArray()) {
+                        for (com.fasterxml.jackson.databind.JsonNode tagNode : tagsNode) {
+                            tags.add(tagNode.asText());
+                        }
+                    }
+                    
                     kb.getErrorCorrections().add(ErrorCorrection.builder()
                             .id("EC-" + agentType + "-" + String.format("%03d", index++))
                             .title(errorType != null ? errorType : "错误修正")
@@ -351,14 +382,44 @@ public class KnowledgeBaseManager {
                             .errorDescription(badBehavior)
                             .correctContent(correctionRule)
                             .correctionExplanation(correctionRule)
-                            .tags(new ArrayList<>())
+                            .tags(tags)
                             .createdAt(now)
                             .updatedAt(now)
                             .build());
                 }
             }
             
-            if (kb.getBasics().isEmpty() && kb.getExamples().isEmpty() && kb.getErrorCorrections().isEmpty()) {
+            com.fasterxml.jackson.databind.JsonNode codeExamplesNode = rootNode.get("codeExamples");
+            if (codeExamplesNode != null && codeExamplesNode.isArray()) {
+                for (com.fasterxml.jackson.databind.JsonNode node : codeExamplesNode) {
+                    String id = node.has("id") ? node.get("id").asText() : null;
+                    String title = node.has("title") ? node.get("title").asText() : null;
+                    String category = node.has("category") ? node.get("category").asText() : null;
+                    String description = node.has("description") ? node.get("description").asText() : null;
+                    String code = node.has("code") ? node.get("code").asText() : null;
+                    
+                    List<String> keywords = new ArrayList<>();
+                    com.fasterxml.jackson.databind.JsonNode keywordsNode = node.get("keywords");
+                    if (keywordsNode != null && keywordsNode.isArray()) {
+                        for (com.fasterxml.jackson.databind.JsonNode kwNode : keywordsNode) {
+                            keywords.add(kwNode.asText());
+                        }
+                    }
+                    
+                    CodeExample codeExample = new CodeExample();
+                    codeExample.setId(id != null ? id : "CE-" + agentType + "-" + kb.getCodeExamples().size());
+                    codeExample.setTitle(title);
+                    codeExample.setCategory(category);
+                    codeExample.setDescription(description);
+                    codeExample.setKeywords(keywords);
+                    codeExample.setCode(code);
+                    
+                    kb.getCodeExamples().add(codeExample);
+                }
+            }
+            
+            if (kb.getBasics().isEmpty() && kb.getExamples().isEmpty() && 
+                kb.getErrorCorrections().isEmpty() && kb.getCodeExamples().isEmpty()) {
                 return createEmptyKnowledgeBase(agentType);
             }
             
@@ -375,8 +436,62 @@ public class KnowledgeBaseManager {
                 .basics(new ArrayList<>())
                 .examples(new ArrayList<>())
                 .errorCorrections(new ArrayList<>())
+                .codeExamples(new ArrayList<>())
                 .lastModified(LocalDateTime.now())
                 .build();
+    }
+
+    private void loadCodeExamples(String agentType, KnowledgeBase kb) {
+        // 尝试加载独立的代码示例文件
+        Path codeExamplesPath = knowledgeRootPath.resolve(agentType + "-code-examples.json");
+        
+        if (!Files.exists(codeExamplesPath)) {
+            // 如果独立文件不存在，检查主文件中是否已经包含 codeExamples
+            if (kb.getCodeExamples() == null || kb.getCodeExamples().isEmpty()) {
+                log.info(String.format("No code examples file found for %s: %s", agentType, codeExamplesPath));
+            } else {
+                log.info(String.format("Using code examples from main KB file for %s: %d examples", 
+                        agentType, kb.getCodeExamples().size()));
+            }
+            return;
+        }
+
+        try {
+            String json = Files.readString(codeExamplesPath);
+            com.fasterxml.jackson.databind.JsonNode rootNode = objectMapper.readTree(json);
+            
+            com.fasterxml.jackson.databind.JsonNode codeExamplesNode = rootNode.get("codeExamples");
+            if (codeExamplesNode != null && codeExamplesNode.isArray()) {
+                for (com.fasterxml.jackson.databind.JsonNode node : codeExamplesNode) {
+                    String id = node.has("id") ? node.get("id").asText() : null;
+                    String title = node.has("title") ? node.get("title").asText() : null;
+                    String category = node.has("category") ? node.get("category").asText() : null;
+                    String description = node.has("description") ? node.get("description").asText() : null;
+                    String code = node.has("code") ? node.get("code").asText() : null;
+                    
+                    List<String> keywords = new ArrayList<>();
+                    com.fasterxml.jackson.databind.JsonNode keywordsNode = node.get("keywords");
+                    if (keywordsNode != null && keywordsNode.isArray()) {
+                        for (com.fasterxml.jackson.databind.JsonNode kwNode : keywordsNode) {
+                            keywords.add(kwNode.asText());
+                        }
+                    }
+                    
+                    CodeExample codeExample = new CodeExample();
+                    codeExample.setId(id != null ? id : "CE-" + agentType + "-" + kb.getCodeExamples().size());
+                    codeExample.setTitle(title);
+                    codeExample.setCategory(category);
+                    codeExample.setDescription(description);
+                    codeExample.setKeywords(keywords);
+                    codeExample.setCode(code);
+                    
+                    kb.getCodeExamples().add(codeExample);
+                }
+                log.info(String.format("Loaded %d code examples from %s", kb.getCodeExamples().size(), codeExamplesPath));
+            }
+        } catch (Exception e) {
+            log.warning(String.format("Failed to load code examples from %s: %s", codeExamplesPath, e.getMessage()));
+        }
     }
 
     private void loadKnowledgeBaseFromResource(String agentType) {
@@ -809,6 +924,9 @@ public class KnowledgeBaseManager {
         for (ErrorCorrection ec : kb.getErrorCorrections()) {
             documents.add(toDocument(ec, agentType, "error_correction"));
         }
+        for (CodeExample codeExample : kb.getCodeExamples()) {
+            documents.add(toDocument(codeExample, agentType, "code_example"));
+        }
         
         return documents;
     }
@@ -883,6 +1001,36 @@ public class KnowledgeBaseManager {
                 .sensors(extractSensors(fullText))
                 .actuators(extractActuators(fullText))
                 .applicationDomains(extractApplicationDomains(fullText, ec.getTags()))
+                .safetyLevels(extractSafetyLevels(fullText))
+                .schedulingPolicies(extractSchedulingPolicies(fullText))
+                .build();
+    }
+
+    private Document toDocument(CodeExample codeExample, String agentType, String type) {
+        String semanticText = (codeExample.getTitle() != null ? "标题: " + codeExample.getTitle() : "") + "\n" + 
+                (codeExample.getDescription() != null ? "描述: " + codeExample.getDescription() : "") + 
+                (codeExample.getCategory() != null ? "\n分类: " + codeExample.getCategory() : "");
+        
+        String payload = (codeExample.getTitle() != null ? "标题: " + codeExample.getTitle() + "\n" : "") + 
+                (codeExample.getDescription() != null ? "描述: " + codeExample.getDescription() + "\n" : "") + 
+                (codeExample.getCategory() != null ? "分类: " + codeExample.getCategory() + "\n" : "") + 
+                (codeExample.getCode() != null ? "\n代码:\n" + codeExample.getCode() : "");
+
+        String fullText = semanticText + (codeExample.getCode() != null ? "\n" + codeExample.getCode() : "");
+
+        return Document.builder()
+                .id(codeExample.getId())
+                .content(semanticText)
+                .payload(payload)
+                .title(codeExample.getTitle())
+                .source(agentType)
+                .category(type)
+                .tags(codeExample.getKeywords())
+                .embedding(null)
+                .hardwareInterfaces(extractHardwareInterfaces(fullText))
+                .sensors(extractSensors(fullText))
+                .actuators(extractActuators(fullText))
+                .applicationDomains(extractApplicationDomains(fullText, codeExample.getKeywords()))
                 .safetyLevels(extractSafetyLevels(fullText))
                 .schedulingPolicies(extractSchedulingPolicies(fullText))
                 .build();

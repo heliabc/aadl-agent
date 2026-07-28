@@ -10,12 +10,18 @@ import com.example.aadlagent.model.GlobalAnchor;
 import com.example.aadlagent.model.Requirement;
 import com.example.aadlagent.model.RequirementAnalysisResult;
 import com.example.aadlagent.model.RequirementAnalysisResult.*;
+import com.example.aadlagent.util.TextCleaner;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
 
+import jakarta.annotation.PostConstruct;
+import java.io.InputStream;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -40,11 +46,14 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
     @Value("${agent.requirement.max-tokens:8192}")
     private int maxTokens;
 
-    @Value("${agent.requirement.chunk-size:2500}")
+    @Value("${agent.requirement.chunk-size:5000}")
     private int chunkSize;
 
     @Value("${agent.requirement.overlap-percent:15}")
     private int overlapPercent;
+
+    @Value("${agent.requirement.direct-process-threshold:4000}")
+    private int directProcessThreshold;
 
     public RequirementAgent(ModelService modelService) {
         this.modelService = modelService;
@@ -74,6 +83,10 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
         log.info("需求文档长度: {} 字符", requirementDoc.length());
         log.info("配置参数: temperature={}, maxTokens={}, maxRetries={}", temperature, maxTokens, maxRetries);
 
+        // 文本清洗：删除页眉页脚/水印、修订记录、分隔线、引导词、压缩空白、删除零宽字符
+        String cleanedDoc = TextCleaner.clean(requirementDoc);
+        log.info("文本清洗完成，清洗后长度: {} 字符", cleanedDoc.length());
+
         RequirementAnalysisResult analysisResult = RequirementAnalysisResult.builder()
                 .rawInput(requirementDoc)
                 .build();
@@ -81,7 +94,7 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
         try {
             // 阶段0：预处理——生成全局上下文卡片
             log.info("\n\n========== 阶段0：预处理——生成全局上下文卡片 ==========");
-            Stage0Result stage0 = executeStage0(requirementDoc, llmClient);
+            Stage0Result stage0 = executeStage0(cleanedDoc, llmClient);
             analysisResult.setStage0(stage0);
             log.info("阶段0完成，耗时: {}ms", stage0.getExecutionTime());
             log.info("全局上下文卡片:\n{}", stage0.getContextCard());
@@ -93,7 +106,11 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
 
             // 阶段1：分层分块——注入全局视野
             log.info("\n\n========== 阶段1：分层分块——注入全局视野 ==========");
-            Stage1Result stage1 = executeStage1(requirementDoc, stage0.getContextCard());
+            boolean isDirectProcess = cleanedDoc.length() <= directProcessThreshold;
+            if (isDirectProcess) {
+                log.info("文档长度 {} 字符，小于直接处理阈值 {}，采用直接处理模式", cleanedDoc.length(), directProcessThreshold);
+            }
+            Stage1Result stage1 = executeStage1(cleanedDoc, stage0.getContextCard(), isDirectProcess);
             analysisResult.setStage1(stage1);
             log.info("阶段1完成，耗时: {}ms，分块数量: {} 个", stage1.getExecutionTime(), 
                     stage1.getChunks() != null ? stage1.getChunks().size() : 0);
@@ -119,7 +136,7 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
 
             // 阶段3：合并与校验——机械拼接，杜绝幻觉融合
             log.info("\n\n========== 阶段3：合并与校验——机械拼接 ==========");
-            Stage3Result stage3 = executeStage3(stage2.getChunkResults());
+            Stage3Result stage3 = executeStage3(stage2.getChunkResults(), stage0.getContextCard());
             analysisResult.setStage3(stage3);
             log.info("阶段3完成，耗时: {}ms，合并后需求: {} 条，冲突: {} 个", 
                     stage3.getExecutionTime(),
@@ -153,39 +170,108 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
         }
     }
 
+    @Data
     private static class PatternConfig {
         String name;
+        String regex;
         Pattern pattern;
         String category;
+        String anchorPrefix;
 
-        PatternConfig(String name, String regex, String category) {
+        public PatternConfig() {}
+
+        public PatternConfig(String name, String regex, String category, String anchorPrefix) {
             this.name = name;
-            this.pattern = Pattern.compile(regex);
+            this.regex = regex;
             this.category = category;
+            this.anchorPrefix = anchorPrefix;
+            this.pattern = Pattern.compile(regex);
+        }
+
+        public void compile() {
+            this.pattern = Pattern.compile(regex);
         }
     }
 
-    private static final List<PatternConfig> PATTERNS = Arrays.asList(
-            new PatternConfig("clock", "(\\d+\\.?\\d*)\\s*([kKMG]?[Hh]z)", "时钟频率"),
-            new PatternConfig("time", "(\\d+\\.?\\d*)\\s*(毫秒|微秒|纳秒|秒|ms|us|μs|ns|s)", "时间参数"),
-            new PatternConfig("memory", "(\\d+\\.?\\d*)\\s*([kKMG]?[Bb](yte)?)", "内存大小"),
-            new PatternConfig("baud", "(\\d+\\.?\\d*)\\s*([kKMG]?[Bb]ps)", "波特率"),
-            new PatternConfig("deadline", "(截止|响应|执行|反应)时间\\s*[:：=]?\\s*(\\d+\\.?\\d*)\\s*(ms|us|μs|ns|s|毫秒|微秒)", "截止时间"),
-            new PatternConfig("period", "(周期|period)\\s*[:：=]?\\s*(\\d+\\.?\\d*)\\s*(ms|毫秒|Hz)", "周期"),
-            new PatternConfig("jitter", "(抖动|jitter)\\s*[:：=]?\\s*(不超过|≤|<)?\\s*(\\d+\\.?\\d*)\\s*(ms|us|μs)", "抖动"),
-            new PatternConfig("priority", "(优先级|priority)\\s*[:：=]?\\s*(\\d+|[高H中M低L])", "优先级"),
-            new PatternConfig("abbr", "([A-Z]{2,6})\\s*[（(]\\s*([^）)]{1,30})\\s*[）)]", "缩写"),
-            new PatternConfig("iface", "(CAN|UART|SPI|I2C|I2S|GPIO|PWM|ADC|DAC|USB|Ethernet|PCIe?|SDIO|FlexRay|LIN|RS232|RS485)\\s*(\\d*)", "接口协议"),
-            new PatternConfig("safety", "(DAL-[A-E]|ASIL\\s*[A-D]|SIL\\s*[1-4])", "安全等级"),
-            new PatternConfig("assume", "(假设|前提|假定)\\s*[:：]?\\s*(.{10,200}?)(?=[。；！\\n]|$)", "假设前提"),
-            new PatternConfig("limit", "(不超过|不低于|≥|≤|max|min|最大|最小)\\s*[:：]?\\s*(\\d+\\.?\\d*)\\s*(ms|us|MHz|KB|%)", "限制条件"),
-            new PatternConfig("constraint", "(必须|不得|禁止|严禁|应当|不应|务必)\\s+(.{1,50}?)(?=[。；！\\n]|$)", "约束条件")
-    );
+    @Data
+    private static class CardConfig {
+        int maxItemsPerCategory;
+        int maxCardLength;
+        int contextExtendLength;
+    }
+
+    @Data
+    private static class ContextPatternsConfig {
+        List<PatternConfig> patterns;
+        CardConfig card;
+    }
+
+    private List<PatternConfig> patterns;
+    private CardConfig cardConfig;
+
+    @PostConstruct
+    public void init() {
+        loadPatternsFromConfig();
+    }
+
+    private void loadPatternsFromConfig() {
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream("context-patterns.yml")) {
+            if (is != null) {
+                Yaml yaml = new Yaml(new Constructor(ContextPatternsConfig.class, new org.yaml.snakeyaml.LoaderOptions()));
+                ContextPatternsConfig config = yaml.load(is);
+                
+                // 编译正则表达式
+                for (PatternConfig patternConfig : config.getPatterns()) {
+                    patternConfig.compile();
+                }
+                
+                this.patterns = config.getPatterns();
+                this.cardConfig = config.getCard();
+                
+                log.info("成功加载 {} 个正则模式配置", patterns.size());
+            } else {
+                log.warn("未找到 context-patterns.yml，使用默认模式");
+                loadDefaultPatterns();
+            }
+        } catch (Exception e) {
+            log.error("加载正则模式配置失败，使用默认模式: {}", e.getMessage());
+            loadDefaultPatterns();
+        }
+    }
+
+    private void loadDefaultPatterns() {
+        this.patterns = Arrays.asList(
+                new PatternConfig("clock", "(\\d+\\.?\\d*)\\s*([kKMG]?[Hh]z)", "时钟频率", "PARAM"),
+                new PatternConfig("time", "(\\d+\\.?\\d*)\\s*(毫秒|微秒|纳秒|秒|ms|us|μs|ns|s)", "时间参数", "PARAM"),
+                new PatternConfig("memory", "(\\d+\\.?\\d*)\\s*([kKMG]?[Bb](yte)?)", "内存大小", "PARAM"),
+                new PatternConfig("baud", "(\\d+\\.?\\d*)\\s*([kKMG]?[Bb]ps)", "波特率", "PARAM"),
+                new PatternConfig("deadline", "(截止|响应|执行|反应)时间\\s*[:：=]?\\s*(\\d+\\.?\\d*)\\s*(ms|us|μs|ns|s|毫秒|微秒)", "截止时间", "PARAM"),
+                new PatternConfig("period", "(周期|period)\\s*[:：=]?\\s*(\\d+\\.?\\d*)\\s*(ms|毫秒|Hz)", "周期", "PARAM"),
+                new PatternConfig("jitter", "(抖动|jitter)\\s*[:：=]?\\s*(不超过|≤|<)?\\s*(\\d+\\.?\\d*)\\s*(ms|us|μs)", "抖动", "PARAM"),
+                new PatternConfig("priority", "(优先级|priority)\\s*[:：=]?\\s*(\\d+|[高H中M低L])", "优先级", "PARAM"),
+                new PatternConfig("abbr", "([A-Z]{2,6})\\s*[（(]\\s*([^）)]{1,30})\\s*[）)]", "缩写", "ABBR"),
+                new PatternConfig("iface", "(CAN|UART|SPI|I2C|I2S|GPIO|PWM|ADC|DAC|USB|Ethernet|PCIe?|SDIO|FlexRay|LIN|RS232|RS485)\\s*(\\d*)", "接口协议", "IFACE"),
+                new PatternConfig("safety", "(DAL-[A-E]|ASIL\\s*[A-D]|SIL\\s*[1-4])", "安全等级", "SAFETY"),
+                new PatternConfig("assume", "(假设|前提|假定)\\s*[:：]?\\s*(.{10,200}?)(?=[。；！\\n]|$)", "假设前提", "ASSUMP"),
+                new PatternConfig("limit", "(不超过|不低于|≥|≤|max|min|最大|最小)\\s*[:：]?\\s*(\\d+\\.?\\d*)\\s*(ms|us|MHz|KB|%)", "限制条件", "CONST"),
+                new PatternConfig("constraint", "(必须|不得|禁止|严禁|应当|不应|务必)\\s+(.{1,50}?)(?=[。；！\\n]|$)", "约束条件", "CONST")
+        );
+        
+        // 编译默认正则表达式
+        for (PatternConfig patternConfig : this.patterns) {
+            patternConfig.compile();
+        }
+        
+        this.cardConfig = new CardConfig();
+        this.cardConfig.setMaxItemsPerCategory(5);
+        this.cardConfig.setMaxCardLength(800);
+        this.cardConfig.setContextExtendLength(80);
+    }
 
     private Stage0Result executeStage0(String document, LlmClient llmClient) {
         long startTime = System.currentTimeMillis();
 
-        // 正则匹配提取信息，直接生成上下文卡片
+        // 正则匹配提取信息，生成上下文卡片
         String contextCard = buildContextCard(document);
 
         return Stage0Result.builder()
@@ -195,45 +281,181 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
     }
 
     private String buildContextCard(String document) {
-        StringBuilder card = new StringBuilder();
-        card.append("【全局上下文卡片】\n");
-
+        Map<String, Integer> counters = new HashMap<>();
         Map<String, List<String>> grouped = new HashMap<>();
         
-        for (PatternConfig config : PATTERNS) {
+        for (PatternConfig config : patterns) {
             Matcher matcher = config.pattern.matcher(document);
             while (matcher.find()) {
-                String content = matcher.group(0).trim();
-                grouped.computeIfAbsent(config.category, k -> new ArrayList<>()).add(content);
+                String context = extractContext(document, matcher.start(), matcher.end(), cardConfig.getContextExtendLength());
+                counters.put(config.category, counters.getOrDefault(config.category, 0) + 1);
+                int count = counters.get(config.category);
+                String anchorId = generateAnchorId(config.anchorPrefix, count);
+                String itemWithId = anchorId + " | " + context;
+                grouped.computeIfAbsent(config.category, k -> new ArrayList<>()).add(itemWithId);
             }
         }
 
-        for (Map.Entry<String, List<String>> entry : grouped.entrySet()) {
-            card.append("- ").append(entry.getKey()).append(":\n");
+        // 将细分类别聚合到三个大类：约束条件、参数配置、接口协议
+        Map<String, List<String>> aggregated = aggregateToCategories(grouped);
+        
+        // 策略：不压缩内容，按顺序删除类别
+        // 删除顺序：参数配置 → 接口协议 → 约束条件（约束条件最重要）
+        
+        // 级别1：包含所有三个大类
+        String level1 = buildCardWithCategories(aggregated, Arrays.asList("约束条件", "参数配置", "接口协议"));
+        if (level1.length() <= cardConfig.getMaxCardLength()) {
+            return level1;
+        }
+        
+        // 级别2：删除参数配置（一般不具备全局属性）
+        String level2 = buildCardWithCategories(aggregated, Arrays.asList("约束条件", "接口协议"));
+        if (level2.length() <= cardConfig.getMaxCardLength()) {
+            return level2;
+        }
+        
+        // 级别3：删除接口协议
+        String level3 = buildCardWithCategories(aggregated, Arrays.asList("约束条件"));
+        return level3;
+    }
+
+    private Map<String, List<String>> aggregateToCategories(Map<String, List<String>> grouped) {
+        Map<String, List<String>> aggregated = new HashMap<>();
+        
+        // 约束条件大类：包含所有约束类细分类别
+        List<String> constraintCategories = Arrays.asList("约束条件", "限制条件", "假设前提", "容错能力", "合规要求");
+        
+        // 参数配置大类：包含所有参数类细分类别
+        List<String> paramCategories = Arrays.asList("时钟频率", "时间参数", "内存大小", "波特率", "截止时间", 
+                "周期", "抖动", "优先级", "电源约束", "温度范围", "可靠性指标", "版本要求", 
+                "存储容量", "网络带宽", "中断优先级", "数据格式");
+        
+        // 接口协议大类：包含所有接口协议类细分类别
+        List<String> ifaceCategories = Arrays.asList("接口协议", "通信协议", "加密要求");
+        
+        // 聚合约束条件
+        List<String> constraints = new ArrayList<>();
+        for (String cat : constraintCategories) {
+            if (grouped.containsKey(cat)) {
+                constraints.addAll(grouped.get(cat));
+            }
+        }
+        if (!constraints.isEmpty()) {
+            aggregated.put("约束条件", constraints);
+        }
+        
+        // 聚合参数配置
+        List<String> params = new ArrayList<>();
+        for (String cat : paramCategories) {
+            if (grouped.containsKey(cat)) {
+                params.addAll(grouped.get(cat));
+            }
+        }
+        if (!params.isEmpty()) {
+            aggregated.put("参数配置", params);
+        }
+        
+        // 聚合接口协议
+        List<String> ifaces = new ArrayList<>();
+        for (String cat : ifaceCategories) {
+            if (grouped.containsKey(cat)) {
+                ifaces.addAll(grouped.get(cat));
+            }
+        }
+        if (!ifaces.isEmpty()) {
+            aggregated.put("接口协议", ifaces);
+        }
+        
+        return aggregated;
+    }
+
+    private String buildCardWithCategories(Map<String, List<String>> aggregated, List<String> categoriesToInclude) {
+        StringBuilder card = new StringBuilder();
+        card.append("【全局上下文卡片】\n");
+        card.append("以下是从整个文档中提取的全局约束、参数和接口定义，每个条目都有唯一锚点ID。\n");
+        card.append("在处理当前分块时，必须遵守这些全局约束，并在输出中通过 globalRef 字段引用相关锚点ID。\n\n");
+
+        for (String category : categoriesToInclude) {
+            if (!aggregated.containsKey(category)) {
+                continue;
+            }
+            
+            List<String> items = aggregated.get(category);
+            card.append("- ").append(category).append(":\n");
             int count = 0;
-            for (String content : entry.getValue()) {
-                if (count >= 5) {  // 每个类别最多显示5条
-                    card.append("  * ...(共").append(entry.getValue().size()).append("条)\n");
+            for (String content : items) {
+                if (count >= cardConfig.getMaxItemsPerCategory()) {
+                    card.append("  * ...(共").append(items.size()).append("条)\n");
                     break;
                 }
+                // 保留完整句子上下文，不压缩
                 card.append("  * ").append(content).append("\n");
                 count++;
             }
         }
 
-        // 压缩至200-300字
-        String result = card.toString();
-        if (result.length() > 300) {
-            result = result.substring(0, 300) + "...\n[注：完整信息见阶段0输出]";
-        }
-        return result;
+        card.append("\n【锚点ID规则说明】\n");
+        card.append("- CONST-xxx：约束条件（必须/不得/禁止等）\n");
+        card.append("- PARAM-xxx：参数配置（时钟频率/时间参数/内存大小/波特率/周期等）\n");
+        card.append("- IFACE-xxx：接口协议\n");
+
+        return card.toString();
     }
 
-    private Stage1Result executeStage1(String document, String contextCard) {
+    private String generateAnchorId(String anchorPrefix, int count) {
+        return anchorPrefix + "-" + String.format("%03d", count);
+    }
+
+    private String extractContext(String document, int start, int end, int contextLength) {
+        int sentenceStart = start;
+        int sentenceEnd = end;
+
+        for (int i = start - 1; i >= 0 && i >= start - contextLength; i--) {
+            char c = document.charAt(i);
+            if (c == '。' || c == '！' || c == '？' || c == ';' || c == '；' || c == '\n') {
+                sentenceStart = i + 1;
+                break;
+            }
+        }
+
+        for (int i = end; i < document.length() && i <= end + contextLength; i++) {
+            char c = document.charAt(i);
+            if (c == '。' || c == '！' || c == '？' || c == ';' || c == '；' || c == '\n') {
+                sentenceEnd = i + 1;
+                break;
+            }
+        }
+
+        String context = document.substring(sentenceStart, sentenceEnd).trim();
+        if (context.length() > 150) {
+            context = context.substring(0, 150) + "...";
+        }
+        return context;
+    }
+
+    private Stage1Result executeStage1(String document, String contextCard, boolean isDirectProcess) {
         long startTime = System.currentTimeMillis();
         List<DocumentChunk> chunks = new ArrayList<>();
 
-        // 直接按字符长度分割，每块固定chunkSize
+        // 直接处理模式：文档较小，无需分块，将整个文档作为一个分块处理
+        if (isDirectProcess) {
+            String injectedContent = contextCard + "\n\n【当前内容】\n" + document;
+            chunks.add(DocumentChunk.builder()
+                    .chunkId(1)
+                    .content(injectedContent)
+                    .sectionId("SEC-001")
+                    .sectionTitle("完整文档")
+                    .startLine(1)
+                    .endLine(1)
+                    .build());
+            
+            return Stage1Result.builder()
+                    .chunks(chunks)
+                    .executionTime(System.currentTimeMillis() - startTime)
+                    .build();
+        }
+
+        // 分块处理模式：文档较大，按固定chunkSize分割
         int chunkId = 1;
         int currentPos = 0;
         int docLength = document.length();
@@ -353,7 +575,7 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
         return Collections.emptyList();
     }
 
-    private Stage3Result executeStage3(List<List<Requirement>> chunkResults) {
+    private Stage3Result executeStage3(List<List<Requirement>> chunkResults, String contextCard) {
         long startTime = System.currentTimeMillis();
 
         // 机械拼接：按原始顺序合并所有需求
@@ -372,11 +594,99 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
         // 冲突检测（规则驱动）
         List<Conflict> conflicts = detectConflicts(mergedRequirements);
 
+        // 全局约束校验：检查需求是否违反全局约束
+        List<Conflict> globalConstraintConflicts = validateGlobalConstraints(mergedRequirements, contextCard);
+        conflicts.addAll(globalConstraintConflicts);
+
         return Stage3Result.builder()
                 .mergedRequirements(mergedRequirements)
                 .conflicts(conflicts)
                 .executionTime(System.currentTimeMillis() - startTime)
                 .build();
+    }
+
+    private List<Conflict> validateGlobalConstraints(List<Requirement> requirements, String contextCard) {
+        List<Conflict> conflicts = new ArrayList<>();
+        
+        // 提取全局约束中的参数值
+        Map<String, String> globalParams = extractGlobalParams(contextCard);
+        
+        for (Requirement req : requirements) {
+            String description = req.getDescription();
+            
+            // 检查数值参数是否与全局约束冲突
+            for (Map.Entry<String, String> entry : globalParams.entrySet()) {
+                String paramKey = entry.getKey();
+                String globalValue = entry.getValue();
+                
+                // 如果需求描述中包含该参数但值不同，标记为冲突
+                if (description.contains(paramKey) && !description.contains(globalValue)) {
+                    conflicts.add(Conflict.builder()
+                            .conflictId("GLOBAL-CONFLICT-" + String.format("%03d", conflicts.size() + 1))
+                            .description("需求 " + req.getRequirementId() + " 与全局约束冲突：" + paramKey + "，全局约束值为 " + globalValue)
+                            .conflictingRequirementIds(Collections.singletonList(req.getRequirementId()))
+                            .conflictingValues(Arrays.asList("需求值", globalValue))
+                            .build());
+                }
+            }
+            
+            // 检查是否缺少必要的全局引用
+            if (req.getGlobalRef() == null || req.getGlobalRef().isEmpty()) {
+                // 检查是否存在应该引用全局约束的关键词
+                boolean shouldReference = false;
+                String[] constraintKeywords = {"必须", "不得", "禁止", "时钟", "频率", "周期", "响应时间", "截止时间", "优先级"};
+                for (String keyword : constraintKeywords) {
+                    if (description.contains(keyword)) {
+                        shouldReference = true;
+                        break;
+                    }
+                }
+                if (shouldReference) {
+                    conflicts.add(Conflict.builder()
+                            .conflictId("GLOBAL-REF-MISSING-" + String.format("%03d", conflicts.size() + 1))
+                            .description("需求 " + req.getRequirementId() + " 包含全局约束相关关键词但未引用全局锚点")
+                            .conflictingRequirementIds(Collections.singletonList(req.getRequirementId()))
+                            .conflictingValues(Collections.emptyList())
+                            .build());
+                }
+            }
+        }
+        
+        return conflicts;
+    }
+
+    private Map<String, String> extractGlobalParams(String contextCard) {
+        Map<String, String> params = new HashMap<>();
+        
+        // 提取时钟频率
+        Pattern clockPattern = Pattern.compile("PARAM-\\d{3} \\| .*?(\\d+\\.?\\d*\\s*[kKMG]?[Hh]z)", Pattern.CASE_INSENSITIVE);
+        Matcher clockMatcher = clockPattern.matcher(contextCard);
+        while (clockMatcher.find()) {
+            params.put("时钟频率", clockMatcher.group(1));
+        }
+        
+        // 提取周期
+        Pattern periodPattern = Pattern.compile("PARAM-\\d{3} \\| .*?(\\d+\\.?\\d*\\s*(ms|毫秒|Hz))");
+        Matcher periodMatcher = periodPattern.matcher(contextCard);
+        while (periodMatcher.find()) {
+            params.put("周期", periodMatcher.group(1));
+        }
+        
+        // 提取截止时间/响应时间
+        Pattern deadlinePattern = Pattern.compile("PARAM-\\d{3} \\| .*?(\\d+\\.?\\d*\\s*(ms|微秒|毫秒|秒))");
+        Matcher deadlineMatcher = deadlinePattern.matcher(contextCard);
+        while (deadlineMatcher.find()) {
+            params.put("响应时间", deadlineMatcher.group(1));
+        }
+        
+        // 提取优先级
+        Pattern priorityPattern = Pattern.compile("PARAM-\\d{3} \\| .*?优先级.*?([高H中M低L])", Pattern.CASE_INSENSITIVE);
+        Matcher priorityMatcher = priorityPattern.matcher(contextCard);
+        while (priorityMatcher.find()) {
+            params.put("优先级", priorityMatcher.group(1));
+        }
+        
+        return params;
     }
 
     private List<Conflict> detectConflicts(List<Requirement> requirements) {

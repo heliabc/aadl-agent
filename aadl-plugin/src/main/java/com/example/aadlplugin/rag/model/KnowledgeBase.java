@@ -10,20 +10,24 @@ public class KnowledgeBase {
     private List<BasicKnowledge> basics;
     private List<ExampleKnowledge> examples;
     private List<ErrorCorrection> errorCorrections;
+    private List<CodeExample> codeExamples;
     private LocalDateTime lastModified;
 
     public KnowledgeBase() {
         this.basics = new ArrayList<>();
         this.examples = new ArrayList<>();
         this.errorCorrections = new ArrayList<>();
+        this.codeExamples = new ArrayList<>();
     }
 
     public KnowledgeBase(String agentType, List<BasicKnowledge> basics, List<ExampleKnowledge> examples,
-                         List<ErrorCorrection> errorCorrections, LocalDateTime lastModified) {
+                         List<ErrorCorrection> errorCorrections, List<CodeExample> codeExamples,
+                         LocalDateTime lastModified) {
         this.agentType = agentType;
         this.basics = basics != null ? basics : new ArrayList<>();
         this.examples = examples != null ? examples : new ArrayList<>();
         this.errorCorrections = errorCorrections != null ? errorCorrections : new ArrayList<>();
+        this.codeExamples = codeExamples != null ? codeExamples : new ArrayList<>();
         this.lastModified = lastModified;
     }
 
@@ -59,6 +63,14 @@ public class KnowledgeBase {
         this.errorCorrections = errorCorrections != null ? errorCorrections : new ArrayList<>();
     }
 
+    public List<CodeExample> getCodeExamples() {
+        return codeExamples;
+    }
+
+    public void setCodeExamples(List<CodeExample> codeExamples) {
+        this.codeExamples = codeExamples != null ? codeExamples : new ArrayList<>();
+    }
+
     public LocalDateTime getLastModified() {
         return lastModified;
     }
@@ -68,7 +80,8 @@ public class KnowledgeBase {
     }
 
     public int getTotalEntries() {
-        return basics.size() + examples.size() + errorCorrections.size();
+        return basics.size() + examples.size() + errorCorrections.size() + 
+               (codeExamples != null ? codeExamples.size() : 0);
     }
 
     public static Builder builder() {
@@ -80,6 +93,7 @@ public class KnowledgeBase {
         private List<BasicKnowledge> basics = new ArrayList<>();
         private List<ExampleKnowledge> examples = new ArrayList<>();
         private List<ErrorCorrection> errorCorrections = new ArrayList<>();
+        private List<CodeExample> codeExamples = new ArrayList<>();
         private LocalDateTime lastModified;
 
         public Builder agentType(String agentType) {
@@ -102,13 +116,18 @@ public class KnowledgeBase {
             return this;
         }
 
+        public Builder codeExamples(List<CodeExample> codeExamples) {
+            this.codeExamples = codeExamples != null ? codeExamples : new ArrayList<>();
+            return this;
+        }
+
         public Builder lastModified(LocalDateTime lastModified) {
             this.lastModified = lastModified;
             return this;
         }
 
         public KnowledgeBase build() {
-            return new KnowledgeBase(agentType, basics, examples, errorCorrections, lastModified);
+            return new KnowledgeBase(agentType, basics, examples, errorCorrections, codeExamples, lastModified);
         }
     }
 }

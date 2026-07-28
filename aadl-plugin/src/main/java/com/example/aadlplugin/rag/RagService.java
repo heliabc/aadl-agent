@@ -129,6 +129,7 @@ public class RagService {
         List<Document> basics = new ArrayList<>();
         List<Document> examples = new ArrayList<>();
         List<Document> errorCorrections = new ArrayList<>();
+        List<Document> codeExamples = new ArrayList<>();
 
         for (Document doc : result.getDocuments()) {
             String category = doc.getCategory();
@@ -138,6 +139,8 @@ public class RagService {
                 examples.add(doc);
             } else if ("error_correction".equals(category)) {
                 errorCorrections.add(doc);
+            } else if ("code_example".equals(category)) {
+                codeExamples.add(doc);
             } else {
                 basics.add(doc);
             }
@@ -159,6 +162,16 @@ public class RagService {
             for (int i = 0; i < examples.size(); i++) {
                 Document doc = examples.get(i);
                 context.append(String.format("%d. %s\n", i + 1, doc.getContent()));
+            }
+            context.append("\n");
+        }
+
+        if (!codeExamples.isEmpty()) {
+            context.append("【代码示例参考】\n");
+            context.append("以下是相关的AADL代码示例，请参考其语法和结构：\n");
+            for (int i = 0; i < codeExamples.size(); i++) {
+                Document doc = codeExamples.get(i);
+                context.append(String.format("%d. %s\n", i + 1, doc.getPayload()));
             }
             context.append("\n");
         }

@@ -230,11 +230,22 @@ public class VectorSearchService {
 
         for (Document doc : documents) {
             String content = doc.getContent().toLowerCase();
+            List<String> tags = doc.getTags();
             int matchCount = 0;
 
             for (String keyword : keywords) {
+                // 在content中查找
                 if (content.contains(keyword)) {
                     matchCount++;
+                }
+                // 在tags中查找，标签匹配权重更高
+                if (tags != null) {
+                    for (String tag : tags) {
+                        if (tag.toLowerCase().contains(keyword)) {
+                            matchCount += 2;  // 标签匹配权重加倍
+                            break;
+                        }
+                    }
                 }
             }
 

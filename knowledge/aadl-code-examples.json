@@ -1,0 +1,295 @@
+{
+  "agentType": "aadl",
+  "description": "AADL标准代码示例库 - 包含各类组件的完整声明和实现示例",
+  "lastModified": "2026-07-27T00:00:00",
+  "codeExamples": [
+    {
+      "id": "CE-001",
+      "title": "软件组件类型声明 - Thread",
+      "category": "thread",
+      "description": "演示线程组件类型的完整声明，包含特征定义和调度属性配置",
+      "keywords": ["thread", "线程", "调度协议", "Periodic", "特征", "属性"],
+      "code": "package ThreadExamples;\n\nwith Base_Types;\n\nthread PeriodicThread\n  features\n    Input: in event data port Base_Types::Integer;\n    Output: out data port Base_Types::Boolean;\n    Trigger: in event port;\n  properties\n    Dispatch_Protocol => Periodic;\n    Period => 10 ms;\n    Deadline => 8 ms;\n    Priority => 50;\n  flows\n    DataFlow: flow source Input sink Output;\nend PeriodicThread;"
+    },
+    {
+      "id": "CE-002",
+      "title": "软件组件类型声明 - Process",
+      "category": "process",
+      "description": "演示进程组件类型的完整声明，包含线程访问特征",
+      "keywords": ["process", "进程", "虚拟地址空间", "线程访问"],
+      "code": "package ProcessExamples;\n\nwith ThreadExamples;\n\nprocess ApplicationProcess\n  features\n    ThreadAccess: provides thread access ThreadExamples::PeriodicThread;\n    MemoryAccess: requires memory access;\n  properties\n    Source_Text_Language => C;\n    Binary_Size => 1024 Kbytes;\nend ApplicationProcess;"
+    },
+    {
+      "id": "CE-003",
+      "title": "软件组件类型声明 - Subprogram",
+      "category": "subprogram",
+      "description": "演示子程序组件类型的声明，包含输入输出参数",
+      "keywords": ["subprogram", "子程序", "参数", "访问特征"],
+      "code": "package SubprogramExamples;\n\nwith Base_Types;\n\nsubprogram Calculator\n  parameters\n    X: in Base_Types::Integer;\n    Y: in Base_Types::Integer;\n    Result: out Base_Types::Integer;\n  properties\n    Execution_Time => 1 ms;\nend Calculator;"
+    },
+    {
+      "id": "CE-004",
+      "title": "软件组件类型声明 - Data",
+      "category": "data",
+      "description": "演示数据组件类型的声明，包含数据表示和初始值属性",
+      "keywords": ["data", "数据组件", "Data_Representation", "Initial_Value"],
+      "code": "package DataExamples;\n\nwith Base_Types;\n\ndata SharedBuffer\n  properties\n    Data_Representation => Array(100 of Base_Types::Integer);\n    Initial_Value => (others => 0);\n    Concurrency_Control_Protocol => Protected;\nend SharedBuffer;"
+    },
+    {
+      "id": "CE-005",
+      "title": "硬件平台组件 - Processor",
+      "category": "processor",
+      "description": "演示处理器组件类型声明，包含调度协议和内存访问特征",
+      "keywords": ["processor", "处理器", "调度协议", "内存访问", "Priority_Range"],
+      "code": "package HardwareExamples;\n\nprocessor ARM_Cortex_M4\n  features\n    MemoryPort: provides memory access;\n    BusPort: provides bus access;\n  properties\n    Allowed_Dispatch_Protocol => list {Periodic, Sporadic, Background};\n    Clock_Frequency => 80 MHz;\n    Priority_Range => (1..255);\n    Number_Of_Processors => 1;\n    Cache_Size => 64 Kbytes;\nend ARM_Cortex_M4;"
+    },
+    {
+      "id": "CE-006",
+      "title": "硬件平台组件 - Memory",
+      "category": "memory",
+      "description": "演示内存组件类型声明，包含容量和访问时间属性",
+      "keywords": ["memory", "内存", "容量", "访问时间", "Memory_Size"],
+      "code": "package HardwareExamples;\n\nmemory RAM_512KB\n  features\n    Port: requires memory access;\n  properties\n    Memory_Size => 512 Kbytes;\n    Access_Time => 10 ns;\n    Memory_Type => RAM;\nend RAM_512KB;\n\nmemory Flash_1MB\n  features\n    Port: requires memory access;\n  properties\n    Memory_Size => 1 Mbytes;\n    Access_Time => 100 ns;\n    Memory_Type => ROM;\nend Flash_1MB;"
+    },
+    {
+      "id": "CE-007",
+      "title": "硬件平台组件 - Bus",
+      "category": "bus",
+      "description": "演示总线组件类型声明，包含带宽和协议属性",
+      "keywords": ["bus", "总线", "带宽", "协议", "Bus_Speed"],
+      "code": "package HardwareExamples;\n\nbus CAN_Bus\n  features\n    Slave: requires bus access;\n  properties\n    Bus_Speed => 500 Kbps;\n    Maximum_Transfer_Rate => 500000 bytes/sec;\n    Protocol => CAN_2_0;\nend CAN_Bus;\n\nbus Ethernet_Bus\n  features\n    Slave: requires bus access;\n  properties\n    Bus_Speed => 100 Mbps;\n    Maximum_Transfer_Rate => 100000000 bytes/sec;\n    Protocol => Ethernet;\nend Ethernet_Bus;"
+    },
+    {
+      "id": "CE-008",
+      "title": "硬件平台组件 - Device",
+      "category": "device",
+      "description": "演示设备组件类型声明，包含端口和总线访问特征",
+      "keywords": ["device", "设备", "传感器", "执行器", "总线访问"],
+      "code": "package HardwareExamples;\n\ndevice TemperatureSensor\n  features\n    DataOut: out data port Base_Types::Integer;\n    BusAccess: requires bus access;\n  properties\n    Update_Rate => 10 Hz;\n    Accuracy => 0.5;\n    Units => \"degrees Celsius\";\nend TemperatureSensor;\n\ndevice Actuator\n  features\n    ControlIn: in data port Base_Types::Boolean;\n    BusAccess: requires bus access;\n  properties\n    Response_Time => 10 ms;\nend Actuator;"
+    },
+    {
+      "id": "CE-009",
+      "title": "组件实现与子组件",
+      "category": "implementation",
+      "description": "演示组件实现中声明子组件并建立内部连接",
+      "keywords": ["implementation", "实现", "子组件", "subcomponents", "connections"],
+      "code": "package ImplementationExamples;\n\nwith Base_Types;\nwith SubprogramExamples;\n\nthread WorkerThread\n  features\n    Input: in data port Base_Types::Integer;\n    Output: out data port Base_Types::Integer;\nend WorkerThread;\n\nthread implementation WorkerThread.impl\n  subcomponents\n    Calc: subprogram SubprogramExamples::Calculator;\n    Buffer: data Base_Types::Integer;\n  connections\n    port Input -> Calc.X;\n    port Input -> Buffer;\n    port Buffer -> Calc.Y;\n    port Calc.Result -> Output;\nend WorkerThread.impl;"
+    },
+    {
+      "id": "CE-010",
+      "title": "端口连接 - Data Port",
+      "category": "port",
+      "description": "演示数据端口之间的连接，包括采样语义的使用",
+      "keywords": ["data port", "数据端口", "连接", "采样语义", "Sampled"],
+      "code": "package ConnectionExamples;\n\nwith Base_Types;\n\nsystem DataFlowSystem\nend DataFlowSystem;\n\nsystem implementation DataFlowSystem.impl\n  subcomponents\n    Producer: thread ProducerThread.impl;\n    Consumer: thread ConsumerThread.impl;\n  connections\n    port Producer.DataOut -> Consumer.DataIn {\n      Connection_Semantics => Sampled;\n    };\nend DataFlowSystem.impl;\n\nthread ProducerThread\n  features\n    DataOut: out data port Base_Types::Integer;\nend ProducerThread;\n\nthread implementation ProducerThread.impl\nend ProducerThread.impl;\n\nthread ConsumerThread\n  features\n    DataIn: in data port Base_Types::Integer;\nend ConsumerThread;\n\nthread implementation ConsumerThread.impl\nend ConsumerThread.impl;"
+    },
+    {
+      "id": "CE-011",
+      "title": "端口连接 - Event Port",
+      "category": "port",
+      "description": "演示事件端口之间的连接，包含事件触发机制",
+      "keywords": ["event port", "事件端口", "连接", "事件触发"],
+      "code": "package ConnectionExamples;\n\nsystem EventSystem\nend EventSystem;\n\nsystem implementation EventSystem.impl\n  subcomponents\n    Sender: thread EventSender.impl;\n    Receiver: thread EventReceiver.impl;\n  connections\n    event port Sender.Trigger -> Receiver.Trigger;\nend EventSystem.impl;\n\nthread EventSender\n  features\n    Trigger: out event port;\nend EventSender;\n\nthread implementation EventSender.impl\nend EventSender.impl;\n\nthread EventReceiver\n  features\n    Trigger: in event port;\nend EventReceiver;\n\nthread implementation EventReceiver.impl\nend EventReceiver.impl;"
+    },
+    {
+      "id": "CE-012",
+      "title": "端口连接 - Event Data Port",
+      "category": "port",
+      "description": "演示事件数据端口的声明和连接，同时携带事件和数据",
+      "keywords": ["event data port", "事件数据端口", "连接"],
+      "code": "package ConnectionExamples;\n\nwith Base_Types;\n\nsystem EventDataSystem\nend EventDataSystem;\n\nsystem implementation EventDataSystem.impl\n  subcomponents\n    Sender: thread EventDataSender.impl;\n    Receiver: thread EventDataReceiver.impl;\n  connections\n    event data port Sender.DataEvent -> Receiver.DataEvent;\nend EventDataSystem.impl;\n\nthread EventDataSender\n  features\n    DataEvent: out event data port Base_Types::Integer;\nend EventDataSender;\n\nthread implementation EventDataSender.impl\nend EventDataSender.impl;\n\nthread EventDataReceiver\n  features\n    DataEvent: in event data port Base_Types::Integer;\nend EventDataReceiver;\n\nthread implementation EventDataReceiver.impl\nend EventDataReceiver.impl;"
+    },
+    {
+      "id": "CE-013",
+      "title": "属性绑定 - 调度属性",
+      "category": "properties",
+      "description": "演示线程调度相关属性的配置，包括周期、截止期、优先级",
+      "keywords": ["属性", "properties", "调度", "Period", "Deadline", "Priority"],
+      "code": "package PropertyExamples;\n\nwith Base_Types;\n\nthread PeriodicTask\n  features\n    Input: in data port Base_Types::Integer;\n    Output: out data port Base_Types::Integer;\n  properties\n    Dispatch_Protocol => Periodic;\n    Period => 10 ms;\n    Deadline => 8 ms;\n    Priority => 50;\n    Execution_Time => 2 ms;\n    Startup_Execution_Time => 5 ms;\n    Startup_Deadline => 10 ms;\nend PeriodicTask;\n\nthread SporadicTask\n  features\n    Trigger: in event port;\n  properties\n    Dispatch_Protocol => Sporadic;\n    Minimum_Interarrival_Time => 50 ms;\n    Deadline => 100 ms;\n    Priority => 100;\nend SporadicTask;"
+    },
+    {
+      "id": "CE-014",
+      "title": "属性绑定 - 部署属性",
+      "category": "properties",
+      "description": "演示部署相关属性的配置，包括处理器绑定和内存绑定",
+      "keywords": ["部署", "Actual_Processor_Binding", "Actual_Memory_Binding"],
+      "code": "package PropertyExamples;\n\nwith HardwareExamples;\nwith ProcessExamples;\n\nsystem DeployedSystem\nend DeployedSystem;\n\nsystem implementation DeployedSystem.impl\n  subcomponents\n    CPU: processor HardwareExamples::ARM_Cortex_M4;\n    RAM: memory HardwareExamples::RAM_512KB;\n    App: process ProcessExamples::ApplicationProcess;\n  connections\n    bus CPU.BusPort -> RAM.Port;\n  properties\n    Actual_Processor_Binding => (reference (CPU)) applies to App;\n    Actual_Memory_Binding => (reference (RAM)) applies to App;\nend DeployedSystem.impl;"
+    },
+    {
+      "id": "CE-015",
+      "title": "属性绑定 - 时序属性",
+      "category": "properties",
+      "description": "演示执行时间和延迟相关属性的配置",
+      "keywords": ["时序", "Execution_Time", "Startup_Execution_Time", "延迟"],
+      "code": "package PropertyExamples;\n\nwith Base_Types;\n\nthread TimedTask\n  features\n    Input: in data port Base_Types::Integer;\n    Output: out data port Base_Types::Integer;\n  properties\n    Execution_Time => 2 ms;\n    Startup_Execution_Time => 5 ms;\n    Period => 10 ms;\n    Deadline => 8 ms;\n    Dispatch_Protocol => Periodic;\nend TimedTask;\n\nsubprogram ComplexCalculation\n  parameters\n    Input: in Base_Types::Integer;\n    Result: out Base_Types::Integer;\n  properties\n    Execution_Time => 1 ms;\nend ComplexCalculation;"
+    },
+    {
+      "id": "CE-016",
+      "title": "流规范与流实现",
+      "category": "flow",
+      "description": "演示在组件类型中定义流规范，在实现中定义流路径",
+      "keywords": ["流", "flow", "流规范", "流实现", "flow specification", "flow implementation"],
+      "code": "package FlowExamples;\n\nwith Base_Types;\n\nthread DataProcessor\n  features\n    InPort: in data port Base_Types::Integer;\n    OutPort: out data port Base_Types::Integer;\n  flows\n    ProcessingFlow: flow source InPort sink OutPort;\nend DataProcessor;\n\nthread implementation DataProcessor.impl\n  subcomponents\n    Sub: subprogram Calculator;\n  connections\n    port InPort -> Sub.X;\n    port Sub.Result -> OutPort;\n  flows\n    ProcessingFlow: flow path InPort -> Sub.X -> Sub.Result -> OutPort;\nend DataProcessor.impl;\n\nsubprogram Calculator\n  parameters\n    X: in Base_Types::Integer;\n    Y: in Base_Types::Integer;\n    Result: out Base_Types::Integer;\nend Calculator;"
+    },
+    {
+      "id": "CE-017",
+      "title": "端到端流",
+      "category": "flow",
+      "description": "演示在系统实现中定义端到端流，描述数据从源到汇的完整路径",
+      "keywords": ["端到端流", "end-to-end flow", "流分析", "时序分析"],
+      "code": "package FlowExamples;\n\nwith Base_Types;\n\nwith HardwareExamples;\n\nsystem SensorToActuatorSystem\nend SensorToActuatorSystem;\n\nsystem implementation SensorToActuatorSystem.impl\n  subcomponents\n    Sensor: device HardwareExamples::TemperatureSensor;\n    Processing: thread DataProcessor.impl;\n    Act: device HardwareExamples::Actuator;\n    Bus: bus HardwareExamples::CAN_Bus;\n  connections\n    bus Sensor.BusAccess -> Bus.Slave;\n    bus Act.BusAccess -> Bus.Slave;\n    port Sensor.DataOut -> Processing.InPort;\n    port Processing.OutPort -> Act.ControlIn;\n  flows\n    SensorToActuator: end-to-end flow\n      source Sensor.DataOut\n      sink Act.ControlIn\n      via Processing.InPort, Processing.OutPort;\nend SensorToActuatorSystem.impl;"
+    },
+    {
+      "id": "CE-018",
+      "title": "模式定义与切换",
+      "category": "mode",
+      "description": "演示组件模式的定义，以及通过事件端口触发模式切换",
+      "keywords": ["模式", "mode", "模式切换", "模式转换"],
+      "code": "package ModeExamples;\n\nwith Base_Types;\n\nthread AdaptiveTask\n  features\n    Input: in data port Base_Types::Integer;\n    Output: out data port Base_Types::Integer;\n    ModeSwitch: in event port;\n  modes\n    Normal: initial mode;\n    HighPerformance;\n  transitions\n    Normal -> HighPerformance when ModeSwitch;\n    HighPerformance -> Normal when ModeSwitch;\n  properties\n    Period => 10 ms applies to Normal;\n    Period => 5 ms applies to HighPerformance;\nend AdaptiveTask;\n\nthread implementation AdaptiveTask.impl\n  modes\n    Normal: initial mode;\n    HighPerformance;\nend AdaptiveTask.impl;"
+    },
+    {
+      "id": "CE-019",
+      "title": "部署绑定 - 线程到处理器",
+      "category": "binding",
+      "description": "演示将线程绑定到处理器的完整部署配置",
+      "keywords": ["部署", "绑定", "线程绑定", "处理器绑定"],
+      "code": "package BindingExamples;\n\nwith HardwareExamples;\nwith ThreadExamples;\n\nsystem ThreadBindingSystem\nend ThreadBindingSystem;\n\nsystem implementation ThreadBindingSystem.impl\n  subcomponents\n    CPU: processor HardwareExamples::ARM_Cortex_M4;\n    Task1: thread ThreadExamples::PeriodicThread;\n    Task2: thread ThreadExamples::PeriodicThread;\n  properties\n    Actual_Processor_Binding => (reference (CPU)) applies to Task1;\n    Actual_Processor_Binding => (reference (CPU)) applies to Task2;\nend ThreadBindingSystem.impl;"
+    },
+    {
+      "id": "CE-020",
+      "title": "部署绑定 - 进程到内存",
+      "category": "binding",
+      "description": "演示将进程绑定到内存的部署配置",
+      "keywords": ["部署", "绑定", "进程绑定", "内存绑定"],
+      "code": "package BindingExamples;\n\nwith HardwareExamples;\nwith ProcessExamples;\n\nsystem MemoryBindingSystem\nend MemoryBindingSystem;\n\nsystem implementation MemoryBindingSystem.impl\n  subcomponents\n    RAM: memory HardwareExamples::RAM_512KB;\n    Flash: memory HardwareExamples::Flash_1MB;\n    App: process ProcessExamples::ApplicationProcess;\n  properties\n    Actual_Memory_Binding => (reference (RAM)) applies to App;\n    Actual_Binding => (reference (Flash)) applies to App.Binary;\nend MemoryBindingSystem.impl;"
+    },
+    {
+      "id": "CE-021",
+      "title": "访问特征 - Subprogram Access",
+      "category": "access",
+      "description": "演示子程序访问特征的声明和使用，实现线程对子程序的调用",
+      "keywords": ["访问特征", "subprogram access", "子程序访问"],
+      "code": "package AccessExamples;\n\nwith Base_Types;\n\nthread TaskWithSubprogram\n  features\n    Input: in data port Base_Types::Integer;\n    Output: out data port Base_Types::Integer;\n    CalcAccess: requires subprogram access Calculator;\nend TaskWithSubprogram;\n\nthread implementation TaskWithSubprogram.impl\n  connections\n    port Input -> CalcAccess.X;\n    port Input -> CalcAccess.Y;\n    port CalcAccess.Result -> Output;\nend TaskWithSubprogram.impl;\n\nsubprogram Calculator\n  parameters\n    X: in Base_Types::Integer;\n    Y: in Base_Types::Integer;\n    Result: out Base_Types::Integer;\nend Calculator;"
+    },
+    {
+      "id": "CE-022",
+      "title": "访问特征 - Data Access",
+      "category": "access",
+      "description": "演示数据访问特征的声明和使用，实现线程对共享数据的访问",
+      "keywords": ["访问特征", "data access", "数据访问", "共享数据"],
+      "code": "package AccessExamples;\n\nwith Base_Types;\n\nsystem SharedDataSystem\nend SharedDataSystem;\n\nsystem implementation SharedDataSystem.impl\n  subcomponents\n    Shared: data SharedBuffer;\n    Writer: thread WriterTask.impl;\n    Reader: thread ReaderTask.impl;\n  connections\n    access Writer.DataAccess -> Shared;\n    access Reader.DataAccess -> Shared;\nend SharedDataSystem.impl;\n\ndata SharedBuffer\n  properties\n    Data_Representation => Base_Types::Integer;\nend SharedBuffer;\n\nthread WriterTask\n  features\n    DataAccess: requires data access SharedBuffer;\nend WriterTask;\n\nthread implementation WriterTask.impl\nend WriterTask.impl;\n\nthread ReaderTask\n  features\n    DataAccess: requires data access SharedBuffer;\nend ReaderTask;\n\nthread implementation ReaderTask.impl\nend ReaderTask.impl;"
+    },
+    {
+      "id": "CE-023",
+      "title": "访问特征 - Bus Access",
+      "category": "access",
+      "description": "演示总线访问特征的声明和使用，实现设备与总线的连接",
+      "keywords": ["访问特征", "bus access", "总线访问"],
+      "code": "package AccessExamples;\n\nwith HardwareExamples;\n\nsystem BusAccessSystem\nend BusAccessSystem;\n\nsystem implementation BusAccessSystem.impl\n  subcomponents\n    CAN: bus HardwareExamples::CAN_Bus;\n    Sensor: device HardwareExamples::TemperatureSensor;\n    Actuator: device HardwareExamples::Actuator;\n    ECU: processor HardwareExamples::ARM_Cortex_M4;\n  connections\n    bus Sensor.BusAccess -> CAN.Slave;\n    bus Actuator.BusAccess -> CAN.Slave;\n    bus ECU.BusPort -> CAN.Slave;\nend BusAccessSystem.impl;"
+    },
+    {
+      "id": "CE-024",
+      "title": "特征组定义与使用",
+      "category": "feature_group",
+      "description": "演示特征组类型的定义和在组件中的使用",
+      "keywords": ["特征组", "feature group", "接口分组"],
+      "code": "package FeatureGroupExamples;\n\nwith Base_Types;\n\nfeature group CommunicationInterface\n  features\n    DataIn: in data port Base_Types::Integer;\n    DataOut: out data port Base_Types::Integer;\n    ControlIn: in event port;\n    ControlOut: out event port;\nend CommunicationInterface;\n\nthread DataNode\n  features\n    Interface: feature group CommunicationInterface;\nend DataNode;\n\nthread implementation DataNode.impl\nend DataNode.impl;\n\nsystem NetworkSystem\nend NetworkSystem;\n\nsystem implementation NetworkSystem.impl\n  subcomponents\n    Node1: thread DataNode.impl;\n    Node2: thread DataNode.impl;\n  connections\n    feature group Node1.Interface -> Node2.Interface;\nend NetworkSystem.impl;"
+    },
+    {
+      "id": "CE-025",
+      "title": "包与命名空间",
+      "category": "package",
+      "description": "演示包的声明、公共/私有部分以及包导入",
+      "keywords": ["包", "package", "命名空间", "with", "public", "private"],
+      "code": "package MyApplication;\n\nwith Base_Types;\nwith HardwareExamples;\n\npublic\n  thread MainTask\n    features\n      Input: in data port Base_Types::Integer;\n      Output: out data port Base_Types::Integer;\n  end MainTask;\n\nprivate\n  subprogram Helper\n    parameters\n      X: in Base_Types::Integer;\n      Result: out Base_Types::Integer;\n  end Helper;\nend MyApplication;\n\npackage SystemDeployment;\n\nwith MyApplication;\nwith HardwareExamples;\n\nsystem ApplicationSystem\nend ApplicationSystem;\n\nsystem implementation ApplicationSystem.impl\n  subcomponents\n    CPU: processor HardwareExamples::ARM_Cortex_M4;\n    Task: thread MyApplication::MainTask;\nend ApplicationSystem.impl;\nend SystemDeployment;"
+    },
+    {
+      "id": "CE-026",
+      "title": "虚拟处理器与绑定",
+      "category": "virtual_processor",
+      "description": "演示虚拟处理器的声明、绑定到物理处理器以及线程绑定到虚拟处理器",
+      "keywords": ["虚拟处理器", "virtual processor", "层次调度", "绑定"],
+      "code": "package VirtualizationExamples;\n\nwith HardwareExamples;\n\nvirtual processor RTOS_Virtual_Processor\n  features\n    ThreadAccess: provides thread access;\n  properties\n    Allowed_Dispatch_Protocol => list {Periodic, Sporadic};\n    Scheduling_Server => Deferrable_Server;\n    Budget => 5 ms;\n    Period => 20 ms;\nend RTOS_Virtual_Processor;\n\nsystem VirtualProcessorSystem\nend VirtualProcessorSystem;\n\nsystem implementation VirtualProcessorSystem.impl\n  subcomponents\n    PhysicalCPU: processor HardwareExamples::ARM_Cortex_M4;\n    VP1: virtual processor RTOS_Virtual_Processor;\n    VP2: virtual processor RTOS_Virtual_Processor;\n    Task1: thread PeriodicTask;\n    Task2: thread PeriodicTask;\n  properties\n    Actual_Processor_Binding => (reference (PhysicalCPU)) applies to VP1;\n    Actual_Processor_Binding => (reference (PhysicalCPU)) applies to VP2;\n    Actual_Processor_Binding => (reference (VP1)) applies to Task1;\n    Actual_Processor_Binding => (reference (VP2)) applies to Task2;\nend VirtualProcessorSystem.impl;\n\nthread PeriodicTask\n  properties\n    Dispatch_Protocol => Periodic;\n    Period => 10 ms;\nend PeriodicTask;"
+    },
+    {
+      "id": "CE-027",
+      "title": "虚拟总线与绑定",
+      "category": "virtual_bus",
+      "description": "演示虚拟总线的声明和绑定到物理总线",
+      "keywords": ["虚拟总线", "virtual bus", "逻辑通道", "绑定"],
+      "code": "package VirtualizationExamples;\n\nwith HardwareExamples;\n\nvirtual bus CAN_Virtual_Channel\n  features\n    Slave: requires virtual bus access;\n  properties\n    Bandwidth_Allocation => 50 percent;\nend CAN_Virtual_Channel;\n\nsystem VirtualBusSystem\nend VirtualBusSystem;\n\nsystem implementation VirtualBusSystem.impl\n  subcomponents\n    PhysicalCAN: bus HardwareExamples::CAN_Bus;\n    VC1: virtual bus CAN_Virtual_Channel;\n    VC2: virtual bus CAN_Virtual_Channel;\n    Sensor1: device HardwareExamples::TemperatureSensor;\n    Sensor2: device HardwareExamples::TemperatureSensor;\n  connections\n    virtual bus VC1.Slave -> PhysicalCAN.Slave;\n    virtual bus VC2.Slave -> PhysicalCAN.Slave;\n    bus Sensor1.BusAccess -> VC1.Slave;\n    bus Sensor2.BusAccess -> VC2.Slave;\nend VirtualBusSystem.impl;"
+    },
+    {
+      "id": "CE-028",
+      "title": "系统组件 - 完整系统建模",
+      "category": "system",
+      "description": "演示系统组件的完整建模，包含软件和硬件子组件",
+      "keywords": ["system", "系统组件", "完整系统", "集成建模"],
+      "code": "package SystemExamples;\n\nwith HardwareExamples;\nwith ThreadExamples;\nwith ProcessExamples;\n\nsystem AutomotiveECU\nend AutomotiveECU;\n\nsystem implementation AutomotiveECU.impl\n  subcomponents\n    MCU: processor HardwareExamples::ARM_Cortex_M4;\n    RAM: memory HardwareExamples::RAM_512KB;\n    Flash: memory HardwareExamples::Flash_1MB;\n    CAN: bus HardwareExamples::CAN_Bus;\n    Sensor: device HardwareExamples::TemperatureSensor;\n    Act: device HardwareExamples::Actuator;\n    App: process ProcessExamples::ApplicationProcess;\n    Monitor: thread ThreadExamples::PeriodicThread;\n  connections\n    bus MCU.BusPort -> RAM.Port;\n    bus MCU.BusPort -> Flash.Port;\n    bus MCU.BusPort -> CAN.Slave;\n    bus Sensor.BusAccess -> CAN.Slave;\n    bus Act.BusAccess -> CAN.Slave;\n  properties\n    Actual_Processor_Binding => (reference (MCU)) applies to App;\n    Actual_Processor_Binding => (reference (MCU)) applies to Monitor;\n    Actual_Memory_Binding => (reference (RAM)) applies to App;\nend AutomotiveECU.impl;"
+    },
+    {
+      "id": "CE-029",
+      "title": "抽象组件与细化",
+      "category": "abstract",
+      "description": "演示抽象组件的定义和细化为具体组件类型",
+      "keywords": ["abstract", "抽象组件", "细化", "refine"],
+      "code": "package AbstractExamples;\n\nwith Base_Types;\n\nabstract ProcessingUnit\n  features\n    Input: in data port Base_Types::Integer;\n    Output: out data port Base_Types::Integer;\nend ProcessingUnit;\n\nthread implementation ProcessingUnit.thread_impl\n  refines ProcessingUnit;\n  subcomponents\n    Worker: subprogram Calculator;\n  connections\n    port Input -> Worker.X;\n    port Worker.Result -> Output;\nend ProcessingUnit.thread_impl;\n\nprocess implementation ProcessingUnit.process_impl\n  refines ProcessingUnit;\n  subcomponents\n    Task: thread ProcessingUnit.thread_impl;\nend ProcessingUnit.process_impl;\n\nsubprogram Calculator\n  parameters\n    X: in Base_Types::Integer;\n    Y: in Base_Types::Integer;\n    Result: out Base_Types::Integer;\nend Calculator;"
+    },
+    {
+      "id": "CE-030",
+      "title": "组件类型扩展",
+      "category": "extends",
+      "description": "演示通过 extends 关键字扩展现有组件类型",
+      "keywords": ["extends", "扩展", "类型继承"],
+      "code": "package ExtendsExamples;\n\nwith Base_Types;\n\nthread BaseThread\n  features\n    Input: in data port Base_Types::Integer;\n    Output: out data port Base_Types::Integer;\n  properties\n    Dispatch_Protocol => Periodic;\n    Period => 10 ms;\nend BaseThread;\n\nthread ExtendedThread extends BaseThread\n  features\n    AdditionalInput: in data port Base_Types::Boolean;\n  properties\n    Period => 5 ms;\nend ExtendedThread;\n\nthread implementation ExtendedThread.impl\n  subcomponents\n    Sub: subprogram Calculator;\n  connections\n    port Input -> Sub.X;\n    port AdditionalInput -> Sub.Y;\n    port Sub.Result -> Output;\nend ExtendedThread.impl;\n\nsubprogram Calculator\n  parameters\n    X: in Base_Types::Integer;\n    Y: in Base_Types::Integer;\n    Result: out Base_Types::Integer;\nend Calculator;"
+    },
+    {
+      "id": "CE-031",
+      "title": "连接模式 - One_To_One",
+      "category": "connection_pattern",
+      "description": "演示使用 One_To_One 连接模式连接组件数组",
+      "keywords": ["连接模式", "connection pattern", "One_To_One", "数组连接"],
+      "code": "package ConnectionPatternExamples;\n\nwith Base_Types;\n\nsystem ArraySystem\nend ArraySystem;\n\nsystem implementation ArraySystem.impl\n  subcomponents\n    Producers: thread Producer[3];\n    Consumers: thread Consumer[3];\n  connections\n    port Producers -> Consumers {\n      Connection_Pattern => One_To_One;\n    };\nend ArraySystem.impl;\n\nthread Producer\n  features\n    Output: out data port Base_Types::Integer;\nend Producer;\n\nthread implementation Producer.impl\nend Producer.impl;\n\nthread Consumer\n  features\n    Input: in data port Base_Types::Integer;\nend Consumer;\n\nthread implementation Consumer.impl\nend Consumer.impl;"
+    },
+    {
+      "id": "CE-032",
+      "title": "线程组 - Thread Group",
+      "category": "thread_group",
+      "description": "演示线程组的声明和使用，用于逻辑分组线程",
+      "keywords": ["thread group", "线程组", "逻辑分组"],
+      "code": "package GroupExamples;\n\nwith Base_Types;\n\nthread group SensorThreads\n  features\n    DataIn: in data port Base_Types::Integer;\n    DataOut: out data port Base_Types::Integer;\nend SensorThreads;\n\nthread group implementation SensorThreads.impl\n  subcomponents\n    Reader: thread SensorReader;\n    Processor: thread SensorProcessor;\n  connections\n    port DataIn -> Reader.Input;\n    port Reader.Output -> Processor.Input;\n    port Processor.Output -> DataOut;\nend SensorThreads.impl;\n\nthread SensorReader\n  features\n    Input: in data port Base_Types::Integer;\n    Output: out data port Base_Types::Integer;\nend SensorReader;\n\nthread implementation SensorReader.impl\nend SensorReader.impl;\n\nthread SensorProcessor\n  features\n    Input: in data port Base_Types::Integer;\n    Output: out data port Base_Types::Integer;\nend SensorProcessor;\n\nthread implementation SensorProcessor.impl\nend SensorProcessor.impl;"
+    },
+    {
+      "id": "CE-033",
+      "title": "子程序组 - Subprogram Group",
+      "category": "subprogram_group",
+      "description": "演示子程序组的声明和使用，用于分组管理子程序",
+      "keywords": ["subprogram group", "子程序组", "子程序库"],
+      "code": "package GroupExamples;\n\nwith Base_Types;\n\nsubprogram group MathLibrary\n  features\n    Add: provides subprogram access AddFunction;\n    Multiply: provides subprogram access MultiplyFunction;\nend MathLibrary;\n\nsubprogram AddFunction\n  parameters\n    X: in Base_Types::Integer;\n    Y: in Base_Types::Integer;\n    Result: out Base_Types::Integer;\nend AddFunction;\n\nsubprogram MultiplyFunction\n  parameters\n    X: in Base_Types::Integer;\n    Y: in Base_Types::Integer;\n    Result: out Base_Types::Integer;\nend MultiplyFunction;\n\nthread CalculatorThread\n  features\n    MathLib: requires subprogram access MathLibrary;\nend CalculatorThread;"
+    },
+    {
+      "id": "CE-034",
+      "title": "事件触发与线程激活",
+      "category": "event",
+      "description": "演示通过事件端口触发线程从挂起到就绪状态的转换",
+      "keywords": ["事件触发", "线程激活", "状态转换", "事件端口"],
+      "code": "package EventExamples;\n\nthread EventDrivenTask\n  features\n    WakeUp: in event port;\n    DataIn: in data port Base_Types::Integer;\n    DataOut: out data port Base_Types::Integer;\n  properties\n    Dispatch_Protocol => Sporadic;\n    Minimum_Interarrival_Time => 100 ms;\n    Deadline => 150 ms;\nend EventDrivenTask;\n\nthread implementation EventDrivenTask.impl\n  subcomponents\n    Worker: subprogram ProcessData;\n  connections\n    event port WakeUp -> Worker.Activate;\n    port DataIn -> Worker.Input;\n    port Worker.Output -> DataOut;\nend EventDrivenTask.impl;\n\nsubprogram ProcessData\n  parameters\n    Input: in Base_Types::Integer;\n    Output: out Base_Types::Integer;\nend ProcessData;"
+    },
+    {
+      "id": "CE-035",
+      "title": "错误处理与恢复",
+      "category": "error_handling",
+      "description": "演示线程错误处理和恢复机制的配置",
+      "keywords": ["错误处理", "错误恢复", "recoverable", "non-recoverable"],
+      "code": "package ErrorHandlingExamples;\n\nwith Base_Types;\n\nthread FaultTolerantTask\n  features\n    Input: in data port Base_Types::Integer;\n    Output: out data port Base_Types::Integer;\n    ErrorOut: out event port;\n  properties\n    Recoverable_Error_Behavior => Restart;\n    Max_Restart_Count => 3;\n    Recovery_Execution_Time => 50 ms;\nend FaultTolerantTask;\n\nthread implementation FaultTolerantTask.impl\n  subcomponents\n    Worker: subprogram SafeOperation;\n  connections\n    port Input -> Worker.Input;\n    port Worker.Output -> Output;\n    event port Worker.Error -> ErrorOut;\nend FaultTolerantTask.impl;\n\nsubprogram SafeOperation\n  parameters\n    Input: in Base_Types::Integer;\n    Output: out data port Base_Types::Integer;\n  features\n    Error: out event port;\nend SafeOperation;"
+    },
+    {
+      "id": "CE-036",
+      "title": "并发控制协议",
+      "category": "concurrency",
+      "description": "演示共享数据的并发控制协议配置",
+      "keywords": ["并发控制", "Concurrency_Control_Protocol", "互斥", "共享数据"],
+      "code": "package ConcurrencyExamples;\n\nwith Base_Types;\n\nsystem SharedResourceSystem\nend SharedResourceSystem;\n\nsystem implementation SharedResourceSystem.impl\n  subcomponents\n    SharedData: data SharedBuffer;\n    Writer1: thread WriterTask;\n    Writer2: thread WriterTask;\n    Reader: thread ReaderTask;\n  connections\n    access Writer1.DataAccess -> SharedData;\n    access Writer2.DataAccess -> SharedData;\n    access Reader.DataAccess -> SharedData;\nend SharedResourceSystem.impl;\n\ndata SharedBuffer\n  properties\n    Data_Representation => Base_Types::Integer;\n    Concurrency_Control_Protocol => Protected;\nend SharedBuffer;\n\nthread WriterTask\n  features\n    DataAccess: requires data access SharedBuffer;\nend WriterTask;\n\nthread implementation WriterTask.impl\nend WriterTask.impl;\n\nthread ReaderTask\n  features\n    DataAccess: requires data access SharedBuffer;\nend ReaderTask;\n\nthread implementation ReaderTask.impl\nend ReaderTask.impl;"
+    }
+  ]
+}

@@ -54,9 +54,14 @@ public class AadlFixerPrompt {
         prompt.append(aadlContent);
         prompt.append("\n```\n\n");
 
-        prompt.append("【检测到的错误列表】\n");
-        prompt.append(errors);
-        prompt.append("\n\n");
+        if (errors != null && !errors.trim().isEmpty()) {
+            prompt.append("【检测到的错误列表】\n");
+            prompt.append(errors);
+            prompt.append("\n\n");
+        } else {
+            prompt.append("【用户修正意图】\n");
+            prompt.append("用户要求对代码进行修正或改进，请根据代码内容分析需要改进的地方。\n\n");
+        }
 
         Map<String, Object> fixGuidelines = (Map<String, Object>) rulesConfig.get("fix_guidelines");
         prompt.append("【修复指南】\n");

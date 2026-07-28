@@ -26,9 +26,12 @@ public class KnowledgeBase {
     @Builder.Default
     private List<ErrorCorrection> errorCorrections = new ArrayList<>();
     
+    @Builder.Default
+    private List<CodeExample> codeExamples = new ArrayList<>();
+    
     private LocalDateTime lastModified;
 
     public int getTotalEntries() {
-        return basics.size() + examples.size() + errorCorrections.size();
+        return basics.size() + examples.size() + errorCorrections.size() + codeExamples.size();
     }
 }

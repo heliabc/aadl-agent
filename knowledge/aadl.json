@@ -3,489 +3,2473 @@
   "basics": [
     {
       "category": "AADL 定义",
-      "content": "AADL 是一种用于描述性能关键、实时嵌入式系统（如航空电子、汽车电子、机器人）的软件架构和硬件平台的文本/图形化语言。"
+      "content": "AADL 是一种用于描述性能关键、实时嵌入式系统（如航空电子、汽车电子、机器人）的软件架构和硬件平台的文本/图形化语言。",
+      "tags": [
+        "AADL",
+        "AADL 定义"
+      ]
     },
     {
       "category": "AADL 模型核心",
-      "content": "系统由组件（component）层次化组成，组件间通过特征（features）交互，并附加属性（properties）进行约束与分析。"
+      "content": "系统由组件（component）层次化组成，组件间通过特征（features）交互，并附加属性（properties）进行约束与分析。",
+      "tags": [
+        "组件",
+        "属性",
+        "AADL 模型核心"
+      ]
     },
     {
       "category": "AADL 规范结构",
-      "content": "AADL 规范由包（package）和属性集（property set）组成。包用于组织组件类型、实现、特征组类型和附件库。"
+      "content": "AADL 规范由包（package）和属性集（property set）组成。包用于组织组件类型、实现、特征组类型和附件库。",
+      "tags": [
+        "组件",
+        "AADL",
+        "属性",
+        "AADL 规范结构"
+      ]
     },
     {
       "category": "组件分类 - 软件组件",
-      "content": "软件组件包括 data、subprogram、subprogram group、thread、thread group、process。"
+      "content": "软件组件包括 data、subprogram、subprogram group、thread、thread group、process。",
+      "tags": [
+        "组件分类 - 软件组件",
+        "组件"
+      ]
     },
     {
       "category": "组件分类 - 执行平台组件",
-      "content": "执行平台组件包括 processor、virtual processor、memory、bus、virtual bus、device。"
+      "content": "执行平台组件包括 processor、virtual processor、memory、bus、virtual bus、device。",
+      "tags": [
+        "组件",
+        "组件分类 - 执行平台组件"
+      ]
     },
     {
       "category": "组件分类 - 组合组件",
-      "content": "组合组件包括 system（系统级组合）和 abstract（抽象组件，可细化为任何具体类别）。"
+      "content": "组合组件包括 system（系统级组合）和 abstract（抽象组件，可细化为任何具体类别）。",
+      "tags": [
+        "组件分类 - 组合组件",
+        "组件"
+      ]
     },
     {
       "category": "data 组件语义",
-      "content": "表示源文本中的数据类型或静态数据实例，可被共享访问。"
+      "content": "表示源文本中的数据类型或静态数据实例，可被共享访问。",
+      "tags": [
+        "data 组件语义"
+      ]
     },
     {
       "category": "subprogram 组件语义",
-      "content": "表示可调用、顺序执行的子程序，可包含参数、本地数据，支持同步/半同步远程调用。"
+      "content": "表示可调用、顺序执行的子程序，可包含参数、本地数据，支持同步/半同步远程调用。",
+      "tags": [
+        "subprogram 组件语义",
+        "子程序"
+      ]
     },
     {
       "category": "subprogram group 组件语义",
-      "content": "子程序库，用于分组管理和访问子程序。"
+      "content": "子程序库，用于分组管理和访问子程序。",
+      "tags": [
+        "subprogram group 组件语义",
+        "子程序"
+      ]
     },
     {
       "category": "thread 组件语义",
-      "content": "并发执行单元（任务），具有调度协议（周期性、非周期性、定时、混合、后台等），有状态（挂起、就绪、运行等），支持错误恢复。"
+      "content": "并发执行单元（任务），具有调度协议（周期性、非周期性、定时、混合、后台等），有状态（挂起、就绪、运行等），支持错误恢复。",
+      "tags": [
+        "thread 组件语义"
+      ]
     },
     {
       "category": "thread group 组件语义",
-      "content": "逻辑分组线程，不提供地址空间或执行单元。"
+      "content": "逻辑分组线程，不提供地址空间或执行单元。",
+      "tags": [
+        "thread group 组件语义",
+        "线程"
+      ]
     },
     {
       "category": "process 组件语义",
-      "content": "虚拟地址空间，包含至少一个线程，可加载二进制映像。"
+      "content": "虚拟地址空间，包含至少一个线程，可加载二进制映像。",
+      "tags": [
+        "线程",
+        "process 组件语义"
+      ]
     },
     {
       "category": "processor 组件语义",
-      "content": "调度和执行线程的硬件/软件抽象，可包含内存、总线，支持调度协议。"
+      "content": "调度和执行线程的硬件/软件抽象，可包含内存、总线，支持调度协议。",
+      "tags": [
+        "总线",
+        "内存",
+        "线程",
+        "processor 组件语义"
+      ]
     },
     {
       "category": "virtual processor 组件语义",
-      "content": "虚拟化执行环境（如虚拟机或层次调度器），绑定到处理器。"
+      "content": "虚拟化执行环境（如虚拟机或层次调度器），绑定到处理器。",
+      "tags": [
+        "绑定",
+        "virtual processor 组件语义",
+        "处理器"
+      ]
     },
     {
       "category": "memory 组件语义",
-      "content": "随机存取存储（RAM/ROM），存储代码和数据。"
+      "content": "随机存取存储（RAM/ROM），存储代码和数据。",
+      "tags": [
+        "memory 组件语义"
+      ]
     },
     {
       "category": "bus 组件语义",
-      "content": "物理通信通道（如总线），连接处理器、内存、设备。"
+      "content": "物理通信通道（如总线），连接处理器、内存、设备。",
+      "tags": [
+        "总线",
+        "处理器",
+        "bus 组件语义",
+        "设备",
+        "内存"
+      ]
     },
     {
       "category": "virtual bus 组件语义",
-      "content": "逻辑通信协议或虚拟通道，可绑定到总线或处理器。"
+      "content": "逻辑通信协议或虚拟通道，可绑定到总线或处理器。",
+      "tags": [
+        "总线",
+        "绑定",
+        "处理器",
+        "virtual bus 组件语义"
+      ]
     },
     {
       "category": "device 组件语义",
-      "content": "物理环境实体（传感器、执行器等），可通过端口或子程序访问，不直接执行线程。"
+      "content": "物理环境实体（传感器、执行器等），可通过端口或子程序访问，不直接执行线程。",
+      "tags": [
+        "线程",
+        "device 组件语义",
+        "子程序"
+      ]
     },
     {
       "category": "system 组件语义",
-      "content": "组合任意子组件（软件+硬件），支持分层建模。"
+      "content": "组合任意子组件（软件+硬件），支持分层建模。",
+      "tags": [
+        "组件",
+        "system 组件语义"
+      ]
     },
     {
       "category": "abstract 组件语义",
-      "content": "早期设计阶段的通用占位符，可细化。"
+      "content": "早期设计阶段的通用占位符，可细化。",
+      "tags": [
+        "abstract 组件语义"
+      ]
     },
     {
       "category": "组件类型（Component Type）定义",
-      "content": "定义外部接口（特征）、流规范、模式、属性。语法示例：thread MyThread features Input: in event data port Integer; Output: out data port Boolean; properties Dispatch_Protocol => Periodic; Period => 10 ms; end MyThread; 可扩展（extends）其他类型，继承特征和属性。"
+      "content": "定义外部接口（特征）、流规范、模式、属性。语法示例：thread MyThread features Input: in event data port Integer; Output: out data port Boolean; properties Dispatch_Protocol => Periodic; Period => 10 ms; end MyThread; 可扩展（extends）其他类型，继承特征和属性。",
+      "tags": [
+        "模式",
+        "组件类型（Component Type）定义",
+        "属性"
+      ]
     },
     {
       "category": "组件实现（Component Implementation）定义",
-      "content": "定义内部结构：子组件、连接、调用序列、流实现、模式、属性。语法示例：thread implementation MyThread.impl subcomponents Sub: subprogram MySubprogram; connections conn: port Input -> Sub.param; end MyThread.impl; 可扩展其他实现，继承并添加/细化内容。"
+      "content": "定义内部结构：子组件、连接、调用序列、流实现、模式、属性。语法示例：thread implementation MyThread.impl subcomponents Sub: subprogram MySubprogram; connections conn: port Input -> Sub.param; end MyThread.impl; 可扩展其他实现，继承并添加/细化内容。",
+      "tags": [
+        "组件",
+        "模式",
+        "组件实现（Component Implementation）定义",
+        "属性"
+      ]
     },
     {
       "category": "子组件声明与包含关系",
-      "content": "在实现中声明包含的组件实例，指定分类器（类型或实现），可带数组维度。process可包含thread、thread group、data、subprogram等；thread可包含data、subprogram、subprogram group；processor可包含memory、bus、virtual processor、virtual bus；system可包含任何类别；abstract可包含任何类别（细化时需遵循目标类别规则）。子组件可声明为数组（如 thread T[3]）。"
+      "content": "在实现中声明包含的组件实例，指定分类器（类型或实现），可带数组维度。process可包含thread、thread group、data、subprogram等；thread可包含data、subprogram、subprogram group；processor可包含memory、bus、virtual processor、virtual bus；system可包含任何类别；abstract可包含任何类别（细化时需遵循目标类别规则）。子组件可声明为数组（如 thread T[3]）。",
+      "tags": [
+        "组件",
+        "子组件声明与包含关系"
+      ]
     },
     {
       "category": "特征类型 - 端口",
-      "content": "端口（Port）包括 data port、event port、event data port，方向为 in、out、in out。"
+      "content": "端口（Port）包括 data port、event port、event data port，方向为 in、out、in out。",
+      "tags": [
+        "特征类型 - 端口"
+      ]
     },
     {
       "category": "特征类型 - 参数",
-      "content": "参数（Parameter）用于子程序的输入/输出参数。"
+      "content": "参数（Parameter）用于子程序的输入/输出参数。",
+      "tags": [
+        "特征类型 - 参数",
+        "子程序"
+      ]
     },
     {
       "category": "特征类型 - 访问",
-      "content": "访问（Access）包括 provides data access、requires data access、provides subprogram access、requires subprogram access、bus access、virtual bus access。"
+      "content": "访问（Access）包括 provides data access、requires data access、provides subprogram access、requires subprogram access、bus access、virtual bus access。",
+      "tags": [
+        "特征类型 - 访问"
+      ]
     },
     {
       "category": "特征类型 - 特征组与抽象特征",
-      "content": "特征组（Feature Group）将多个特征组合成组，简化连接；抽象特征（Feature）可被原型参数化的占位符。"
+      "content": "特征组（Feature Group）将多个特征组合成组，简化连接；抽象特征（Feature）可被原型参数化的占位符。",
+      "tags": [
+        "特征类型 - 特征组与抽象特征"
+      ]
     },
     {
       "category": "连接类型 - 端口连接",
-      "content": "端口连接：port Source -> Destination（数据/事件流）。"
+      "content": "端口连接：port Source -> Destination（数据/事件流）。",
+      "tags": [
+        "连接类型 - 端口连接"
+      ]
     },
     {
       "category": "连接类型 - 访问连接",
-      "content": "访问连接：data access DataComp <-> Thread.RequiredAccess（共享数据绑定）。"
+      "content": "访问连接：data access DataComp <-> Thread.RequiredAccess（共享数据绑定）。",
+      "tags": [
+        "连接类型 - 访问连接",
+        "绑定"
+      ]
     },
     {
       "category": "连接类型 - 参数连接",
-      "content": "参数连接：parameter Call.Param -> Subprogram.Param（传递参数）。"
+      "content": "参数连接：parameter Call.Param -> Subprogram.Param（传递参数）。",
+      "tags": [
+        "连接类型 - 参数连接"
+      ]
     },
     {
       "category": "连接类型 - 特征组连接",
-      "content": "特征组连接：feature group 整体连接。"
+      "content": "特征组连接：feature group 整体连接。",
+      "tags": [
+        "连接类型 - 特征组连接"
+      ]
     },
     {
       "category": "连接属性",
-      "content": "可指定通信模式（如采样、立即、延迟）、队列处理、绑定约束。"
+      "content": "可指定通信模式（如采样、立即、延迟）、队列处理、绑定约束。",
+      "tags": [
+        "模式",
+        "连接属性",
+        "绑定"
+      ]
     },
     {
       "category": "执行平台 - 处理需求与权限",
-      "content": "实现方法不要求监控启动截止时间并将溢出报告为错误；可以选择强制线程截止时间和最大计算执行时间，违反情况作为线程可恢复错误报告；处理器可以用系统组件类别建模，以详细描述其内部结构。"
+      "content": "实现方法不要求监控启动截止时间并将溢出报告为错误；可以选择强制线程截止时间和最大计算执行时间，违反情况作为线程可恢复错误报告；处理器可以用系统组件类别建模，以详细描述其内部结构。",
+      "tags": [
+        "组件",
+        "执行平台 - 处理需求与权限",
+        "线程",
+        "处理器"
+      ]
     },
     {
       "category": "虚拟处理器 - 定义与声明绑定",
-      "content": "虚拟处理器代表一个能够调度和执行线程及其他虚拟处理器的逻辑资源。可以作为处理器或其他虚拟处理器的子组件声明（隐式绑定），也可以作为系统组件的子组件单独声明然后显式绑定到处理器或虚拟处理器；可以绑定到虚拟总线；完全绑定系统中，每个虚拟处理器和线程最终都必须绑定到一个物理处理器。"
+      "content": "虚拟处理器代表一个能够调度和执行线程及其他虚拟处理器的逻辑资源。可以作为处理器或其他虚拟处理器的子组件声明（隐式绑定），也可以作为系统组件的子组件单独声明然后显式绑定到处理器或虚拟处理器；可以绑定到虚拟总线；完全绑定系统中，每个虚拟处理器和线程最终都必须绑定到一个物理处理器。",
+      "tags": [
+        "组件",
+        "虚拟处理器 - 定义与声明绑定",
+        "总线",
+        "处理器",
+        "绑定"
+      ]
     },
     {
       "category": "虚拟处理器 - 合法性规则",
-      "content": "类型可包含端口、特征组、提供子程序访问、子程序组访问、流规范、模式子句和属性关联；实现可包含虚拟总线、虚拟处理器、抽象子组件声明，不能包含子程序调用子句，可以包含连接。"
+      "content": "类型可包含端口、特征组、提供子程序访问、子程序组访问、流规范、模式子句和属性关联；实现可包含虚拟总线、虚拟处理器、抽象子组件声明，不能包含子程序调用子句，可以包含连接。",
+      "tags": [
+        "组件",
+        "总线",
+        "模式",
+        "处理器",
+        "属性"
+      ]
     },
     {
       "category": "虚拟处理器 - 一致性规则 (C1)",
-      "content": "在完全绑定系统中，每个虚拟处理器必须直接或间接绑定到或包含在一个物理处理器中。"
+      "content": "在完全绑定系统中，每个虚拟处理器必须直接或间接绑定到或包含在一个物理处理器中。",
+      "tags": [
+        "绑定",
+        "处理器",
+        "虚拟处理器 - 一致性规则 (C1)"
+      ]
     },
     {
       "category": "虚拟处理器 - 一致性规则 (C2)",
-      "content": "完全部署系统中，由 Required_Virtual_Bus_Class 属性指定的虚拟处理器必须绑定到提供该虚拟总线的处理器或虚拟处理器。"
+      "content": "完全部署系统中，由 Required_Virtual_Bus_Class 属性指定的虚拟处理器必须绑定到提供该虚拟总线的处理器或虚拟处理器。",
+      "tags": [
+        "总线",
+        "处理器",
+        "绑定",
+        "虚拟处理器 - 一致性规则 (C2)",
+        "属性"
+      ]
     },
     {
       "category": "虚拟处理器 - 一致性规则 (C3)",
-      "content": "虚拟处理器之间的绑定不能存在循环。"
+      "content": "虚拟处理器之间的绑定不能存在循环。",
+      "tags": [
+        "绑定",
+        "处理器",
+        "虚拟处理器 - 一致性规则 (C3)"
+      ]
     },
     {
       "category": "虚拟处理器 - 标准属性",
-      "content": "定义了与线程调度、代码/数据/栈大小、内存/处理器绑定、初始化时间、线程限制、调度协议、优先级等相关的属性。"
+      "content": "定义了与线程调度、代码/数据/栈大小、内存/处理器绑定、初始化时间、线程限制、调度协议、优先级等相关的属性。",
+      "tags": [
+        "虚拟处理器 - 标准属性",
+        "处理器",
+        "绑定",
+        "属性",
+        "内存"
+      ]
     },
     {
       "category": "内存 - 定义与绑定",
-      "content": "内存代表存储代码和数据二进制映像的执行平台组件（如 RAM、ROM、磁盘）。子程序、数据和进程（二进制映像）需绑定到内存组件，供处理器在执行线程时访问。内存可以包含在处理器中，或通过总线被处理器访问。"
+      "content": "内存代表存储代码和数据二进制映像的执行平台组件（如 RAM、ROM、磁盘）。子程序、数据和进程（二进制映像）需绑定到内存组件，供处理器在执行线程时访问。内存可以包含在处理器中，或通过总线被处理器访问。",
+      "tags": [
+        "组件",
+        "总线",
+        "处理器",
+        "绑定",
+        "内存 - 定义与绑定"
+      ]
     },
     {
       "category": "内存 - 合法性规则",
-      "content": "类型可包含虚拟总线访问、总线访问声明、特征组、模式子句和属性关联，但不能包含流规范；实现可包含抽象、内存、总线和虚拟总线子组件，可包含模式子句和属性关联。"
+      "content": "类型可包含虚拟总线访问、总线访问声明、特征组、模式子句和属性关联，但不能包含流规范；实现可包含抽象、内存、总线和虚拟总线子组件，可包含模式子句和属性关联。",
+      "tags": [
+        "组件",
+        "总线",
+        "模式",
+        "属性",
+        "内存 - 合法性规则"
+      ]
     },
     {
       "category": "内存 - 标准属性与语义",
-      "content": "标准属性包括内存访问协议、字大小、字节数、内存大小、读写时间、硬件描述等。语义：内存组件用于存储二进制映像（进程的虚拟地址空间）；线程能访问内存当且仅当该内存包含在处理器中或通过共享总线可访问；内存组件可以建模为更抽象的存储组件，内部可进一步通过AADL系统建模。"
+      "content": "标准属性包括内存访问协议、字大小、字节数、内存大小、读写时间、硬件描述等。语义：内存组件用于存储二进制映像（进程的虚拟地址空间）；线程能访问内存当且仅当该内存包含在处理器中或通过共享总线可访问；内存组件可以建模为更抽象的存储组件，内部可进一步通过AADL系统建模。",
+      "tags": [
+        "组件",
+        "总线",
+        "处理器",
+        "内存 - 标准属性与语义",
+        "内存"
+      ]
     },
     {
       "category": "总线 - 定义与访问",
-      "content": "总线代表能够在内存、处理器和设备之间交换控制和数据的执行平台组件（通信通道）。处理器、设备和内存通过共享总线进行通信。总线可以连接到其他总线（通过 requires bus access），形成总线桥接。"
+      "content": "总线代表能够在内存、处理器和设备之间交换控制和数据的执行平台组件（通信通道）。处理器、设备和内存通过共享总线进行通信。总线可以连接到其他总线（通过 requires bus access），形成总线桥接。",
+      "tags": [
+        "组件",
+        "总线",
+        "总线 - 定义与访问",
+        "处理器",
+        "设备"
+      ]
     },
     {
       "category": "总线 - 合法性规则",
-      "content": "类型可包含虚拟总线和总线访问声明、模式子句和属性关联，但不能包含流规范；实现可包含虚拟总线和抽象子组件，可包含端口连接声明，不能包含流或子程序调用子句。"
+      "content": "类型可包含虚拟总线和总线访问声明、模式子句和属性关联，但不能包含流规范；实现可包含虚拟总线和抽象子组件，可包含端口连接声明，不能包含流或子程序调用子句。",
+      "tags": [
+        "组件",
+        "总线",
+        "模式",
+        "总线 - 合法性规则",
+        "属性"
+      ]
     },
     {
       "category": "总线 - 标准属性与语义",
-      "content": "标准属性包括连接类型、物理访问、消息大小、传输时间、访问权限、虚拟总线类等。语义：支持处理器访问内存和设备硬件；支持不同处理器上的线程间的端口和子程序连接；可直接连接到其他总线；访问可通过 Allowed_Physical_Access 属性限制；支持的协议可通过属性指定或通过虚拟总线子组件显式建模。"
+      "content": "标准属性包括连接类型、物理访问、消息大小、传输时间、访问权限、虚拟总线类等。语义：支持处理器访问内存和设备硬件；支持不同处理器上的线程间的端口和子程序连接；可直接连接到其他总线；访问可通过 Allowed_Physical_Access 属性限制；支持的协议可通过属性指定或通过虚拟总线子组件显式建模。",
+      "tags": [
+        "组件",
+        "总线",
+        "处理器",
+        "总线 - 标准属性与语义",
+        "属性"
+      ]
     },
     {
       "category": "虚拟总线 - 定义与绑定",
-      "content": "虚拟总线代表逻辑总线抽象，如虚拟通道或通信协议。可以绑定到总线、虚拟总线、处理器、虚拟处理器、设备或内存；可以连接到其他虚拟总线、虚拟处理器和设备，用于建模虚拟平台。"
+      "content": "虚拟总线代表逻辑总线抽象，如虚拟通道或通信协议。可以绑定到总线、虚拟总线、处理器、虚拟处理器、设备或内存；可以连接到其他虚拟总线、虚拟处理器和设备，用于建模虚拟平台。",
+      "tags": [
+        "总线",
+        "处理器",
+        "绑定",
+        "设备",
+        "内存"
+      ]
     },
     {
       "category": "虚拟总线 - 合法性规则",
-      "content": "类型不能包含流规范；实现可包含虚拟总线子组件声明，可包含端口连接，不能包含连接子句、流子句或子程序调用子句。"
+      "content": "类型不能包含流规范；实现可包含虚拟总线子组件声明，可包含端口连接，不能包含连接子句、流子句或子程序调用子句。",
+      "tags": [
+        "组件",
+        "虚拟总线 - 合法性规则",
+        "子程序",
+        "总线"
+      ]
     },
     {
       "category": "虚拟总线 - 一致性规则 (C1)",
-      "content": "完全部署系统中，虚拟总线必须直接或间接绑定到支持它们的处理器或总线，或者它们是总线和处理器的子组件。"
+      "content": "完全部署系统中，虚拟总线必须直接或间接绑定到支持它们的处理器或总线，或者它们是总线和处理器的子组件。",
+      "tags": [
+        "虚拟总线 - 一致性规则 (C1)",
+        "总线",
+        "组件",
+        "处理器",
+        "绑定"
+      ]
     },
     {
       "category": "虚拟总线 - 一致性规则 (C2)",
-      "content": "虚拟总线之间的绑定声明不能存在循环。"
+      "content": "虚拟总线之间的绑定声明不能存在循环。",
+      "tags": [
+        "总线",
+        "虚拟总线 - 一致性规则 (C2)",
+        "绑定"
+      ]
     },
     {
       "category": "虚拟总线 - 标准属性与语义",
-      "content": "标准属性包括连接类型、消息大小、传输类型、QoS、绑定等。语义：Provided_Virtual_Bus_Class 表示处理器或总线支持的协议；Required_Virtual_Bus_Class 表示连接或虚拟总线所需的协议；虚拟总线可以代表总线带宽的一部分，作为虚拟通道提供性能保障。"
+      "content": "标准属性包括连接类型、消息大小、传输类型、QoS、绑定等。语义：Provided_Virtual_Bus_Class 表示处理器或总线支持的协议；Required_Virtual_Bus_Class 表示连接或虚拟总线所需的协议；虚拟总线可以代表总线带宽的一部分，作为虚拟通道提供性能保障。",
+      "tags": [
+        "总线",
+        "处理器",
+        "绑定",
+        "属性",
+        "虚拟总线 - 标准属性与语义"
+      ]
     },
     {
       "category": "设备 - 定义与交互",
-      "content": "设备代表系统中的物理或机械组件，或外部环境实体（如传感器、执行器、摄像头）。逻辑上连接到应用软件组件，物理上连接到计算硬件。"
+      "content": "设备代表系统中的物理或机械组件，或外部环境实体（如传感器、执行器、摄像头）。逻辑上连接到应用软件组件，物理上连接到计算硬件。",
+      "tags": [
+        "组件",
+        "设备",
+        "设备 - 定义与交互"
+      ]
     },
     {
       "category": "设备 - 合法性规则",
-      "content": "类型可包含端口、特征组、提供/需要子程序访问、总线访问、流规范、模式子句和属性关联；实现不能包含子程序调用子句，可包含抽象、数据、虚拟总线和总线子组件，可包含总线访问连接、模式/流子句和属性关联。"
+      "content": "类型可包含端口、特征组、提供/需要子程序访问、总线访问、流规范、模式子句和属性关联；实现不能包含子程序调用子句，可包含抽象、数据、虚拟总线和总线子组件，可包含总线访问连接、模式/流子句和属性关联。",
+      "tags": [
+        "组件",
+        "总线",
+        "模式",
+        "属性",
+        "设备 - 合法性规则"
+      ]
     },
     {
       "category": "设备 - 标准属性与语义",
-      "content": "标准属性包括硬件描述、驱动软件属性（源文本、大小）、调度属性（协议、周期、执行时间）、绑定约束等。语义：设备可以是简单的（定时器、传感器）或复杂的（摄像头、GPS）；功能可以完全嵌入硬件或由驱动程序提供；执行可以是周期性的（轮询）或事件驱动的；驱动程序可以运行在操作系统内核、独立地址空间或作为应用线程；设备可以包含总线子组件，成为总线管理器。"
+      "content": "标准属性包括硬件描述、驱动软件属性（源文本、大小）、调度属性（协议、周期、执行时间）、绑定约束等。语义：设备可以是简单的（定时器、传感器）或复杂的（摄像头、GPS）；功能可以完全嵌入硬件或由驱动程序提供；执行可以是周期性的（轮询）或事件驱动的；驱动程序可以运行在操作系统内核、独立地址空间或作为应用线程；设备可以包含总线子组件，成为总线管理器。",
+      "tags": [
+        "组件",
+        "总线",
+        "绑定",
+        "属性",
+        "设备"
+      ]
     },
     {
       "category": "系统组合 - 系统定义",
-      "content": "系统代表一个由交互的应用软件、执行平台和系统组件组成的装配体。系统可以有多个模式，代表不同的配置。"
+      "content": "系统代表一个由交互的应用软件、执行平台和系统组件组成的装配体。系统可以有多个模式，代表不同的配置。",
+      "tags": [
+        "组件",
+        "模式",
+        "系统组合 - 系统定义"
+      ]
     },
     {
       "category": "系统 - 合法性规则",
-      "content": "类型可包含各种访问声明、端口、特征组、流规范和属性关联；实现可包含几乎所有类型的子组件（软件和执行平台），但不能包含子程序调用子句，可以包含连接、流、模式子句和属性关联。"
+      "content": "类型可包含各种访问声明、端口、特征组、流规范和属性关联；实现可包含几乎所有类型的子组件（软件和执行平台），但不能包含子程序调用子句，可以包含连接、流、模式子句和属性关联。",
+      "tags": [
+        "组件",
+        "模式",
+        "属性",
+        "系统 - 合法性规则",
+        "子程序"
+      ]
     },
     {
       "category": "系统 - 标准属性与语义",
-      "content": "标准属性包括源代码、运行时保护、线程属性、绑定、部署和硬件时钟等。语义：系统可以代表纯软件（需绑定外部平台）、纯硬件平台或两者的组合；自包含系统可通过端口（逻辑）和总线访问（物理）与外部交互；系统可以用于建模设备的白盒实现，并通过 Implemented_As 属性与设备组件关联。"
+      "content": "标准属性包括源代码、运行时保护、线程属性、绑定、部署和硬件时钟等。语义：系统可以代表纯软件（需绑定外部平台）、纯硬件平台或两者的组合；自包含系统可通过端口（逻辑）和总线访问（物理）与外部交互；系统可以用于建模设备的白盒实现，并通过 Implemented_As 属性与设备组件关联。",
+      "tags": [
+        "组件",
+        "总线",
+        "绑定",
+        "属性",
+        "设备"
+      ]
     },
     {
       "category": "特征组 - 定义与反向",
-      "content": "特征组是一组组件特征的集合，可以包含子特征组。可以在组件内部单独连接组内特征，在外部作为整体连接，减少连接声明。反向（inverse of）用于定义连接时的匹配规则。"
+      "content": "特征组是一组组件特征的集合，可以包含子特征组。可以在组件内部单独连接组内特征，在外部作为整体连接，减少连接声明。反向（inverse of）用于定义连接时的匹配规则。",
+      "tags": [
+        "组件",
+        "特征组 - 定义与反向"
+      ]
     },
     {
       "category": "端口 - 分类与语义",
-      "content": "数据端口传递状态数据，不排队，只保留最新值；事件端口传递事件（无数据），可排队，可触发调度或模式转换；事件数据端口传递带数据的事件（消息），可排队，可触发调度。"
+      "content": "数据端口传递状态数据，不排队，只保留最新值；事件端口传递事件（无数据），可排队，可触发调度或模式转换；事件数据端口传递带数据的事件（消息），可排队，可触发调度。",
+      "tags": [
+        "模式",
+        "端口 - 分类与语义"
+      ]
     },
     {
       "category": "端口队列处理",
-      "content": "事件和事件数据端口默认有大小为1的队列，可配置 Queue_Size 和溢出处理协议（Overflow_Handling_Protocol）。队列服务策略（如FIFO）和紧急度（Urgency）决定服务顺序；出队协议（Dequeue_Protocol）控制一次取一个、多个还是所有元素。"
+      "content": "事件和事件数据端口默认有大小为1的队列，可配置 Queue_Size 和溢出处理协议（Overflow_Handling_Protocol）。队列服务策略（如FIFO）和紧急度（Urgency）决定服务顺序；出队协议（Dequeue_Protocol）控制一次取一个、多个还是所有元素。",
+      "tags": [
+        "端口队列处理"
+      ]
     },
     {
       "category": "端口 - 输入/输出时间与触发器",
-      "content": "端口在源代码中表现为变量（数据端口）或队列（事件/事件数据端口）。可通过 Input_Time 和 Output_Time 属性控制数据冻结或发送时间；事件端口可作为模式转换触发器。"
+      "content": "端口在源代码中表现为变量（数据端口）或队列（事件/事件数据端口）。可通过 Input_Time 和 Output_Time 属性控制数据冻结或发送时间；事件端口可作为模式转换触发器。",
+      "tags": [
+        "模式",
+        "属性",
+        "端口 - 输入/输出时间与触发器"
+      ]
     },
     {
       "category": "子程序与子程序组访问",
-      "content": "用于建模组件对子程序或子程序库的需求（requires）和提供（provides）访问。调用可能发生在本地（同一线程）或远程（不同线程）；远程调用通过代理（Proxy）处理，调用线程会被阻塞直到远程执行完成。"
+      "content": "用于建模组件对子程序或子程序库的需求（requires）和提供（provides）访问。调用可能发生在本地（同一线程）或远程（不同线程）；远程调用通过代理（Proxy）处理，调用线程会被阻塞直到远程执行完成。",
+      "tags": [
+        "组件",
+        "子程序与子程序组访问",
+        "线程",
+        "子程序"
+      ]
     },
     {
       "category": "子程序参数",
-      "content": "定义子程序调用时传入/传出的数据值，方向分为 in、out、in out。"
+      "content": "定义子程序调用时传入/传出的数据值，方向分为 in、out、in out。",
+      "tags": [
+        "子程序参数",
+        "子程序"
+      ]
     },
     {
       "category": "数据组件访问",
-      "content": "用于建模共享数据。组件可以提供（provides）对内部数据组件的访问，或需求（requires）访问外部数据组件。访问权限（读/写）由 Access_Right 属性或连接方向控制；并发访问控制由 Concurrency_Control_Protocol 属性管理。"
+      "content": "用于建模共享数据。组件可以提供（provides）对内部数据组件的访问，或需求（requires）访问外部数据组件。访问权限（读/写）由 Access_Right 属性或连接方向控制；并发访问控制由 Concurrency_Control_Protocol 属性管理。",
+      "tags": [
+        "组件",
+        "数据组件访问",
+        "属性"
+      ]
     },
     {
       "category": "总线和虚拟总线访问",
-      "content": "类似于数据访问，用于建模组件对总线或虚拟总线的需求与提供，表示执行平台组件的物理或逻辑连接。"
+      "content": "类似于数据访问，用于建模组件对总线或虚拟总线的需求与提供，表示执行平台组件的物理或逻辑连接。",
+      "tags": [
+        "组件",
+        "总线和虚拟总线访问",
+        "总线"
+      ]
     },
     {
       "category": "内部特征与处理器特征",
-      "content": "内部特征（Internal Features）代表组件内部的事件源（如错误检测点），在连接中使用 self. 前缀引用；处理器特征（Processor Features）作为组件所绑定处理器特征的代理，在连接中使用 processor. 前缀引用。"
+      "content": "内部特征（Internal Features）代表组件内部的事件源（如错误检测点），在连接中使用 self. 前缀引用；处理器特征（Processor Features）作为组件所绑定处理器特征的代理，在连接中使用 processor. 前缀引用。",
+      "tags": [
+        "组件",
+        "绑定",
+        "处理器",
+        "内部特征与处理器特征"
+      ]
     },
     {
       "category": "连接概述与语义连接",
-      "content": "语义连接在实例化过程中通过一系列连接声明创建从最终源到最终目标的连接实例。特征连接连接两个抽象特征，可上/下或跨越包含层次。"
+      "content": "语义连接在实例化过程中通过一系列连接声明创建从最终源到最终目标的连接实例。特征连接连接两个抽象特征，可上/下或跨越包含层次。",
+      "tags": [
+        "连接概述与语义连接"
+      ]
     },
     {
       "category": "端口连接 - 采样、立即、延迟语义",
-      "content": "采样（Sampled）：接收方在调度时采样发送方的最新输出，非确定性；立即（Immediate）：发送方与接收方同帧通信，接收方需等待发送方完成；延迟（Delayed）：发送方在截止时间后通信，接收方在其下一次调度时获取数据，具有确定性。"
+      "content": "采样（Sampled）：接收方在调度时采样发送方的最新输出，非确定性；立即（Immediate）：发送方与接收方同帧通信，接收方需等待发送方完成；延迟（Delayed）：发送方在截止时间后通信，接收方在其下一次调度时获取数据，具有确定性。",
+      "tags": [
+        "端口连接 - 采样、立即、延迟语义"
+      ]
     },
     {
       "category": "连接模式",
-      "content": "定义了组件数组和特征数组之间的连接方式（如 One_To_One、All_To_All、Next 等）。"
+      "content": "定义了组件数组和特征数组之间的连接方式（如 One_To_One、All_To_All、Next 等）。",
+      "tags": [
+        "组件",
+        "连接模式"
+      ]
     },
     {
       "category": "参数连接、访问连接、特征组连接",
-      "content": "参数连接表示线程内一系列子程序调用间通过参数的数据流；访问连接表示对共享数据、总线、虚拟总线、子程序或子程序组的访问；特征组连接表示两个特征组之间所有对应特征的一系列连接。"
+      "content": "参数连接表示线程内一系列子程序调用间通过参数的数据流；访问连接表示对共享数据、总线、虚拟总线、子程序或子程序组的访问；特征组连接表示两个特征组之间所有对应特征的一系列连接。",
+      "tags": [
+        "总线",
+        "参数连接、访问连接、特征组连接",
+        "线程",
+        "数据流",
+        "子程序"
+      ]
     },
     {
       "category": "流规范与流实现",
-      "content": "流规范在组件类型中定义，表示信息逻辑上通过组件的路径（流源、流汇、流路径）；流实现在组件实现中定义，描述了流规范如何通过子组件和连接被具体实现。"
+      "content": "流规范在组件类型中定义，表示信息逻辑上通过组件的路径（流源、流汇、流路径）；流实现在组件实现中定义，描述了流规范如何通过子组件和连接被具体实现。",
+      "tags": [
+        "组件",
+        "流规范与流实现"
+      ]
     },
     {
       "category": "端到端流",
-      "content": "在系统实现中定义，表示经过一系列组件（如线程、设备）的逻辑数据/控制流，是进行端到端时序、延迟等分析的基础。"
+      "content": "在系统实现中定义，表示经过一系列组件（如线程、设备）的逻辑数据/控制流，是进行端到端时序、延迟等分析的基础。",
+      "tags": [
+        "组件",
+        "设备",
+        "端到端流",
+        "线程"
+      ]
     },
     {
       "category": "属性集与属性类型",
-      "content": "属性集用于组织属性类型、属性和属性常量的命名空间。属性类型包括 aadlboolean、aadlstring、enumeration、units、aadlreal、aadlinteger、range、classifier、reference、record 等。"
+      "content": "属性集用于组织属性类型、属性和属性常量的命名空间。属性类型包括 aadlboolean、aadlstring、enumeration、units、aadlreal、aadlinteger、range、classifier、reference、record 等。",
+      "tags": [
+        "属性",
+        "属性集与属性类型"
+      ]
     },
     {
       "category": "属性定义与属性常量",
-      "content": "属性定义声明一个具体的属性，指定其类型、是否可继承（inherit）、是否多值（list of）以及应用于哪些模型元素（applies to）。属性常量为属性值定义符号常量，便于重用和集中管理。"
+      "content": "属性定义声明一个具体的属性，指定其类型、是否可继承（inherit）、是否多值（list of）以及应用于哪些模型元素（applies to）。属性常量为属性值定义符号常量，便于重用和集中管理。",
+      "tags": [
+        "属性定义与属性常量",
+        "属性"
+      ]
     },
     {
       "category": "预定义属性集列表",
-      "content": "标准库提供 Deployment_Properties（部署绑定）、Thread_Properties（线程调度、并发）、Timing_Properties（执行时间、截止期）、Communication_Properties（通信队列、传输）、Memory_Properties（内存大小、访问时间）、Programming_Properties（源码、入口点）、Modeling_Properties（建模辅助）等。"
+      "content": "标准库提供 Deployment_Properties（部署绑定）、Thread_Properties（线程调度、并发）、Timing_Properties（执行时间、截止期）、Communication_Properties（通信队列、传输）、Memory_Properties（内存大小、访问时间）、Programming_Properties（源码、入口点）、Modeling_Properties（建模辅助）等。",
+      "tags": [
+        "内存",
+        "线程",
+        "预定义属性集列表",
+        "绑定"
+      ]
     },
     {
       "category": "包（Package）",
-      "content": "包为组件分类器提供命名空间，可包含公共和私有部分，可引入其他包。"
+      "content": "包为组件分类器提供命名空间，可包含公共和私有部分，可引入其他包。",
+      "tags": [
+        "组件",
+        "包（Package）"
+      ]
     },
     {
       "category": "名称与标识符规则",
-      "content": "标识符由字母、数字、下划线组成，大小写不敏感；关键词不可用作标识符。"
+      "content": "标识符由字母、数字、下划线组成，大小写不敏感；关键词不可用作标识符。",
+      "tags": [
+        "名称与标识符规则"
+      ]
     },
     {
       "category": "数值字面量",
-      "content": "十进制整数和实数可带指数；基于进制的整数（2~16）如 2#1111_1111#。"
+      "content": "十进制整数和实数可带指数；基于进制的整数（2~16）如 2#1111_1111#。",
+      "tags": [
+        "数值字面量"
+      ]
     },
     {
       "category": "字符串字面量与注释",
-      "content": "字符串用双引号括起，内部双引号转义为 \"\"；注释以 -- 开始，至行尾。"
+      "content": "字符串用双引号括起，内部双引号转义为 \"\"；注释以 -- 开始，至行尾。",
+      "tags": [
+        "字符串字面量与注释"
+      ]
     },
     {
       "category": "分隔符与运算符",
-      "content": "分隔符包括空格、制表符、换行；单字符分隔符：( ) [ ] { } , * +；复合分隔符：=>、+=>、->、<->、..、-[、]-、::。"
+      "content": "分隔符包括空格、制表符、换行；单字符分隔符：( ) [ ] { } , * +；复合分隔符：=>、+=>、->、<->、..、-[、]-、::。",
+      "tags": [
+        "分隔符与运算符"
+      ]
     },
     {
       "category": "组件包含约束完整表（简要）",
-      "content": "abstract 可包含全部类型；data 可包含 data、subprogram、abstract；subprogram 可包含 data、abstract、subprogram；thread 可包含 data、subprogram、subprogram group、abstract；process 可包含 data、subprogram、subprogram group、thread、thread group、abstract；processor 可包含 memory、bus、virtual processor、virtual bus、abstract；system 可包含所有类别（含processor? 实际含所有）。完整表见标准附录 C.1。"
+      "content": "abstract 可包含全部类型；data 可包含 data、subprogram、abstract；subprogram 可包含 data、abstract、subprogram；thread 可包含 data、subprogram、subprogram group、abstract；process 可包含 data、subprogram、subprogram group、thread、thread group、abstract；processor 可包含 memory、bus、virtual processor、virtual bus、abstract；system 可包含所有类别（含processor? 实际含所有）。完整表见标准附录 C.1。",
+      "tags": [
+        "组件包含约束完整表（简要）"
+      ]
     },
     {
       "category": "系统实例与绑定",
-      "content": "系统实例由根组件实现实例化，形成包含层次。绑定将软件组件（线程、进程）映射到执行平台组件（处理器、内存、总线）。关键属性包括 Allowed_Processor_Binding、Actual_Processor_Binding、Allowed_Memory_Binding、Actual_Memory_Binding、Allowed_Connection_Binding、Actual_Subprogram_Call 等。"
+      "content": "系统实例由根组件实现实例化，形成包含层次。绑定将软件组件（线程、进程）映射到执行平台组件（处理器、内存、总线）。关键属性包括 Allowed_Processor_Binding、Actual_Processor_Binding、Allowed_Memory_Binding、Actual_Memory_Binding、Allowed_Connection_Binding、Actual_Subprogram_Call 等。",
+      "tags": [
+        "组件",
+        "总线",
+        "处理器",
+        "系统实例与绑定",
+        "绑定"
+      ]
     },
     {
       "category": "词法规则 - 字符集与保留字",
-      "content": "字符集基于 ISO 10646 BMP；标识符可包含下划线，区分大小写（但大小写等价）。保留字（如 thread、processor、system、in、out、modes、properties 等）不得用作标识符；数值字面量可带单位（如 10 ms），单位在属性类型中定义。"
+      "content": "字符集基于 ISO 10646 BMP；标识符可包含下划线，区分大小写（但大小写等价）。保留字（如 thread、processor、system、in、out、modes、properties 等）不得用作标识符；数值字面量可带单位（如 10 ms），单位在属性类型中定义。",
+      "tags": [
+        "词法规则 - 字符集与保留字",
+        "属性"
+      ]
     },
     {
       "category": "补充 - 包与属性集的多文件组织",
-      "content": "一个AADL规范可以由多个包和属性集组成，但一个 .aadl 源文件通常只包含一个包或一个属性集。"
+      "content": "一个AADL规范可以由多个包和属性集组成，但一个 .aadl 源文件通常只包含一个包或一个属性集。",
+      "tags": [
+        "AADL",
+        "补充 - 包与属性集的多文件组织",
+        "属性"
+      ]
     },
     {
       "category": "补充 - 导入声明 (with)",
-      "content": "使用 with 语句显式声明要引用的其他包或属性集。例如，要使用标准库的 Base_Types，需在文件顶部声明 with Base_Types;。"
+      "content": "使用 with 语句显式声明要引用的其他包或属性集。例如，要使用标准库的 Base_Types，需在文件顶部声明 with Base_Types;。",
+      "tags": [
+        "补充 - 导入声明 (with)",
+        "属性"
+      ]
     },
     {
       "category": "补充 - 可见性 (public/private)",
-      "content": "包的声明部分应使用 public 或 private 关键字来区分内容的可见性。private 部分声明的分类器在包外不可见。"
+      "content": "包的声明部分应使用 public 或 private 关键字来区分内容的可见性。private 部分声明的分类器在包外不可见。",
+      "tags": [
+        "补充 - 可见性 (public/private)"
+      ]
     },
     {
       "category": "补充 - 组件别名 (renames)",
-      "content": "可使用 renames 为组件类型或实现创建别名。别名声明中的组件类别必须与被引用的组件类别匹配。"
+      "content": "可使用 renames 为组件类型或实现创建别名。别名声明中的组件类别必须与被引用的组件类别匹配。",
+      "tags": [
+        "补充 - 组件别名 (renames)",
+        "组件"
+      ]
     },
     {
       "category": "补充 - 原型绑定 (Prototype Binding)",
-      "content": "支持在组件实现中为类型原型绑定具体的实现。在子组件数组初始化时，也可为每个数组元素绑定原型。"
+      "content": "支持在组件实现中为类型原型绑定具体的实现。在子组件数组初始化时，也可为每个数组元素绑定原型。",
+      "tags": [
+        "组件",
+        "补充 - 原型绑定 (Prototype Binding)",
+        "绑定"
+      ]
     },
     {
       "category": "补充 - 属性集扩展 (extends)",
-      "content": "一个属性集可以使用 extends 关键字继承另一个属性集。"
+      "content": "一个属性集可以使用 extends 关键字继承另一个属性集。",
+      "tags": [
+        "补充 - 属性集扩展 (extends)",
+        "属性"
+      ]
     },
     {
       "category": "补充 - 属性名称解析",
-      "content": "引用属性时，可使用“属性集名::属性名”的格式进行显式限定。"
+      "content": "引用属性时，可使用“属性集名::属性名”的格式进行显式限定。",
+      "tags": [
+        "补充 - 属性名称解析",
+        "属性"
+      ]
+    },
+    {
+      "category": "虚拟处理器 - 详细语义(S1)",
+      "content": "虚拟处理器是能够调度和执行线程及其他虚拟处理器的逻辑资源。可作为处理器或其他虚拟处理器的子组件声明（隐式绑定），也可作为系统组件的子组件单独声明然后显式绑定。在完全绑定系统中，每个虚拟处理器和线程最终都必须绑定到一个物理处理器。",
+      "tags": [
+        "组件",
+        "处理器",
+        "绑定",
+        "虚拟处理器 - 详细语义(S1)",
+        "线程"
+      ]
+    },
+    {
+      "category": "虚拟处理器 - 详细语义(S2)",
+      "content": "Allowed_Dispatch_Protocol属性指定虚拟处理器提供的调度协议，只有调度协议被支持的线程或虚拟处理器才能被绑定。线程执行支持可能需要实现虚拟处理器功能的软件（如操作系统内核），此类软件必须绑定到处理器可访问的内存组件。",
+      "tags": [
+        "虚拟处理器 - 详细语义(S2)",
+        "组件",
+        "处理器",
+        "绑定",
+        "属性"
+      ]
+    },
+    {
+      "category": "虚拟处理器 - 详细语义(S3)",
+      "content": "虚拟处理器组件可在其抽象中包含协议，这些协议可显式建模为虚拟总线子组件以通过连接满足协议需求。协议支持也可通过属性指定。",
+      "tags": [
+        "组件",
+        "总线",
+        "虚拟处理器 - 详细语义(S3)",
+        "处理器",
+        "属性"
+      ]
+    },
+    {
+      "category": "虚拟处理器 - 详细语义(S4)",
+      "content": "虚拟处理器可声明为处理器或另一虚拟处理器的子组件，也可单独声明在系统组件中然后绑定。两者区别在于：作为子组件时，绑定隐含在包含关系中；单独声明时需显式绑定。",
+      "tags": [
+        "组件",
+        "虚拟处理器 - 详细语义(S4)",
+        "处理器",
+        "绑定"
+      ]
+    },
+    {
+      "category": "虚拟处理器 - 详细语义(S5)",
+      "content": "流规范对虚拟处理器中的逻辑流进行建模，可表示通过子程序或端口请求操作系统服务。模式允许虚拟处理器组件在不同操作模式下具有不同属性值，可用于指定不同的运行时可选配置。",
+      "tags": [
+        "组件",
+        "模式",
+        "处理器",
+        "虚拟处理器 - 详细语义(S5)",
+        "属性"
+      ]
+    },
+    {
+      "category": "虚拟处理器 - 详细语义(S6)",
+      "content": "虚拟处理器状态和转换通过混合自动机建模。虚拟处理器在处理器和任何虚拟处理器初始化后、任何进程或线程初始化前进行自初始化。虚拟处理器在线程、进程及其中包含的虚拟处理器停止后停止。",
+      "tags": [
+        "进程",
+        "虚拟处理器 - 详细语义(S6)",
+        "线程",
+        "处理器"
+      ]
+    },
+    {
+      "category": "虚拟处理器 - 标准属性(调度)",
+      "content": "与线程调度相关的属性包括：Allowed_Dispatch_Protocol（支持的调度协议列表）、Allowed_Period（支持的周期范围）、Scheduling_Protocol（调度协议）、Slot_Time（时隙时间）、Frame_Period（帧周期）、Priority_Range（优先级范围）、Priority_Map（优先级映射）。",
+      "tags": [
+        "虚拟处理器 - 标准属性(调度)",
+        "线程",
+        "属性"
+      ]
+    },
+    {
+      "category": "虚拟处理器 - 标准属性(绑定)",
+      "content": "与绑定相关的属性包括：Allowed_Processor_Binding_Class（允许绑定的处理器类别）、Allowed_Processor_Binding（允许绑定的处理器引用）、Actual_Processor_Binding（实际处理器绑定）、Allowed_Memory_Binding_Class（允许绑定的内存类别）、Allowed_Memory_Binding（允许绑定的内存引用）、Actual_Memory_Binding（实际内存绑定）。",
+      "tags": [
+        "处理器",
+        "绑定",
+        "虚拟处理器 - 标准属性(绑定)",
+        "属性",
+        "内存"
+      ]
+    },
+    {
+      "category": "虚拟处理器 - 标准属性(初始化与执行)",
+      "content": "与初始化和执行相关的属性包括：Startup_Execution_Time（启动执行时间）、Startup_Deadline（启动截止时间）、Thread_Limit（线程数量限制）、Process_Swap_Execution_Time（进程切换执行时间）、Thread_Swap_Execution_Time（线程切换执行时间）、Period（周期）、Dispatch_Protocol（调度协议）、Execution_Time（执行时间）。",
+      "tags": [
+        "虚拟处理器 - 标准属性(初始化与执行)",
+        "进程",
+        "线程",
+        "属性"
+      ]
+    },
+    {
+      "category": "虚拟处理器 - 标准属性(保护与模式)",
+      "content": "与保护和模式相关的属性包括：Runtime_Protection（运行时保护）、Runtime_Protection_Support（运行时保护支持）、Resumption_Policy（恢复策略：restart/resume）、Deactivation_Policy（停用策略：inactive/unload）、Implemented_As（实现为：系统实现/抽象实现）、Provided_Virtual_Bus_Class（提供的虚拟总线类别）。",
+      "tags": [
+        "总线",
+        "虚拟处理器 - 标准属性(保护与模式)",
+        "属性",
+        "模式"
+      ]
+    },
+    {
+      "category": "虚拟处理器 - 标准属性(代码与语言)",
+      "content": "与源代码和语言相关的属性包括：Source_Text（源文本）、Source_Language（源语言）、Code_Size（代码大小）、Data_Size（数据大小）、Stack_Size（栈大小）、Supported_Source_Language（支持的源语言）。",
+      "tags": [
+        "虚拟处理器 - 标准属性(代码与语言)",
+        "属性"
+      ]
+    },
+    {
+      "category": "虚拟处理器 - 合法性规则(L1)",
+      "content": "虚拟处理器组件类型可包含端口、特征组、提供子程序访问、子程序组访问声明，可包含流规范、模式子句和属性关联。",
+      "tags": [
+        "组件",
+        "模式",
+        "处理器",
+        "虚拟处理器 - 合法性规则(L1)",
+        "属性"
+      ]
+    },
+    {
+      "category": "虚拟处理器 - 合法性规则(L2)",
+      "content": "虚拟处理器组件实现可包含虚拟总线、虚拟处理器和抽象子组件声明。",
+      "tags": [
+        "组件",
+        "总线",
+        "虚拟处理器 - 合法性规则(L2)",
+        "处理器"
+      ]
+    },
+    {
+      "category": "虚拟处理器 - 合法性规则(L3)",
+      "content": "虚拟处理器实现可包含模式子句、流子句和属性子句。",
+      "tags": [
+        "模式",
+        "处理器",
+        "属性",
+        "虚拟处理器 - 合法性规则(L3)"
+      ]
+    },
+    {
+      "category": "虚拟处理器 - 合法性规则(L4)",
+      "content": "虚拟处理器实现不得包含子程序调用子句。",
+      "tags": [
+        "虚拟处理器 - 合法性规则(L4)",
+        "处理器",
+        "子程序"
+      ]
+    },
+    {
+      "category": "虚拟处理器 - 合法性规则(L5)",
+      "content": "虚拟处理器实现可包含子程序访问、子程序组访问、端口、特征和特征组连接。",
+      "tags": [
+        "子程序",
+        "虚拟处理器 - 合法性规则(L5)",
+        "处理器"
+      ]
+    },
+    {
+      "category": "处理器 - 处理需求与权限(P20)",
+      "content": "实现方法不要求监控启动截止时间并将溢出报告为错误。",
+      "tags": [
+        "处理器 - 处理需求与权限(P20)"
+      ]
+    },
+    {
+      "category": "处理器 - 处理需求与权限(P21)",
+      "content": "实现方法可以选择强制线程截止时间和最大计算执行时间，违反情况作为线程可恢复错误报告。",
+      "tags": [
+        "线程",
+        "处理器 - 处理需求与权限(P21)"
+      ]
+    },
+    {
+      "category": "处理器 - 处理需求与权限(P22)",
+      "content": "处理器也可以使用系统组件类别建模，以详细描述处理器内部结构。",
+      "tags": [
+        "组件",
+        "处理器 - 处理需求与权限(P22)",
+        "处理器"
+      ]
+    },
+    {
+      "category": "线程 - 调度协议",
+      "content": "线程支持多种调度协议：Periodic（周期性）、Aperiodic（非周期性）、Sporadic（零星）、Timed（定时）、Hybrid（混合）、Background（后台）、Deferred（延迟）。",
+      "tags": [
+        "线程",
+        "线程 - 调度协议"
+      ]
+    },
+    {
+      "category": "线程 - 状态转换",
+      "content": "线程状态包括：Idle（空闲）、Suspended（挂起）、Ready（就绪）、Running（运行）、Blocked（阻塞）、Completed（完成）、Error（错误）。状态转换由调度协议、事件、超时和错误处理驱动。",
+      "tags": [
+        "线程",
+        "线程 - 状态转换"
+      ]
+    },
+    {
+      "category": "线程 - 错误恢复",
+      "content": "线程支持错误恢复机制，包括可恢复错误（recoverable）和不可恢复错误（non-recoverable）。错误处理可通过属性配置恢复策略。",
+      "tags": [
+        "属性",
+        "线程",
+        "线程 - 错误恢复"
+      ]
+    },
+    {
+      "category": "进程 - 虚拟地址空间",
+      "content": "进程提供虚拟地址空间，包含至少一个线程。进程可加载二进制映像，通过 Actual_Memory_Binding 属性绑定到内存组件。",
+      "tags": [
+        "组件",
+        "绑定",
+        "进程",
+        "进程 - 虚拟地址空间",
+        "属性"
+      ]
+    },
+    {
+      "category": "进程 - 线程管理",
+      "content": "进程可包含线程和线程组，负责管理线程的生命周期。进程通过 Actual_Processor_Binding 属性绑定到处理器或虚拟处理器。",
+      "tags": [
+        "处理器",
+        "绑定",
+        "进程 - 线程管理",
+        "进程",
+        "属性"
+      ]
+    },
+    {
+      "category": "模式 - 定义与切换",
+      "content": "模式（Mode）用于定义组件在不同操作环境下的配置。模式切换可由事件端口触发，或通过模式转换条件控制。模式可继承属性值。",
+      "tags": [
+        "组件",
+        "模式",
+        "属性",
+        "模式 - 定义与切换"
+      ]
+    },
+    {
+      "category": "模式 - 语义规则",
+      "content": "每个模式必须有唯一名称；组件类型中定义的模式必须在实现中完全覆盖；模式切换不能导致死锁。",
+      "tags": [
+        "组件",
+        "模式",
+        "模式 - 语义规则"
+      ]
+    },
+    {
+      "category": "流 - 端到端延迟分析",
+      "content": "端到端流用于分析数据从源到汇的延迟，包括计算延迟和通信延迟。分析基于流路径中的线程执行时间、调度协议和通信协议。",
+      "tags": [
+        "流 - 端到端延迟分析",
+        "线程"
+      ]
+    },
+    {
+      "category": "流 - 数据速率约束",
+      "content": "流规范可指定数据速率约束，包括最小数据速率和最大数据速率。这些约束用于验证系统是否满足实时性能要求。",
+      "tags": [
+        "流 - 数据速率约束"
+      ]
+    },
+    {
+      "category": "属性 - 继承规则",
+      "content": "属性值可通过 inherit 关键字继承自父类型。继承可被覆盖，子组件可继承父组件的属性值。",
+      "tags": [
+        "组件",
+        "属性",
+        "属性 - 继承规则"
+      ]
+    },
+    {
+      "category": "属性 - 多值列表",
+      "content": "属性可定义为列表类型（list of），允许一个属性包含多个值。列表中的值按顺序处理，第一个匹配的值生效。",
+      "tags": [
+        "属性 - 多值列表",
+        "属性"
+      ]
+    },
+    {
+      "category": "属性 - 作用范围",
+      "content": "属性通过 applies to 子句指定作用范围，可应用于组件类型、组件实现、子组件实例、连接等。未指定时默认应用于当前声明。",
+      "tags": [
+        "组件",
+        "属性 - 作用范围",
+        "属性"
+      ]
+    },
+    {
+      "category": "连接 - 通信协议属性",
+      "content": "连接可指定通信协议属性，包括 Queue_Size（队列大小）、Overflow_Handling_Protocol（溢出处理协议）、Urgency（紧急度）、Dequeue_Protocol（出队协议）。",
+      "tags": [
+        "连接 - 通信协议属性",
+        "属性"
+      ]
+    },
+    {
+      "category": "连接 - 绑定属性",
+      "content": "连接可指定绑定属性，包括 Allowed_Connection_Binding（允许的连接绑定）、Actual_Connection_Binding（实际的连接绑定）。",
+      "tags": [
+        "连接 - 绑定属性",
+        "属性",
+        "绑定"
+      ]
+    },
+    {
+      "category": "绑定 - 完整性规则",
+      "content": "完全绑定系统要求：每个线程必须绑定到处理器或虚拟处理器；每个进程必须绑定到处理器或虚拟处理器；每个二进制映像必须绑定到内存组件；每个连接必须绑定到总线或虚拟总线。",
+      "tags": [
+        "组件",
+        "总线",
+        "处理器",
+        "绑定",
+        "进程"
+      ]
+    },
+    {
+      "category": "绑定 - 约束规则",
+      "content": "绑定约束包括：只能绑定到允许的类别（Allowed_*_Binding_Class）；绑定必须形成无环图；绑定必须满足协议兼容性要求。",
+      "tags": [
+        "绑定 - 约束规则",
+        "绑定"
+      ]
+    },
+    {
+      "category": "部署 - 属性集",
+      "content": "Deployment_Properties 属性集包含部署相关属性，包括绑定属性、地址分配属性、资源分配属性。",
+      "tags": [
+        "部署 - 属性集",
+        "属性",
+        "绑定"
+      ]
+    },
+    {
+      "category": "时序 - 属性集",
+      "content": "Timing_Properties 属性集包含时序相关属性，包括执行时间、截止时间、周期、抖动、延迟等。",
+      "tags": [
+        "时序 - 属性集",
+        "属性"
+      ]
+    },
+    {
+      "category": "通信 - 属性集",
+      "content": "Communication_Properties 属性集包含通信相关属性，包括队列属性、传输属性、协议属性。",
+      "tags": [
+        "属性",
+        "通信 - 属性集"
+      ]
+    },
+    {
+      "category": "内存 - 属性集",
+      "content": "Memory_Properties 属性集包含内存相关属性，包括内存大小、访问时间、字大小、内存类型。",
+      "tags": [
+        "内存",
+        "属性",
+        "内存 - 属性集"
+      ]
+    },
+    {
+      "category": "编程 - 属性集",
+      "content": "Programming_Properties 属性集包含编程相关属性，包括源代码、入口点、编程语言、代码大小。",
+      "tags": [
+        "编程 - 属性集",
+        "属性"
+      ]
+    },
+    {
+      "category": "建模 - 属性集",
+      "content": "Modeling_Properties 属性集包含建模辅助属性，包括文档注释、建模提示、分析配置。",
+      "tags": [
+        "建模 - 属性集",
+        "属性"
+      ]
+    },
+    {
+      "category": "抽象组件 - 细化规则",
+      "content": "抽象组件在细化时必须遵循目标类别的包含规则。细化可在类型或实现级别进行，保持接口兼容性。",
+      "tags": [
+        "组件",
+        "抽象组件 - 细化规则"
+      ]
+    },
+    {
+      "category": "系统组件 - 白盒建模",
+      "content": "系统组件可用于对设备进行白盒建模，并通过 Implemented_As 属性与设备组件关联。",
+      "tags": [
+        "组件",
+        "设备",
+        "系统组件 - 白盒建模",
+        "属性"
+      ]
+    },
+    {
+      "category": "设备 - 驱动软件",
+      "content": "设备的功能可完全嵌入硬件或由驱动程序提供。驱动程序可运行在操作系统内核、独立地址空间或作为应用线程。",
+      "tags": [
+        "设备",
+        "线程",
+        "设备 - 驱动软件"
+      ]
+    },
+    {
+      "category": "设备 - 执行模式",
+      "content": "设备执行可以是周期性的（轮询）或事件驱动的。设备可包含总线子组件，成为总线管理器。",
+      "tags": [
+        "组件",
+        "总线",
+        "设备 - 执行模式",
+        "设备"
+      ]
+    },
+    {
+      "category": "总线 - 访问权限",
+      "content": "总线访问可通过 Allowed_Physical_Access 属性限制。支持的协议可通过属性指定或通过虚拟总线子组件显式建模。",
+      "tags": [
+        "组件",
+        "总线",
+        "属性",
+        "总线 - 访问权限"
+      ]
+    },
+    {
+      "category": "总线 - 桥接",
+      "content": "总线可通过 requires bus access 连接到其他总线，形成总线桥接。",
+      "tags": [
+        "总线",
+        "总线 - 桥接"
+      ]
+    },
+    {
+      "category": "虚拟总线 - 带宽保障",
+      "content": "虚拟总线可代表总线带宽的一部分，作为虚拟通道提供性能保障。",
+      "tags": [
+        "虚拟总线 - 带宽保障",
+        "总线"
+      ]
+    },
+    {
+      "category": "虚拟总线 - 协议支持",
+      "content": "Provided_Virtual_Bus_Class 表示处理器或总线支持的协议；Required_Virtual_Bus_Class 表示连接或虚拟总线所需的协议。",
+      "tags": [
+        "总线",
+        "虚拟总线 - 协议支持",
+        "处理器"
+      ]
+    },
+    {
+      "category": "子程序 - 远程调用",
+      "content": "远程子程序调用通过代理（Proxy）处理，调用线程会被阻塞直到远程执行完成。支持同步和半同步调用模式。",
+      "tags": [
+        "线程",
+        "模式",
+        "子程序 - 远程调用",
+        "子程序"
+      ]
+    },
+    {
+      "category": "子程序组 - 库管理",
+      "content": "子程序组用于分组管理和访问子程序，提供子程序库功能。子程序组可被多个组件共享访问。",
+      "tags": [
+        "组件",
+        "子程序组 - 库管理",
+        "子程序"
+      ]
+    },
+    {
+      "category": "数据组件 - 并发访问",
+      "content": "数据组件的并发访问控制由 Concurrency_Control_Protocol 属性管理，支持互斥访问、读写锁等协议。",
+      "tags": [
+        "组件",
+        "数据组件 - 并发访问",
+        "属性"
+      ]
+    },
+    {
+      "category": "数据组件 - 访问权限",
+      "content": "数据组件的访问权限（读/写）由 Access_Right 属性或连接方向控制。",
+      "tags": [
+        "组件",
+        "数据组件 - 访问权限",
+        "属性"
+      ]
+    },
+    {
+      "category": "特征组 - 反向规则",
+      "content": "特征组的反向（inverse of）用于定义连接时的匹配规则，确保特征组连接的双向一致性。",
+      "tags": [
+        "特征组 - 反向规则"
+      ]
+    },
+    {
+      "category": "特征组 - 嵌套",
+      "content": "特征组可包含子特征组，形成嵌套结构。嵌套特征组继承父特征组的连接规则。",
+      "tags": [
+        "特征组 - 嵌套"
+      ]
+    },
+    {
+      "category": "端口 - 输入输出时间",
+      "content": "端口可通过 Input_Time 和 Output_Time 属性控制数据冻结或发送时间，确保时序正确性。",
+      "tags": [
+        "端口 - 输入输出时间",
+        "属性"
+      ]
+    },
+    {
+      "category": "端口 - 模式触发器",
+      "content": "事件端口可作为模式转换触发器，当事件到达时触发模式切换。",
+      "tags": [
+        "模式",
+        "端口 - 模式触发器"
+      ]
+    },
+    {
+      "category": "包 - 多文件组织",
+      "content": "一个AADL规范可由多个包和属性集组成，但一个 .aadl 源文件通常只包含一个包或一个属性集。包之间通过 with 语句相互引用。",
+      "tags": [
+        "AADL",
+        "属性",
+        "包 - 多文件组织"
+      ]
+    },
+    {
+      "category": "包 - 可见性控制",
+      "content": "包的声明部分使用 public 或 private 关键字区分内容可见性。private 部分声明的分类器在包外不可见。",
+      "tags": [
+        "包 - 可见性控制"
+      ]
+    },
+    {
+      "category": "别名 - 重命名规则",
+      "content": "可使用 renames 为组件类型或实现创建别名。别名声明中的组件类别必须与被引用的组件类别匹配。",
+      "tags": [
+        "组件",
+        "别名 - 重命名规则"
+      ]
+    },
+    {
+      "category": "原型绑定 - 数组初始化",
+      "content": "支持在组件实现中为类型原型绑定具体的实现。在子组件数组初始化时，也可为每个数组元素绑定原型。",
+      "tags": [
+        "组件",
+        "绑定",
+        "原型绑定 - 数组初始化"
+      ]
+    },
+    {
+      "category": "属性集 - 扩展继承",
+      "content": "一个属性集可以使用 extends 关键字继承另一个属性集，继承父属性集的所有属性定义。",
+      "tags": [
+        "属性集 - 扩展继承",
+        "属性"
+      ]
+    },
+    {
+      "category": "属性 - 显式限定",
+      "content": "引用属性时，可使用“属性集名::属性名”的格式进行显式限定，避免命名冲突。",
+      "tags": [
+        "属性 - 显式限定",
+        "属性"
+      ]
     }
   ],
   "examples": [
     {
       "scenario": "第3.1节 组件类型示例（线程类型）",
       "input": "定义一个周期性线程 MyThread，具有输入事件数据端口和输出数据端口，周期10ms。",
-      "goldenOutput": "thread MyThread\n  features\n    Input: in event data port Integer;\n    Output: out data port Boolean;\n  properties\n    Dispatch_Protocol => Periodic;\n    Period => 10 ms;\nend MyThread;"
+      "goldenOutput": "thread MyThread\n  features\n    Input: in event data port Integer;\n    Output: out data port Boolean;\n  properties\n    Dispatch_Protocol => Periodic;\n    Period => 10 ms;\nend MyThread;",
+      "tags": [
+        "线程",
+        "端口",
+        "第3.1节 组件类型示例（线程类型）"
+      ]
     },
     {
       "scenario": "第3.2节 组件实现示例（线程实现）",
       "input": "为 MyThread 提供实现，包含子程序子组件和连接。",
-      "goldenOutput": "thread implementation MyThread.impl\n  subcomponents\n    Sub: subprogram MySubprogram;\n  connections\n    conn: port Input -> Sub.param;\nend MyThread.impl;"
+      "goldenOutput": "thread implementation MyThread.impl\n  subcomponents\n    Sub: subprogram MySubprogram;\n  connections\n    conn: port Input -> Sub.param;\nend MyThread.impl;",
+      "tags": [
+        "第3.2节 组件实现示例（线程实现）",
+        "连接"
+      ]
     },
     {
       "scenario": "第6.4节 总线连接示例（隐含）",
       "input": "两个处理器通过总线连接。",
-      "goldenOutput": "processor P1\n  features\n    BusPort: in bus port;\nend P1;\nprocessor P2\n  features\n    BusPort: in bus port;\nend P2;\nbus B\nend B;\nsystem implementation Top.impl\n  subcomponents\n    P1_inst: processor P1.impl;\n    P2_inst: processor P2.impl;\n    B_inst: bus B.impl;\n  connections\n    bus P1_inst.BusPort -> B_inst;\n    bus P2_inst.BusPort -> B_inst;\nend Top.impl;"
+      "goldenOutput": "processor P1\n  features\n    BusPort: in bus port;\nend P1;\nprocessor P2\n  features\n    BusPort: in bus port;\nend P2;\nbus B\nend B;\nsystem implementation Top.impl\n  subcomponents\n    P1_inst: processor P1.impl;\n    P2_inst: processor P2.impl;\n    B_inst: bus B.impl;\n  connections\n    bus P1_inst.BusPort -> B_inst;\n    bus P2_inst.BusPort -> B_inst;\nend Top.impl;",
+      "tags": [
+        "第6.4节 总线连接示例（隐含）",
+        "连接"
+      ]
     },
     {
       "scenario": "第8.3节 事件端口队列处理（隐含）",
       "input": "定义事件端口并设置队列大小。",
-      "goldenOutput": "thread T\n  features\n    E: in event port;\n  properties\n    Queue_Size => 5;\n    Overflow_Handling_Protocol => DropOldest;\nend T;"
+      "goldenOutput": "thread T\n  features\n    E: in event port;\n  properties\n    Queue_Size => 5;\n    Overflow_Handling_Protocol => DropOldest;\nend T;",
+      "tags": [
+        "第8.3节 事件端口队列处理（隐含）",
+        "端口"
+      ]
     },
     {
       "scenario": "第10章 流规范与流实现",
       "input": "组件类型定义流源，实现中定义流路径。",
-      "goldenOutput": "thread T\n  flows\n    OutFlow: flow source OutPort;\nend T;\nthread implementation T.impl\n  subcomponents\n    Sub: subprogram S;\n  connections\n    port Sub.Result -> OutPort;\n  flows\n    OutFlow: flow path Sub.Result -> OutPort;\nend T.impl;"
+      "goldenOutput": "thread T\n  flows\n    OutFlow: flow source OutPort;\nend T;\nthread implementation T.impl\n  subcomponents\n    Sub: subprogram S;\n  connections\n    port Sub.Result -> OutPort;\n  flows\n    OutFlow: flow path Sub.Result -> OutPort;\nend T.impl;",
+      "tags": [
+        "第10章 流规范与流实现"
+      ]
     }
   ],
   "errorCorrections": [
     {
       "errorType": "缺少 end 闭合语句",
       "badBehavior": "声明了组件类型但忘记闭合，如 'thread TaskScheduler' 没有后续。",
-      "correctionRule": "【语法错误】任何组件的类型声明和实现声明都必须以 'end 组件名;' 闭合。正确格式：类型声明 -> end; 实现声明 -> end;。"
+      "correctionRule": "【语法错误】任何组件的类型声明和实现声明都必须以 'end 组件名;' 闭合。正确格式：类型声明 -> end; 实现声明 -> end;。",
+      "tags": [
+        "缺少 end 闭合语句"
+      ]
     },
     {
       "errorType": "硬件中直接嵌套软件（非法包含）",
       "badBehavior": "在处理器的实现中直接声明进程或线程，如 'processor implementation CPU.impl subcomponents P: process Proc.impl; end CPU.impl;'。",
-      "correctionRule": "【语义错误】处理器只能包含内存、总线、虚拟处理器等硬件抽象，不能直接包含进程或线程。软件进程必须放在系统层级，并通过 Actual_Processor_Binding 绑定。"
+      "correctionRule": "【语义错误】处理器只能包含内存、总线、虚拟处理器等硬件抽象，不能直接包含进程或线程。软件进程必须放在系统层级，并通过 Actual_Processor_Binding 绑定。",
+      "tags": [
+        "线程",
+        "进程",
+        "硬件中直接嵌套软件（非法包含）",
+        "处理器"
+      ]
     },
     {
       "errorType": "端口类型不匹配",
       "badBehavior": "将数据端口连接到事件端口，或 data port 连接到 event data port 等不匹配的组合。",
-      "correctionRule": "【语义错误】数据端口只能连接数据端口，事件端口只能连接事件端口，事件数据端口可连接事件数据端口或分别连接事件和数据（需具体场景）。检查两端端口类型一致性。"
+      "correctionRule": "【语义错误】数据端口只能连接数据端口，事件端口只能连接事件端口，事件数据端口可连接事件数据端口或分别连接事件和数据（需具体场景）。检查两端端口类型一致性。",
+      "tags": [
+        "端口类型不匹配"
+      ]
     },
     {
       "errorType": "包名称与 end 不匹配",
       "badBehavior": "package 声明为 'package MySystem'，但结尾写 'end WrongSystem;'。",
-      "correctionRule": "【语法错误】end 后的名称必须与 package 名称完全一致。"
+      "correctionRule": "【语法错误】end 后的名称必须与 package 名称完全一致。",
+      "tags": [
+        "包名称与 end 不匹配"
+      ]
     },
     {
       "errorType": "缺少分号",
       "badBehavior": "语句末尾未加分号，如 'thread MyThread' 或 'properties Period => 10 ms'。",
-      "correctionRule": "【语法错误】每条声明、定义、属性赋值、连接等均需以分号 ';' 结束。"
+      "correctionRule": "【语法错误】每条声明、定义、属性赋值、连接等均需以分号 ';' 结束。",
+      "tags": [
+        "缺少分号"
+      ]
     },
     {
       "errorType": "连接缺少关键字",
       "badBehavior": "总线端口连接未加 'bus'，如 'connections port ECU.CANPort -> CANBus;'，或事件端口连接未加 'event'。",
-      "correctionRule": "【语法错误】总线连接必须使用 'bus' 关键字，事件端口连接必须使用 'event port'。正确示例：'connections bus ECU.CANPort -> CANBus;'。"
+      "correctionRule": "【语法错误】总线连接必须使用 'bus' 关键字，事件端口连接必须使用 'event port'。正确示例：'connections bus ECU.CANPort -> CANBus;'。",
+      "tags": [
+        "总线",
+        "连接缺少关键字"
+      ]
     },
     {
       "errorType": "端口方向错误",
       "badBehavior": "输入端口使用了 'out'，输出端口使用了 'in'，如 'features DataIn: out data port;'。",
-      "correctionRule": "【语义错误】输入端口必须声明为 'in'，输出端口声明为 'out'，双向为 'in out'。修正方向。"
+      "correctionRule": "【语义错误】输入端口必须声明为 'in'，输出端口声明为 'out'，双向为 'in out'。修正方向。",
+      "tags": [
+        "端口方向错误"
+      ]
     },
     {
       "errorType": "属性应用未指定目标",
       "badBehavior": "属性绑定未加 'applies to'，如 'Actual_Processor_Binding => reference (CPU);'。",
-      "correctionRule": "【语法错误】部署属性必须通过 'applies to' 指明作用对象。正确写法：'Actual_Processor_Binding => (reference (CPU)) applies to Process_Inst;'。"
+      "correctionRule": "【语法错误】部署属性必须通过 'applies to' 指明作用对象。正确写法：'Actual_Processor_Binding => (reference (CPU)) applies to Process_Inst;'。",
+      "tags": [
+        "属性应用未指定目标",
+        "属性",
+        "绑定"
+      ]
     },
     {
       "errorType": "流规范缺少对应流实现",
       "badBehavior": "在类型中定义了 flow，但在实现中未提供 flow implementation。",
-      "correctionRule": "【语义错误】类型中的流规范必须在对应实现中通过流实现具体化，描述路径经过的子组件和连接。"
+      "correctionRule": "【语义错误】类型中的流规范必须在对应实现中通过流实现具体化，描述路径经过的子组件和连接。",
+      "tags": [
+        "流规范缺少对应流实现"
+      ]
     },
     {
       "errorType": "违反虚拟处理器一致性规则（C1）",
       "badBehavior": "虚拟处理器未直接或间接绑定到物理处理器。",
-      "correctionRule": "【语义错误】完全绑定系统中，每个虚拟处理器必须直接或间接绑定到或包含在一个物理处理器中（参见第6.2节 C1）。"
+      "correctionRule": "【语义错误】完全绑定系统中，每个虚拟处理器必须直接或间接绑定到或包含在一个物理处理器中（参见第6.2节 C1）。",
+      "tags": [
+        "处理器",
+        "违反虚拟处理器一致性规则（C1）",
+        "绑定"
+      ]
     },
     {
       "errorType": "违反虚拟总线一致性规则（C2）",
       "badBehavior": "虚拟总线之间绑定存在循环。",
-      "correctionRule": "【语义错误】虚拟总线之间的绑定声明不能存在循环（参见第6.5节 C2）。"
+      "correctionRule": "【语义错误】虚拟总线之间的绑定声明不能存在循环（参见第6.5节 C2）。",
+      "tags": [
+        "总线",
+        "违反虚拟总线一致性规则（C2）",
+        "绑定"
+      ]
     },
     {
       "errorType": "补充 - 声明不在包内",
       "badBehavior": "AADL声明直接写在文件顶部，未包含在 package ... end 块内。",
-      "correctionRule": "【语法错误】所有AADL声明必须放在 package 声明和对应的 end 之间。"
+      "correctionRule": "【语法错误】所有AADL声明必须放在 package 声明和对应的 end 之间。",
+      "tags": [
+        "补充 - 声明不在包内"
+      ]
     },
     {
       "errorType": "补充 - 端口/参数缺少数据类型",
       "badBehavior": "端口或参数声明时未指定数据类型，如 'Input: in data port;'。",
-      "correctionRule": "【语义错误】端口和参数必须指定数据类型（如 Base_Types::Integer）。正确示例：'Input: in data port Base_Types::Integer;'。"
+      "correctionRule": "【语义错误】端口和参数必须指定数据类型（如 Base_Types::Integer）。正确示例：'Input: in data port Base_Types::Integer;'。",
+      "tags": [
+        "补充 - 端口/参数缺少数据类型"
+      ]
     },
     {
       "errorType": "补充 - 将子程序用作特征",
       "badBehavior": "试图直接在 features 中声明 subprogram，如 'features Calc: subprogram MathLib;'。",
-      "correctionRule": "【语义错误】子程序不能作为特征直接声明，应使用 'provides subprogram access' 或 'requires subprogram access'。"
+      "correctionRule": "【语义错误】子程序不能作为特征直接声明，应使用 'provides subprogram access' 或 'requires subprogram access'。",
+      "tags": [
+        "补充 - 将子程序用作特征"
+      ]
     },
     {
       "errorType": "补充 - 忽略标准库导入",
       "badBehavior": "使用了 Base_Types 中的类型，但文件顶部未添加 'with Base_Types;'。",
-      "correctionRule": "【语法错误】使用外部包（包括标准库）时，必须用 with 语句显式导入。"
+      "correctionRule": "【语法错误】使用外部包（包括标准库）时，必须用 with 语句显式导入。",
+      "tags": [
+        "补充 - 忽略标准库导入"
+      ]
     },
     {
       "errorType": "补充 - 数组连接语义错误",
       "badBehavior": "试图直接连接两个数组组件，如 'connections port A[0] -> B[0];' 并期望自动展开。",
-      "correctionRule": "【语义错误】AADL 不支持直接连接数组元素，应使用连接模式（如 One_To_One）来定义组件数组间的连接。"
+      "correctionRule": "【语义错误】AADL 不支持直接连接数组元素，应使用连接模式（如 One_To_One）来定义组件数组间的连接。",
+      "tags": [
+        "补充 - 数组连接语义错误"
+      ]
     },
     {
       "errorType": "补充 - applies to 使用不当",
       "badBehavior": "在属性赋值中，'applies to' 指向了组件类型而非实例。",
-      "correctionRule": "【语义错误】'applies to' 应作用于实例对象（如 Process_Inst），而非类型名。正确示例：'Actual_Processor_Binding => (reference (CPU)) applies to Process_Inst;'。"
+      "correctionRule": "【语义错误】'applies to' 应作用于实例对象（如 Process_Inst），而非类型名。正确示例：'Actual_Processor_Binding => (reference (CPU)) applies to Process_Inst;'。",
+      "tags": [
+        "补充 - applies to 使用不当",
+        "属性"
+      ]
     },
     {
       "errorType": "补充 - 流实现连接断裂",
       "badBehavior": "流实现中引用的子组件和连接没有形成从源到汇的完整路径。",
-      "correctionRule": "【语义错误】流实现必须描述一条连续、完整的路径，路径中的每个连接和子组件都必须正确连接。"
+      "correctionRule": "【语义错误】流实现必须描述一条连续、完整的路径，路径中的每个连接和子组件都必须正确连接。",
+      "tags": [
+        "补充 - 流实现连接断裂"
+      ]
     },
     {
       "errorType": "补充 - 分类器不可见",
       "badBehavior": "引用的组件分类器未在当前包的 public 部分声明，也未通过 with 导入。",
-      "correctionRule": "【语义错误】确保引用的分类器可见：要么在当前包的 public 部分定义，要么通过 with 导入外部包。"
+      "correctionRule": "【语义错误】确保引用的分类器可见：要么在当前包的 public 部分定义，要么通过 with 导入外部包。",
+      "tags": [
+        "补充 - 分类器不可见"
+      ]
     },
     {
       "errorType": "补充 - Initial_Value 误用",
       "badBehavior": "在未设置 Data_Representation 的数据组件上使用 Initial_Value 属性。",
-      "correctionRule": "【语义错误】Initial_Value 通常仅当数据组件设置了 Data_Representation 属性时才能使用。"
+      "correctionRule": "【语义错误】Initial_Value 通常仅当数据组件设置了 Data_Representation 属性时才能使用。",
+      "tags": [
+        "属性",
+        "补充 - Initial_Value 误用"
+      ]
+    },
+    {
+      "errorType": "虚拟处理器 - 包含子程序调用子句",
+      "badBehavior": "在虚拟处理器实现中声明了子程序调用子句，如 'thread calls Sub;'。",
+      "correctionRule": "【语义错误】虚拟处理器实现不得包含子程序调用子句（违反合法性规则L4）。将子程序调用移至线程组件中。",
+      "tags": [
+        "虚拟处理器 - 包含子程序调用子句",
+        "处理器",
+        "子程序"
+      ]
+    },
+    {
+      "errorType": "虚拟处理器 - 类型缺少必要特征",
+      "badBehavior": "虚拟处理器类型未声明必要的访问特征，如 provides subprogram access。",
+      "correctionRule": "【语义错误】虚拟处理器类型可包含端口、特征组、提供子程序访问、子程序组访问声明（合法性规则L1）。根据需要添加访问特征。",
+      "tags": [
+        "虚拟处理器 - 类型缺少必要特征",
+        "处理器"
+      ]
+    },
+    {
+      "errorType": "虚拟处理器 - 实现包含非法子组件",
+      "badBehavior": "虚拟处理器实现中包含了线程、进程等软件子组件。",
+      "correctionRule": "【语义错误】虚拟处理器实现只能包含虚拟总线、虚拟处理器和抽象子组件（合法性规则L2）。软件组件应放在系统层级。",
+      "tags": [
+        "虚拟处理器 - 实现包含非法子组件",
+        "进程",
+        "线程",
+        "处理器"
+      ]
+    },
+    {
+      "errorType": "虚拟处理器 - 违反一致性规则C3",
+      "badBehavior": "虚拟处理器之间的绑定存在循环，如 VP1 绑定到 VP2，VP2 绑定到 VP1。",
+      "correctionRule": "【语义错误】虚拟处理器之间的绑定不能存在循环（一致性规则C3）。重新设计绑定结构，确保无环。",
+      "tags": [
+        "绑定",
+        "虚拟处理器 - 违反一致性规则C3",
+        "处理器"
+      ]
+    },
+    {
+      "errorType": "线程 - 调度协议不兼容",
+      "badBehavior": "线程的调度协议与绑定的虚拟处理器支持的协议不匹配。",
+      "correctionRule": "【语义错误】Allowed_Dispatch_Protocol 属性指定虚拟处理器提供的调度协议，只有协议匹配的线程才能被绑定。检查 Dispatch_Protocol 和 Allowed_Dispatch_Protocol 的兼容性。",
+      "tags": [
+        "线程",
+        "线程 - 调度协议不兼容",
+        "处理器",
+        "绑定"
+      ]
+    },
+    {
+      "errorType": "线程 - 缺少必要属性",
+      "badBehavior": "周期性线程未指定 Period 属性，或未指定 Dispatch_Protocol。",
+      "correctionRule": "【语义错误】Periodic 调度协议的线程必须指定 Period 属性。确保线程类型声明包含必要的属性配置。",
+      "tags": [
+        "线程",
+        "线程 - 缺少必要属性",
+        "属性"
+      ]
+    },
+    {
+      "errorType": "进程 - 缺少线程",
+      "badBehavior": "进程实现中未声明任何线程子组件。",
+      "correctionRule": "【语义错误】进程必须包含至少一个线程。添加线程子组件声明。",
+      "tags": [
+        "进程 - 缺少线程",
+        "进程",
+        "线程"
+      ]
+    },
+    {
+      "errorType": "模式 - 未覆盖父类型模式",
+      "badBehavior": "组件实现中定义的模式未完全覆盖类型中声明的模式。",
+      "correctionRule": "【语义错误】组件类型中定义的模式必须在实现中完全覆盖。检查模式定义的完整性。",
+      "tags": [
+        "模式",
+        "模式 - 未覆盖父类型模式"
+      ]
+    },
+    {
+      "errorType": "模式 - 名称重复",
+      "badBehavior": "同一组件中声明了两个同名模式。",
+      "correctionRule": "【语义错误】每个模式必须有唯一名称。修改重复的模式名称。",
+      "tags": [
+        "模式",
+        "模式 - 名称重复"
+      ]
+    },
+    {
+      "errorType": "流 - 端到端流路径断裂",
+      "badBehavior": "端到端流中引用的子组件或连接不存在，导致路径断裂。",
+      "correctionRule": "【语义错误】端到端流必须描述一条连续、完整的路径。检查所有引用的子组件和连接是否正确定义。",
+      "tags": [
+        "流 - 端到端流路径断裂"
+      ]
+    },
+    {
+      "errorType": "流 - 流源与流汇不匹配",
+      "badBehavior": "流源和流汇的端口类型不匹配，如数据端口作为流源连接到事件端口作为流汇。",
+      "correctionRule": "【语义错误】流源和流汇必须类型匹配。确保流路径两端的端口类型一致。",
+      "tags": [
+        "流 - 流源与流汇不匹配"
+      ]
+    },
+    {
+      "errorType": "属性 - inherit 使用不当",
+      "badBehavior": "在非继承属性上使用了 inherit 关键字。",
+      "correctionRule": "【语法错误】只有声明为 inherit 的属性才能使用 inherit 关键字。检查属性定义是否包含 inherit 修饰符。",
+      "tags": [
+        "属性 - inherit 使用不当",
+        "属性"
+      ]
+    },
+    {
+      "errorType": "属性 - 值类型不匹配",
+      "badBehavior": "属性赋值的值类型与属性定义的类型不匹配，如向整数属性赋值字符串。",
+      "correctionRule": "【语义错误】属性值类型必须与属性定义的类型一致。检查属性类型定义和赋值的值。",
+      "tags": [
+        "属性 - 值类型不匹配",
+        "属性"
+      ]
+    },
+    {
+      "errorType": "属性 - list of 语法错误",
+      "badBehavior": "多值属性赋值时未使用列表语法，如 'Allowed_Processor_Binding => reference (CPU);' 应为列表。",
+      "correctionRule": "【语法错误】声明为 list of 的属性必须使用列表语法赋值。正确示例：'Allowed_Processor_Binding => list {reference (CPU)};'。",
+      "tags": [
+        "属性 - list of 语法错误",
+        "属性"
+      ]
+    },
+    {
+      "errorType": "绑定 - 线程未绑定处理器",
+      "badBehavior": "线程未通过 Actual_Processor_Binding 绑定到处理器或虚拟处理器。",
+      "correctionRule": "【语义错误】完全绑定系统要求每个线程必须绑定到处理器或虚拟处理器。添加 Actual_Processor_Binding 属性。",
+      "tags": [
+        "绑定 - 线程未绑定处理器",
+        "线程",
+        "处理器",
+        "绑定"
+      ]
+    },
+    {
+      "errorType": "绑定 - 进程未绑定内存",
+      "badBehavior": "进程未通过 Actual_Memory_Binding 绑定到内存组件。",
+      "correctionRule": "【语义错误】完全绑定系统要求每个进程的二进制映像必须绑定到内存组件。添加 Actual_Memory_Binding 属性。",
+      "tags": [
+        "内存",
+        "进程",
+        "绑定 - 进程未绑定内存",
+        "绑定"
+      ]
+    },
+    {
+      "errorType": "绑定 - 类别不匹配",
+      "badBehavior": "将线程绑定到不允许的组件类别，如绑定到设备组件。",
+      "correctionRule": "【语义错误】只能绑定到 Allowed_*_Binding_Class 指定的类别。检查 Allowed_Processor_Binding_Class 属性配置。",
+      "tags": [
+        "线程",
+        "设备",
+        "绑定 - 类别不匹配",
+        "绑定"
+      ]
+    },
+    {
+      "errorType": "组件包含 - 线程包含进程",
+      "badBehavior": "在线程实现中声明了进程子组件。",
+      "correctionRule": "【语义错误】线程只能包含数据、子程序、子程序组和抽象子组件。进程应作为系统或处理器的子组件。",
+      "tags": [
+        "线程",
+        "进程",
+        "组件包含 - 线程包含进程"
+      ]
+    },
+    {
+      "errorType": "组件包含 - 内存包含处理器",
+      "badBehavior": "在内存实现中声明了处理器子组件。",
+      "correctionRule": "【语义错误】内存只能包含抽象、内存、总线和虚拟总线子组件。处理器应作为系统的子组件。",
+      "tags": [
+        "组件包含 - 内存包含处理器",
+        "内存",
+        "处理器"
+      ]
+    },
+    {
+      "errorType": "总线 - 包含流子句",
+      "badBehavior": "在总线实现中声明了流子句。",
+      "correctionRule": "【语义错误】总线实现不能包含流或子程序调用子句。流应在系统或线程级别定义。",
+      "tags": [
+        "总线",
+        "总线 - 包含流子句"
+      ]
+    },
+    {
+      "errorType": "设备 - 包含子程序调用",
+      "badBehavior": "在设备实现中声明了子程序调用子句。",
+      "correctionRule": "【语义错误】设备实现不能包含子程序调用子句。驱动程序调用应通过子程序访问特征实现。",
+      "tags": [
+        "设备",
+        "设备 - 包含子程序调用",
+        "子程序"
+      ]
+    },
+    {
+      "errorType": "设备 - 未连接总线",
+      "badBehavior": "设备组件未通过总线访问连接到总线。",
+      "correctionRule": "【语义错误】设备需要通过总线访问连接到总线才能与处理器通信。添加总线访问特征和连接。",
+      "tags": [
+        "总线",
+        "设备",
+        "设备 - 未连接总线"
+      ]
+    },
+    {
+      "errorType": "子程序 - 参数方向错误",
+      "badBehavior": "子程序参数使用了 in out 方向但实际只需要 in 或 out。",
+      "correctionRule": "【语义错误】参数方向应准确反映数据流向。检查参数的实际用途，使用正确的方向（in/out/in out）。",
+      "tags": [
+        "子程序 - 参数方向错误",
+        "子程序"
+      ]
+    },
+    {
+      "errorType": "子程序 - 远程调用无代理",
+      "badBehavior": "跨线程调用子程序时未配置代理机制。",
+      "correctionRule": "【语义错误】远程子程序调用需要通过代理处理。确保提供子程序访问的组件配置了正确的调用代理。",
+      "tags": [
+        "子程序 - 远程调用无代理",
+        "线程",
+        "子程序"
+      ]
+    },
+    {
+      "errorType": "数据组件 - 缺少并发控制协议",
+      "badBehavior": "多个线程共享访问的数据组件未指定 Concurrency_Control_Protocol 属性。",
+      "correctionRule": "【语义错误】共享数据应指定并发访问控制协议（如互斥）。添加 Concurrency_Control_Protocol 属性。",
+      "tags": [
+        "数据组件 - 缺少并发控制协议",
+        "线程",
+        "属性"
+      ]
+    },
+    {
+      "errorType": "特征组 - 嵌套层级过深",
+      "badBehavior": "特征组嵌套超过3层。",
+      "correctionRule": "【语义错误】特征组嵌套应保持合理层级，建议不超过3层。重构特征组结构，减少嵌套。",
+      "tags": [
+        "特征组 - 嵌套层级过深"
+      ]
+    },
+    {
+      "errorType": "端口 - 队列大小为零",
+      "badBehavior": "事件或事件数据端口的 Queue_Size 设置为 0。",
+      "correctionRule": "【语义错误】事件端口默认队列大小为1，不能设置为0。将 Queue_Size 设置为至少1。",
+      "tags": [
+        "端口 - 队列大小为零"
+      ]
+    },
+    {
+      "errorType": "端口 - 数据端口设置队列",
+      "badBehavior": "数据端口设置了 Queue_Size 属性。",
+      "correctionRule": "【语义错误】数据端口不支持队列，只保留最新值。移除数据端口的 Queue_Size 属性。",
+      "tags": [
+        "端口 - 数据端口设置队列",
+        "属性"
+      ]
+    },
+    {
+      "errorType": "包 - 循环导入",
+      "badBehavior": "包 A 导入包 B，包 B 又导入包 A。",
+      "correctionRule": "【语义错误】包导入不能形成循环。重构包结构，避免循环依赖。",
+      "tags": [
+        "包 - 循环导入"
+      ]
+    },
+    {
+      "errorType": "包 - 私有分类器被外部引用",
+      "badBehavior": "在包的 private 部分声明的分类器被包外组件引用。",
+      "correctionRule": "【语义错误】private 部分声明的分类器在包外不可见。将需要外部访问的分类器移至 public 部分。",
+      "tags": [
+        "包 - 私有分类器被外部引用"
+      ]
+    },
+    {
+      "errorType": "别名 - 类别不匹配",
+      "badBehavior": "使用 renames 创建别名时，别名的组件类别与原组件不一致。",
+      "correctionRule": "【语义错误】别名声明中的组件类别必须与被引用的组件类别匹配。修正别名的类别声明。",
+      "tags": [
+        "别名 - 类别不匹配"
+      ]
+    },
+    {
+      "errorType": "抽象组件 - 细化类型不兼容",
+      "badBehavior": "将抽象组件细化为与原接口不兼容的具体组件类型。",
+      "correctionRule": "【语义错误】抽象组件细化时必须保持接口兼容性。确保细化后的组件类型与原抽象接口匹配。",
+      "tags": [
+        "抽象组件 - 细化类型不兼容"
+      ]
+    },
+    {
+      "errorType": "系统组件 - 包含线程但未绑定",
+      "badBehavior": "系统实现中包含线程子组件但未通过 Actual_Processor_Binding 绑定到处理器。",
+      "correctionRule": "【语义错误】系统中的线程必须绑定到处理器或虚拟处理器才能执行。添加绑定属性或使用虚拟处理器作为中介。",
+      "tags": [
+        "系统组件 - 包含线程但未绑定",
+        "线程",
+        "处理器",
+        "绑定"
+      ]
+    },
+    {
+      "errorType": "虚拟总线 - 未绑定到物理总线",
+      "badBehavior": "虚拟总线未直接或间接绑定到支持它的处理器或总线。",
+      "correctionRule": "【语义错误】虚拟总线必须直接或间接绑定到支持它们的处理器或总线（一致性规则C1）。添加绑定声明。",
+      "tags": [
+        "总线",
+        "虚拟总线 - 未绑定到物理总线",
+        "处理器",
+        "绑定"
+      ]
+    },
+    {
+      "errorType": "虚拟总线 - 违反一致性规则C2",
+      "badBehavior": "虚拟总线之间的绑定存在循环。",
+      "correctionRule": "【语义错误】虚拟总线之间的绑定声明不能存在循环（一致性规则C2）。重新设计绑定结构。",
+      "tags": [
+        "总线",
+        "绑定",
+        "虚拟总线 - 违反一致性规则C2"
+      ]
+    },
+    {
+      "errorType": "进程 - 重复绑定",
+      "badBehavior": "同一进程通过 Actual_Processor_Binding 绑定到多个处理器。",
+      "correctionRule": "【语义错误】一个进程只能绑定到一个处理器或虚拟处理器。移除重复的绑定声明。",
+      "tags": [
+        "进程",
+        "进程 - 重复绑定",
+        "处理器",
+        "绑定"
+      ]
+    },
+    {
+      "errorType": "线程 - 优先级超出范围",
+      "badBehavior": "线程的优先级值超出了绑定处理器的 Priority_Range 范围。",
+      "correctionRule": "【语义错误】线程优先级必须在绑定处理器的 Priority_Range 范围内。调整优先级值或处理器的优先级范围。",
+      "tags": [
+        "线程",
+        "线程 - 优先级超出范围",
+        "处理器",
+        "绑定"
+      ]
+    },
+    {
+      "errorType": "属性集 - extends 循环",
+      "badBehavior": "属性集 A extends 属性集 B，属性集 B 又 extends 属性集 A。",
+      "correctionRule": "【语义错误】属性集继承不能形成循环。重构属性集继承结构。",
+      "tags": [
+        "属性集 - extends 循环",
+        "属性"
+      ]
+    },
+    {
+      "errorType": "属性 - 未定义属性引用",
+      "badBehavior": "引用了未在任何属性集中定义的属性。",
+      "correctionRule": "【语义错误】确保引用的属性已在当前包或通过 with 导入的属性集中定义。检查属性名称拼写和导入声明。",
+      "tags": [
+        "属性 - 未定义属性引用",
+        "属性"
+      ]
+    },
+    {
+      "errorType": "连接 - 数组连接未使用连接模式",
+      "badBehavior": "试图直接连接数组组件的元素，如 'port A[0] -> B[0];'。",
+      "correctionRule": "【语义错误】AADL不支持直接连接数组元素，应使用连接模式（如 One_To_One）来定义组件数组间的连接。",
+      "tags": [
+        "连接 - 数组连接未使用连接模式"
+      ]
+    },
+    {
+      "errorType": "连接 - 访问方向不匹配",
+      "badBehavior": "将 provides data access 连接到 provides data access（应为 provides 连接到 requires）。",
+      "correctionRule": "【语义错误】访问连接必须在 provides 和 requires 之间建立。确保连接两端的访问方向正确匹配。",
+      "tags": [
+        "连接 - 访问方向不匹配"
+      ]
+    },
+    {
+      "errorType": "流 - 流实现与流规范不匹配",
+      "badBehavior": "实现中的流路径与类型中定义的流规范不对应。",
+      "correctionRule": "【语义错误】流实现必须与类型中的流规范一一对应。检查流名称和路径定义的一致性。",
+      "tags": [
+        "流 - 流实现与流规范不匹配"
+      ]
+    },
+    {
+      "errorType": "模式 - 转换条件冲突",
+      "badBehavior": "同一事件端口触发多个互斥的模式转换。",
+      "correctionRule": "【语义错误】模式转换条件不应产生歧义。确保每个事件只触发一个模式转换，或使用优先级规则。",
+      "tags": [
+        "模式",
+        "模式 - 转换条件冲突"
+      ]
+    },
+    {
+      "errorType": "设备 - 重复总线访问",
+      "badBehavior": "设备声明了多个 requires bus access 特征连接到同一总线。",
+      "correctionRule": "【语义错误】设备通常只需要一个总线访问特征。移除重复的总线访问声明。",
+      "tags": [
+        "总线",
+        "设备 - 重复总线访问",
+        "设备"
+      ]
+    },
+    {
+      "errorType": "处理器 - 包含线程子组件",
+      "badBehavior": "在处理器实现中直接声明了线程子组件。",
+      "correctionRule": "【语义错误】处理器只能包含内存、总线、虚拟处理器和虚拟总线子组件。线程应通过绑定关联，而非直接包含。",
+      "tags": [
+        "线程",
+        "处理器 - 包含线程子组件",
+        "处理器"
+      ]
+    },
+    {
+      "errorType": "虚拟处理器 - 缺少启动时间属性",
+      "badBehavior": "虚拟处理器未指定 Startup_Execution_Time 或 Startup_Deadline 属性。",
+      "correctionRule": "【语义错误】虚拟处理器应配置启动相关属性以支持初始化时序分析。添加 Startup_Execution_Time 和 Startup_Deadline 属性。",
+      "tags": [
+        "虚拟处理器 - 缺少启动时间属性",
+        "处理器",
+        "属性"
+      ]
+    },
+    {
+      "errorType": "线程 - 执行时间超出限制",
+      "badBehavior": "线程的 Execution_Time 超过了绑定处理器的时间片限制。",
+      "correctionRule": "【语义错误】线程执行时间应在处理器调度能力范围内。优化线程实现或调整处理器配置。",
+      "tags": [
+        "绑定",
+        "线程",
+        "线程 - 执行时间超出限制",
+        "处理器"
+      ]
     }
   ],
-  "lastModified": "2026-07-21T00:00:00"
+  "lastModified": "2026-07-27T00:00:00",
+  "codeExamples": [
+    {
+      "id": "CE-001",
+      "title": "软件组件类型声明 - Thread",
+      "category": "thread",
+      "description": "演示线程组件类型的完整声明，包含特征定义和调度属性配置",
+      "keywords": [
+        "线程",
+        "调度协议",
+        "周期性调度",
+        "特征",
+        "属性"
+      ],
+      "code": "package ThreadExamples;\n\nwith Base_Types;\n\nthread PeriodicThread\n  features\n    Input: in event data port Base_Types::Integer;\n    Output: out data port Base_Types::Boolean;\n    Trigger: in event port;\n  properties\n    Dispatch_Protocol => Periodic;\n    Period => 10 ms;\n    Deadline => 8 ms;\n    Priority => 50;\n  flows\n    DataFlow: flow source Input sink Output;\nend PeriodicThread;"
+    },
+    {
+      "id": "CE-002",
+      "title": "软件组件类型声明 - Process",
+      "category": "process",
+      "description": "演示进程组件类型的完整声明，包含线程访问特征",
+      "keywords": [
+        "进程",
+        "虚拟地址空间",
+        "线程访问"
+      ],
+      "code": "package ProcessExamples;\n\nwith ThreadExamples;\n\nprocess ApplicationProcess\n  features\n    ThreadAccess: provides thread access ThreadExamples::PeriodicThread;\n    MemoryAccess: requires memory access;\n  properties\n    Source_Text_Language => C;\n    Binary_Size => 1024 Kbytes;\nend ApplicationProcess;"
+    },
+    {
+      "id": "CE-003",
+      "title": "软件组件类型声明 - Subprogram",
+      "category": "subprogram",
+      "description": "演示子程序组件类型的声明，包含输入输出参数",
+      "keywords": [
+        "子程序",
+        "参数",
+        "访问特征"
+      ],
+      "code": "package SubprogramExamples;\n\nwith Base_Types;\n\nsubprogram Calculator\n  parameters\n    X: in Base_Types::Integer;\n    Y: in Base_Types::Integer;\n    Result: out Base_Types::Integer;\n  properties\n    Execution_Time => 1 ms;\nend Calculator;"
+    },
+    {
+      "id": "CE-004",
+      "title": "软件组件类型声明 - Data",
+      "category": "data",
+      "description": "演示数据组件类型的声明，包含数据表示和初始值属性",
+      "keywords": [
+        "数据组件",
+        "数据表示",
+        "初始值"
+      ],
+      "code": "package DataExamples;\n\nwith Base_Types;\n\ndata SharedBuffer\n  properties\n    Data_Representation => Array(100 of Base_Types::Integer);\n    Initial_Value => (others => 0);\n    Concurrency_Control_Protocol => Protected;\nend SharedBuffer;"
+    },
+    {
+      "id": "CE-005",
+      "title": "硬件平台组件 - Processor",
+      "category": "processor",
+      "description": "演示处理器组件类型声明，包含调度协议和内存访问特征",
+      "keywords": [
+        "处理器",
+        "调度协议",
+        "内存访问",
+        "优先级范围"
+      ],
+      "code": "package HardwareExamples;\n\nprocessor ARM_Cortex_M4\n  features\n    MemoryPort: provides memory access;\n    BusPort: provides bus access;\n  properties\n    Allowed_Dispatch_Protocol => list {Periodic, Sporadic, Background};\n    Clock_Frequency => 80 MHz;\n    Priority_Range => (1..255);\n    Number_Of_Processors => 1;\n    Cache_Size => 64 Kbytes;\nend ARM_Cortex_M4;"
+    },
+    {
+      "id": "CE-006",
+      "title": "硬件平台组件 - Memory",
+      "category": "memory",
+      "description": "演示内存组件类型声明，包含容量和访问时间属性",
+      "keywords": [
+        "内存",
+        "容量",
+        "访问时间",
+        "内存容量"
+      ],
+      "code": "package HardwareExamples;\n\nmemory RAM_512KB\n  features\n    Port: requires memory access;\n  properties\n    Memory_Size => 512 Kbytes;\n    Access_Time => 10 ns;\n    Memory_Type => RAM;\nend RAM_512KB;\n\nmemory Flash_1MB\n  features\n    Port: requires memory access;\n  properties\n    Memory_Size => 1 Mbytes;\n    Access_Time => 100 ns;\n    Memory_Type => ROM;\nend Flash_1MB;"
+    },
+    {
+      "id": "CE-007",
+      "title": "硬件平台组件 - Bus",
+      "category": "bus",
+      "description": "演示总线组件类型声明，包含带宽和协议属性",
+      "keywords": [
+        "总线",
+        "带宽",
+        "协议",
+        "总线速度"
+      ],
+      "code": "package HardwareExamples;\n\nbus CAN_Bus\n  features\n    Slave: requires bus access;\n  properties\n    Bus_Speed => 500 Kbps;\n    Maximum_Transfer_Rate => 500000 bytes/sec;\n    Protocol => CAN_2_0;\nend CAN_Bus;\n\nbus Ethernet_Bus\n  features\n    Slave: requires bus access;\n  properties\n    Bus_Speed => 100 Mbps;\n    Maximum_Transfer_Rate => 100000000 bytes/sec;\n    Protocol => Ethernet;\nend Ethernet_Bus;"
+    },
+    {
+      "id": "CE-008",
+      "title": "硬件平台组件 - Device",
+      "category": "device",
+      "description": "演示设备组件类型声明，包含端口和总线访问特征",
+      "keywords": [
+        "设备",
+        "传感器",
+        "执行器",
+        "总线访问"
+      ],
+      "code": "package HardwareExamples;\n\ndevice TemperatureSensor\n  features\n    DataOut: out data port Base_Types::Integer;\n    BusAccess: requires bus access;\n  properties\n    Update_Rate => 10 Hz;\n    Accuracy => 0.5;\n    Units => \"degrees Celsius\";\nend TemperatureSensor;\n\ndevice Actuator\n  features\n    ControlIn: in data port Base_Types::Boolean;\n    BusAccess: requires bus access;\n  properties\n    Response_Time => 10 ms;\nend Actuator;"
+    },
+    {
+      "id": "CE-009",
+      "title": "组件实现与子组件",
+      "category": "implementation",
+      "description": "演示组件实现中声明子组件并建立内部连接",
+      "keywords": [
+        "实现",
+        "子组件",
+        "子组件声明",
+        "连接声明"
+      ],
+      "code": "package ImplementationExamples;\n\nwith Base_Types;\nwith SubprogramExamples;\n\nthread WorkerThread\n  features\n    Input: in data port Base_Types::Integer;\n    Output: out data port Base_Types::Integer;\nend WorkerThread;\n\nthread implementation WorkerThread.impl\n  subcomponents\n    Calc: subprogram SubprogramExamples::Calculator;\n    Buffer: data Base_Types::Integer;\n  connections\n    port Input -> Calc.X;\n    port Input -> Buffer;\n    port Buffer -> Calc.Y;\n    port Calc.Result -> Output;\nend WorkerThread.impl;"
+    },
+    {
+      "id": "CE-010",
+      "title": "端口连接 - Data Port",
+      "category": "port",
+      "description": "演示数据端口之间的连接，包括采样语义的使用",
+      "keywords": [
+        "数据端口",
+        "连接",
+        "采样语义"
+      ],
+      "code": "package ConnectionExamples;\n\nwith Base_Types;\n\nsystem DataFlowSystem\nend DataFlowSystem;\n\nsystem implementation DataFlowSystem.impl\n  subcomponents\n    Producer: thread ProducerThread.impl;\n    Consumer: thread ConsumerThread.impl;\n  connections\n    port Producer.DataOut -> Consumer.DataIn {\n      Connection_Semantics => Sampled;\n    };\nend DataFlowSystem.impl;\n\nthread ProducerThread\n  features\n    DataOut: out data port Base_Types::Integer;\nend ProducerThread;\n\nthread implementation ProducerThread.impl\nend ProducerThread.impl;\n\nthread ConsumerThread\n  features\n    DataIn: in data port Base_Types::Integer;\nend ConsumerThread;\n\nthread implementation ConsumerThread.impl\nend ConsumerThread.impl;"
+    },
+    {
+      "id": "CE-011",
+      "title": "端口连接 - Event Port",
+      "category": "port",
+      "description": "演示事件端口之间的连接，包含事件触发机制",
+      "keywords": [
+        "事件端口",
+        "连接",
+        "事件触发"
+      ],
+      "code": "package ConnectionExamples;\n\nsystem EventSystem\nend EventSystem;\n\nsystem implementation EventSystem.impl\n  subcomponents\n    Sender: thread EventSender.impl;\n    Receiver: thread EventReceiver.impl;\n  connections\n    event port Sender.Trigger -> Receiver.Trigger;\nend EventSystem.impl;\n\nthread EventSender\n  features\n    Trigger: out event port;\nend EventSender;\n\nthread implementation EventSender.impl\nend EventSender.impl;\n\nthread EventReceiver\n  features\n    Trigger: in event port;\nend EventReceiver;\n\nthread implementation EventReceiver.impl\nend EventReceiver.impl;"
+    },
+    {
+      "id": "CE-012",
+      "title": "端口连接 - Event Data Port",
+      "category": "port",
+      "description": "演示事件数据端口的声明和连接，同时携带事件和数据",
+      "keywords": [
+        "事件数据端口",
+        "连接"
+      ],
+      "code": "package ConnectionExamples;\n\nwith Base_Types;\n\nsystem EventDataSystem\nend EventDataSystem;\n\nsystem implementation EventDataSystem.impl\n  subcomponents\n    Sender: thread EventDataSender.impl;\n    Receiver: thread EventDataReceiver.impl;\n  connections\n    event data port Sender.DataEvent -> Receiver.DataEvent;\nend EventDataSystem.impl;\n\nthread EventDataSender\n  features\n    DataEvent: out event data port Base_Types::Integer;\nend EventDataSender;\n\nthread implementation EventDataSender.impl\nend EventDataSender.impl;\n\nthread EventDataReceiver\n  features\n    DataEvent: in event data port Base_Types::Integer;\nend EventDataReceiver;\n\nthread implementation EventDataReceiver.impl\nend EventDataReceiver.impl;"
+    },
+    {
+      "id": "CE-013",
+      "title": "属性绑定 - 调度属性",
+      "category": "properties",
+      "description": "演示线程调度相关属性的配置，包括周期、截止期、优先级",
+      "keywords": [
+        "属性",
+        "调度",
+        "周期",
+        "截止期",
+        "优先级"
+      ],
+      "code": "package PropertyExamples;\n\nwith Base_Types;\n\nthread PeriodicTask\n  features\n    Input: in data port Base_Types::Integer;\n    Output: out data port Base_Types::Integer;\n  properties\n    Dispatch_Protocol => Periodic;\n    Period => 10 ms;\n    Deadline => 8 ms;\n    Priority => 50;\n    Execution_Time => 2 ms;\n    Startup_Execution_Time => 5 ms;\n    Startup_Deadline => 10 ms;\nend PeriodicTask;\n\nthread SporadicTask\n  features\n    Trigger: in event port;\n  properties\n    Dispatch_Protocol => Sporadic;\n    Minimum_Interarrival_Time => 50 ms;\n    Deadline => 100 ms;\n    Priority => 100;\nend SporadicTask;"
+    },
+    {
+      "id": "CE-014",
+      "title": "属性绑定 - 部署属性",
+      "category": "properties",
+      "description": "演示部署相关属性的配置，包括处理器绑定和内存绑定",
+      "keywords": [
+        "部署",
+        "处理器绑定",
+        "内存绑定"
+      ],
+      "code": "package PropertyExamples;\n\nwith HardwareExamples;\nwith ProcessExamples;\n\nsystem DeployedSystem\nend DeployedSystem;\n\nsystem implementation DeployedSystem.impl\n  subcomponents\n    CPU: processor HardwareExamples::ARM_Cortex_M4;\n    RAM: memory HardwareExamples::RAM_512KB;\n    App: process ProcessExamples::ApplicationProcess;\n  connections\n    bus CPU.BusPort -> RAM.Port;\n  properties\n    Actual_Processor_Binding => (reference (CPU)) applies to App;\n    Actual_Memory_Binding => (reference (RAM)) applies to App;\nend DeployedSystem.impl;"
+    },
+    {
+      "id": "CE-015",
+      "title": "属性绑定 - 时序属性",
+      "category": "properties",
+      "description": "演示执行时间和延迟相关属性的配置",
+      "keywords": [
+        "时序",
+        "执行时间",
+        "启动执行时间",
+        "延迟"
+      ],
+      "code": "package PropertyExamples;\n\nwith Base_Types;\n\nthread TimedTask\n  features\n    Input: in data port Base_Types::Integer;\n    Output: out data port Base_Types::Integer;\n  properties\n    Execution_Time => 2 ms;\n    Startup_Execution_Time => 5 ms;\n    Period => 10 ms;\n    Deadline => 8 ms;\n    Dispatch_Protocol => Periodic;\nend TimedTask;\n\nsubprogram ComplexCalculation\n  parameters\n    Input: in Base_Types::Integer;\n    Result: out Base_Types::Integer;\n  properties\n    Execution_Time => 1 ms;\nend ComplexCalculation;"
+    },
+    {
+      "id": "CE-016",
+      "title": "流规范与流实现",
+      "category": "flow",
+      "description": "演示在组件类型中定义流规范，在实现中定义流路径",
+      "keywords": [
+        "流",
+        "流规范",
+        "流实现",
+        "flow specification",
+        "flow implementation"
+      ],
+      "code": "package FlowExamples;\n\nwith Base_Types;\n\nthread DataProcessor\n  features\n    InPort: in data port Base_Types::Integer;\n    OutPort: out data port Base_Types::Integer;\n  flows\n    ProcessingFlow: flow source InPort sink OutPort;\nend DataProcessor;\n\nthread implementation DataProcessor.impl\n  subcomponents\n    Sub: subprogram Calculator;\n  connections\n    port InPort -> Sub.X;\n    port Sub.Result -> OutPort;\n  flows\n    ProcessingFlow: flow path InPort -> Sub.X -> Sub.Result -> OutPort;\nend DataProcessor.impl;\n\nsubprogram Calculator\n  parameters\n    X: in Base_Types::Integer;\n    Y: in Base_Types::Integer;\n    Result: out Base_Types::Integer;\nend Calculator;"
+    },
+    {
+      "id": "CE-017",
+      "title": "端到端流",
+      "category": "flow",
+      "description": "演示在系统实现中定义端到端流，描述数据从源到汇的完整路径",
+      "keywords": [
+        "端到端流",
+        "端到端数据流",
+        "流分析",
+        "时序分析"
+      ],
+      "code": "package FlowExamples;\n\nwith Base_Types;\n\nwith HardwareExamples;\n\nsystem SensorToActuatorSystem\nend SensorToActuatorSystem;\n\nsystem implementation SensorToActuatorSystem.impl\n  subcomponents\n    Sensor: device HardwareExamples::TemperatureSensor;\n    Processing: thread DataProcessor.impl;\n    Act: device HardwareExamples::Actuator;\n    Bus: bus HardwareExamples::CAN_Bus;\n  connections\n    bus Sensor.BusAccess -> Bus.Slave;\n    bus Act.BusAccess -> Bus.Slave;\n    port Sensor.DataOut -> Processing.InPort;\n    port Processing.OutPort -> Act.ControlIn;\n  flows\n    SensorToActuator: end-to-end flow\n      source Sensor.DataOut\n      sink Act.ControlIn\n      via Processing.InPort, Processing.OutPort;\nend SensorToActuatorSystem.impl;"
+    },
+    {
+      "id": "CE-018",
+      "title": "模式定义与切换",
+      "category": "mode",
+      "description": "演示组件模式的定义，以及通过事件端口触发模式切换",
+      "keywords": [
+        "模式",
+        "工作模式",
+        "模式切换",
+        "模式转换"
+      ],
+      "code": "package ModeExamples;\n\nwith Base_Types;\n\nthread AdaptiveTask\n  features\n    Input: in data port Base_Types::Integer;\n    Output: out data port Base_Types::Integer;\n    ModeSwitch: in event port;\n  modes\n    Normal: initial mode;\n    HighPerformance;\n  transitions\n    Normal -> HighPerformance when ModeSwitch;\n    HighPerformance -> Normal when ModeSwitch;\n  properties\n    Period => 10 ms applies to Normal;\n    Period => 5 ms applies to HighPerformance;\nend AdaptiveTask;\n\nthread implementation AdaptiveTask.impl\n  modes\n    Normal: initial mode;\n    HighPerformance;\nend AdaptiveTask.impl;"
+    },
+    {
+      "id": "CE-019",
+      "title": "部署绑定 - 线程到处理器",
+      "category": "binding",
+      "description": "演示将线程绑定到处理器的完整部署配置",
+      "keywords": [
+        "部署",
+        "绑定",
+        "线程绑定",
+        "处理器绑定"
+      ],
+      "code": "package BindingExamples;\n\nwith HardwareExamples;\nwith ThreadExamples;\n\nsystem ThreadBindingSystem\nend ThreadBindingSystem;\n\nsystem implementation ThreadBindingSystem.impl\n  subcomponents\n    CPU: processor HardwareExamples::ARM_Cortex_M4;\n    Task1: thread ThreadExamples::PeriodicThread;\n    Task2: thread ThreadExamples::PeriodicThread;\n  properties\n    Actual_Processor_Binding => (reference (CPU)) applies to Task1;\n    Actual_Processor_Binding => (reference (CPU)) applies to Task2;\nend ThreadBindingSystem.impl;"
+    },
+    {
+      "id": "CE-020",
+      "title": "部署绑定 - 进程到内存",
+      "category": "binding",
+      "description": "演示将进程绑定到内存的部署配置",
+      "keywords": [
+        "部署",
+        "绑定",
+        "进程绑定",
+        "内存绑定"
+      ],
+      "code": "package BindingExamples;\n\nwith HardwareExamples;\nwith ProcessExamples;\n\nsystem MemoryBindingSystem\nend MemoryBindingSystem;\n\nsystem implementation MemoryBindingSystem.impl\n  subcomponents\n    RAM: memory HardwareExamples::RAM_512KB;\n    Flash: memory HardwareExamples::Flash_1MB;\n    App: process ProcessExamples::ApplicationProcess;\n  properties\n    Actual_Memory_Binding => (reference (RAM)) applies to App;\n    Actual_Binding => (reference (Flash)) applies to App.Binary;\nend MemoryBindingSystem.impl;"
+    },
+    {
+      "id": "CE-021",
+      "title": "访问特征 - Subprogram Access",
+      "category": "access",
+      "description": "演示子程序访问特征的声明和使用，实现线程对子程序的调用",
+      "keywords": [
+        "访问特征",
+        "子程序访问"
+      ],
+      "code": "package AccessExamples;\n\nwith Base_Types;\n\nthread TaskWithSubprogram\n  features\n    Input: in data port Base_Types::Integer;\n    Output: out data port Base_Types::Integer;\n    CalcAccess: requires subprogram access Calculator;\nend TaskWithSubprogram;\n\nthread implementation TaskWithSubprogram.impl\n  connections\n    port Input -> CalcAccess.X;\n    port Input -> CalcAccess.Y;\n    port CalcAccess.Result -> Output;\nend TaskWithSubprogram.impl;\n\nsubprogram Calculator\n  parameters\n    X: in Base_Types::Integer;\n    Y: in Base_Types::Integer;\n    Result: out Base_Types::Integer;\nend Calculator;"
+    },
+    {
+      "id": "CE-022",
+      "title": "访问特征 - Data Access",
+      "category": "access",
+      "description": "演示数据访问特征的声明和使用，实现线程对共享数据的访问",
+      "keywords": [
+        "访问特征",
+        "数据访问",
+        "共享数据"
+      ],
+      "code": "package AccessExamples;\n\nwith Base_Types;\n\nsystem SharedDataSystem\nend SharedDataSystem;\n\nsystem implementation SharedDataSystem.impl\n  subcomponents\n    Shared: data SharedBuffer;\n    Writer: thread WriterTask.impl;\n    Reader: thread ReaderTask.impl;\n  connections\n    access Writer.DataAccess -> Shared;\n    access Reader.DataAccess -> Shared;\nend SharedDataSystem.impl;\n\ndata SharedBuffer\n  properties\n    Data_Representation => Base_Types::Integer;\nend SharedBuffer;\n\nthread WriterTask\n  features\n    DataAccess: requires data access SharedBuffer;\nend WriterTask;\n\nthread implementation WriterTask.impl\nend WriterTask.impl;\n\nthread ReaderTask\n  features\n    DataAccess: requires data access SharedBuffer;\nend ReaderTask;\n\nthread implementation ReaderTask.impl\nend ReaderTask.impl;"
+    },
+    {
+      "id": "CE-023",
+      "title": "访问特征 - Bus Access",
+      "category": "access",
+      "description": "演示总线访问特征的声明和使用，实现设备与总线的连接",
+      "keywords": [
+        "访问特征",
+        "总线访问"
+      ],
+      "code": "package AccessExamples;\n\nwith HardwareExamples;\n\nsystem BusAccessSystem\nend BusAccessSystem;\n\nsystem implementation BusAccessSystem.impl\n  subcomponents\n    CAN: bus HardwareExamples::CAN_Bus;\n    Sensor: device HardwareExamples::TemperatureSensor;\n    Actuator: device HardwareExamples::Actuator;\n    ECU: processor HardwareExamples::ARM_Cortex_M4;\n  connections\n    bus Sensor.BusAccess -> CAN.Slave;\n    bus Actuator.BusAccess -> CAN.Slave;\n    bus ECU.BusPort -> CAN.Slave;\nend BusAccessSystem.impl;"
+    },
+    {
+      "id": "CE-024",
+      "title": "特征组定义与使用",
+      "category": "feature_group",
+      "description": "演示特征组类型的定义和在组件中的使用",
+      "keywords": [
+        "特征组",
+        "接口分组"
+      ],
+      "code": "package FeatureGroupExamples;\n\nwith Base_Types;\n\nfeature group CommunicationInterface\n  features\n    DataIn: in data port Base_Types::Integer;\n    DataOut: out data port Base_Types::Integer;\n    ControlIn: in event port;\n    ControlOut: out event port;\nend CommunicationInterface;\n\nthread DataNode\n  features\n    Interface: feature group CommunicationInterface;\nend DataNode;\n\nthread implementation DataNode.impl\nend DataNode.impl;\n\nsystem NetworkSystem\nend NetworkSystem;\n\nsystem implementation NetworkSystem.impl\n  subcomponents\n    Node1: thread DataNode.impl;\n    Node2: thread DataNode.impl;\n  connections\n    feature group Node1.Interface -> Node2.Interface;\nend NetworkSystem.impl;"
+    },
+    {
+      "id": "CE-025",
+      "title": "包与命名空间",
+      "category": "package",
+      "description": "演示包的声明、公共/私有部分以及包导入",
+      "keywords": [
+        "包",
+        "命名空间",
+        "导入",
+        "公共",
+        "私有"
+      ],
+      "code": "package MyApplication;\n\nwith Base_Types;\nwith HardwareExamples;\n\npublic\n  thread MainTask\n    features\n      Input: in data port Base_Types::Integer;\n      Output: out data port Base_Types::Integer;\n  end MainTask;\n\nprivate\n  subprogram Helper\n    parameters\n      X: in Base_Types::Integer;\n      Result: out Base_Types::Integer;\n  end Helper;\nend MyApplication;\n\npackage SystemDeployment;\n\nwith MyApplication;\nwith HardwareExamples;\n\nsystem ApplicationSystem\nend ApplicationSystem;\n\nsystem implementation ApplicationSystem.impl\n  subcomponents\n    CPU: processor HardwareExamples::ARM_Cortex_M4;\n    Task: thread MyApplication::MainTask;\nend ApplicationSystem.impl;\nend SystemDeployment;"
+    },
+    {
+      "id": "CE-026",
+      "title": "虚拟处理器与绑定",
+      "category": "virtual_processor",
+      "description": "演示虚拟处理器的声明、绑定到物理处理器以及线程绑定到虚拟处理器",
+      "keywords": [
+        "虚拟处理器",
+        "层次调度",
+        "绑定"
+      ],
+      "code": "package VirtualizationExamples;\n\nwith HardwareExamples;\n\nvirtual processor RTOS_Virtual_Processor\n  features\n    ThreadAccess: provides thread access;\n  properties\n    Allowed_Dispatch_Protocol => list {Periodic, Sporadic};\n    Scheduling_Server => Deferrable_Server;\n    Budget => 5 ms;\n    Period => 20 ms;\nend RTOS_Virtual_Processor;\n\nsystem VirtualProcessorSystem\nend VirtualProcessorSystem;\n\nsystem implementation VirtualProcessorSystem.impl\n  subcomponents\n    PhysicalCPU: processor HardwareExamples::ARM_Cortex_M4;\n    VP1: virtual processor RTOS_Virtual_Processor;\n    VP2: virtual processor RTOS_Virtual_Processor;\n    Task1: thread PeriodicTask;\n    Task2: thread PeriodicTask;\n  properties\n    Actual_Processor_Binding => (reference (PhysicalCPU)) applies to VP1;\n    Actual_Processor_Binding => (reference (PhysicalCPU)) applies to VP2;\n    Actual_Processor_Binding => (reference (VP1)) applies to Task1;\n    Actual_Processor_Binding => (reference (VP2)) applies to Task2;\nend VirtualProcessorSystem.impl;\n\nthread PeriodicTask\n  properties\n    Dispatch_Protocol => Periodic;\n    Period => 10 ms;\nend PeriodicTask;"
+    },
+    {
+      "id": "CE-027",
+      "title": "虚拟总线与绑定",
+      "category": "virtual_bus",
+      "description": "演示虚拟总线的声明和绑定到物理总线",
+      "keywords": [
+        "虚拟总线",
+        "逻辑通道",
+        "绑定"
+      ],
+      "code": "package VirtualizationExamples;\n\nwith HardwareExamples;\n\nvirtual bus CAN_Virtual_Channel\n  features\n    Slave: requires virtual bus access;\n  properties\n    Bandwidth_Allocation => 50 percent;\nend CAN_Virtual_Channel;\n\nsystem VirtualBusSystem\nend VirtualBusSystem;\n\nsystem implementation VirtualBusSystem.impl\n  subcomponents\n    PhysicalCAN: bus HardwareExamples::CAN_Bus;\n    VC1: virtual bus CAN_Virtual_Channel;\n    VC2: virtual bus CAN_Virtual_Channel;\n    Sensor1: device HardwareExamples::TemperatureSensor;\n    Sensor2: device HardwareExamples::TemperatureSensor;\n  connections\n    virtual bus VC1.Slave -> PhysicalCAN.Slave;\n    virtual bus VC2.Slave -> PhysicalCAN.Slave;\n    bus Sensor1.BusAccess -> VC1.Slave;\n    bus Sensor2.BusAccess -> VC2.Slave;\nend VirtualBusSystem.impl;"
+    },
+    {
+      "id": "CE-028",
+      "title": "系统组件 - 完整系统建模",
+      "category": "system",
+      "description": "演示系统组件的完整建模，包含软件和硬件子组件",
+      "keywords": [
+        "系统",
+        "系统组件",
+        "完整系统",
+        "集成建模"
+      ],
+      "code": "package SystemExamples;\n\nwith HardwareExamples;\nwith ThreadExamples;\nwith ProcessExamples;\n\nsystem AutomotiveECU\nend AutomotiveECU;\n\nsystem implementation AutomotiveECU.impl\n  subcomponents\n    MCU: processor HardwareExamples::ARM_Cortex_M4;\n    RAM: memory HardwareExamples::RAM_512KB;\n    Flash: memory HardwareExamples::Flash_1MB;\n    CAN: bus HardwareExamples::CAN_Bus;\n    Sensor: device HardwareExamples::TemperatureSensor;\n    Act: device HardwareExamples::Actuator;\n    App: process ProcessExamples::ApplicationProcess;\n    Monitor: thread ThreadExamples::PeriodicThread;\n  connections\n    bus MCU.BusPort -> RAM.Port;\n    bus MCU.BusPort -> Flash.Port;\n    bus MCU.BusPort -> CAN.Slave;\n    bus Sensor.BusAccess -> CAN.Slave;\n    bus Act.BusAccess -> CAN.Slave;\n  properties\n    Actual_Processor_Binding => (reference (MCU)) applies to App;\n    Actual_Processor_Binding => (reference (MCU)) applies to Monitor;\n    Actual_Memory_Binding => (reference (RAM)) applies to App;\nend AutomotiveECU.impl;"
+    },
+    {
+      "id": "CE-029",
+      "title": "抽象组件与细化",
+      "category": "abstract",
+      "description": "演示抽象组件的定义和细化为具体组件类型",
+      "keywords": [
+        "抽象组件",
+        "细化"
+      ],
+      "code": "package AbstractExamples;\n\nwith Base_Types;\n\nabstract ProcessingUnit\n  features\n    Input: in data port Base_Types::Integer;\n    Output: out data port Base_Types::Integer;\nend ProcessingUnit;\n\nthread implementation ProcessingUnit.thread_impl\n  refines ProcessingUnit;\n  subcomponents\n    Worker: subprogram Calculator;\n  connections\n    port Input -> Worker.X;\n    port Worker.Result -> Output;\nend ProcessingUnit.thread_impl;\n\nprocess implementation ProcessingUnit.process_impl\n  refines ProcessingUnit;\n  subcomponents\n    Task: thread ProcessingUnit.thread_impl;\nend ProcessingUnit.process_impl;\n\nsubprogram Calculator\n  parameters\n    X: in Base_Types::Integer;\n    Y: in Base_Types::Integer;\n    Result: out Base_Types::Integer;\nend Calculator;"
+    },
+    {
+      "id": "CE-030",
+      "title": "组件类型扩展",
+      "category": "extends",
+      "description": "演示通过 extends 关键字扩展现有组件类型",
+      "keywords": [
+        "扩展",
+        "类型继承"
+      ],
+      "code": "package ExtendsExamples;\n\nwith Base_Types;\n\nthread BaseThread\n  features\n    Input: in data port Base_Types::Integer;\n    Output: out data port Base_Types::Integer;\n  properties\n    Dispatch_Protocol => Periodic;\n    Period => 10 ms;\nend BaseThread;\n\nthread ExtendedThread extends BaseThread\n  features\n    AdditionalInput: in data port Base_Types::Boolean;\n  properties\n    Period => 5 ms;\nend ExtendedThread;\n\nthread implementation ExtendedThread.impl\n  subcomponents\n    Sub: subprogram Calculator;\n  connections\n    port Input -> Sub.X;\n    port AdditionalInput -> Sub.Y;\n    port Sub.Result -> Output;\nend ExtendedThread.impl;\n\nsubprogram Calculator\n  parameters\n    X: in Base_Types::Integer;\n    Y: in Base_Types::Integer;\n    Result: out Base_Types::Integer;\nend Calculator;"
+    },
+    {
+      "id": "CE-031",
+      "title": "连接模式 - One_To_One",
+      "category": "connection_pattern",
+      "description": "演示使用 One_To_One 连接模式连接组件数组",
+      "keywords": [
+        "连接模式",
+        "一对一连接",
+        "数组连接"
+      ],
+      "code": "package ConnectionPatternExamples;\n\nwith Base_Types;\n\nsystem ArraySystem\nend ArraySystem;\n\nsystem implementation ArraySystem.impl\n  subcomponents\n    Producers: thread Producer[3];\n    Consumers: thread Consumer[3];\n  connections\n    port Producers -> Consumers {\n      Connection_Pattern => One_To_One;\n    };\nend ArraySystem.impl;\n\nthread Producer\n  features\n    Output: out data port Base_Types::Integer;\nend Producer;\n\nthread implementation Producer.impl\nend Producer.impl;\n\nthread Consumer\n  features\n    Input: in data port Base_Types::Integer;\nend Consumer;\n\nthread implementation Consumer.impl\nend Consumer.impl;"
+    },
+    {
+      "id": "CE-032",
+      "title": "线程组 - Thread Group",
+      "category": "thread_group",
+      "description": "演示线程组的声明和使用，用于逻辑分组线程",
+      "keywords": [
+        "线程组",
+        "逻辑分组"
+      ],
+      "code": "package GroupExamples;\n\nwith Base_Types;\n\nthread group SensorThreads\n  features\n    DataIn: in data port Base_Types::Integer;\n    DataOut: out data port Base_Types::Integer;\nend SensorThreads;\n\nthread group implementation SensorThreads.impl\n  subcomponents\n    Reader: thread SensorReader;\n    Processor: thread SensorProcessor;\n  connections\n    port DataIn -> Reader.Input;\n    port Reader.Output -> Processor.Input;\n    port Processor.Output -> DataOut;\nend SensorThreads.impl;\n\nthread SensorReader\n  features\n    Input: in data port Base_Types::Integer;\n    Output: out data port Base_Types::Integer;\nend SensorReader;\n\nthread implementation SensorReader.impl\nend SensorReader.impl;\n\nthread SensorProcessor\n  features\n    Input: in data port Base_Types::Integer;\n    Output: out data port Base_Types::Integer;\nend SensorProcessor;\n\nthread implementation SensorProcessor.impl\nend SensorProcessor.impl;"
+    },
+    {
+      "id": "CE-033",
+      "title": "子程序组 - Subprogram Group",
+      "category": "subprogram_group",
+      "description": "演示子程序组的声明和使用，用于分组管理子程序",
+      "keywords": [
+        "子程序组",
+        "子程序库"
+      ],
+      "code": "package GroupExamples;\n\nwith Base_Types;\n\nsubprogram group MathLibrary\n  features\n    Add: provides subprogram access AddFunction;\n    Multiply: provides subprogram access MultiplyFunction;\nend MathLibrary;\n\nsubprogram AddFunction\n  parameters\n    X: in Base_Types::Integer;\n    Y: in Base_Types::Integer;\n    Result: out Base_Types::Integer;\nend AddFunction;\n\nsubprogram MultiplyFunction\n  parameters\n    X: in Base_Types::Integer;\n    Y: in Base_Types::Integer;\n    Result: out Base_Types::Integer;\nend MultiplyFunction;\n\nthread CalculatorThread\n  features\n    MathLib: requires subprogram access MathLibrary;\nend CalculatorThread;"
+    },
+    {
+      "id": "CE-034",
+      "title": "事件触发与线程激活",
+      "category": "event",
+      "description": "演示通过事件端口触发线程从挂起到就绪状态的转换",
+      "keywords": [
+        "事件触发",
+        "线程激活",
+        "状态转换",
+        "事件端口"
+      ],
+      "code": "package EventExamples;\n\nthread EventDrivenTask\n  features\n    WakeUp: in event port;\n    DataIn: in data port Base_Types::Integer;\n    DataOut: out data port Base_Types::Integer;\n  properties\n    Dispatch_Protocol => Sporadic;\n    Minimum_Interarrival_Time => 100 ms;\n    Deadline => 150 ms;\nend EventDrivenTask;\n\nthread implementation EventDrivenTask.impl\n  subcomponents\n    Worker: subprogram ProcessData;\n  connections\n    event port WakeUp -> Worker.Activate;\n    port DataIn -> Worker.Input;\n    port Worker.Output -> DataOut;\nend EventDrivenTask.impl;\n\nsubprogram ProcessData\n  parameters\n    Input: in Base_Types::Integer;\n    Output: out Base_Types::Integer;\nend ProcessData;"
+    },
+    {
+      "id": "CE-035",
+      "title": "错误处理与恢复",
+      "category": "error_handling",
+      "description": "演示线程错误处理和恢复机制的配置",
+      "keywords": [
+        "错误处理",
+        "错误恢复",
+        "可恢复",
+        "non-recoverable"
+      ],
+      "code": "package ErrorHandlingExamples;\n\nwith Base_Types;\n\nthread FaultTolerantTask\n  features\n    Input: in data port Base_Types::Integer;\n    Output: out data port Base_Types::Integer;\n    ErrorOut: out event port;\n  properties\n    Recoverable_Error_Behavior => Restart;\n    Max_Restart_Count => 3;\n    Recovery_Execution_Time => 50 ms;\nend FaultTolerantTask;\n\nthread implementation FaultTolerantTask.impl\n  subcomponents\n    Worker: subprogram SafeOperation;\n  connections\n    port Input -> Worker.Input;\n    port Worker.Output -> Output;\n    event port Worker.Error -> ErrorOut;\nend FaultTolerantTask.impl;\n\nsubprogram SafeOperation\n  parameters\n    Input: in Base_Types::Integer;\n    Output: out data port Base_Types::Integer;\n  features\n    Error: out event port;\nend SafeOperation;"
+    },
+    {
+      "id": "CE-036",
+      "title": "并发控制协议",
+      "category": "concurrency",
+      "description": "演示共享数据的并发控制协议配置",
+      "keywords": [
+        "并发控制",
+        "并发控制协议",
+        "互斥",
+        "共享数据"
+      ],
+      "code": "package ConcurrencyExamples;\n\nwith Base_Types;\n\nsystem SharedResourceSystem\nend SharedResourceSystem;\n\nsystem implementation SharedResourceSystem.impl\n  subcomponents\n    SharedData: data SharedBuffer;\n    Writer1: thread WriterTask;\n    Writer2: thread WriterTask;\n    Reader: thread ReaderTask;\n  connections\n    access Writer1.DataAccess -> SharedData;\n    access Writer2.DataAccess -> SharedData;\n    access Reader.DataAccess -> SharedData;\nend SharedResourceSystem.impl;\n\ndata SharedBuffer\n  properties\n    Data_Representation => Base_Types::Integer;\n    Concurrency_Control_Protocol => Protected;\nend SharedBuffer;\n\nthread WriterTask\n  features\n    DataAccess: requires data access SharedBuffer;\nend WriterTask;\n\nthread implementation WriterTask.impl\nend WriterTask.impl;\n\nthread ReaderTask\n  features\n    DataAccess: requires data access SharedBuffer;\nend ReaderTask;\n\nthread implementation ReaderTask.impl\nend ReaderTask.impl;"
+    }
+  ]
 }
