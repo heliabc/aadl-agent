@@ -359,6 +359,26 @@ rules:
       3. 需求中明确声明的数值约束（如"响应时间不超过10ms"、"单帧固定8字节"、"优先级为高"等）必须通过 properties 显式映射到 AADL 模型中，禁止遗漏。
       4. 当需求中未明确给出具体数值时，不生成 properties 块。
 
+  - id: connections
+    title: 连接声明模板
+    always: true
+    content: |
+      connections 块用于声明组件之间的连接关系，放在 system/process implementation 内部。
+
+      端口连接（单向数据流）：
+        conn_name : port source_feature -> destination_feature;
+        例：data_flow : port Sensor.out_data -> Processor.in_data;
+
+      访问连接（双向共享访问）：
+        conn_name : bus access source_feature <-> destination_feature;
+        例：bus_conn : bus access Device.powerIn <-> PowerBus.powerOut;
+
+      规则：
+      1. port 连接方向用 ->（单向），access 连接方向用 <->（双向）。
+      2. bus access 连接严禁使用 <> 或 ->，必须使用 <->。
+      3. 连接的两端必须是 features 中已声明的端口或访问点名称。
+      4. connections 块放在 implementation 的 subcomponents 之后、properties 之前。
+
 order:
   content: |
     生成顺序：
@@ -380,26 +400,6 @@ order:
     16. data 声明及 implementation
     17. subprogram 声明及 implementation
     18. end package
-
-  - id: connections
-    title: 连接声明模板
-    always: true
-    content: |
-      connections 块用于声明组件之间的连接关系，放在 system/process implementation 内部。
-
-      端口连接（单向数据流）：
-        conn_name : port source_feature -> destination_feature;
-        例：data_flow : port Sensor.out_data -> Processor.in_data;
-
-      访问连接（双向共享访问）：
-        conn_name : bus access source_feature <-> destination_feature;
-        例：bus_conn : bus access Device.powerIn <-> PowerBus.powerOut;
-
-      规则：
-      1. port 连接方向用 ->（单向），access 连接方向用 <->（双向）。
-      2. bus access 连接严禁使用 <> 或 ->，必须使用 <->。
-      3. 连接的两端必须是 features 中已声明的端口或访问点名称。
-      4. connections 块放在 implementation 的 subcomponents 之后、properties 之前。
 
 forbidden:
   content: |
