@@ -381,6 +381,26 @@ order:
     17. subprogram 声明及 implementation
     18. end package
 
+  - id: connections
+    title: 连接声明模板
+    always: true
+    content: |
+      connections 块用于声明组件之间的连接关系，放在 system/process implementation 内部。
+
+      端口连接（单向数据流）：
+        conn_name : port source_feature -> destination_feature;
+        例：data_flow : port Sensor.out_data -> Processor.in_data;
+
+      访问连接（双向共享访问）：
+        conn_name : bus access source_feature <-> destination_feature;
+        例：bus_conn : bus access Device.powerIn <-> PowerBus.powerOut;
+
+      规则：
+      1. port 连接方向用 ->（单向），access 连接方向用 <->（双向）。
+      2. bus access 连接严禁使用 <> 或 ->，必须使用 <->。
+      3. 连接的两端必须是 features 中已声明的端口或访问点名称。
+      4. connections 块放在 implementation 的 subcomponents 之后、properties 之前。
+
 forbidden:
   content: |
     禁止规则：
