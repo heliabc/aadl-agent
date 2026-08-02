@@ -412,8 +412,6 @@ rules:
 
       常用属性（来自 AADL 标准属性集）：
         - Data_Size => N Bytes;          -- 数据大小（data 组件用）
-        - Source_Data_Size => N Bytes;   -- 源数据大小（port/connection 用）
-        - Destination_Data_Size => N Bytes; -- 目标数据大小（port/connection 用）
         - Period => N Ms;                -- 周期（thread 用）
         - Compute_Execution_Time => N Ms .. M Ms;  -- 计算执行时间范围（thread 用）
         - Deadline => N Ms;              -- 截止时间（thread 用）
@@ -421,6 +419,21 @@ rules:
         - Stack_Size => N Bytes;         -- 栈大小（thread 用）
         - Max_Queue_Size => N;           -- 最大队列长度（port 用）
         - Actual_Processor_Binding => reference (处理器名) applies to 软件组件;  -- 处理器绑定
+        - Memory_Properties::RAM_Size => N Bytes;  -- 内存大小（memory 组件用，必须带属性集前缀）
+
+      属性适用性表（严格匹配，不可跨类型使用）：
+        - Data_Size：仅适用于 data 组件
+        - Period / Compute_Execution_Time / Deadline / Priority / Stack_Size：仅适用于 thread 组件
+        - Max_Queue_Size：仅适用于 event data port
+        - Actual_Processor_Binding：将 thread/process 绑定到 processor
+        - RAM_Size / Access_Time / Transfer_Rate：仅适用于 memory 组件，且必须带 Memory_Properties:: 前缀
+        - Allowed_Connection_Binding：仅适用于连接绑定
+
+      AADL 标准单位（严禁使用英文全拼）：
+        数据大小：Bytes, Kbyte, Mbyte, Gbyte（严禁 Kilobytes, Megabytes）
+        时间：ps, ns, us, ms, sec, min, hr（严禁 Second, Seconds, Millisecond）
+        频率：Hz, KHz, MHz, GHz（严禁 Hertz）
+        速率：per Second（用 AADL 标准时间单位，如 100 per sec）
 
       规则：
       1. properties 块可以出现在两个位置：
@@ -431,6 +444,10 @@ rules:
       4. 当需求中未明确给出具体数值时，不生成 properties 块。
       5. 当属性值适用于该组件的所有实现时（如 thread 的 Period、Stack_Size、Compute_Execution_Time），应放在类型声明中而非实现声明中。
       6. 当属性值因实现不同而变化时（如 Data_Size 因 data 实现不同而不同），放在实现声明中。
+      7. 严禁使用已废弃属性 Source_Data_Size 和 Destination_Data_Size，统一使用 Data_Size。
+      8. 属性必须应用于其适用的组件类型，严禁跨类型使用（如 Data_Size 只能用于 data，不能用于 device/memory/processor）。
+      9. 非标准属性集的属性必须带属性集前缀（如 Memory_Properties::RAM_Size），严禁直接写属性名。
+      10. 数值与单位之间用空格分隔（如 10 Kbyte，不是 10Kbyte），单位使用 AADL 标准缩写。
 
   - id: connections
     title: 连接声明模板
@@ -527,6 +544,11 @@ forbidden:
     3. 严禁忽略需求中明确声明的数据大小约束（如"固定占用8字节"）。凡有字节大小描述的数据组件，必须在 data implementation 的 properties 中声明 Data_Size。
     4. 严禁用 in/out 端口访问总线！device/processor/memory 等组件访问总线时，必须在 features 块中使用 requires bus access 声明（如 requires bus access CanBus;），不得用 in data port / out data port 代替。
     5. 严禁在 bus access 连接中使用 <> 或 ->，必须使用 <->。
+    6. 严禁使用已废弃属性 Source_Data_Size 和 Destination_Data_Size，必须使用 Data_Size 替代。
+    7. 严禁跨组件类型使用属性：Data_Size 仅用于 data 组件；Period/Deadline/Priority/Stack_Size/Compute_Execution_Time 仅用于 thread；RAM_Size 仅用于 memory。不得将 thread 属性用于 device/system/processor，也不得将 data 属性用于非 data 组件。
+    8. 严禁使用英文全拼单位（Kilobytes, Megabytes, Second, Seconds, Millisecond, Hertz），必须使用 AADL 标准缩写（Kbyte, Mbyte, sec, ms, Hz）。
+    9. 严禁直接使用非标准属性名而不带属性集前缀，如直接写 Max_Capacity 或 per。必须带属性集前缀（如 Memory_Properties::Max_Capacity）。
+    10. 严禁在属性值中出现语法错误：数值与单位之间必须有空格（10 Kbyte），范围用 .. 连接（5 ms .. 10 ms），列表用括号包裹（("Ok", "Error")）。
 
 example:
   title: AADL生成示例
