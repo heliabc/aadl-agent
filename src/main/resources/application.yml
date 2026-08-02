@@ -38,7 +38,9 @@ agent:
     temperature: 0.1
     max-tokens: 8192
     chunk-size: 8000
-    direct-process-threshold: 5500
+    overlap-percent: 15
+    direct-process-threshold: 10000
+    parallel-pool-size: 3
   architecture:
     max-retries: 3
     temperature: 0.1

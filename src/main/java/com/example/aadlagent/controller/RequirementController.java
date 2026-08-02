@@ -82,6 +82,7 @@ public class RequirementController {
         String requirementDoc = (String) request.get("content");
         String modelTypeStr = (String) request.get("model");
         String sessionId = (String) request.get("sessionId");
+        String fileName = (String) request.get("fileName");
 
         if (requirementDoc == null || requirementDoc.trim().isEmpty()) {
             Map<String, Object> error = new HashMap<>();
@@ -92,8 +93,16 @@ public class RequirementController {
 
         ModelType modelType = parseModelType(modelTypeStr);
 
+        // session ID 优先级：已有session > 文件名 > 文字片段 > 随机生成
         if (sessionId == null || sessionId.trim().isEmpty() || !sessionManager.exists(sessionId)) {
-            sessionId = sessionManager.createSession();
+            if (fileName != null && !fileName.trim().isEmpty()) {
+                // 文件上传：用文件名作为 session ID
+                sessionId = sessionManager.createSession(fileName);
+            } else {
+                // 文字输入：取前20个字符作为 session ID
+                String snippet = extractTextSnippet(requirementDoc);
+                sessionId = sessionManager.createSession(snippet);
+            }
         }
 
         log.info("Received requirement analysis request, content length: {} characters, model: {}, session: {}", 
@@ -135,7 +144,7 @@ public class RequirementController {
             response.put("data", output.getContent());
             traceabilityService.addRequirementTraceability(sessionId, requirementDoc, output.getContent());
             
-            String outputFileName = "requirements_" + sessionId.substring(0, 8) + ".json";
+            String outputFileName = "requirements_" + sessionId + ".json";
             String outputFilePath = Paths.get(fileConfig.getRequirementsPath(), outputFileName).toString();
             try {
                 docFileReader.writeFile(output.getContent(), outputFilePath);
@@ -292,13 +301,15 @@ public class RequirementController {
         ModelType modelType = parseModelType(modelTypeStr);
 
         if (sessionId == null || sessionId.trim().isEmpty() || !sessionManager.exists(sessionId)) {
-            sessionId = sessionManager.createSession();
+            // 从需求文件名推导 session ID
+            String derivedId = deriveSessionFromFileName(fileName);
+            sessionId = sessionManager.createSession(derivedId);
         }
 
         try {
             // 如果没有传fileName，通过sessionId自动生成文件名
             if (fileName == null || fileName.trim().isEmpty()) {
-                fileName = "requirements_" + sessionId.substring(0, 8) + ".json";
+                fileName = "requirements_" + sessionId + ".json";
                 log.info("架构生成 - 未传fileName，通过sessionId自动生成: {}", fileName);
             }
 
@@ -402,16 +413,18 @@ public class RequirementController {
         ModelType modelType = parseModelType(modelTypeStr);
 
         if (sessionId == null || sessionId.trim().isEmpty() || !sessionManager.exists(sessionId)) {
-            sessionId = sessionManager.createSession();
+            // 从需求文件名推导 session ID
+            String derivedId = deriveSessionFromFileName(requirementsFileName);
+            sessionId = sessionManager.createSession(derivedId);
         }
 
         // 如果没有传文件名，通过sessionId自动生成
         if (requirementsFileName == null || requirementsFileName.trim().isEmpty()) {
-            requirementsFileName = "requirements_" + sessionId.substring(0, 8) + ".json";
+            requirementsFileName = "requirements_" + sessionId + ".json";
             log.info("模块分析 - 未传requirementsFile，通过sessionId自动生成: {}", requirementsFileName);
         }
         if (architectureFileName == null || architectureFileName.trim().isEmpty()) {
-            architectureFileName = "architecture_" + sessionId.substring(0, 8) + ".json";
+            architectureFileName = "requirements_" + sessionId + "-architecture.json";
             log.info("模块分析 - 未传architectureFile，通过sessionId自动生成: {}", architectureFileName);
         }
 
@@ -549,7 +562,9 @@ public class RequirementController {
         ModelType modelType = parseModelType(modelTypeStr);
 
         if (sessionId == null || sessionId.trim().isEmpty() || !sessionManager.exists(sessionId)) {
-            sessionId = sessionManager.createSession();
+            // 从架构文件名推导 session ID
+            String derivedId = deriveSessionFromFileName(architectureFileName);
+            sessionId = sessionManager.createSession(derivedId);
         }
 
         try {
@@ -658,7 +673,8 @@ public class RequirementController {
         ModelType modelType = parseModelType(modelTypeStr);
 
         if (sessionId == null || sessionId.trim().isEmpty() || !sessionManager.exists(sessionId)) {
-            sessionId = sessionManager.createSession();
+            String derivedId = deriveSessionFromFileName(architectureFileName);
+            sessionId = sessionManager.createSession(derivedId);
         }
 
         try {
@@ -1028,6 +1044,39 @@ public class RequirementController {
             }
         }
         return ModelType.OLLAMA;
+    }
+
+    /**
+     * 从需求文字中提取一段作为 session ID 的基底。
+     * 取第一个句号/换行前的内容，最多20个字符。
+     */
+    private String extractTextSnippet(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            return null;
+        }
+        String snippet = text.trim();
+        // 取第一个句末标点或换行前的内容
+        int cutPos = snippet.length();
+        for (int i = 0; i < snippet.length(); i++) {
+            char c = snippet.charAt(i);
+            if (c == '。' || c == '；' || c == '\n' || c == '\r' || c == '!' || c == '？') {
+                cutPos = i;
+                break;
+            }
+        }
+        snippet = snippet.substring(0, Math.min(cutPos, 20));
+        return snippet.trim();
+    }
+
+    /**
+     * 从需求文件名推导 session ID。
+     * 如 "requirements_brake_system.json" → "brake_system"
+     */
+    private String deriveSessionFromFileName(String fileName) {
+        if (fileName == null || fileName.trim().isEmpty()) {
+            return null;
+        }
+        return SessionManager.sanitizeSessionId(fileName);
     }
 
     @GetMapping("/traceability/excel")

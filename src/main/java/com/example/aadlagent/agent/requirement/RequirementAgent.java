@@ -19,7 +19,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -52,10 +54,37 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
     @Value("${agent.requirement.direct-process-threshold:4000}")
     private int directProcessThreshold;
 
+    @Value("${agent.requirement.parallel-pool-size:3}")
+    private int parallelPoolSize;
+
+    private ExecutorService chunkExecutor;
+
     public RequirementAgent(ModelService modelService) {
         this.modelService = modelService;
         this.objectMapper = new ObjectMapper();
         this.prompt = new RequirementPrompt();
+    }
+
+    @PostConstruct
+    public void init() {
+        loadPatterns();
+        // 创建固定大小线程池用于并行处理分块
+        this.chunkExecutor = Executors.newFixedThreadPool(parallelPoolSize);
+    }
+
+    @PreDestroy
+    public void destroy() {
+        if (chunkExecutor != null) {
+            chunkExecutor.shutdown();
+            try {
+                if (!chunkExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
+                    chunkExecutor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                chunkExecutor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     @Override
@@ -290,11 +319,6 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
 
     private List<PatternConfig> patterns;
     private CardConfig cardConfig;
-
-    @PostConstruct
-    public void init() {
-        loadPatterns();
-    }
 
     private void loadPatterns() {
         this.patterns = Arrays.asList(
@@ -560,56 +584,54 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
                     .build();
         }
 
-        // 分块处理模式：文档较大，按固定chunkSize分割
+        // 分块处理模式：优先按章节标题切分，标题间内容超过chunkSize时再按字符切
+        List<int[]> sectionBoundaries = detectSectionBoundaries(document);
         int chunkId = 1;
-        int currentPos = 0;
         int docLength = document.length();
+        int overlapSize = chunkSize * overlapPercent / 100;
 
-        while (currentPos < docLength) {
-            // 确定分块结束位置（固定chunkSize）
-            int endPos = Math.min(currentPos + chunkSize, docLength);
-            
-            // 检查最后一句是否完整，如果不完整则向后扩展到句末（最后一个分块不需要扩展）
-            if (endPos < docLength) {
-                char lastChar = document.charAt(endPos - 1);
-                // 如果最后一个字符不是句末标点，向后查找直到句末
-                if (lastChar != '。' && lastChar != '！' && lastChar != '？' && 
-                    lastChar != ';' && lastChar != '；' && lastChar != '\n') {
-                    // 向后查找最近的句末标点
-                    for (int i = endPos; i < Math.min(docLength, endPos + 200); i++) {
-                        char c = document.charAt(i);
-                        if (c == '。' || c == '！' || c == '？' || c == ';' || c == '；') {
-                            endPos = i + 1;
-                            break;
-                        }
-                    }
+        if (!sectionBoundaries.isEmpty()) {
+            // 语义分块：按章节标题切分，过长的章节再按字符切
+            for (int i = 0; i < sectionBoundaries.size(); i++) {
+                int secStart = sectionBoundaries.get(i)[0];
+                int secEnd = sectionBoundaries.get(i)[1];
+                String sectionTitle = document.substring(secStart, Math.min(secStart + 80, secEnd))
+                        .trim().replaceAll("[\\r\\n]+", " ");
+                if (sectionTitle.length() > 50) {
+                    sectionTitle = sectionTitle.substring(0, 50) + "...";
+                }
+
+                String sectionContent = document.substring(secStart, secEnd).trim();
+                if (sectionContent.isEmpty()) {
+                    continue;
+                }
+
+                if (sectionContent.length() <= chunkSize) {
+                    // 章节内容不超过chunkSize，整块处理
+                    String injectedContent = contextCard + "\n\n【当前内容】\n" + sectionContent;
+                    chunks.add(DocumentChunk.builder()
+                            .chunkId(chunkId)
+                            .content(injectedContent)
+                            .sectionId("SEC-" + String.format("%03d", chunkId))
+                            .sectionTitle(sectionTitle)
+                            .startLine(1)
+                            .endLine(1)
+                            .build());
+                    chunkId++;
+                } else {
+                    // 章节内容超过chunkSize，按字符切分（带重叠）
+                    List<DocumentChunk> subChunks = splitByChar(sectionContent, contextCard,
+                            chunkId, sectionTitle, overlapSize);
+                    chunks.addAll(subChunks);
+                    chunkId += subChunks.size();
                 }
             }
-
-            // 提取分块内容
-            String chunkContent = document.substring(currentPos, endPos).trim();
-            
-            // 跳过空内容
-            if (chunkContent.isEmpty()) {
-                currentPos++;
-                continue;
-            }
-            
-            // 创建分块（注入全局上下文卡片）
-            String injectedContent = contextCard + "\n\n【当前内容】\n" + chunkContent;
-            
-            chunks.add(DocumentChunk.builder()
-                    .chunkId(chunkId)
-                    .content(injectedContent)
-                    .sectionId("SEC-" + String.format("%03d", chunkId))
-                    .sectionTitle("分块 " + chunkId)
-                    .startLine(1)
-                    .endLine(1)
-                    .build());
-
-            // 下一个分块直接从endPos开始，不回退（无重叠）
-            currentPos = endPos;
-            chunkId++;
+        } else {
+            // 无明确章节标题，按字符切分（带重叠）
+            List<DocumentChunk> charChunks = splitByChar(document, contextCard,
+                    chunkId, "分块", overlapSize);
+            chunks.addAll(charChunks);
+            chunkId += charChunks.size();
         }
 
         return Stage1Result.builder()
@@ -618,24 +640,151 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
                 .build();
     }
 
+    /**
+     * 检测文档中的章节标题边界，返回 [start, end) 位置列表。
+     * 识别常见标题格式：第X章/节/部分、X.标题、数字编号标题等。
+     */
+    private List<int[]> detectSectionBoundaries(String document) {
+        List<int[]> boundaries = new ArrayList<>();
+        // 匹配常见章节标题模式（行首）：
+        // 1. 第X章/节/部分/章
+        // 2. X. X.X X.X.X 编号标题（数字+点）
+        // 3. 一、二、三、等中文序号
+        Pattern titlePattern = Pattern.compile(
+            "(?m)^\\s*(" +
+            "第[一二三四五六七八九十百千\\d]+[章节部分篇]" + "|" +
+            "\\d+[\\.\\d]*\\s+\\S" + "|" +
+            "[一二三四五六七八九十]+[、.]" +
+            ")\\s*.*$"
+        );
+
+        Matcher matcher = titlePattern.matcher(document);
+        List<Integer> titlePositions = new ArrayList<>();
+        while (matcher.find()) {
+            titlePositions.add(matcher.start());
+        }
+
+        if (titlePositions.isEmpty()) {
+            return boundaries;
+        }
+
+        // 构建章节区间 [start, nextStart)
+        for (int i = 0; i < titlePositions.size(); i++) {
+            int start = titlePositions.get(i);
+            int end = (i + 1 < titlePositions.size()) ? titlePositions.get(i + 1) : document.length();
+            boundaries.add(new int[]{start, end});
+        }
+
+        return boundaries;
+    }
+
+    /**
+     * 按字符切分文档（带重叠），确保句末完整性。
+     */
+    private List<DocumentChunk> splitByChar(String text, String contextCard,
+                                            int startChunkId, String sectionTitle, int overlapSize) {
+        List<DocumentChunk> chunks = new ArrayList<>();
+        int chunkId = startChunkId;
+        int currentPos = 0;
+        int textLength = text.length();
+
+        while (currentPos < textLength) {
+            int endPos = Math.min(currentPos + chunkSize, textLength);
+
+            // 检查最后一句是否完整，不完整则向后扩展到句末
+            if (endPos < textLength) {
+                char lastChar = text.charAt(endPos - 1);
+                if (lastChar != '。' && lastChar != '！' && lastChar != '？' &&
+                    lastChar != ';' && lastChar != '；' && lastChar != '\n') {
+                    for (int i = endPos; i < Math.min(textLength, endPos + 200); i++) {
+                        char c = text.charAt(i);
+                        if (c == '。' || c == '！' || c == '？' || c == ';' || c == '；') {
+                            endPos = i + 1;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            String chunkContent = text.substring(currentPos, endPos).trim();
+            if (!chunkContent.isEmpty()) {
+                String injectedContent = contextCard + "\n\n【当前内容】\n" + chunkContent;
+                chunks.add(DocumentChunk.builder()
+                        .chunkId(chunkId)
+                        .content(injectedContent)
+                        .sectionId("SEC-" + String.format("%03d", chunkId))
+                        .sectionTitle(sectionTitle + " (部分 " + (chunkId - startChunkId + 1) + ")")
+                        .startLine(1)
+                        .endLine(1)
+                        .build());
+                chunkId++;
+            }
+
+            // 带重叠：下一个分块从 endPos - overlapSize 开始
+            if (overlapSize > 0 && endPos < textLength) {
+                currentPos = Math.max(currentPos + 1, endPos - overlapSize);
+            } else {
+                currentPos = endPos;
+            }
+        }
+
+        return chunks;
+    }
+
     private Stage2Result executeStage2(List<DocumentChunk> chunks, LlmClient llmClient, AgentInput input) {
         long startTime = System.currentTimeMillis();
-        List<List<Requirement>> chunkResults = new ArrayList<>();
+        // 使用ConcurrentLinkedQueue保证线程安全，但最终需要按chunkId排序
+        Map<Integer, List<Requirement>> resultMap = new ConcurrentHashMap<>();
 
+        // 提交所有分块到线程池
+        List<Future<?>> futures = new ArrayList<>();
         for (DocumentChunk chunk : chunks) {
             if (input.isCancelled()) {
-                log.info("任务已取消，停止处理剩余分块");
+                log.info("任务已取消，停止提交剩余分块");
                 break;
             }
 
-            log.info("处理分块 {}: {} (行 {} - {})", 
-                    chunk.getChunkId(), chunk.getSectionTitle(), chunk.getStartLine(), chunk.getEndLine());
+            Future<?> future = chunkExecutor.submit(() -> {
+                if (input.isCancelled()) {
+                    return;
+                }
+                log.info("处理分块 {}: {} (行 {} - {})",
+                        chunk.getChunkId(), chunk.getSectionTitle(), chunk.getStartLine(), chunk.getEndLine());
 
-            List<Requirement> requirements = processChunk(chunk, llmClient, input);
-            chunkResults.add(requirements);
-            
-            log.info("  分块 {} 提取需求: {} 条", chunk.getChunkId(), requirements.size());
+                List<Requirement> requirements = processChunk(chunk, llmClient, input);
+                resultMap.put(chunk.getChunkId(), requirements);
+
+                log.info("  分块 {} 提取需求: {} 条", chunk.getChunkId(), requirements.size());
+            });
+            futures.add(future);
         }
+
+        // 等待所有分块完成（支持取消中断）
+        for (Future<?> future : futures) {
+            try {
+                if (input.isCancelled()) {
+                    // 取消尚未开始的任务
+                    for (Future<?> f : futures) {
+                        f.cancel(true);
+                    }
+                    break;
+                }
+                future.get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            } catch (ExecutionException e) {
+                log.error("分块处理异常: {}", e.getMessage());
+            } catch (CancellationException e) {
+                // 任务被取消，正常忽略
+            }
+        }
+
+        // 按chunkId顺序收集结果
+        List<List<Requirement>> chunkResults = new ArrayList<>();
+        chunks.stream()
+                .sorted(Comparator.comparingInt(DocumentChunk::getChunkId))
+                .forEach(chunk -> chunkResults.add(resultMap.getOrDefault(chunk.getChunkId(), Collections.emptyList())));
 
         return Stage2Result.builder()
                 .chunkResults(chunkResults)
@@ -683,18 +832,22 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
     private Stage3Result executeStage3(List<List<Requirement>> chunkResults, String contextCard) {
         long startTime = System.currentTimeMillis();
 
-        // 机械拼接：按原始顺序合并所有需求
-        List<Requirement> mergedRequirements = new ArrayList<>();
-        int reqCounter = 1;
-        
+        // 先收集所有需求，再去重
+        List<Requirement> allRequirements = new ArrayList<>();
         for (List<Requirement> chunkReqs : chunkResults) {
-            for (Requirement req : chunkReqs) {
-                // 生成唯一ID
-                String reqId = "REQ-" + String.format("%04d", reqCounter++);
-                req.setRequirementId(reqId);
-                mergedRequirements.add(req);
-            }
+            allRequirements.addAll(chunkReqs);
         }
+
+        // 去重：基于标题+描述的相似度（重叠分块可能产生重复需求）
+        List<Requirement> mergedRequirements = deduplicateRequirements(allRequirements);
+
+        // 重新编号
+        int reqCounter = 1;
+        for (Requirement req : mergedRequirements) {
+            req.setRequirementId("REQ-" + String.format("%04d", reqCounter++));
+        }
+
+        log.info("去重完成：原始 {} 条 → 去重后 {} 条", allRequirements.size(), mergedRequirements.size());
 
         // 冲突检测（规则驱动）
         List<Conflict> conflicts = detectConflicts(mergedRequirements);
@@ -708,6 +861,93 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
                 .conflicts(conflicts)
                 .executionTime(System.currentTimeMillis() - startTime)
                 .build();
+    }
+
+    /**
+     * 基于标题和描述相似度去重。
+     * 判定重复的条件：标题完全相同，或描述的Jaccard相似度 >= 0.8。
+     */
+    private List<Requirement> deduplicateRequirements(List<Requirement> requirements) {
+        List<Requirement> unique = new ArrayList<>();
+        for (Requirement req : requirements) {
+            boolean isDuplicate = false;
+            for (Requirement existing : unique) {
+                if (isSimilarRequirement(req, existing)) {
+                    isDuplicate = true;
+                    // 合并依赖关系
+                    if (req.getDependencies() != null && existing.getDependencies() != null) {
+                        for (String dep : req.getDependencies()) {
+                            if (!existing.getDependencies().contains(dep)) {
+                                existing.getDependencies().add(dep);
+                            }
+                        }
+                    }
+                    // 合并globalRef
+                    if (req.getGlobalRef() != null && existing.getGlobalRef() != null) {
+                        for (String ref : req.getGlobalRef()) {
+                            if (!existing.getGlobalRef().contains(ref)) {
+                                existing.getGlobalRef().add(ref);
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+            if (!isDuplicate) {
+                unique.add(req);
+            }
+        }
+        return unique;
+    }
+
+    /**
+     * 判断两个需求是否相似（重复）。
+     */
+    private boolean isSimilarRequirement(Requirement r1, Requirement r2) {
+        // 标题完全相同（忽略大小写和空格）
+        String title1 = r1.getTitle() != null ? r1.getTitle().trim().toLowerCase() : "";
+        String title2 = r2.getTitle() != null ? r2.getTitle().trim().toLowerCase() : "";
+        if (!title1.isEmpty() && title1.equals(title2)) {
+            return true;
+        }
+
+        // 描述的Jaccard相似度 >= 0.8
+        String desc1 = r1.getDescription() != null ? r1.getDescription() : "";
+        String desc2 = r2.getDescription() != null ? r2.getDescription() : "";
+        if (desc1.isEmpty() || desc2.isEmpty()) {
+            return false;
+        }
+        double similarity = jaccardSimilarity(tokenize(desc1), tokenize(desc2));
+        return similarity >= 0.8;
+    }
+
+    /**
+     * 简单分词：按空格和标点切分，过滤短词。
+     */
+    private Set<String> tokenize(String text) {
+        Set<String> tokens = new HashSet<>();
+        // 按非字母数字字符切分
+        String[] parts = text.toLowerCase().split("[^a-zA-Z0-9\\u4e00-\\u9fa5]+");
+        for (String part : parts) {
+            if (part.length() >= 2) {
+                tokens.add(part);
+            }
+        }
+        return tokens;
+    }
+
+    /**
+     * 计算两个集合的Jaccard相似度。
+     */
+    private double jaccardSimilarity(Set<String> set1, Set<String> set2) {
+        if (set1.isEmpty() && set2.isEmpty()) {
+            return 1.0;
+        }
+        Set<String> intersection = new HashSet<>(set1);
+        intersection.retainAll(set2);
+        Set<String> union = new HashSet<>(set1);
+        union.addAll(set2);
+        return (double) intersection.size() / union.size();
     }
 
     private List<Conflict> validateGlobalConstraints(List<Requirement> requirements, String contextCard) {

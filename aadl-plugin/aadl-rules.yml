@@ -40,10 +40,43 @@ global:
          end TaskScheduler;                      ← 必须有！
          thread implementation TaskScheduler.impl
          end TaskScheduler.impl;
-    8. 【★严重警告★】subcomponents 不能为空：任何 implementation（.impl）的 subcomponents 块中必须至少包含一个子组件声明。如果当前层级确实没有子组件，则必须向上合并到父组件中，或在 subcomponents 中声明至少一个占位子组件（如一个空的 thread 或 data 子组件）。严禁生成空的 subcomponents 块后直接 end。
-    6. 所有 implementation 后缀统一使用 .impl。
-    7. package 名与顶层 system 名保持一致。
-    8. 如果某类结构没有在需求模板中出现，不要因为示例或规则文本主动补充该结构。
+    8. subcomponents 不能为空：任何 implementation（.impl）的 subcomponents 块中必须至少包含一个子组件声明。如果当前层级确实没有子组件，则必须向上合并到父组件中，或在 subcomponents 中声明至少一个占位子组件。严禁生成空的 subcomponents 块后直接 end。
+    9. 所有 implementation 后缀统一使用 .impl。
+    10. package 名与顶层 system 名保持一致。
+    11. 如果某类结构没有在需求模板中出现，不要因为示例或规则文本主动补充该结构。
+
+# 同义词映射表：key 为规范词，value 为该词的所有同义词/近义词列表
+# 匹配时自动展开：若规则关键词命中某组任一成员（不区分大小写），该组全部成员参与匹配
+# 新增同义词只需在此处维护，无需修改各规则的 anyKeywords
+synonyms:
+  # 处理器 / CPU 同义词组
+  处理器: ["CPU", "MCU", "芯片", "processor", "处理单元", "处理器单元", "核心", "SoC", "DSP", "ARM", "单片机"]
+  # 存储器 / 内存 同义词组
+  存储器: ["内存", "RAM", "ROM", "Flash", "memory", "存储单元", "闪存", "EEPROM", "存储空间", "磁盘", "存储模块"]
+  # 设备 / 外设 同义词组
+  设备: ["外设", "外围设备", "device", "传感器", "执行器", "面板", "actuator", "sensor", "I/O设备", "输入设备", "输出设备", "单板", "定时器", "看门狗"]
+  # 总线 同义词组（含具体总线协议名）
+  总线: ["CAN", "I2C", "SPI", "Ethernet", "PCIE", "PCIe", "bus", "通信总线", "数据总线", "USB", "UART", "RS232", "RS485", "LIN", "FlexRay", "串行总线", "MIL-STD-1553", "现场总线", "背板总线"]
+  # 分区 / 进程 同义词组
+  分区: ["软件分区", "运行分区", "ARINC653", "ARINC 653", "进程", "process", "partition", "时空分区", "隔离分区", "时间分区", "空间分区"]
+  # 任务 / 线程 同义词组
+  任务: ["thread", "线程", "作业", "task", "调度任务", "周期任务", "工作线程", "后台任务", "中断任务"]
+  # 网络接口 同义词组
+  网络接口: ["网口", "网卡", "网络", "Network_interface", "Net_interface", "以太网", "TCP/IP", "网络控制器", "通信接口", "Ethernet", "网络适配器", "网络端口"]
+  # 子系统 / 功能模块 同义词组
+  子系统: ["功能子系统", "控制子系统", "通信子系统", "导航子系统", "检测子系统", "功能模块", "业务模块", "模块", "subsystem", "组件", "功能单元", "业务单元"]
+  # 管理器（通用）同义词组
+  管理器: ["manager", "管理模块", "管理单元", "控制单元"]
+  # 系统管理器 同义词组
+  系统管理器: ["system manager", "系统管理", "系统管理模块", "系统控制器"]
+  # 模块管理器 同义词组
+  模块管理器: ["module manager", "模块管理", "模块控制单元"]
+  # 程序 / 函数 同义词组
+  程序: ["初始化", "运行程序", "终止", "启动", "subprogram", "函数", "方法", "例程", "routine", "procedure", "回调", "入口函数"]
+  # 数据 / 信号 同义词组
+  数据: ["data", "信号", "帧", "字节", "结构体", "struct", "报文", "消息", "数据包", "数据帧", "payload", "报文格式", "数据结构", "消息格式"]
+  # 错误行为 / 故障模型 同义词组
+  错误行为: ["error behavior", "故障", "错误状态", "错误事件", "错误转移", "error model", "容错", "错误模型", "失效", "故障状态", "故障事件", "可靠性", "异常处理", "EMV2", "annex"]
 
 rules:
   - id: package_structure
@@ -322,6 +355,42 @@ rules:
       1. 模块与设备程序包括：Initialization_program、Run_program 等。
       2. 程序名称必须与需求语义一致。
 
+  - id: error_behavior
+    title: 错误行为模型模板
+    trigger:
+      anyKeywords: ["错误行为", "error behavior", "故障", "错误状态", "错误事件", "错误转移", "error model", "容错", "错误模型", "失效", "EMV2"]
+    content: |
+      annex EMV2 {**
+        error behavior 错误行为名
+          events
+            错误事件名 : error event;
+          states
+            状态名 : initial state;
+            状态名 : state;
+          transitions
+            转移名 : 源状态 -[错误事件名]-> 目标状态;
+        end behavior;
+      **};
+
+      语法说明：
+      1. error behavior 是 AADL 错误模型附件（Error Model Annex, EMV2）的声明块，用于描述组件的故障行为。
+      2. 整个 error behavior 块必须包裹在 "annex EMV2 {** ... **};" 中，严禁裸写 error behavior。
+      3. "annex EMV2 {**" 开启附件块，"**};" 闭合附件块，两者缺一不可。
+      4. events 段：声明错误事件，格式为 "事件名 : error event;"。
+      5. states 段：声明错误状态，必须有一个 "initial state"，其余为 "state"。
+      6. transitions 段：声明状态转移，格式为 "转移名 : 源状态 -[事件名]-> 目标状态;"。
+      7. error behavior 块内部以 "end behavior;" 闭合，整个附件块以 "**};" 闭合。
+
+      规则：
+      1. 只有需求中明确出现"错误行为、故障状态、错误事件、容错、错误模型、EMV2"等描述时，才生成 annex EMV2 块。
+      2. 严禁省略 annex EMV2 包裹，裸写 error behavior 会导致语法错误。
+      3. events、states、transitions 三个段都必须存在，不可省略。
+      4. states 段中必须且只能有一个 initial state。
+      5. 每个 transition 引用的事件必须在 events 段中声明，引用的状态必须在 states 段中声明。
+      6. annex EMV2 块通常放在 package 的 public 段内，与其他组件声明平级。
+      7. 错误事件名、状态名、转移名使用英文标识符，下划线连接。
+      8. 转移箭头格式固定为 "源状态 -[事件名]-> 目标状态"，方括号不可省略。
+
   - id: naming
     title: 命名规则
     always: true
@@ -354,10 +423,14 @@ rules:
         - Actual_Processor_Binding => reference (处理器名) applies to 软件组件;  -- 处理器绑定
 
       规则：
-      1. properties 块必须放在 implementation 的 subcomponents 之后、end 之前。
+      1. properties 块可以出现在两个位置：
+         a) 组件类型声明中（放在 features 之后、end 之前）——声明该类型所有实现共享的固有属性。
+         b) 组件实现声明中（放在 subcomponents 之后、end 之前）——声明特定实现专属的属性。
       2. 每个属性声明以分号结尾。
       3. 需求中明确声明的数值约束（如"响应时间不超过10ms"、"单帧固定8字节"、"优先级为高"等）必须通过 properties 显式映射到 AADL 模型中，禁止遗漏。
       4. 当需求中未明确给出具体数值时，不生成 properties 块。
+      5. 当属性值适用于该组件的所有实现时（如 thread 的 Period、Stack_Size、Compute_Execution_Time），应放在类型声明中而非实现声明中。
+      6. 当属性值因实现不同而变化时（如 Data_Size 因 data 实现不同而不同），放在实现声明中。
 
   - id: connections
     title: 连接声明模板
@@ -373,11 +446,55 @@ rules:
         conn_name : bus access source_feature <-> destination_feature;
         例：bus_conn : bus access Device.powerIn <-> PowerBus.powerOut;
 
+      连接内联属性（在连接声明末尾用花括号附加属性）：
+        conn_name : port source_feature -> destination_feature {属性名 => 属性值;};
+        例：current_temperature : port temperature_sensor.current_temperature -> thermostat.current_temperature {latency => 2ms..4ms;};
+        例：heat_control : port thermostat.heat_control -> heat_source.heat_control {latency => 5ms..6ms;};
+
       规则：
       1. port 连接方向用 ->（单向），access 连接方向用 <->（双向）。
       2. bus access 连接严禁使用 <> 或 ->，必须使用 <->。
       3. 连接的两端必须是 features 中已声明的端口或访问点名称。
       4. connections 块放在 implementation 的 subcomponents 之后、properties 之前。
+      5. 当需求中明确给出连接的延迟、带宽等约束时，使用连接内联属性 {属性名 => 值;} 附加在连接声明末尾。
+      6. 常用连接内联属性：latency（延迟范围，如 latency => 2ms..4ms;）、Timing（时序）。
+      7. 内联属性以分号结尾，整体用花括号包裹，紧跟在连接声明的分号位置之前。
+
+  - id: flows
+    title: 流声明模板
+    trigger:
+      anyKeywords: ["流", "flow", "端到端", "数据流路径", "flow path", "flow source", "flow sink", "end to end flow"]
+    content: |
+      flows 块用于声明组件的端到端数据流路径，放在组件类型声明的 features 之后。
+
+      三种流声明类型：
+        1. flow source（流源）：数据从该组件产生向外输出
+           流名 : flow source out_port_name;
+           例：current_temperature_flow : flow source current_temperature;
+
+        2. flow sink（流汇）：数据从外部流入该组件终止
+           流名 : flow sink in_port_name;
+           例：heat_control_flow : flow sink heat_control;
+
+        3. flow path（流路径）：数据穿过该组件，从输入端口到输出端口
+           流名 : flow path in_port_name -> out_port_name;
+           例：current_temperature_flow : flow path current_temperature -> heat_control;
+
+      end to end flow（端到端流，在 implementation 的 flows 块中声明）：
+        流名 : end to end flow 组件A.流A -> 连接名 -> 组件B.流B -> 连接名 -> 组件C.流C {属性};
+        例：path1 : end to end flow temperature_sensor.current_temperature_flow -> current_temperature -> thermostat.current_temperature_flow -> heat_control -> heat_source.heat_control_flow {latency => 5ms..9ms;};
+
+      语法说明：
+      1. flow source/sink/path 声明在组件类型声明（system/device 等）的 features 之后，与 features 平级。
+      2. end to end flow 声明在 implementation 的 flows 块中，引用子组件的流和 connections 中的连接名。
+      3. end to end flow 通过 "-> 连接名 ->" 将各子组件的流串联起来。
+
+      规则：
+      1. 只有需求中明确描述"数据流路径、端到端流、数据流向"等内容时，才生成 flows 块。
+      2. flow source 用于数据产生者（如传感器），flow sink 用于数据消费者（如执行器），flow path 用于数据中转者（如控制器）。
+      3. end to end flow 中引用的流名必须在对应子组件的类型声明中已定义，引用的连接名必须在 connections 块中已声明。
+      4. end to end flow 可以携带内联属性（如 latency），格式与连接内联属性一致。
+      5. flows 块在 implementation 中放在 connections 之后、properties 之前。
 
 order:
   content: |
@@ -399,20 +516,17 @@ order:
     15. bus 声明及 implementation
     16. data 声明及 implementation
     17. subprogram 声明及 implementation
-    18. end package
+    18. annex EMV2 错误行为模型（如有）
+    19. end package
 
 forbidden:
   content: |
-    禁止规则：
-    1. 不要生成需求中未定义的连接、端口、属性、线程、进程、设备、总线或数据。
-    2. 如果需求中总线为 0，则不要生成 bus。
-    3. 不要添加自然语言解释，不要输出代码块标记（如 ```aadl）。
-    4. 严禁使用 system, process, thread 等关键字直接作为组件名称。
-    5. 严禁在 processor、memory、device 等物理硬件的 subcomponents 中直接嵌套 process、thread 等软件组件。
-    6. 【★严重警告★】严禁省略组件类型声明的 end！每个组件类型声明后必须有 "end 组件名;"。
-    7. 【★严重警告★】严禁生成空的 subcomponents 块！任何 implementation（.impl）若包含 subcomponents 关键字，其后必须至少跟随一个子组件声明。对于底层无子组件的 thread/data/subprogram，直接写 "end 组件名.impl;"，不要出现 "subcomponents\nend" 的空块。
-    8. 严禁忽略需求中明确声明的数据大小约束（如"固定占用8字节"）。凡有字节大小描述的数据组件，必须在 data implementation 的 properties 中声明 Data_Size。
-    9. 【★严重警告★】严禁用 in/out 端口访问总线！device/processor/memory 等组件访问总线时，必须在 features 块中使用 requires bus access 声明（如 requires bus access CanBus;），不得用 in data port / out data port 代替。
+    禁止规则（以下为全局规则之外的补充禁止项，全局规则中已声明的不再重复）：
+    1. 如果需求中总线为 0，则不要生成 bus。
+    2. 严禁在 processor、memory、device 等物理硬件的 subcomponents 中直接嵌套 process、thread 等软件组件。
+    3. 严禁忽略需求中明确声明的数据大小约束（如"固定占用8字节"）。凡有字节大小描述的数据组件，必须在 data implementation 的 properties 中声明 Data_Size。
+    4. 严禁用 in/out 端口访问总线！device/processor/memory 等组件访问总线时，必须在 features 块中使用 requires bus access 声明（如 requires bus access CanBus;），不得用 in data port / out data port 代替。
+    5. 严禁在 bus access 连接中使用 <> 或 ->，必须使用 <->。
 
 example:
   title: AADL生成示例
@@ -571,5 +685,24 @@ example:
        end WatchdogTimer; 
        device implementation WatchdogTimer.impl 
        end WatchdogTimer.impl; 
+
+    -- =======================================
+    -- 错误行为模型示例
+    -- =======================================
+    error behavior ThreeErrorStates
+      events
+        BadValueEvent  : error event;
+        NoValueEvent   : error event;
+        LateValueEvent : error event;
+      states
+        Operational    : initial state;
+        BadValueState  : state;
+        NoValueState   : state;
+        LateValueState : state;
+      transitions
+        BadValueTransition : Operational -[BadValueEvent]-> BadValueState;
+        NoValueTransition  : Operational -[NoValueEvent]-> NoValueState;
+        LateTransition     : Operational -[LateValueEvent]-> LateValueState;
+    end behavior;
 
      end OS_Arch;

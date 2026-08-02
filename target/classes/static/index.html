@@ -1219,7 +1219,7 @@ Invalid connection syntax	example.aadl	/model	Line 38	Error"></textarea>
                 const response = await fetch(`${API_BASE}/requirement/analyze`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ content: content, model: currentModel, sessionId: sessionId })
+                    body: JSON.stringify({ content: content, model: currentModel, sessionId: sessionId, fileName: fileName })
                 });
                 return await response.json();
             }, { fileName });
