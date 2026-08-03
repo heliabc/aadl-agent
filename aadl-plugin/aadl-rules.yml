@@ -7,7 +7,11 @@ task_description: |
   任务目标：根据架构树和模块分析结果，按照给定的规则生成完整的AADL模型文件。
 
 input_section: |
-  请根据以上规则和示例，分析以下架构树和模块分析结果，生成完整的AADL模型文件。
+  以下是根据架构树和模块分析解析出的结构化组件清单和约束。请严格按照此清单生成 AADL 代码：
+  - 清单中列出的组件必须全部出现在 AADL 代码中，不得遗漏。
+  - 不得生成清单之外的组件。
+  - 每个组件的 AADL 类型必须与清单中指定的类型完全一致。
+  - 模块约束中的功能描述和关联组件信息必须映射到 AADL 的 properties 和 connections 中。
 
 architecture_label: 架构树：
 
@@ -398,6 +402,77 @@ rules:
       1. 中文名称转换为英文直译，英文名称使用下划线连接。
       2. 严禁使用 System, Process 等 AADL 保留关键字作为名称。
 
+  - id: subcomponents_syntax
+    title: subcomponents 语法与完整性规则
+    always: true
+    content: |
+      subcomponents 块的每一行必须严格遵循以下格式（不可省略任何部分）：
+
+        实例名 : 组件关键字 组件类型名.impl;
+
+      格式拆解：
+        - 实例名：自由命名，首字母小写或大写均可，但不能与 AADL 保留字冲突。
+        - 组件关键字：必须是 AADL 标准关键字之一（system / process / thread / processor /
+          memory / device / bus / data / subprogram / virtual processor），严禁使用
+          subsystem、module、component 等非标准关键字。
+        - 组件类型名.impl：必须引用已在 package 中声明过类型和实现的组件，后缀 .impl 不可省略。
+
+      正确示例：
+        subcomponents
+          BrakeCtrl : system BrakeCtrl.impl;
+          TempSensor : device TempSensor.impl;
+          CanBus_1  : bus CanBus.impl;
+          MainTask   : thread MainTask.impl;
+
+      错误示例（这些是常见的出错模式，严禁出现）：
+        -- 错误1：缺少 .impl 后缀
+        BrakeCtrl : system BrakeCtrl;
+        -- 错误2：使用了非标准关键字 subsystem
+        BrakeSubsystem : subsystem BrakeSubsystem.impl;
+        -- 错误3：缺少分号
+        BrakeCtrl : system BrakeCtrl.impl
+        -- 错误4：实例名与类型名混淆，把实例名写成了 .impl
+        BrakeCtrl.impl : system BrakeCtrl.impl;
+        -- 错误5：引用了未声明的组件（BrakeCtrl 在 package 中没有对应的 system 声明和 implementation）
+        BrakeCtrl : system BrakeCtrl.impl;  -- 但 package 中没有 system BrakeCtrl ... end BrakeCtrl;
+
+      完整性规则（每个 subcomponent 引用必须可追溯）：
+      1. subcomponents 中引用的每一个组件，都必须在同一个 package 中有完整的"类型声明 + 实现声明"对。
+         即：若 subcomponents 中出现 `Foo : system Foo.impl;`，则 package 中必须存在：
+           system Foo
+           end Foo;
+           system implementation Foo.impl
+           ...
+           end Foo.impl;
+      2. 严禁在 subcomponents 中引用只在类型声明而没有 implementation 的组件。
+      3. 严禁在 subcomponents 中引用只在 implementation 而没有类型声明的组件。
+      4. 实例名可以与类型名相同（如 `BrakeCtrl : system BrakeCtrl.impl;`），也可以不同（如
+         `FrontBrake : system BrakeCtrl.impl;`），但类型名必须与已声明的组件类型名一致。
+
+      组件包含关系表（父组件类型 -> 允许的子组件类型）：
+        system implementation    -> system, process, processor, memory, device, bus, virtual processor, thread, data, subprogram, abstract
+        processor implementation -> virtual processor, memory, bus（严禁包含 process！）
+        process implementation   -> thread, data, subprogram
+        thread implementation    -> data, subprogram
+        virtual processor impl   -> thread, data, subprogram
+        memory implementation    -> memory, bus
+        bus implementation       -> （不允许包含任何子组件）
+        device implementation    -> （不允许包含任何子组件）
+        data implementation      -> data, subprogram
+        subprogram implementation-> （不允许包含任何子组件）
+        abstract implementation  -> system, process, processor, memory, device, bus, virtual processor, thread, data, subprogram, abstract
+
+      包含关系规则：
+      1. 严禁将 thread 直接放入 system implementation 的 subcomponents 中——thread 必须先放入
+         process，再由 process 放入 system。
+      2. 严禁将 process 直接放入 processor implementation 的 subcomponents 中——process 放在
+         system implementation 的 subcomponents 中，processor 的 subcomponents 中只能放
+         virtual processor、memory、bus。
+      3. 严禁将 system 放入 process 或 thread 中——system 是顶层容器组件。
+      4. bus、device、subprogram 的 implementation 中不允许声明任何 subcomponents，它们是叶子节点。
+      5. virtual processor 的 implementation 中可以包含 thread、data、subprogram，但绝不能包含
+         process、processor、system 等高层组件。
+
   - id: properties_explanation
     title: properties 关键字用法说明
     always: true
@@ -549,6 +624,9 @@ forbidden:
     8. 严禁使用英文全拼单位（Kilobytes, Megabytes, Second, Seconds, Millisecond, Hertz），必须使用 AADL 标准缩写（Kbyte, Mbyte, sec, ms, Hz）。
     9. 严禁直接使用非标准属性名而不带属性集前缀，如直接写 Max_Capacity 或 per。必须带属性集前缀（如 Memory_Properties::Max_Capacity）。
     10. 严禁在属性值中出现语法错误：数值与单位之间必须有空格（10 Kbyte），范围用 .. 连接（5 ms .. 10 ms），列表用括号包裹（("Ok", "Error")）。
+    11. 严禁在 subcomponents 中使用非标准组件关键字（subsystem、module、component 等），必须使用 AADL 标准关键字（system、process、thread、processor、memory、device、bus、data、subprogram、virtual processor）。
+    12. 严禁在 subcomponents 中引用未在 package 中声明类型和实现的组件——每个 subcomponent 引用都必须有对应的"类型声明 + 实现声明"对存在于同一个 package 中。
+    13. 严禁在 subcomponents 行中省略 .impl 后缀或省略末尾分号。
 
 example:
   title: AADL生成示例

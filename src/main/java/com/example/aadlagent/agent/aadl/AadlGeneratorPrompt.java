@@ -94,12 +94,7 @@ public class AadlGeneratorPrompt {
     }
 
     @SuppressWarnings("unchecked")
-    public String buildPrompt(String architectureJson, String modulesJson) {
-        return buildPrompt(architectureJson, modulesJson, null);
-    }
-
-    @SuppressWarnings("unchecked")
-    public String buildPrompt(String architectureJson, String modulesJson, String ragContext) {
+    public String buildPrompt(String parsedManifest, String ragContext) {
         StringBuilder prompt = new StringBuilder();
 
         prompt.append(rulesConfig.get("system_prompt"));
@@ -119,9 +114,8 @@ public class AadlGeneratorPrompt {
         prompt.append(global.get("alwaysRules"));
         prompt.append("\n\n");
 
-        // 按条件过滤规则：扫描输入内容，只注入匹配的规则
-        String combinedInput = (architectureJson != null ? architectureJson : "")
-                + " " + (modulesJson != null ? modulesJson : "");
+        // 按条件过滤规则：扫描解析后的清单内容，只注入匹配的规则
+        String combinedInput = parsedManifest != null ? parsedManifest : "";
         String combinedLower = combinedInput.toLowerCase();
 
         prompt.append("【组件模板规则】\n");
@@ -162,17 +156,10 @@ public class AadlGeneratorPrompt {
         prompt.append(example.get("content"));
         prompt.append("\n--- 示例结束 ---\n\n");
 
+        // 注入解析后的结构化清单（替代原始 JSON）
         prompt.append(rulesConfig.get("input_section"));
         prompt.append("\n\n");
-
-        prompt.append(rulesConfig.get("architecture_label"));
-        prompt.append("\n");
-        prompt.append(architectureJson);
-        prompt.append("\n\n");
-
-        prompt.append(rulesConfig.get("modules_label"));
-        prompt.append("\n");
-        prompt.append(modulesJson);
+        prompt.append(parsedManifest);
         prompt.append("\n\n");
 
         prompt.append(rulesConfig.get("output_instruction"));

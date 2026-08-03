@@ -6,13 +6,12 @@ import com.example.aadlagent.agent.AgentOutput;
 import com.example.aadlagent.client.LlmClient;
 import com.example.aadlagent.client.ModelService;
 import com.example.aadlagent.client.ModelType;
+import com.example.aadlagent.util.AadlInputParser;
+import com.example.aadlagent.util.AadlReferenceValidator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -69,8 +68,15 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
         log.info("模块分析长度: {} 字符", modulesJson.length());
         log.info("配置参数: temperature={}, maxTokens={}", temperature, maxTokens);
 
+        // 硬编码解析架构树和模块分析，生成结构化清单（替代原始 JSON 注入提示词）
+        log.info("正在解析架构树和模块分析...");
+        AadlInputParser inputParser = new AadlInputParser();
+        AadlInputParser.ParseResult parseResult = inputParser.parse(architectureJson, modulesJson);
+        log.info("解析完成，清单长度: {} 字符，组件真值表: {} 个",
+                parseResult.manifestText.length(), parseResult.archComponents.size());
+
         log.info("正在构建Prompt...");
-        String systemPrompt = prompt.buildPrompt(architectureJson, modulesJson, input.getRagContext());
+        String systemPrompt = prompt.buildPrompt(parseResult.manifestText, input.getRagContext());
         log.info("Prompt构建完成，长度: {} 字符", systemPrompt.length());
 
         if (input.isCancelled()) {
@@ -104,6 +110,14 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
         try {
             log.info("正在解析LLM响应...");
             String aadlContent = extractAadlContent(llmResponse);
+
+            // 引用完整性验证与自动修正（不依赖大模型）
+            AadlReferenceValidator.ValidationResult validationResult =
+                    validateAndFixReferences(aadlContent, parseResult);
+            aadlContent = validationResult.fixedContent;
+
+            // 将验证结果以注释形式嵌入 AADL 代码顶部
+            aadlContent = embedValidationReport(aadlContent, validationResult);
 
             long executionTime = System.currentTimeMillis() - startTime;
             int componentCount = countComponents(aadlContent);
@@ -163,6 +177,107 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
         return cleaned;
     }
 
+    /**
+     * 引用完整性验证与自动修正。
+     * 复用 AadlInputParser 解析出的组件真值表，检测并自动修正 AADL 代码中的：
+     * - 悬空引用（subcomponents 引用了未声明的组件）
+     * - 缺失声明（有类型声明但缺实现声明，或反之）
+     * - 遗漏组件（架构树中存在但 AADL 中缺失）
+     * - 幻觉组件（AADL 中声明了但架构树中不存在）
+     * - 类型不匹配
+     *
+     * @return ValidationResult 包含修正后的代码 + errors/warnings/fixes 列表
+     */
+    private AadlReferenceValidator.ValidationResult validateAndFixReferences(
+            String aadlContent, AadlInputParser.ParseResult parseResult) {
+        log.info("========================================");
+        log.info("开始引用完整性验证（基于解析器真值表）");
+
+        AadlReferenceValidator validator = new AadlReferenceValidator();
+        AadlReferenceValidator.ValidationResult validationResult =
+                validator.validate(aadlContent, parseResult);
+
+        // 记录验证结果到日志
+        if (!validationResult.errors.isEmpty()) {
+            log.warn("引用完整性验证发现 {} 个错误:", validationResult.errors.size());
+            for (String error : validationResult.errors) {
+                log.warn("  [ERROR] {}", error);
+            }
+        }
+        if (!validationResult.warnings.isEmpty()) {
+            log.info("引用完整性验证发现 {} 个警告:", validationResult.warnings.size());
+            for (String warning : validationResult.warnings) {
+                log.info("  [WARN] {}", warning);
+            }
+        }
+        if (!validationResult.fixes.isEmpty()) {
+            log.info("自动修正应用了 {} 项修复:", validationResult.fixes.size());
+            for (String fix : validationResult.fixes) {
+                log.info("  [FIX] {}", fix);
+            }
+        }
+
+        if (validationResult.hasIssues()) {
+            log.info("引用完整性验证完成: {} 错误, {} 警告, {} 修复",
+                    validationResult.errors.size(),
+                    validationResult.warnings.size(),
+                    validationResult.fixes.size());
+        } else {
+            log.info("引用完整性验证通过，无问题");
+        }
+        log.info("========================================");
+
+        return validationResult;
+    }
+
+    /**
+     * 将验证结果以 AADL 注释（--）形式嵌入代码顶部。
+     * 这样用户在查看生成的 AADL 文件时即可看到验证报告。
+     */
+    private String embedValidationReport(String aadlContent,
+                                          AadlReferenceValidator.ValidationResult result) {
+        StringBuilder report = new StringBuilder();
+
+        report.append("-- =========================================================\n");
+        report.append("-- AADL 模型验证报告\n");
+        report.append("-- =========================================================\n");
+
+        if (result.errors.isEmpty() && result.warnings.isEmpty() && result.fixes.isEmpty()) {
+            report.append("-- 验证通过，无问题。\n");
+        } else {
+            // 错误
+            if (!result.errors.isEmpty()) {
+                report.append(String.format("-- [错误] (%d 项):%n", result.errors.size()));
+                for (int i = 0; i < result.errors.size(); i++) {
+                    report.append(String.format("--   %d. %s%n", i + 1, result.errors.get(i)));
+                }
+            }
+
+            // 警告
+            if (!result.warnings.isEmpty()) {
+                report.append(String.format("-- [警告] (%d 项):%n", result.warnings.size()));
+                for (int i = 0; i < result.warnings.size(); i++) {
+                    report.append(String.format("--   %d. %s%n", i + 1, result.warnings.get(i)));
+                }
+            }
+
+            // 自动修复
+            if (!result.fixes.isEmpty()) {
+                report.append(String.format("-- [自动修复] (%d 项):%n", result.fixes.size()));
+                for (int i = 0; i < result.fixes.size(); i++) {
+                    report.append(String.format("--   %d. %s%n", i + 1, result.fixes.get(i)));
+                }
+            }
+
+            report.append(String.format("-- 汇总: %d 错误, %d 警告, %d 修复%n",
+                    result.errors.size(), result.warnings.size(), result.fixes.size()));
+        }
+
+        report.append("-- =========================================================\n\n");
+
+        return report.toString() + aadlContent;
+    }
+
     private String fixMissingEndStatements(String aadlContent) {
         log.info("========================================");
         log.info("开始修复缺失的 end 语句");
@@ -214,168 +329,6 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
         log.info("========================================");
         
         return String.join("\n", lines).trim();
-    }
-
-    private List<String> validateAadl(String aadlContent) {
-        List<String> errors = new ArrayList<>();
-
-        if (aadlContent == null || aadlContent.trim().isEmpty()) {
-            errors.add("AADL内容为空");
-            return errors;
-        }
-
-        String trimmed = aadlContent.trim();
-        String[] lines = aadlContent.split("\n");
-
-        if (!trimmed.startsWith("package")) {
-            errors.add("AADL内容必须以 'package' 关键字开头");
-        }
-
-        java.util.regex.Matcher pkgMatcher = java.util.regex.Pattern.compile("^\\s*package\\s+(\\w+)").matcher(trimmed);
-        String packageName = null;
-        if (pkgMatcher.find()) {
-            packageName = pkgMatcher.group(1);
-        }
-
-        if (!trimmed.matches(".*end\\s+(\\w+)\\s*;\\s*$")) {
-            errors.add("AADL内容必须以 'end packageName;' 结尾");
-        } else if (packageName != null && !trimmed.matches(".*end\\s+" + packageName + "\\s*;\\s*$")) {
-            errors.add("package名称与结尾的end语句不匹配，期望: 'end " + packageName + ";'");
-        }
-
-        List<String> missingEnds = findMissingEndStatements(aadlContent);
-        if (!missingEnds.isEmpty()) {
-            for (String missing : missingEnds) {
-                errors.add("缺少组件结束语句 'end " + missing + ";'");
-            }
-        }
-
-        List<String> duplicateEnds = findDuplicateEndStatements(aadlContent);
-        if (!duplicateEnds.isEmpty()) {
-            for (String duplicate : duplicateEnds) {
-                errors.add("存在重复的结束语句 'end " + duplicate + ";'");
-            }
-        }
-
-        List<String> missingSemicolons = findMissingSemicolons(aadlContent);
-        if (!missingSemicolons.isEmpty()) {
-            for (String line : missingSemicolons) {
-                errors.add("缺少分号结尾: " + line);
-            }
-        }
-
-        List<String> invalidConnections = findInvalidConnections(aadlContent);
-        if (!invalidConnections.isEmpty()) {
-            for (String conn : invalidConnections) {
-                errors.add("连接语法不正确: " + conn);
-            }
-        }
-
-        return errors;
-    }
-
-    private List<String> findMissingEndStatements(String aadlContent) {
-        List<String> missingEnds = new ArrayList<>();
-        String[] lines = aadlContent.split("\n");
-
-        Pattern componentPattern = Pattern.compile("^(\\s*)(thread|process|system|processor|memory|device|bus|data|subprogram)\\s+(\\w+)");
-        Stack<String> componentStack = new Stack<>();
-
-        for (int i = 0; i < lines.length; i++) {
-            String line = lines[i].trim();
-
-            if (line.startsWith("end ") && line.endsWith(";")) {
-                String endName = line.substring(4, line.length() - 1).trim();
-                if (!componentStack.isEmpty() && componentStack.peek().equals(endName)) {
-                    componentStack.pop();
-                } else {
-                    if (!componentStack.isEmpty()) {
-                        missingEnds.add(componentStack.peek());
-                    }
-                }
-                continue;
-            }
-
-            Matcher matcher = componentPattern.matcher(line);
-            if (matcher.find() && !line.contains("implementation")) {
-                String componentName = matcher.group(3);
-                componentStack.push(componentName);
-            }
-        }
-
-        while (!componentStack.isEmpty()) {
-            missingEnds.add(componentStack.pop());
-        }
-
-        return missingEnds;
-    }
-
-    private List<String> findDuplicateEndStatements(String aadlContent) {
-        List<String> duplicates = new ArrayList<>();
-        String[] lines = aadlContent.split("\n");
-        java.util.Map<String, Integer> endCount = new java.util.HashMap<>();
-
-        Pattern endPattern = Pattern.compile("end\\s+(\\w+)\\s*;");
-
-        for (String line : lines) {
-            Matcher matcher = endPattern.matcher(line.trim());
-            if (matcher.find()) {
-                String name = matcher.group(1);
-                endCount.put(name, endCount.getOrDefault(name, 0) + 1);
-            }
-        }
-
-        for (java.util.Map.Entry<String, Integer> entry : endCount.entrySet()) {
-            if (entry.getValue() > 1) {
-                duplicates.add(entry.getKey());
-            }
-        }
-
-        return duplicates;
-    }
-
-    private List<String> findMissingSemicolons(String aadlContent) {
-        List<String> missing = new ArrayList<>();
-        String[] lines = aadlContent.split("\n");
-
-        Pattern statementPattern = Pattern.compile("^(\\s*)(thread|process|system|processor|memory|device|bus|data|subprogram|end|connection|port|property)\\s+");
-
-        for (int i = 0; i < lines.length; i++) {
-            String line = lines[i].trim();
-            if (line.isEmpty() || line.startsWith("--")) {
-                continue;
-            }
-
-            Matcher matcher = statementPattern.matcher(line);
-            if (matcher.find()) {
-                String keyword = matcher.group(2);
-                if (!line.contains("implementation") && !line.contains("(") && !line.contains("{") && !line.endsWith(";")) {
-                    missing.add("第" + (i + 1) + "行: " + line);
-                }
-            }
-        }
-
-        return missing;
-    }
-
-    private List<String> findInvalidConnections(String aadlContent) {
-        List<String> invalid = new ArrayList<>();
-        String[] lines = aadlContent.split("\n");
-
-        Pattern connectionPattern = Pattern.compile("connection\\s+(\\w+)\\s+:\\s+(\\w+)");
-        Pattern portPattern = Pattern.compile("port\\s+(\\w+)\\s+:\\s+(\\w+)");
-
-        for (int i = 0; i < lines.length; i++) {
-            String line = lines[i].trim();
-            if (line.startsWith("connection")) {
-                Matcher matcher = connectionPattern.matcher(line);
-                if (!matcher.find()) {
-                    invalid.add("第" + (i + 1) + "行: " + line);
-                }
-            }
-        }
-
-        return invalid;
     }
 
     private int countComponents(String aadlContent) {
