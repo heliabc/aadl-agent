@@ -225,6 +225,15 @@ public class AadlReferenceValidator {
         // 4m. 检测设备端口类型与数据组件混淆
         checkDevicePortTypeMismatch(aadlContent, aadlDeclarations, result);
 
+        // 4n. 检测 process implementation 中非法的 bus access 连接
+        checkBusAccessInProcess(aadlContent, result);
+
+        // 4o. 检测 implementation 中 subcomponents → connections → properties 顺序违规
+        checkImplementationOrder(aadlContent, result);
+
+        // 4p. 检测 process/thread implementation 中的双向连接（<->）
+        checkBidirectionalInSoftwareLayer(aadlContent, result);
+
         // 5. 自动修正
         if (!result.errors.isEmpty() || hasAutoFixableIssues(aadlDeclarations, archComponents)
                 || !result.missingFeatures.isEmpty()) {
@@ -1209,6 +1218,176 @@ public class AadlReferenceValidator {
         }
     }
 
+    /**
+     * 4n. 检测 process implementation 中非法的 bus access 连接。
+     *
+     * 分层架构规范：bus access 连接只能出现在 system implementation 中，
+     * 严禁出现在 process implementation 中。进程内部只做纯粹的 port 数据流连接。
+     */
+    private void checkBusAccessInProcess(String aadlContent, ValidationResult result) {
+        String[] lines = aadlContent.split("\n");
+
+        Pattern processImplPattern = Pattern.compile(
+                "^\\s*process\\s+implementation\\s+(\\w+)\\.impl"
+        );
+        Pattern busAccessConnPattern = Pattern.compile(
+                "^\\s*\\w+\\s*:\\s*bus\\s+access\\s+"
+        );
+
+        boolean inProcessImpl = false;
+        String currentProcessImplName = null;
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].trim();
+
+            if (line.startsWith("--")) {
+                continue;
+            }
+
+            Matcher processMatcher = processImplPattern.matcher(line);
+            if (processMatcher.find()) {
+                inProcessImpl = true;
+                currentProcessImplName = processMatcher.group(1);
+                continue;
+            }
+
+            if (line.matches("end\\s+\\w+\\.impl\\s*;")) {
+                inProcessImpl = false;
+                currentProcessImplName = null;
+                continue;
+            }
+
+            if (inProcessImpl && busAccessConnPattern.matcher(line).find()) {
+                result.errors.add(String.format(
+                        "第%d行: 分层架构违规 - bus access 连接出现在 process implementation '%s.impl' 中; " +
+                        "bus access 连接只能出现在 system implementation 中，进程内部只做 port 数据流连接",
+                        i + 1, currentProcessImplName
+                ));
+            }
+        }
+    }
+
+    /**
+     * 4o. 检测 implementation 中 subcomponents → connections → properties 的顺序违规。
+     *
+     * 三步规范：编写 implementation 时必须严格遵守顺序：
+     *   第一步 subcomponents → 第二步 connections → 第三步 properties
+     * 如果出现顺序倒置（如 properties 出现在 subcomponents 之前），报告错误。
+     */
+    private void checkImplementationOrder(String aadlContent, ValidationResult result) {
+        String[] lines = aadlContent.split("\n");
+
+        // 匹配任意组件类型的 implementation 声明
+        Pattern implPattern = Pattern.compile(
+                "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+implementation\\s+(\\w+)\\.impl"
+        );
+        // 匹配块关键字
+        Pattern subcompPattern = Pattern.compile("^\\s*subcomponents\\s*$");
+        Pattern connPattern = Pattern.compile("^\\s*connections\\s*$");
+        Pattern propPattern = Pattern.compile("^\\s*properties\\s*$");
+
+        boolean inImpl = false;
+        String currentImplName = null;
+        int lastSectionOrder = 0; // 0=未出现, 1=subcomponents, 2=connections, 3=properties
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].trim();
+
+            if (line.startsWith("--")) {
+                continue;
+            }
+
+            Matcher implMatcher = implPattern.matcher(line);
+            if (implMatcher.find()) {
+                inImpl = true;
+                currentImplName = implMatcher.group(2);
+                lastSectionOrder = 0;
+                continue;
+            }
+
+            if (inImpl && line.matches("end\\s+\\w+\\.impl\\s*;")) {
+                inImpl = false;
+                currentImplName = null;
+                lastSectionOrder = 0;
+                continue;
+            }
+
+            if (!inImpl) {
+                continue;
+            }
+
+            int currentOrder = 0;
+            if (subcompPattern.matcher(line).find()) {
+                currentOrder = 1;
+            } else if (connPattern.matcher(line).find()) {
+                currentOrder = 2;
+            } else if (propPattern.matcher(line).find()) {
+                currentOrder = 3;
+            }
+
+            if (currentOrder > 0) {
+                if (currentOrder < lastSectionOrder) {
+                    String[] sectionNames = {"", "subcomponents", "connections", "properties"};
+                    result.errors.add(String.format(
+                            "第%d行: 三步规范违规 - implementation '%s.impl' 中 '%s' 出现在 '%s' 之后; " +
+                            "必须严格遵守顺序: subcomponents → connections → properties",
+                            i + 1, currentImplName, sectionNames[currentOrder], sectionNames[lastSectionOrder]
+                    ));
+                }
+                lastSectionOrder = currentOrder;
+            }
+        }
+    }
+
+    /**
+     * 4p. 检测 process/thread implementation 中的双向连接（<->）。
+     *
+     * 分层架构规范：软件层（process / thread）中的 port 连接必须使用单向 ->，
+     * 双向 <-> 容易引发跨层耦合和语法解析问题，应避免使用。
+     */
+    private void checkBidirectionalInSoftwareLayer(String aadlContent, ValidationResult result) {
+        String[] lines = aadlContent.split("\n");
+
+        // 匹配 process 或 thread implementation
+        Pattern softwareImplPattern = Pattern.compile(
+                "^\\s*(process|thread)\\s+implementation\\s+(\\w+)\\.impl"
+        );
+        // 匹配包含 <-> 的连接行
+        Pattern bidirConnPattern = Pattern.compile("<->");
+
+        boolean inSoftwareImpl = false;
+        String currentImplName = null;
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].trim();
+
+            if (line.startsWith("--")) {
+                continue;
+            }
+
+            Matcher implMatcher = softwareImplPattern.matcher(line);
+            if (implMatcher.find()) {
+                inSoftwareImpl = true;
+                currentImplName = implMatcher.group(2);
+                continue;
+            }
+
+            if (line.matches("end\\s+\\w+\\.impl\\s*;")) {
+                inSoftwareImpl = false;
+                currentImplName = null;
+                continue;
+            }
+
+            if (inSoftwareImpl && bidirConnPattern.matcher(line).find()) {
+                result.warnings.add(String.format(
+                        "第%d行: 分层架构建议 - process/thread implementation '%s.impl' 中使用了双向连接 <->; " +
+                        "软件层组件间应使用单向 -> 进行数据流连接，避免跨层耦合",
+                        i + 1, currentImplName
+                ));
+            }
+        }
+    }
+
     // ========================= 自动修正 =========================
 
     private boolean hasAutoFixableIssues(Map<String, AadlDeclaration> declarations,
@@ -1939,6 +2118,280 @@ public class AadlReferenceValidator {
     }
 
     /**
+     * 自动修正：删除 process implementation 中非法的 bus access 连接行。
+     *
+     * 分层架构规范：bus access 连接只能出现在 system implementation 中。
+     * 进程内部的 bus access 连接行会被直接移除。
+     */
+    private String fixBusAccessInProcess(String content, ValidationResult result) {
+        String[] lines = content.split("\n");
+        List<String> resultLines = new ArrayList<>();
+
+        Pattern processImplPattern = Pattern.compile(
+                "^\\s*process\\s+implementation\\s+(\\w+)\\.impl"
+        );
+        Pattern busAccessConnPattern = Pattern.compile(
+                "^\\s*\\w+\\s*:\\s*bus\\s+access\\s+"
+        );
+
+        boolean inProcessImpl = false;
+        String currentProcessImplName = null;
+        int removedCount = 0;
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+            String trimmed = line.trim();
+
+            if (trimmed.startsWith("--")) {
+                resultLines.add(line);
+                continue;
+            }
+
+            Matcher processMatcher = processImplPattern.matcher(trimmed);
+            if (processMatcher.find()) {
+                inProcessImpl = true;
+                currentProcessImplName = processMatcher.group(1);
+                resultLines.add(line);
+                continue;
+            }
+
+            if (trimmed.matches("end\\s+\\w+\\.impl\\s*;")) {
+                inProcessImpl = false;
+                currentProcessImplName = null;
+                resultLines.add(line);
+                continue;
+            }
+
+            if (inProcessImpl && busAccessConnPattern.matcher(trimmed).find()) {
+                removedCount++;
+                result.fixes.add(String.format(
+                        "已删除 process implementation '%s.impl' 中非法的 bus access 连接行: %s",
+                        currentProcessImplName, trimmed));
+                continue;
+            }
+
+            resultLines.add(line);
+        }
+
+        if (removedCount > 0) {
+            log.info(String.format("自动修正：从 process implementation 中删除了 %d 行非法 bus access 连接", removedCount));
+        }
+        return String.join("\n", resultLines);
+    }
+
+    /**
+     * 自动修正：将 process/thread implementation 中的双向连接（<->）替换为单向（->）。
+     *
+     * 分层架构规范：软件层组件间应使用单向 -> 进行数据流连接。
+     */
+    private String fixBidirectionalInSoftwareLayer(String content, ValidationResult result) {
+        String[] lines = content.split("\n");
+        List<String> resultLines = new ArrayList<>();
+
+        Pattern softwareImplPattern = Pattern.compile(
+                "^\\s*(process|thread)\\s+implementation\\s+(\\w+)\\.impl"
+        );
+
+        boolean inSoftwareImpl = false;
+        String currentImplName = null;
+        int fixCount = 0;
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+            String trimmed = line.trim();
+
+            if (trimmed.startsWith("--")) {
+                resultLines.add(line);
+                continue;
+            }
+
+            Matcher implMatcher = softwareImplPattern.matcher(trimmed);
+            if (implMatcher.find()) {
+                inSoftwareImpl = true;
+                currentImplName = implMatcher.group(2);
+                resultLines.add(line);
+                continue;
+            }
+
+            if (trimmed.matches("end\\s+\\w+\\.impl\\s*;")) {
+                inSoftwareImpl = false;
+                currentImplName = null;
+                resultLines.add(line);
+                continue;
+            }
+
+            if (inSoftwareImpl && line.contains("<->")) {
+                String fixedLine = line.replace("<->", "->");
+                fixCount++;
+                result.fixes.add(String.format(
+                        "已将 process/thread implementation '%s.impl' 中的双向连接 <-> 替换为单向 -> : %s",
+                        currentImplName, trimmed));
+                resultLines.add(fixedLine);
+            } else {
+                resultLines.add(line);
+            }
+        }
+
+        if (fixCount > 0) {
+            log.info(String.format("自动修正：在软件层中将 %d 处双向连接 <-> 替换为单向 ->", fixCount));
+        }
+        return String.join("\n", resultLines);
+    }
+
+    /**
+     * 自动修正：重排 implementation 中的块顺序为 subcomponents → connections → properties。
+     *
+     * 三步规范：当检测到块顺序违规时，提取各块内容并按正确顺序重新组装。
+     */
+    private String fixImplementationOrder(String content, ValidationResult result) {
+        String[] lines = content.split("\n");
+        List<String> resultLines = new ArrayList<>();
+
+        Pattern implPattern = Pattern.compile(
+                "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+implementation\\s+(\\w+)\\.impl"
+        );
+
+        int i = 0;
+        while (i < lines.length) {
+            String line = lines[i];
+            String trimmed = line.trim();
+
+            Matcher implMatcher = implPattern.matcher(trimmed);
+            if (implMatcher.find()) {
+                // 找到 implementation 块的开始，提取整个块
+                String implName = implMatcher.group(2);
+                List<String> blockLines = new ArrayList<>();
+                blockLines.add(line);
+                i++;
+
+                // 收集直到 end ... .impl;
+                while (i < lines.length) {
+                    String blockLine = lines[i];
+                    blockLines.add(blockLine);
+                    if (blockLine.trim().matches("end\\s+\\w+\\.impl\\s*;")) {
+                        i++;
+                        break;
+                    }
+                    i++;
+                }
+
+                // 分析块内顺序，必要时重排
+                List<String> reordered = reorderImplementationBlock(blockLines, implName, result);
+                resultLines.addAll(reordered);
+            } else {
+                resultLines.add(line);
+                i++;
+            }
+        }
+
+        return String.join("\n", resultLines);
+    }
+
+    /**
+     * 重排单个 implementation 块的内部顺序。
+     * 将块内容分为 subcomponents / connections / properties / 其他 四组，
+     * 按正确顺序重新组装。
+     */
+    private List<String> reorderImplementationBlock(List<String> blockLines, String implName,
+                                                     ValidationResult result) {
+        // 分类收集各块行
+        List<String> subcompLines = new ArrayList<>();
+        List<String> connLines = new ArrayList<>();
+        List<String> propLines = new ArrayList<>();
+        List<String> otherLines = new ArrayList<>(); // 声明行、end 行等
+
+        Pattern subcompHeader = Pattern.compile("^\\s*subcomponents\\s*$");
+        Pattern connHeader = Pattern.compile("^\\s*connections\\s*$");
+        Pattern propHeader = Pattern.compile("^\\s*properties\\s*$");
+
+        String currentSection = null; // "subcomp", "conn", "prop", null
+
+        for (String line : blockLines) {
+            String trimmed = line.trim();
+
+            if (subcompHeader.matcher(trimmed).find()) {
+                currentSection = "subcomp";
+                subcompLines.add(line);
+                continue;
+            }
+            if (connHeader.matcher(trimmed).find()) {
+                currentSection = "conn";
+                connLines.add(line);
+                continue;
+            }
+            if (propHeader.matcher(trimmed).find()) {
+                currentSection = "prop";
+                propLines.add(line);
+                continue;
+            }
+
+            // 非块头行
+            if (currentSection == null) {
+                otherLines.add(line); // 声明行、end 行等
+            } else if ("subcomp".equals(currentSection)) {
+                subcompLines.add(line);
+            } else if ("conn".equals(currentSection)) {
+                connLines.add(line);
+            } else if ("prop".equals(currentSection)) {
+                propLines.add(line);
+            }
+        }
+
+        // 检查是否需要重排
+        boolean needsReorder = false;
+        int subcompIdx = -1, connIdx = -1, propIdx = -1;
+        for (int idx = 0; idx < blockLines.size(); idx++) {
+            String t = blockLines.get(idx).trim();
+            if (subcompHeader.matcher(t).find()) subcompIdx = idx;
+            else if (connHeader.matcher(t).find()) connIdx = idx;
+            else if (propHeader.matcher(t).find()) propIdx = idx;
+        }
+        // 判断顺序是否违规
+        if (subcompIdx >= 0 && connIdx >= 0 && subcompIdx > connIdx) needsReorder = true;
+        if (subcompIdx >= 0 && propIdx >= 0 && subcompIdx > propIdx) needsReorder = true;
+        if (connIdx >= 0 && propIdx >= 0 && connIdx > propIdx) needsReorder = true;
+
+        if (!needsReorder) {
+            return blockLines; // 顺序正确，无需重排
+        }
+
+        result.fixes.add(String.format(
+                "已重排 implementation '%s.impl' 中的块顺序为: subcomponents → connections → properties",
+                implName));
+        log.info(String.format("自动修正：重排 implementation '%s.impl' 中的块顺序", implName));
+
+        // 重新组装：声明行 → subcomponents → connections → properties → end 行
+        List<String> reordered = new ArrayList<>();
+
+        // 分离声明行和 end 行
+        List<String> headerLines = new ArrayList<>();
+        List<String> endLines = new ArrayList<>();
+        for (String line : otherLines) {
+            String trimmed = line.trim();
+            if (trimmed.matches("end\\s+\\w+\\.impl\\s*;")) {
+                endLines.add(line);
+            } else {
+                headerLines.add(line);
+            }
+        }
+
+        // 组装
+        reordered.addAll(headerLines);
+        if (!subcompLines.isEmpty()) {
+            reordered.addAll(subcompLines);
+        }
+        if (!connLines.isEmpty()) {
+            reordered.addAll(connLines);
+        }
+        if (!propLines.isEmpty()) {
+            reordered.addAll(propLines);
+        }
+        reordered.addAll(endLines);
+
+        return reordered;
+    }
+
+    /**
      * 自动修正（按顺序执行）：
      * 0a. 修正非法 'requires data port' 语法 → 'in data port'
      * 0b. 修复截断/不完整的连接行（硬编码补充缺失端口名 + 分号）
@@ -1967,6 +2420,15 @@ public class AadlReferenceValidator {
 
         // 0e. 将 implementation 中非法的 features 块移到对应的类型声明中
         content = fixFeaturesPlacement(content, result);
+
+        // 0f. 删除 process implementation 中非法的 bus access 连接行
+        content = fixBusAccessInProcess(content, result);
+
+        // 0g. 将软件层中的双向连接 <-> 替换为单向 ->
+        content = fixBidirectionalInSoftwareLayer(content, result);
+
+        // 0h. 重排 implementation 中的块顺序为 subcomponents → connections → properties
+        content = fixImplementationOrder(content, result);
 
         StringBuilder fixBlock = new StringBuilder();
         int fixCount = 0;
