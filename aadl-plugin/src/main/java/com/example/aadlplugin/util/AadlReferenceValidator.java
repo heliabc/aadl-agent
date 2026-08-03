@@ -140,8 +140,8 @@ public class AadlReferenceValidator {
         public List<String> warnings = new ArrayList<>();
         public List<String> fixes = new ArrayList<>();
         public String fixedContent;
-        /** 需要自动补全的 feature 列表：key = 组件类型名, value = 需要补全的 feature 名集合 */
-        public Map<String, Set<String>> missingFeatures = new LinkedHashMap<>();
+        /** 需要自动补全的 feature 列表：key = 组件类型名, value = {feature名 → 数据类型} */
+        public Map<String, Map<String, String>> missingFeatures = new LinkedHashMap<>();
         public boolean hasIssues() {
             return !errors.isEmpty() || !warnings.isEmpty() || !fixes.isEmpty();
         }
@@ -178,7 +178,7 @@ public class AadlReferenceValidator {
         log.info(String.format("subcomponents 引用解析完成：%d 条", subcomponentRefs.size()));
 
         // 3b. 解析组件 features（类型声明中的端口/访问点）
-        Map<String, Set<String>> componentFeatures = parseFeatures(aadlContent);
+        Map<String, Map<String, String>> componentFeatures = parseFeatures(aadlContent);
         log.info(String.format("features 解析完成：%d 个组件有 features 声明", componentFeatures.size()));
 
         // 3c. 解析 connections 引用
@@ -570,8 +570,8 @@ public class AadlReferenceValidator {
      *
      * @return Map: 组件类型名 → 该组件 features 块中声明的端口/访问点名集合
      */
-    private Map<String, Set<String>> parseFeatures(String aadlContent) {
-        Map<String, Set<String>> componentFeatures = new LinkedHashMap<>();
+    private Map<String, Map<String, String>> parseFeatures(String aadlContent) {
+        Map<String, Map<String, String>> componentFeatures = new LinkedHashMap<>();
         String[] lines = aadlContent.split("\n");
 
         // 类型声明模式（不含 implementation）
@@ -586,13 +586,14 @@ public class AadlReferenceValidator {
         Pattern virtualTypePattern = Pattern.compile(
                 "^\\s*virtual\\s+processor\\s+(\\w+)\\s*$"
         );
-        // feature 行模式：featureName : in data port ... / out data port ... / requires bus access ... / provides bus access ...
+        // feature 行模式：featureName : in data port TypeName / out data port TypeName / ...
+        // 捕获: 1=featureName, 2=方向+端口类型, 4=数据类型(可选)
         Pattern featurePattern = Pattern.compile(
                 "^(\\w+)\\s*:\\s*(in\\s+data\\s+port|out\\s+data\\s+port|in\\s+event\\s+port|out\\s+event\\s+port|" +
                 "in\\s+event\\s+data\\s+port|out\\s+event\\s+data\\s+port|" +
                 "requires\\s+bus\\s+access|provides\\s+bus\\s+access|" +
                 "requires\\s+data\\s+access|provides\\s+data\\s+access|" +
-                "in\\s+port|out\\s+port)"
+                "in\\s+port|out\\s+port)(\\s+([A-Za-z_]\\w*(?:::[A-Za-z_]\\w*)*(?:\\.\\w+)?))?\\s*;"
         );
 
         String currentTypeDecl = null;  // 当前所在的类型声明名
@@ -659,8 +660,9 @@ public class AadlReferenceValidator {
                 Matcher featureMatcher = featurePattern.matcher(line);
                 if (featureMatcher.find()) {
                     String featureName = featureMatcher.group(1);
-                    componentFeatures.computeIfAbsent(currentTypeDecl, k -> new LinkedHashSet<>())
-                            .add(featureName);
+                    String dataType = featureMatcher.group(4);  // 数据类型，可能为 null
+                    componentFeatures.computeIfAbsent(currentTypeDecl, k -> new LinkedHashMap<>())
+                            .put(featureName, dataType != null ? dataType : "");
                 }
             }
         }
@@ -788,13 +790,13 @@ public class AadlReferenceValidator {
      * 2. 端口名是否在该实例对应组件类型的 features 块中声明过
      *
      * @param connections      解析出的 connections 引用
-     * @param componentFeatures 每个组件类型的 features 名集合
+     * @param componentFeatures 每个组件类型的 features（feature名 → 数据类型）
      * @param subcomponentRefs  解析出的 subcomponents 引用（用于建立 实例名→类型名 映射）
      * @param declarations      AADL 声明（用于查找类型）
      * @param result            验证结果
      */
     private void checkConnectionReferences(List<ConnectionRef> connections,
-                                            Map<String, Set<String>> componentFeatures,
+                                            Map<String, Map<String, String>> componentFeatures,
                                             List<SubcomponentRef> subcomponentRefs,
                                             Map<String, AadlDeclaration> declarations,
                                             ValidationResult result) {
@@ -814,12 +816,14 @@ public class AadlReferenceValidator {
 
             Map<String, String> instanceMap = implInstanceMap.get(conn.parentImpl);
 
-            // 检查源端
+            // 检查源端，传入目标端信息用于数据类型推断
             checkSingleEndpoint(conn, conn.sourceInstance, conn.sourceFeature,
+                    conn.destInstance, conn.destFeature,
                     instanceMap, componentFeatures, declarations, result, "源");
 
-            // 检查目标端
+            // 检查目标端，传入源端信息用于数据类型推断
             checkSingleEndpoint(conn, conn.destInstance, conn.destFeature,
+                    conn.sourceInstance, conn.sourceFeature,
                     instanceMap, componentFeatures, declarations, result, "目标");
         }
     }
@@ -827,10 +831,23 @@ public class AadlReferenceValidator {
     /**
      * 检查连接的单个端点（源或目标）。
      * 如果端口不存在于 features 中，将记录到 result.missingFeatures 供自动补全使用。
+     * 补全时从连接另一端的 feature 声明中查找数据类型。
+     *
+     * @param conn              当前连接
+     * @param instanceName      本端实例名
+     * @param featureName       本端端口名
+     * @param otherInstance     另一端实例名
+     * @param otherFeature      另一端端口名
+     * @param instanceMap       实例名→类型名映射
+     * @param componentFeatures 组件类型 → (feature名 → 数据类型)
+     * @param declarations      AADL 声明
+     * @param result            验证结果
+     * @param endpointLabel     "源" 或 "目标"
      */
     private void checkSingleEndpoint(ConnectionRef conn, String instanceName, String featureName,
+                                      String otherInstance, String otherFeature,
                                       Map<String, String> instanceMap,
-                                      Map<String, Set<String>> componentFeatures,
+                                      Map<String, Map<String, String>> componentFeatures,
                                       Map<String, AadlDeclaration> declarations,
                                       ValidationResult result, String endpointLabel) {
         if (instanceMap == null) {
@@ -848,24 +865,56 @@ public class AadlReferenceValidator {
         }
 
         // 2. 检查端口名是否在对应组件类型的 features 中声明过
-        Set<String> features = componentFeatures.get(typeName);
+        Map<String, String> features = componentFeatures.get(typeName);
         if (features == null || features.isEmpty()) {
             // 组件类型没有 features 块 → 需要补全
             result.errors.add(String.format(
                     "第%d行: 连接 '%s' 的%s端引用 '%s.%s'，但组件类型 '%s' 没有 features 块或 features 为空",
                     conn.lineNumber, conn.connName, endpointLabel, instanceName, featureName, typeName
             ));
-            result.missingFeatures.computeIfAbsent(typeName, k -> new LinkedHashSet<>()).add(featureName);
-        } else if (!features.contains(featureName)) {
-            String availableFeatures = String.join(", ", features);
+            String dataType = resolveDataType(otherInstance, otherFeature, instanceMap, componentFeatures);
+            result.missingFeatures.computeIfAbsent(typeName, k -> new LinkedHashMap<>())
+                    .put(featureName, dataType != null ? dataType : "");
+        } else if (!features.containsKey(featureName)) {
+            String availableFeatures = String.join(", ", features.keySet());
             result.errors.add(String.format(
                     "第%d行: 连接 '%s' 的%s端引用 '%s.%s'，但组件类型 '%s' 的 features 中不存在 '%s'（可用: %s）",
                     conn.lineNumber, conn.connName, endpointLabel, instanceName, featureName,
                     typeName, featureName, availableFeatures
             ));
-            // 收集缺失的 feature 供自动补全
-            result.missingFeatures.computeIfAbsent(typeName, k -> new LinkedHashSet<>()).add(featureName);
+            // 收集缺失的 feature 供自动补全，从连接另一端查找数据类型
+            String dataType = resolveDataType(otherInstance, otherFeature, instanceMap, componentFeatures);
+            result.missingFeatures.computeIfAbsent(typeName, k -> new LinkedHashMap<>())
+                    .put(featureName, dataType != null ? dataType : "");
         }
+    }
+
+    /**
+     * 从连接另一端的 feature 声明中查找数据类型。
+     * 如果另一端实例的组件类型 features 中存在对应 feature 且有数据类型，则返回该类型。
+     *
+     * @param otherInstance     另一端实例名
+     * @param otherFeature      另一端端口名
+     * @param instanceMap       实例名→类型名映射
+     * @param componentFeatures 组件类型 → (feature名 → 数据类型)
+     * @return 数据类型名，或 null 如果无法确定
+     */
+    private String resolveDataType(String otherInstance, String otherFeature,
+                                    Map<String, String> instanceMap,
+                                    Map<String, Map<String, String>> componentFeatures) {
+        if (otherInstance == null || otherFeature == null || instanceMap == null) {
+            return null;
+        }
+        String otherType = instanceMap.get(otherInstance);
+        if (otherType == null) {
+            return null;
+        }
+        Map<String, String> otherFeatures = componentFeatures.get(otherType);
+        if (otherFeatures == null) {
+            return null;
+        }
+        String dataType = otherFeatures.get(otherFeature);
+        return (dataType != null && !dataType.isEmpty()) ? dataType : null;
     }
 
     // ========================= 线程 connections 块检测 =========================
@@ -1902,7 +1951,7 @@ public class AadlReferenceValidator {
     private String applyFixes(String aadlContent,
                               Map<String, AadlDeclaration> declarations,
                               Map<String, AadlInputParser.ArchNode> archComponents,
-                              Map<String, Set<String>> componentFeatures,
+                              Map<String, Map<String, String>> componentFeatures,
                               ValidationResult result) {
         // 0a. 修正非法 requires data port 语法
         String content = fixRequiresDataPort(aadlContent, result);
@@ -1993,21 +2042,19 @@ public class AadlReferenceValidator {
                 content = insertFixBlockBeforeEndPackage(content, fixBlock.toString());
             }
 
-            for (Map.Entry<String, Set<String>> entry : result.missingFeatures.entrySet()) {
+            for (Map.Entry<String, Map<String, String>> entry : result.missingFeatures.entrySet()) {
                 String typeName = entry.getKey();
-                Set<String> missingFeats = entry.getValue();
-                Set<String> existingFeats = componentFeatures.get(typeName);
+                Map<String, String> missingFeats = entry.getValue();  // feature名 → 数据类型
+                Map<String, String> existingFeats = componentFeatures.get(typeName);
 
                 // 过滤掉已存在的（可能在补全过程中已被其他逻辑添加）
-                Set<String> toAdd = new LinkedHashSet<>();
-                if (existingFeats != null) {
-                    for (String f : missingFeats) {
-                        if (!existingFeats.contains(f)) {
-                            toAdd.add(f);
-                        }
+                Map<String, String> toAdd = new LinkedHashMap<>();
+                for (Map.Entry<String, String> fe : missingFeats.entrySet()) {
+                    String featName = fe.getKey();
+                    String dataType = fe.getValue();
+                    if (existingFeats == null || !existingFeats.containsKey(featName)) {
+                        toAdd.put(featName, dataType);
                     }
-                } else {
-                    toAdd.addAll(missingFeats);
                 }
 
                 if (toAdd.isEmpty()) {
@@ -2016,9 +2063,15 @@ public class AadlReferenceValidator {
 
                 content = injectMissingFeatures(content, typeName, toAdd);
                 featureFixCount += toAdd.size();
-                for (String f : toAdd) {
+                for (Map.Entry<String, String> fe : toAdd.entrySet()) {
+                    String featName = fe.getKey();
+                    String dataType = fe.getValue();
+                    String direction = inferDirection(featName);
+                    String typeDesc = (dataType != null && !dataType.isEmpty())
+                            ? direction + " data port " + dataType
+                            : direction + " data port";
                     result.fixes.add(String.format(
-                            "已补全缺失 feature 声明: %s.%s (in data port)", typeName, f
+                            "已补全缺失 feature 声明: %s.%s (%s)", typeName, featName, typeDesc
                     ));
                 }
             }
@@ -2073,14 +2126,24 @@ public class AadlReferenceValidator {
      *
      * @param content      AADL 代码
      * @param typeName     组件类型名
-     * @param missingFeats 需要补全的 feature 名集合
+     * @param missingFeats 需要补全的 feature（feature名 → 数据类型，数据类型可能为空字符串）
      * @return 修正后的 AADL 代码
      */
-    private String injectMissingFeatures(String content, String typeName, Set<String> missingFeats) {
+    private String injectMissingFeatures(String content, String typeName, Map<String, String> missingFeats) {
         String[] lines = content.split("\n");
         StringBuilder featureLines = new StringBuilder();
-        for (String f : missingFeats) {
-            featureLines.append("    ").append(f).append(" : in data port;\n");
+        List<String> featNames = new ArrayList<>(missingFeats.keySet());
+        for (Map.Entry<String, String> entry : missingFeats.entrySet()) {
+            String featName = entry.getKey();
+            String dataType = entry.getValue();
+            String direction = inferDirection(featName);
+            if (dataType != null && !dataType.isEmpty()) {
+                featureLines.append("    ").append(featName).append(" : ")
+                        .append(direction).append(" data port ").append(dataType).append(";\n");
+            } else {
+                featureLines.append("    ").append(featName).append(" : ")
+                        .append(direction).append(" data port;\n");
+            }
         }
 
         // 查找类型声明行：如 "processor MainProcessor" 或 "device PowerSupply"
@@ -2134,7 +2197,7 @@ public class AadlReferenceValidator {
                 // 已有 features 块，在块末尾（endFeaturesIdx 之前）追加
                 StringBuilder sb = new StringBuilder();
                 sb.append("    -- [自动修正] 补全 connections 引用中缺失的 feature 声明: ")
-                  .append(String.join(", ", missingFeats)).append("\n");
+                  .append(String.join(", ", featNames)).append("\n");
                 sb.append(featureLines);
                 lines[endFeaturesIdx] = sb.toString() + lines[endFeaturesIdx];
                 return String.join("\n", lines);
@@ -2143,7 +2206,7 @@ public class AadlReferenceValidator {
                 StringBuilder sb = new StringBuilder();
                 sb.append("  features\n");
                 sb.append("    -- [自动修正] 补全 connections 引用中缺失的 feature 声明: ")
-                  .append(String.join(", ", missingFeats)).append("\n");
+                  .append(String.join(", ", featNames)).append("\n");
                 sb.append(featureLines);
                 lines[i] = lines[i] + "\n" + sb.toString().trim();
                 return String.join("\n", lines);
@@ -2153,6 +2216,21 @@ public class AadlReferenceValidator {
         // 未找到类型声明，无法注入
         log.warning(String.format("未找到组件类型 '%s' 的声明，无法补全 feature", typeName));
         return content;
+    }
+
+    /**
+     * 根据 feature 名推断端口方向。
+     * 名字包含 "out"（不区分大小写）→ out，否则默认 in。
+     */
+    private String inferDirection(String featureName) {
+        if (featureName == null) {
+            return "in";
+        }
+        String lower = featureName.toLowerCase();
+        if (lower.contains("out") || lower.contains("output") || lower.contains("send") || lower.contains("src")) {
+            return "out";
+        }
+        return "in";
     }
 
     /** 生成类型声明 */
