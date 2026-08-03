@@ -1,0 +1,425 @@
+# AADL 局部语法约束 - 提取自 OSATE 官方 Xtext 文法 (Aadl2.xtext)
+# 来源: https://github.com/osate/osate2/blob/master/core/org.osate.xtext.aadl2/src/org/osate/xtext/aadl2/Aadl2.xtext
+# 用途: 用于 AadlReferenceValidator 的轻量级正则验证，替代完整BNF解析器
+# 注意: 仅提取可直接用正则/字符串匹配实现的约束，不涉及语义分析
+
+# ============================================================
+# 1. 包结构约束
+# ============================================================
+package_structure:
+  # AadlPackage: 'package' name=PNAME (public|private section) 'end' PNAME ';'
+  # PNAME = ID ('::' ID)*
+  pattern: |
+    ^package\s+(?<pkgname>[A-Za-z_]\w*(?:::[A-Za-z_]\w*)*)\s*
+  end_pattern: |
+    ^end\s+(?<endname>[A-Za-z_]\w*(?:::[A-Za-z_]\w*)*)\s*;\s*$
+  constraint: "包声明的 name 必须与 end 后的名称完全一致"
+  auto_fix: "将 end 后的名称修正为 package 声明的名称"
+
+# ============================================================
+# 2. 组件类型声明约束
+# ============================================================
+component_type:
+  # 模式: <category> name=ID ... 'end' ID ';'
+  # category 取值见 component_categories
+  categories:
+    - abstract
+    - bus
+    - data
+    - device
+    - memory
+    - process
+    - processor
+    - subprogram
+    - subprogram group    # 两个token
+    - system
+    - thread group        # 两个token
+    - thread
+    - virtual bus         # 两个token
+    - virtual processor   # 两个token
+  pattern: |
+    ^(?<category>abstract|bus|data|device|memory|process|processor|subprogram\s+group|system|thread\s+group|thread|virtual\s+bus|virtual\s+processor)\s+(?<typename>[A-Za-z_]\w*)
+  end_pattern: |
+    ^end\s+(?<endname>[A-Za-z_]\w*)\s*;\s*$
+  constraint: "组件类型声明的 name 必须与 end 后的 ID 一致"
+  sections_order:
+    - extends
+    - prototypes
+    - features
+    - flows
+    - modes / requires modes
+    - properties
+    - annex subclause
+  features_only_in_type: true
+  constraint_msg: "features 块只能出现在组件类型(type)声明中，不能出现在 implementation 声明中"
+
+# ============================================================
+# 3. 组件实现声明约束
+# ============================================================
+component_implementation:
+  # 模式: <category> implementation Realization '.' INAME ... 'end' FULLINAME ';'
+  # Realization = implemented=[ComponentType|ID]  即: implemented TypeName
+  # INAME = ID (如 impl)
+  # FULLINAME = ID '.' ID (如 TypeName.impl)
+  pattern: |
+    ^(?<category>abstract|bus|data|device|memory|process|processor|subprogram\s+group|subprogram|system|thread\s+group|thread|virtual\s+bus|virtual\s+processor)\s+implementation\s+(?<realized>[A-Za-z_]\w*)\s*\.\s*(?<implname>[A-Za-z_]\w*)
+  end_pattern: |
+    ^end\s+(?<endtype>[A-Za-z_]\w*)\s*\.\s*(?<endimpl>[A-Za-z_]\w*)\s*;\s*$
+  constraint: "implementation 的 end 名称必须为 TypeName.implName 格式，且与声明一致"
+  auto_fix: "将 end 后的名称修正为 TypeName.implName"
+  sections_order:
+    - extends
+    - prototypes
+    - subcomponents
+    - internal features
+    - processor features
+    - calls
+    - connections
+    - flows
+    - modes
+    - properties
+    - annex subclause
+  no_features_block: true
+  constraint_msg: "implementation 声明中不能包含 features 块"
+
+# ============================================================
+# 4. 子组件声明约束 (Subcomponent)
+# ============================================================
+subcomponent:
+  # 通用模式: name=ID ':' <category> <typeRef>? ';'
+  # typeRef 是 QCREF (qualified reference, 如 pkg::Type 或 Type 或 Type.impl)
+  pattern: |
+    ^\s*(?<instname>[A-Za-z_]\w*)\s*:\s*(?<category>abstract|bus|data|device|memory|process|processor|subprogram\s+group|subprogram|system|thread\s+group|thread|virtual\s+bus|virtual\s+processor)\s+(?<typeref>[A-Za-z_]\w*(?:::[A-Za-z_]\w*)*(?:\.\w+)?)\s*;\s*$
+  constraint: "子组件声明格式: instanceName : category TypeRef;"
+  must_end_with_semicolon: true
+  typeref_format: "QCREF = ID ('::' ID)* ('.' ID)?，如 MyType 或 pkg::MyType 或 MyType.impl"
+
+# ============================================================
+# 5. 组件嵌套规则 (Containment Rules)
+# 来源: 各 Implementation 的 subcomponents 块定义
+# ============================================================
+containment_rules:
+  # 每种 implementation 允许的子组件类型
+  system_impl:
+    allowed: [system, subprogram, subprogram_group, process, processor, virtual_processor, memory, device, bus, virtual_bus, data, abstract]
+    forbidden: [thread, thread_group]
+    
+  process_impl:
+    allowed: [thread_group, thread, subprogram, subprogram_group, data, abstract]
+    forbidden: [system, process, processor, virtual_processor, memory, device, bus, virtual_bus]
+    
+  thread_group_impl:
+    allowed: [thread_group, thread, subprogram, subprogram_group, data, abstract]
+    forbidden: [system, process, processor, memory, device, bus, virtual_bus]
+    
+  thread_impl:
+    allowed: [subprogram, subprogram_group, data, abstract]
+    forbidden: [system, process, processor, virtual_processor, memory, device, bus, virtual_bus, thread, thread_group]
+    # 注意: 官方文法中 ThreadImplementation 有 connections 块！
+    # 见 Aadl2.xtext 第747-752行
+    has_connections: true  # 官方文法允许线程包含connections
+    
+  processor_impl:
+    allowed: [memory, abstract, bus, virtual_bus, virtual_processor]
+    forbidden: [system, process, thread, thread_group, device, data, subprogram, subprogram_group]
+    
+  virtual_processor_impl:
+    allowed: [abstract, virtual_bus, virtual_processor]
+    forbidden: [system, process, thread, thread_group, processor, memory, device, bus, data, subprogram, subprogram_group]
+    # 关键: 虚拟处理器不能包含线程或进程
+    
+  device_impl:
+    allowed: [abstract, data, virtual_bus, bus]
+    forbidden: [system, process, thread, thread_group, processor, virtual_processor, memory, subprogram, subprogram_group]
+    
+  memory_impl:
+    allowed: [abstract, memory, bus, virtual_bus]
+    forbidden: [system, process, thread, thread_group, processor, virtual_processor, device, data, subprogram, subprogram_group]
+    
+  bus_impl:
+    allowed: [abstract, virtual_bus]
+    forbidden: [system, process, thread, thread_group, processor, virtual_processor, memory, device, data, bus, subprogram, subprogram_group]
+    
+  virtual_bus_impl:
+    allowed: [abstract, virtual_bus]
+    forbidden: [system, process, thread, thread_group, processor, virtual_processor, memory, device, data, bus, subprogram, subprogram_group]
+    
+  data_impl:
+    allowed: [abstract, data, subprogram]
+    forbidden: [system, process, thread, thread_group, processor, virtual_processor, memory, device, bus, virtual_bus, subprogram_group]
+    
+  subprogram_impl:
+    allowed: [abstract, subprogram, data]
+    forbidden: [system, process, thread, thread_group, processor, virtual_processor, memory, device, bus, virtual_bus, subprogram_group]
+    
+  subprogram_group_impl:
+    allowed: [subprogram_group, subprogram, abstract]
+    forbidden: [system, process, thread, thread_group, processor, virtual_processor, memory, device, bus, virtual_bus, data]
+    
+  abstract_impl:
+    allowed: [system, subprogram, subprogram_group, thread, thread_group, process, processor, virtual_processor, memory, device, bus, virtual_bus, data, abstract]
+    forbidden: []
+
+# ============================================================
+# 6. Feature 声明约束
+# ============================================================
+features:
+  # DataPort: name ':' (in|out|in out) data port [TypeName]? ';'
+  data_port:
+    pattern: |
+      ^\s*(?<name>[A-Za-z_]\w*)\s*:\s*(in\s+out|in|out)\s+data\s+port(\s+(?<type>[A-Za-z_]\w*(?:::[A-Za-z_]\w*)*(?:\.\w+)?))?\s*;\s*$
+    direction_keywords: [in, out, "in out"]
+    type_required: false
+    constraint: "数据端口格式: name : in|out data port TypeName;"
+    
+  # EventPort: name ':' (in|out|in out) event port ';'
+  event_port:
+    pattern: |
+      ^\s*(?<name>[A-Za-z_]\w*)\s*:\s*(in\s+out|in|out)\s+event\s+port\s*;\s*$
+    direction_keywords: [in, out, "in out"]
+    no_type: true
+    
+  # EventDataPort: name ':' (in|out|in out) event data port [TypeName]? ';'
+  event_data_port:
+    pattern: |
+      ^\s*(?<name>[A-Za-z_]\w*)\s*:\s*(in\s+out|in|out)\s+event\s+data\s+port(\s+(?<type>[A-Za-z_]\w*(?:::[A-Za-z_]\w*)*(?:\.\w+)?))?\s*;\s*$
+    direction_keywords: [in, out, "in out"]
+    type_required: false
+    
+  # DataAccess: name ':' (requires|provides) data access [TypeName]? ';'
+  data_access:
+    pattern: |
+      ^\s*(?<name>[A-Za-z_]\w*)\s*:\s*(requires|provides)\s+data\s+access(\s+(?<type>[A-Za-z_]\w*(?:::[A-Za-z_]\w*)*(?:\.\w+)?))?\s*;\s*$
+    direction_keywords: [requires, provides]
+    
+  # BusAccess: name ':' (requires|provides) [virtual] bus access [TypeName]? ';'
+  bus_access:
+    pattern: |
+      ^\s*(?<name>[A-Za-z_]\w*)\s*:\s*(requires|provides)\s+(virtual\s+)?bus\s+access(\s+(?<type>[A-Za-z_]\w*(?:::[A-Za-z_]\w*)*(?:\.\w+)?))?\s*;\s*$
+    direction_keywords: [requires, provides]
+    
+  # SubprogramAccess: name ':' (requires|provides) subprogram access [TypeName]? ';'
+  subprogram_access:
+    pattern: |
+      ^\s*(?<name>[A-Za-z_]\w*)\s*:\s*(requires|provides)\s+subprogram\s+access(\s+(?<type>[A-Za-z_]\w*(?:::[A-Za-z_]\w*)*(?:\.\w+)?))?\s*;\s*$
+    direction_keywords: [requires, provides]
+    
+  # SubprogramGroupAccess: name ':' (requires|provides) subprogram group access [TypeName]? ';'
+  subprogram_group_access:
+    pattern: |
+      ^\s*(?<name>[A-Za-z_]\w*)\s*:\s*(requires|provides)\s+subprogram\s+group\s+access(\s+(?<type>[A-Za-z_]\w*(?:::[A-Za-z_]\w*)*(?:\.\w+)?))?\s*;\s*$
+    direction_keywords: [requires, provides]
+    
+  # FeatureGroup: name ':' (in|out)? feature group [TypeName]? ';'
+  feature_group:
+    pattern: |
+      ^\s*(?<name>[A-Za-z_]\w*)\s*:\s*(in\s+|out\s+)?feature\s+group(\s+(?<type>[A-Za-z_]\w*(?:::[A-Za-z_]\w*)*(?:\.\w+)?))?\s*;\s*$
+    direction_optional: true
+    
+  # Parameter: name ':' (in|out|in out) parameter [TypeName]? ';'
+  parameter:
+    pattern: |
+      ^\s*(?<name>[A-Za-z_]\w*)\s*:\s*(in\s+out|in|out)\s+parameter(\s+(?<type>[A-Za-z_]\w*(?:::[A-Za-z_]\w*)*(?:\.\w+)?))?\s*;\s*$
+    direction_keywords: [in, out, "in out"]
+    
+  # AbstractFeature: name ':' (in|out)? (prototype X | feature Y | feature) ';'
+  abstract_feature:
+    pattern: |
+      ^\s*(?<name>[A-Za-z_]\w*)\s*:\s*(in\s+|out\s+)?(prototype\s+\w+|feature\s+\w+|feature)\s*;\s*$
+
+  # 端口方向规则
+  port_directions:
+    data_port_directions: ["in", "out", "in out"]
+    event_port_directions: ["in", "out", "in out"]
+    event_data_port_directions: ["in", "out", "in out"]
+    parameter_directions: ["in", "out", "in out"]
+    access_directions: ["requires", "provides"]
+    forbidden_for_data_port: ["requires", "provides"]
+    constraint_msg: "数据端口只能使用 in/out/in out 方向关键字，禁止使用 requires/provides"
+
+# ============================================================
+# 7. 连接声明约束 (Connections)
+# ============================================================
+connections:
+  # PortConnection: name ':' port source (->|<->) destination ';'
+  # source/destination = ConnectedElement = (context '.')? connectionEnd
+  port_connection:
+    pattern: |
+      ^\s*(?<name>[A-Za-z_]\w*)\s*:\s*port\s+(?<src>\w+(?:\.\w+)*)\s*(->|<->)\s*(?<dst>\w+(?:\.\w+)*)\s*(\{[^}]*\})?\s*(in\s+modes\s*\([^)]*\))?\s*;\s*$
+    direction_operators: ["->", "<->"]
+    element_format: "ConnectedElement = (context '.')? connectionEnd, 如 Instance.port 或 port"
+    
+  # AccessConnection: name ':' <category> access source (->|<->) destination ';'
+  access_connection:
+    pattern: |
+      ^\s*(?<name>[A-Za-z_]\w*)\s*:\s*(bus|data|subprogram\s+group|subprogram|virtual\s+bus)\s+access\s+(?<src>\w+(?:\.\w+)*)\s*(->|<->)\s*(?<dst>\w+(?:\.\w+)*)\s*(\{[^}]*\})?\s*(in\s+modes\s*\([^)]*\))?\s*;\s*$
+    access_categories: [bus, data, "subprogram group", subprogram, "virtual bus"]
+    
+  # FeatureGroupConnection: name ':' feature group source (->|<->) destination ';'
+  feature_group_connection:
+    pattern: |
+      ^\s*(?<name>[A-Za-z_]\w*)\s*:\s*feature\s+group\s+(?<src>[\w.]+(?:\.[\w.]+)*)\s*(->|<->)\s*(?<dst>[\w.]+(?:\.[\w.]+)*)\s*(\{[^}]*\})?\s*(in\s+modes\s*\([^)]*\))?\s*;\s*$
+    
+  # FeatureConnection: name ':' feature source (->|<->) destination ';'
+  feature_connection:
+    pattern: |
+      ^\s*(?<name>[A-Za-z_]\w*)\s*:\s*feature\s+(?<src>[\w.]+(?:\.[\w.]+)*)\s*(->|<->)\s*(?<dst>[\w.]+(?:\.[\w.]+)*)\s*(\{[^}]*\})?\s*(in\s+modes\s*\([^)]*\))?\s*;\s*$
+    
+  # ParameterConnection: name ':' parameter source -> destination ';'
+  parameter_connection:
+    pattern: |
+      ^\s*(?<name>[A-Za-z_]\w*)\s*:\s*parameter\s+(?<src>\w+(?:\.\w+)*)\s*->\s*(?<dst>\w+(?:\.\w+)*)\s*(\{[^}]*\})?\s*(in\s+modes\s*\([^)]*\))?\s*;\s*$
+    direction_operator: "->"  # 参数连接只能用单向 ->
+    
+  # 连接端点格式
+  connected_element:
+    format: "(context '.')? connectionEnd"
+    examples: ["Instance.port", "port", "self.eventSource", "processor.proxy"]
+    must_have_port_name: "连接引用的 Instance 必须包含 .portName，不能只有 Instance 名"
+    auto_fix_missing_port: "源端补 .dataOut，目标端补 .dataIn"
+    
+  must_end_with_semicolon: true
+
+# ============================================================
+# 8. 实现内部块顺序约束
+# ============================================================
+implementation_block_order:
+  # 从各 Implementation 规则提取的块出现顺序
+  valid_order:
+    - subcomponents
+    - internal features
+    - processor features
+    - calls
+    - connections
+    - flows
+    - modes
+    - properties
+    - annex
+  constraint: "块必须按上述顺序出现，不能乱序"
+  
+  # 允许 connections 的实现类型（从文法确认）
+  implementations_with_connections:
+    - abstract_impl
+    - system_impl
+    - process_impl
+    - thread_group_impl
+    - thread_impl           # 官方文法允许！
+    - subprogram_impl
+    - subprogram_group_impl
+    - processor_impl
+    - virtual_processor_impl
+    - device_impl
+    - bus_impl
+    - virtual_bus_impl
+    - memory_impl           # 注意: Memory只有AccessConnection，无PortConnection
+    - data_impl             # 注意: Data只有AccessConnection，无PortConnection
+
+# ============================================================
+# 9. 关键字定义 (来自文法 keyword rules)
+# ============================================================
+keywords:
+  implementation_keywords:
+    abstract: "abstract implementation"
+    bus: "bus implementation"
+    data: "data implementation"
+    device: "device implementation"
+    memory: "memory implementation"
+    process: "process implementation"
+    processor: "processor implementation"
+    subprogram: "subprogram implementation"
+    subprogram_group: "subprogram group implementation"
+    system: "system implementation"
+    thread: "thread implementation"
+    thread_group: "thread group implementation"
+    virtual_bus: "virtual bus implementation"
+    virtual_processor: "virtual processor implementation"
+    
+  feature_keywords:
+    data_port: "data port"
+    event_port: "event port"
+    event_data_port: "event data port"
+    data_access: "data access"
+    bus_access: "bus access"
+    subprogram_access: "subprogram access"
+    subprogram_group_access: "subprogram group access"
+    feature_group: "feature group"
+    
+  connection_keywords:
+    port_connection: "port"
+    access_connection: "access"  # 前面有 category: bus/data/subprogram/virtual bus
+    feature_group_connection: "feature group"
+    feature_connection: "feature"
+    parameter_connection: "parameter"
+    
+  direction_keywords:
+    port_directions: ["in", "out", "in out"]
+    access_directions: ["requires", "provides"]
+
+# ============================================================
+# 10. 与当前项目规则的冲突说明
+# ============================================================
+conflicts_with_project_rules:
+  
+  conflict_1:
+    project_rule: "线程(Thread)内部严禁出现connections块"
+    grammar_finding: "ThreadImplementation (Aadl2.xtext 第715-764行) 明确包含 connections 块，允许 PortConnection、AccessConnection、FeatureGroupConnection、FeatureConnection、ParameterConnection"
+    grammar_line: 747
+    resolution: "官方文法允许线程包含connections。当前项目规则可能是基于实际OSATE使用中线程连接不常见的实践，但语法层面是合法的。建议降级为警告而非错误。"
+    
+  conflict_2:
+    project_rule: "虚拟处理器implementation中不得直接包含线程"
+    grammar_finding: "VirtualProcessorImplementation (第898-942行) 的 subcomponents 只允许 AbstractSubcomponent, VirtualBusSubcomponent, VirtualProcessorSubcomponent。确认线程确实不允许。"
+    grammar_line: 907
+    resolution: "当前项目规则正确，与官方文法一致。"
+    
+  conflict_3:
+    project_rule: "数据端口只能使用in/out方向关键字，禁止使用requires关键字"
+    grammar_finding: "DataPort (第1653-1662行) 使用 (in|out|in out) 方向，AccessDirection (第1754行) 才用 requires/provides。DataAccess/BusAccess 使用 requires/provides。"
+    grammar_line: 1657
+    resolution: "当前项目规则正确。数据端口用 in/out，访问端口用 requires/provides。"
+    
+  conflict_4:
+    project_rule: "features块只能出现在组件类型声明中，严禁出现在implementation声明中"
+    grammar_finding: "所有 ComponentType 都有 features 块，所有 ComponentImplementation 都没有 features 块。确认正确。"
+    resolution: "当前项目规则正确，与官方文法一致。"
+    
+  conflict_5:
+    project_rule: "连接行缺失端口名时硬编码补充源端.dataOut和目标端.dataIn"
+    grammar_finding: "ConnectedElement (第1842-1845行) 格式为 (context '.')? connectionEnd，connectionEnd 是必须的。如果只有 context 没有 connectionEnd，语法不合法。"
+    resolution: "补充端口名的做法是合理的修复策略，但默认端口名应根据实际features声明而非固定为 dataOut/dataIn。"
+
+# ============================================================
+# 11. 自动修复规则
+# ============================================================
+auto_fix_rules:
+  
+  fix_end_name_mismatch:
+    trigger: "end 后的名称与声明不一致"
+    action: "将 end 后的名称修改为与声明一致"
+    examples:
+      - "package MyPkg ... end WrongName; → end MyPkg;"
+      - "system Foo ... end Bar; → end Foo;"
+      - "system implementation Foo.impl ... end Bar.impl; → end Foo.impl;"
+      
+  fix_missing_semicolon:
+    trigger: "声明行末尾缺少分号"
+    action: "在行尾补充分号 ;"
+    
+  fix_requires_data_port:
+    trigger: "数据端口使用了 requires 关键字"
+    action: "将 requires data port 替换为 in data port"
+    pattern: "(\\w+\\s*:\\s*)requires\\s+data\\s+port"
+    replacement: "$1in data port"
+    
+  fix_incomplete_connection:
+    trigger: "连接行只有实例名没有端口名"
+    action: "补充 .portName，源端默认 .dataOut，目标端默认 .dataIn"
+    pattern: "(\\w+)(\\s*(->|<->)\\s*)(\\w+)(\\s*;)"
+    
+  fix_features_in_implementation:
+    trigger: "implementation 中出现 features 块"
+    action: "将 features 块移到对应的组件类型声明中，或删除"
+    
+  fix_illegal_nesting:
+    trigger: "子组件类型不在父实现允许的子组件列表中"
+    action: "根据 containment_rules 检查并报告，不自动修改（需要语义判断）"

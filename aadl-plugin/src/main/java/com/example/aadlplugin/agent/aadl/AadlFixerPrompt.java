@@ -56,7 +56,7 @@ public class AadlFixerPrompt {
         prompt.append("\n```\n\n");
 
         if (errors != null && !errors.trim().isEmpty()) {
-            prompt.append("【检测到的错误列表】\n");
+            prompt.append("【检测到的错误信息】\n");
             prompt.append(errors);
             prompt.append("\n\n");
         } else {

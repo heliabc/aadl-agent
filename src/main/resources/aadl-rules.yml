@@ -48,6 +48,14 @@ global:
     9. 所有 implementation 后缀统一使用 .impl。
     10. package 名与顶层 system 名保持一致。
     11. 如果某类结构没有在需求模板中出现，不要因为示例或规则文本主动补充该结构。
+    12. 【features 放置规则】features 块只能出现在组件类型声明中（如 `processor MainProcessor ... features ... end MainProcessor;`），严禁出现在 implementation 声明中。implementation 中只能包含 subcomponents、connections、properties、flows 等块，不能包含 features。
+    13. 【connections 引用规则】connections 中引用的每一个端口/访问点（格式：`实例名.端口名`）必须在该实例对应组件类型的 features 块中已声明。如果某组件类型没有声明某个 feature，则 connections 中严禁引用该 feature。生成 connections 前必须先确认两端组件的 features 块中确实存在被引用的端口名。
+    14. 严禁在 thread implementation 中编写 connections 块！线程内部只能包含 properties，不能包含 connections、subcomponents。组件之间的连接只能写在 system 或 process 的 implementation 中。
+    15. 严禁使用 requires data port 语法！requires 关键字只能用于 bus access / subprogram access。数据端口必须明确方向：in data port（输入）或 out data port（输出）。
+    16. 严禁在 properties 中使用 applies to 引用未在当前 implementation 的 subcomponents 中声明的实例。applies to 的目标必须是当前 implementation 中已实例化的子组件名。
+    17. 严禁在 virtual processor 的 subcomponents 中直接包含 thread！虚拟处理器只能包含其他虚拟处理器或进程。线程只能作为 process 的子组件。
+    18. 严禁截断连接行：每条连接声明必须完整写出两端端口引用（格式：`实例名.端口名`）并以分号结尾。严禁出现 `Instance.` 后面缺少端口名、或只有 `Instance` 而没有 `.端口名` 的情况。
+    19. 【数据端口类型规则】in data port / out data port 引用的类型必须是已声明的 data 组件类型（如 `in data port BrakeSignal;`，其中 BrakeSignal 必须是 `data BrakeSignal ... end BrakeSignal;` 声明的数据组件）。严禁将 device、process、system 等非 data 组件类型用作数据端口的类型。
 
 # 同义词映射表：key 为规范词，value 为该词的所有同义词/近义词列表
 # 匹配时自动展开：若规则关键词命中某组任一成员（不区分大小写），该组全部成员参与匹配
@@ -453,8 +461,8 @@ rules:
         system implementation    -> system, process, processor, memory, device, bus, virtual processor, thread, data, subprogram, abstract
         processor implementation -> virtual processor, memory, bus（严禁包含 process！）
         process implementation   -> thread, data, subprogram
-        thread implementation    -> data, subprogram
-        virtual processor impl   -> thread, data, subprogram
+        thread implementation    -> data, subprogram（严禁包含 connections 块！）
+        virtual processor impl   -> virtual processor, process（严禁包含 thread！线程只能放在 process 中）
         memory implementation    -> memory, bus
         bus implementation       -> （不允许包含任何子组件）
         device implementation    -> （不允许包含任何子组件）
@@ -470,8 +478,8 @@ rules:
          virtual processor、memory、bus。
       3. 严禁将 system 放入 process 或 thread 中——system 是顶层容器组件。
       4. bus、device、subprogram 的 implementation 中不允许声明任何 subcomponents，它们是叶子节点。
-      5. virtual processor 的 implementation 中可以包含 thread、data、subprogram，但绝不能包含
-         process、processor、system 等高层组件。
+      5. 严禁将 thread 直接放入 virtual processor 的 subcomponents 中——线程只能作为 process 的
+         子组件。virtual processor 的 subcomponents 中只能放 virtual processor 或 process。
 
   - id: properties_explanation
     title: properties 关键字用法说明
@@ -546,11 +554,12 @@ rules:
       规则：
       1. port 连接方向用 ->（单向），access 连接方向用 <->（双向）。
       2. bus access 连接严禁使用 <> 或 ->，必须使用 <->。
-      3. 连接的两端必须是 features 中已声明的端口或访问点名称。
+      3. 连接的两端必须是 features 中已声明的端口或访问点名称。生成每条连接前，必须逐一核对：引用的 实例名.端口名 中，端口名是否确实存在于该实例对应组件类型的 features 块中。如果该组件类型没有 features 块或 features 块中没有该端口，则严禁生成此连接。
       4. connections 块放在 implementation 的 subcomponents 之后、properties 之前。
       5. 当需求中明确给出连接的延迟、带宽等约束时，使用连接内联属性 {属性名 => 值;} 附加在连接声明末尾。
       6. 常用连接内联属性：latency（延迟范围，如 latency => 2ms..4ms;）、Timing（时序）。
       7. 内联属性以分号结尾，整体用花括号包裹，紧跟在连接声明的分号位置之前。
+      8. 连接中引用的实例名必须是当前 implementation 的 subcomponents 中已声明的子组件实例名，严禁引用未在当前 implementation 中实例化的组件。
 
   - id: flows
     title: 流声明模板
@@ -627,6 +636,11 @@ forbidden:
     11. 严禁在 subcomponents 中使用非标准组件关键字（subsystem、module、component 等），必须使用 AADL 标准关键字（system、process、thread、processor、memory、device、bus、data、subprogram、virtual processor）。
     12. 严禁在 subcomponents 中引用未在 package 中声明类型和实现的组件——每个 subcomponent 引用都必须有对应的"类型声明 + 实现声明"对存在于同一个 package 中。
     13. 严禁在 subcomponents 行中省略 .impl 后缀或省略末尾分号。
+    14. 严禁在 thread implementation 中编写 connections 块！线程内部只能包含 properties，不能包含 connections、subcomponents。组件之间的连接只能写在 system 或 process 的 implementation 中。
+    15. 严禁使用 requires data port 语法！requires 关键字只能用于 bus access / subprogram access。数据端口必须明确方向：in data port（输入）或 out data port（输出）。
+    16. 严禁在 properties 中使用 applies to 引用未在当前 implementation 的 subcomponents 中声明的实例。applies to 的目标必须是当前 implementation 中已实例化的子组件名。
+    17. 严禁在 virtual processor 的 subcomponents 中直接包含 thread！虚拟处理器只能包含其他虚拟处理器或进程。线程只能作为 process 的子组件。
+    18. 严禁截断连接行：每条连接声明必须完整写出两端端口引用并以分号结尾。严禁出现 `Instance.` 后面缺少端口名的情况。
 
 example:
   title: AADL生成示例

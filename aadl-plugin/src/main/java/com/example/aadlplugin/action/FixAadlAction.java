@@ -1,7 +1,6 @@
 package com.example.aadlplugin.action;
 
 import com.example.aadlplugin.Activator;
-import com.example.aadlplugin.agent.aadl.AadlErrorParserAgent;
 import com.example.aadlplugin.agent.aadl.AadlFixerAgent;
 import com.example.aadlplugin.agent.AgentInput;
 import com.example.aadlplugin.agent.AgentOutput;
@@ -52,35 +51,15 @@ public class FixAadlAction implements IObjectActionDelegate {
                 return;
             }
 
-            // 第一步：解析错误
-            AadlErrorParserAgent parserAgent = Activator.getDefault().getAadlErrorParserAgent();
-            AgentInput parserInput = AgentInput.builder()
+            // 一步完成修复：直接将原始错误信息传给修复Agent
+            AadlFixerAgent fixerAgent = Activator.getDefault().getAadlFixerAgent();
+            AgentInput fixerInput = AgentInput.builder()
                     .content(aadlContent)
                     .metadata(rawErrors)
                     .modelType(ModelType.OLLAMA)
                     .build();
 
-            MessageDialog.openInformation(shell, "Info", "正在解析错误信息...");
-            
-            AgentOutput parserOutput = parserAgent.execute(parserInput);
-
-            if (!parserOutput.isSuccess()) {
-                MessageDialog.openError(shell, "Error", "解析错误信息失败:\n" + parserOutput.getErrorMessage());
-                return;
-            }
-
-            String parsedErrors = parserOutput.getContent();
-            MessageDialog.openInformation(shell, "Info", "错误解析完成！\n解析出的错误信息:\n" + parsedErrors);
-
-            // 第二步：修复AADL
-            AadlFixerAgent fixerAgent = Activator.getDefault().getAadlFixerAgent();
-            AgentInput fixerInput = AgentInput.builder()
-                    .content(aadlContent)
-                    .metadata(parsedErrors)
-                    .modelType(ModelType.OLLAMA)
-                    .build();
-
-            MessageDialog.openInformation(shell, "Info", "正在修复AADL文件...");
+            MessageDialog.openInformation(shell, "Info", "正在分析错误并修复AADL文件...");
 
             AgentOutput fixerOutput = fixerAgent.execute(fixerInput);
 

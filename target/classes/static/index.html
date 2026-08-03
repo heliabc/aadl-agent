@@ -800,7 +800,7 @@
             </div>
 
             <div class="dependency-info">
-                [提示] 输入：AADL 代码 + OSATE 原始错误信息（自动解析后修复）
+                [提示] 输入：AADL 代码 + OSATE 原始错误信息（一步完成错误分析与修复）
             </div>
 
             <div class="module-input-section">
@@ -836,26 +836,12 @@ Invalid connection syntax	example.aadl	/model	Line 38	Error"></textarea>
             </div>
 
             <div class="action-bar">
-                <button class="btn btn-primary" id="btnParseErrors">
-                    <span>解析错误</span>
-                </button>
                 <button class="btn btn-primary" id="btnFix">
-                    <span>解析并修正 AADL</span>
+                    <span>修正 AADL</span>
                 </button>
                 <button class="btn btn-secondary" id="btnClearFix">
                     <span>清空</span>
                 </button>
-            </div>
-
-            <div class="result-section" id="resultParsedErrors" style="display: none;">
-                <div class="result-header">
-                    <h4>解析后的错误列表</h4>
-                    <button class="copy-btn" id="copyParsedErrorsBtn" title="复制错误列表">复制</button>
-                </div>
-                <div class="result-content" id="contentParsedErrors"></div>
-                <div class="result-meta">
-                    <span id="timeParsedErrors"></span>
-                </div>
             </div>
 
             <div class="result-section" id="resultFix">
@@ -1096,7 +1082,6 @@ Invalid connection syntax	example.aadl	/model	Line 38	Error"></textarea>
             document.getElementById('btnArchitecture').addEventListener('click', async () => await runArchitecture());
             document.getElementById('btnModule').addEventListener('click', async () => await runModule());
             document.getElementById('btnAadl').addEventListener('click', async () => await runAadl());
-            document.getElementById('btnParseErrors').addEventListener('click', async () => await runParseErrors());
             document.getElementById('btnFix').addEventListener('click', async () => await runFix());
             
             document.getElementById('btnDownloadExcel').addEventListener('click', downloadTraceabilityExcel);
@@ -1117,7 +1102,6 @@ Invalid connection syntax	example.aadl	/model	Line 38	Error"></textarea>
             document.getElementById('copyArchitectureBtn').addEventListener('click', () => copyContent('contentArchitecture', 'copyArchitectureBtn'));
             document.getElementById('copyModuleBtn').addEventListener('click', () => copyContent('contentModule', 'copyModuleBtn'));
             document.getElementById('copyAadlBtn').addEventListener('click', () => copyContent('contentAadl', 'copyAadlBtn'));
-            document.getElementById('copyParsedErrorsBtn').addEventListener('click', () => copyContent('contentParsedErrors', 'copyParsedErrorsBtn'));
             document.getElementById('copyFixBtn').addEventListener('click', () => copyContent('contentFix', 'copyFixBtn'));
         }
 
@@ -1368,97 +1352,6 @@ Invalid connection syntax	example.aadl	/model	Line 38	Error"></textarea>
             }, { architectureFileName, modulesFileName });
         }
 
-        let parsedErrors = null;
-
-        async function runParseErrors() {
-            const tabType = getActiveTab('Fix');
-            
-            let aadlContent = null;
-            let rawErrors = null;
-
-            if (tabType === 'text') {
-                aadlContent = document.getElementById('textFixAadl').value.trim();
-                rawErrors = document.getElementById('textFixErrors').value.trim();
-            } else if (tabType === 'previous') {
-                aadlContent = results.Aadl;
-                rawErrors = document.getElementById('textFixErrorsFromPrevious').value.trim();
-            }
-
-            if (!aadlContent) {
-                alert('请输入 AADL 代码');
-                return;
-            }
-            if (!rawErrors) {
-                alert('请输入错误信息');
-                return;
-            }
-
-            if (isRunning) return;
-            isRunning = true;
-
-            const btn = document.getElementById('btnParseErrors');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<span class="running-indicator"></span> 解析中...';
-            btn.disabled = true;
-
-            addTimeline('开始解析错误信息...');
-
-            try {
-                const response = await fetch(`${API_BASE}/requirement/parse-errors`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        aadlContent: aadlContent,
-                        errors: rawErrors,
-                        model: currentModel,
-                        sessionId: sessionId
-                    })
-                });
-                const data = await response.json();
-
-                sessionId = data.sessionId || sessionId;
-                document.getElementById('sessionIdDisplay').textContent = sessionId;
-
-                if (data.success) {
-                    parsedErrors = data.data;
-                    
-                    const contentEl = document.getElementById('contentParsedErrors');
-                    try {
-                        const errorList = JSON.parse(parsedErrors);
-                        let html = '<ul style="margin: 0; padding-left: 20px;">';
-                        errorList.forEach((error, index) => {
-                            html += `<li style="margin-bottom: 8px;">
-                                <strong>${index + 1}. ${error.errorType || 'Unknown'}:</strong> ${error.description || error.message || 'No description'}
-                                ${error.lineNumber ? ` (行: ${error.lineNumber})` : ''}
-                                ${error.location ? ` [${error.location}]` : ''}
-                                ${error.suggestedFix ? `<br><span style="color: var(--success-color); font-size: 0.8rem;">建议: ${error.suggestedFix}</span>` : ''}
-                            </li>`;
-                        });
-                        html += '</ul>';
-                        contentEl.innerHTML = html;
-                    } catch (e) {
-                        contentEl.textContent = parsedErrors;
-                    }
-
-                    document.getElementById('timeParsedErrors').textContent = `执行时间: ${data.executionTime}ms`;
-                    
-                    document.getElementById('resultParsedErrors').style.display = 'block';
-                    addTimeline('错误解析完成', 'success');
-                } else {
-                    const contentEl = document.getElementById('contentParsedErrors');
-                    contentEl.innerHTML = `<div class="error-message">${data.message}</div>`;
-                    document.getElementById('resultParsedErrors').style.display = 'block';
-                    addTimeline('错误解析失败: ' + data.message, 'error');
-                }
-            } catch (error) {
-                console.error(error);
-            } finally {
-                isRunning = false;
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
-        }
-
         async function runFix() {
             const tabType = getActiveTab('Fix');
             
@@ -1487,63 +1380,18 @@ Invalid connection syntax	example.aadl	/model	Line 38	Error"></textarea>
 
             const btn = document.getElementById('btnFix');
             const originalText = btn.innerHTML;
-            btn.innerHTML = '<span class="running-indicator"></span> 处理中...';
+            btn.innerHTML = '<span class="running-indicator"></span> 修复中...';
             btn.disabled = true;
 
             try {
-                addTimeline('开始解析错误信息...');
-
-                const parseResponse = await fetch(`${API_BASE}/requirement/parse-errors`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        aadlContent: aadlContent,
-                        errors: rawErrors,
-                        model: currentModel,
-                        sessionId: sessionId
-                    })
-                });
-                const parseData = await parseResponse.json();
-
-                sessionId = parseData.sessionId || sessionId;
-                document.getElementById('sessionIdDisplay').textContent = sessionId;
-
-                if (!parseData.success) {
-                    alert('错误解析失败: ' + parseData.message);
-                    addTimeline('错误解析失败: ' + parseData.message, 'error');
-                    return;
-                }
-
-                parsedErrors = parseData.data;
-                
-                const contentEl = document.getElementById('contentParsedErrors');
-                try {
-                    const errorList = JSON.parse(parsedErrors);
-                    let html = '<ul style="margin: 0; padding-left: 20px;">';
-                    errorList.forEach((error, index) => {
-                        html += `<li style="margin-bottom: 8px;">
-                            <strong>${index + 1}. ${error.errorType || 'Unknown'}:</strong> ${error.description || error.message || 'No description'}
-                            ${error.lineNumber ? ` (行: ${error.lineNumber})` : ''}
-                            ${error.location ? ` [${error.location}]` : ''}
-                            ${error.suggestedFix ? `<br><span style="color: var(--success-color); font-size: 0.8rem;">建议: ${error.suggestedFix}</span>` : ''}
-                        </li>`;
-                    });
-                    html += '</ul>';
-                    contentEl.innerHTML = html;
-                } catch (e) {
-                    contentEl.textContent = parsedErrors;
-                }
-
-                document.getElementById('timeParsedErrors').textContent = `解析时间: ${parseData.executionTime}ms`;
-                document.getElementById('resultParsedErrors').style.display = 'block';
-                addTimeline('错误解析完成，开始修复 AADL...');
+                addTimeline('开始分析错误并修复 AADL...');
 
                 const fixResponse = await fetch(`${API_BASE}/requirement/fix-aadl`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         aadlContent: aadlContent,
-                        errors: parsedErrors,
+                        errors: rawErrors,
                         model: currentModel,
                         sessionId: sessionId
                     })
