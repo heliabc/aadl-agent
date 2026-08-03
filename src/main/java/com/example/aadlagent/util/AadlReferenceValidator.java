@@ -72,6 +72,34 @@ public class AadlReferenceValidator {
         )));
     }
 
+    /**
+     * AADL 强保留关键字集合（不区分大小写）。
+     * 这些词不能用作组件名、包名等标识符。
+     * 当架构树中存在以保留字命名的组件时，自动补全应跳过并输出警告，
+     * 因为 LLM 通常已按照命名规则将其重命名（如 System → Top_BSCU）。
+     */
+    private static final Set<String> AADL_RESERVED_WORDS = new LinkedHashSet<>(Arrays.asList(
+            "system", "process", "thread", "processor", "memory", "device", "bus",
+            "data", "subprogram", "abstract", "package", "end", "public", "private",
+            "features", "subcomponents", "connections", "properties", "port", "event",
+            "in", "out", "inout", "requires", "provides", "access", "virtual",
+            "implementation", "annex", "behavior", "error", "states", "transitions",
+            "events", "initial", "state", "applies", "to", "reference", "true", "false",
+            "none", "all", "and", "or", "not", "if", "then", "else", "elsif", "end",
+            "is", "of", "type", "subtype", "constant", "range", "delta", "digits",
+            "array", "record", "tagged", "limited", "abstract", "synchronized",
+            "interface", "task", "protected", "entry", "for", "use", "renames",
+            "when", "loop", "while", "exit", "return", "abort", "accept", "delay",
+            "select", "requeue", "terminate", "raise", "null", "begin", "declare",
+            "exception", "generic", "pragma", "aliased", "at", "do", "reverse",
+            "component", "module", "subsystem"
+    ));
+
+    /** 检查名称是否为 AADL 保留字（不区分大小写） */
+    private boolean isReservedWord(String name) {
+        return name != null && AADL_RESERVED_WORDS.contains(name.toLowerCase());
+    }
+
     // ========================= 数据结构 =========================
 
     /** AADL 代码中解析出的组件声明 */
@@ -407,10 +435,19 @@ public class AadlReferenceValidator {
 
         for (AadlInputParser.ArchNode archComp : archComponents.values()) {
             if (!declarations.containsKey(archComp.name)) {
-                result.errors.add(String.format(
-                        "遗漏组件: '%s' (%s) 在架构树中存在但 AADL 中缺失声明",
-                        archComp.name, archComp.type
-                ));
+                // 保留字命名的组件降级为警告：LLM 通常已按命名规则重命名（如 System → Top_BSCU）
+                if (isReservedWord(archComp.name)) {
+                    result.warnings.add(String.format(
+                            "架构树组件 '%s' (%s) 使用了 AADL 保留关键字作为名称，" +
+                            "AADL 中可能已用合规名称替代（非硬性错误）",
+                            archComp.name, archComp.type
+                    ));
+                } else {
+                    result.errors.add(String.format(
+                            "遗漏组件: '%s' (%s) 在架构树中存在但 AADL 中缺失声明",
+                            archComp.name, archComp.type
+                    ));
+                }
             }
         }
     }
@@ -486,9 +523,12 @@ public class AadlReferenceValidator {
 
     private boolean hasAutoFixableIssues(Map<String, AadlDeclaration> declarations,
                                          Map<String, AadlInputParser.ArchNode> archComponents) {
-        // 如果有架构树中存在但 AADL 中缺失的组件，可以自动补全
+        // 如果有架构树中存在但 AADL 中缺失的组件，可以自动补全（跳过保留字命名的组件）
         if (!archComponents.isEmpty()) {
             for (AadlInputParser.ArchNode archComp : archComponents.values()) {
+                if (isReservedWord(archComp.name)) {
+                    continue;
+                }
                 if (!declarations.containsKey(archComp.name)) {
                     return true;
                 }
@@ -518,6 +558,16 @@ public class AadlReferenceValidator {
         // 1. 补全架构树中存在但 AADL 中缺失的组件
         if (!archComponents.isEmpty()) {
             for (AadlInputParser.ArchNode archComp : archComponents.values()) {
+                // 跳过 AADL 保留字命名的组件（LLM 通常已按命名规则重命名，如 System → Top_BSCU）
+                if (isReservedWord(archComp.name)) {
+                    result.warnings.add(String.format(
+                            "组件 '%s' (%s) 使用了 AADL 保留关键字作为名称，已跳过自动补全。" +
+                            "LLM 可能已按照命名规则使用合规名称替代",
+                            archComp.name, archComp.type
+                    ));
+                    log.warn("跳过保留字组件自动补全: {} ({})", archComp.name, archComp.type);
+                    continue;
+                }
                 AadlDeclaration decl = declarations.get(archComp.name);
                 if (decl == null) {
                     // 完全缺失，生成类型声明 + 实现声明
@@ -613,14 +663,37 @@ public class AadlReferenceValidator {
         return sb.toString();
     }
 
-    /** 找到 "end <package_name>;" 的位置 */
+    /**
+     * 找到 "end <package_name>;" 的位置。
+     *
+     * 实现策略：
+     * 1. 从文件头部 "package XXX" 声明中提取包名
+     * 2. 精确匹配 "end <包名>;" 的最后一个出现位置
+     *
+     * 这样可以避免误匹配 EMV2 块内的 "end behavior;" 或组件的 "end Foo;"。
+     */
     private int findEndPackagePosition(String content) {
-        // 匹配最后一行 "end XXX;"
-        Pattern endPkgPattern = Pattern.compile("end\\s+\\w+\\s*;\\s*$", Pattern.MULTILINE);
-        Matcher m = endPkgPattern.matcher(content.trim());
-        if (m.find()) {
-            return content.indexOf(m.group());
+        // 1. 提取 package 名称
+        Pattern pkgPattern = Pattern.compile("package\\s+(\\w+)");
+        Matcher pkgMatcher = pkgPattern.matcher(content);
+        if (!pkgMatcher.find()) {
+            log.warn("未找到 package 声明，无法定位 end package 位置");
+            return -1;
         }
-        return -1;
+        String pkgName = pkgMatcher.group(1);
+
+        // 2. 查找 "end <pkgName>;" 的最后一个出现位置
+        Pattern endPkgPattern = Pattern.compile(
+                "end\\s+" + Pattern.quote(pkgName) + "\\s*;", Pattern.MULTILINE
+        );
+        Matcher m = endPkgPattern.matcher(content);
+        int lastPos = -1;
+        while (m.find()) {
+            lastPos = m.start();
+        }
+        if (lastPos < 0) {
+            log.warn("未找到 'end {};' 语句", pkgName);
+        }
+        return lastPos;
     }
 }
