@@ -44,6 +44,25 @@ public class AadlInputParser {
         public String functionDescription;
         public List<String> relatedComponents = new ArrayList<>();
         public List<String> satisfiedRequirements = new ArrayList<>();
+        /** 端口声明需求 */
+        public List<PortRequirement> portRequirements = new ArrayList<>();
+        /** 连接关系提示 */
+        public List<ConnectionHint> connectionHints = new ArrayList<>();
+    }
+
+    /** 端口声明需求 */
+    public static class PortRequirement {
+        public String portName;
+        public String direction;
+        public String dataType;
+        public String reason;
+    }
+
+    /** 连接关系提示 */
+    public static class ConnectionHint {
+        public String source;
+        public String target;
+        public String dataType;
     }
 
     /** 解析结果：文本清单 + 结构化数据 */
@@ -96,6 +115,33 @@ public class AadlInputParser {
                         info.functionDescription = getText(m, "function_description");
                         info.relatedComponents = toStringList(m.get("related_components"));
                         info.satisfiedRequirements = toStringList(m.get("satisfied_requirements"));
+                        // 解析端口声明需求
+                        JsonNode portsNode = m.get("port_requirements");
+                        if (portsNode != null && portsNode.isArray()) {
+                            for (JsonNode p : portsNode) {
+                                PortRequirement port = new PortRequirement();
+                                port.portName = getText(p, "port_name");
+                                port.direction = getText(p, "direction");
+                                port.dataType = getText(p, "data_type");
+                                port.reason = getText(p, "reason");
+                                if (!port.portName.isEmpty()) {
+                                    info.portRequirements.add(port);
+                                }
+                            }
+                        }
+                        // 解析连接关系提示
+                        JsonNode connsNode = m.get("connection_hints");
+                        if (connsNode != null && connsNode.isArray()) {
+                            for (JsonNode c : connsNode) {
+                                ConnectionHint conn = new ConnectionHint();
+                                conn.source = getText(c, "source");
+                                conn.target = getText(c, "target");
+                                conn.dataType = getText(c, "data_type");
+                                if (!conn.source.isEmpty() && !conn.target.isEmpty()) {
+                                    info.connectionHints.add(conn);
+                                }
+                            }
+                        }
                         result.modules.add(info);
                     }
                 }
@@ -229,6 +275,31 @@ public class AadlInputParser {
                 sb.append("关联组件: ").append(String.join(", ", m.relatedComponents)).append("\n");
                 sb.append("-> 必须在 connections 中声明 ").append(componentName)
                         .append(" 与以上关联组件的连接\n");
+            }
+
+            // 端口声明需求
+            if (!m.portRequirements.isEmpty()) {
+                sb.append("端口声明:\n");
+                for (PortRequirement port : m.portRequirements) {
+                    String dataType = (port.dataType != null && !port.dataType.isEmpty())
+                            ? port.dataType : "Base_Type";
+                    sb.append("  ").append(port.portName)
+                            .append(" : ").append(port.direction)
+                            .append(" data port ").append(dataType).append(";\n");
+                }
+            }
+
+            // 连接关系提示
+            if (!m.connectionHints.isEmpty()) {
+                sb.append("连接约束:\n");
+                for (ConnectionHint conn : m.connectionHints) {
+                    sb.append("  ").append(conn.source)
+                            .append(" -> ").append(conn.target);
+                    if (conn.dataType != null && !conn.dataType.isEmpty()) {
+                        sb.append("  [").append(conn.dataType).append("]");
+                    }
+                    sb.append(";\n");
+                }
             }
 
             sb.append("\n");

@@ -24,11 +24,11 @@ global:
     === 核心红线规则（违反任何一条将导致 AADL 语法错误，必须严格遵守）===
     R1【命名规范】标识符只用英文和下划线。package 用 {项目名}_Arch，顶层 system 用 Top_{项目名}。禁止用保留字（system/process/thread 等）作组件名。
     R2【声明完整性】每个组件必须成对生成：类型声明（`组件类型 组件名 ... end 组件名;`）+ 实现声明（`组件类型 implementation 组件名.impl ... end 组件名.impl;`），两者缺一不可，end 闭合不可省略。
-    R3【features 只在类型声明中】features 块只能出现在组件类型声明中，严禁出现在 implementation 中。thread 的 features 只能有 in/out data port 和 event port，严禁 requires bus access。
-    R4【connections 引用完整性】connections 中每个 `实例名.端口名` 必须满足：实例名在当前 subcomponents 中声明，端口名在对应组件类型的 features 中声明。连接行必须以分号结尾，严禁截断。
+    R3【features 只在主动构件的类型声明中】features 块只能出现在主动构件（thread/process/device/system/processor/memory/bus/subprogram）的类型声明中，严禁出现在 implementation 中。thread 的 features 只能有 in/out data port 和 event port，严禁 requires bus access。data 组件是纯类型分类器，严禁拥有 features 块——数据组件只需声明类型（如 `data CommandData end CommandData;`），由主动构件的端口引用（如 `out data port CommandData;`）。subprogram 可以定义 features（如 in/out parameter）。
+    R4【connections 引用与类型完整性】connections 中每个 `实例名.端口名` 必须满足：实例名在当前 subcomponents 中声明，端口名在对应组件类型的 features 中声明。连接行必须以分号结尾，严禁截断。连接类型必须与端点 feature 类型严格匹配：port 连接（`conn : port A.x -> B.y;`）的两端必须是 data port / event port / event data port；bus access 连接（`conn : bus access A.x <-> B.y;`）的两端必须是 requires/provides bus access。严禁 port 与 bus access 混连。port 连接用单向 `->`，bus access 连接用双向 `<->`。port 连接的源端（-> 左侧）必须是 out port，目标端（-> 右侧）必须是 in port，严禁 in→in、out→out、in→out。port 连接两端必须引用相同的数据类型（如 `out data port CommandData -> in data port CommandData`）。
     R5【thread 内部只有 properties】thread implementation 中严禁出现 connections 和 subcomponents。组件间连接只能写在 system 或 process implementation 中。
     R6【数据端口语法】数据端口必须写 `in data port 类型名` 或 `out data port 类型名`，类型名必须是已声明的 data 组件。严禁 `requires data port`，严禁无类型的 `data port;`。
-    R7【分层架构 - 各司其职】软件层（thread/process）用 port 单向连接（->）。硬件层（bus/device/processor）用 bus access 双向连接（<->）。bus access 连接只能出现在 system implementation 中，严禁出现在 process/thread implementation 中。thread 严禁直接访问总线。
+    R7【连接归属与特征归属】连接归属：任何具有容器属性的具体实体实现（implementation）中，只要内部包含子组件（subcomponents），就可以定义 connections 块。但连接类型受实体类型约束：软件实体（process）的 connections 中只能包含 port 连接（数据流/控制流），严禁出现 bus access 连接；硬件实体（device、processor、memory、bus）的 connections 中只能包含 bus access 连接，严禁出现 port 连接；system 实体作为软硬件桥接容器，port 连接和 bus access 连接均可。特征归属：软件实体（thread、process）只能定义软件级别的交互特征，即 Port（in/out data port、in/out event port）；硬件实体（bus、processor、device、memory）通过硬件物理特征交互，即 Bus Access（requires/provides bus access）。port 连接用单向 `->`，bus access 连接用双向 `<->`。thread 严禁定义 bus access 特征。
     R8【三步顺序】implementation 内部必须按 subcomponents → connections → properties 顺序编写，严禁打乱。
     R9【subcomponents 规范】subcomponents 不得为空（至少一个子组件）。每行格式：`实例名 : 组件关键字 组件类型名.impl;`。virtual processor 中只能含 virtual processor 或 process，严禁含 thread。
     R10【applies to 规范】properties 中 `applies to` 引用的实例名必须在当前 implementation 的 subcomponents 中已声明。
@@ -620,8 +620,14 @@ checklist:
     [3] thread 的 features 中是否只有 in/out data port，没有 requires bus access？
     [4] connections 中每个 实例名.端口名 是否都在对应组件的 features 中声明过？
     [5] thread implementation 中是否只有 properties，没有 connections？
-    [6] bus access 连接是否只出现在 system implementation 中？
+    [6] 软件实体（thread/process）的 features 中是否只有 Port，硬件实体（bus/processor/device/memory）的 features 中是否只有 Bus Access？
     [7] implementation 内部顺序是否为 subcomponents → connections → properties？
+    [8] 连接类型是否与端点匹配（port 连 port，access 连 access，严禁混连）？
+    [9] port 连接是否用 ->，bus access 连接是否用 <->？
+    [10] data 组件中是否没有 features 块（data 是纯类型分类器，由主动构件端口引用）？subprogram 可以有 features。
+    [11] port 连接的源端（-> 左侧）是否为 out port，目标端（-> 右侧）是否为 in port？
+    [12] port 连接两端是否引用了相同的数据类型（如 out data port T -> in data port T）？
+    [13] 软件实体（process）的 connections 中是否只有 port 连接？硬件实体（device/processor/memory/bus）的 connections 中是否只有 bus access 连接？
 
 example:
   title: AADL生成示例

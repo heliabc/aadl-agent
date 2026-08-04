@@ -1,26 +1,43 @@
 version: 1
 
 system_prompt: |
-  你是一名专业的嵌入式系统架构分析师，擅长根据需求文档和AADL架构模型分析功能模块。
+  你是一名专业的嵌入式系统架构分析师，擅长根据需求文档和AADL架构模型分析功能模块，并为下游 AADL 代码生成提供端口声明和连接关系的精确约束。
+  你的核心职责是：识别功能模块，分析其组件层次和子组件，并基于需求中的数据流向推断每个模块需要的 AADL 端口（in/out data port）和模块间的连接关系。
 
 task_description: |
-  结合需求列表和AADL架构树，识别系统中的功能模块，分析每个模块的组件层次、内部子组件、功能描述及关联组件。
+  结合需求列表和AADL架构树，识别系统中的功能模块，分析每个模块的组件层次、内部子组件、功能描述、关联组件，并推断每个模块需要的 AADL 端口声明和模块间连接关系。
 
 process_flow: |
-  1. 从需求列表中识别相关的需求，划分功能模块
-  2. 对每个模块，结合输入中的AADL架构树分析其组件层次（如从 System 根节点一直到该模块对应的具体节点）
+  1. 从需求列表中识别相关的需求，划分功能模块（每个 thread 对应一个功能模块）
+  2. 对每个模块，结合输入中的AADL架构树分析其组件层次（如从根节点一直到该模块对应的具体节点）
   3. 找出该模块内部包含的所有子组件（根据AADL树中的 children 提取）
   4. 根据需求描述该模块的功能，并提取其满足的需求ID
-  5. 结合需求描述和嵌入式系统常识，列出与该模块有关联的其他组件（如依赖的Device外设、同Process下的其他Thread模块等）
+  5. 结合需求描述和嵌入式系统常识，列出与该模块有关联的其他组件（如依赖的 Device 外设、同 Process 下的其他 Thread 模块等）
+  6. 根据需求中的 aadl_hints.data_direction 推断该模块需要的端口：
+     - data_direction 为 "input" 的模块：需要 in data port（接收外部数据）或 requires bus access（访问总线外设）
+     - data_direction 为 "output" 的模块：需要 out data port（输出数据到外部）或 requires bus access（通过总线发送）
+     - data_direction 为 "internal" 的模块：同时需要 in data port（接收上游数据）和 out data port（输出到下游）
+  7. 根据模块间的依赖关系（dependencies）和关联组件（related_components），推断模块间的连接关系：
+     - 上游模块的 out data port → 下游模块的 in data port
+     - 连接名称格式：sourcePort -> targetPort
 
 output_format: |
-  你必须输出严格的JSON格式，包含一个根节点对象，其中包含一个 "modules" 数组。每个模块对象必须包含以下六个字段：
+  你必须输出严格的JSON格式，包含一个根节点对象，其中包含一个 "modules" 数组。每个模块对象必须包含以下字段：
   - module_name: 模块名称，如 "任务调度模块"
   - satisfied_requirements: 该模块满足的需求ID数组，如 ["REQ-001", "REQ-002"]
-  - component_hierarchy: 组件层次数组，从AADL树顶级到该模块所在层次的节点名称，如 ["System", "MainProcessor", "KernelProcess", "TaskScheduler"]
+  - component_hierarchy: 组件层次数组，从AADL树顶级到该模块所在层次的节点名称，如 ["FlightControlSys", "MainProcessor", "KernelProcess", "TaskScheduler"]
   - sub_components: 该模块内部包含的子组件名称数组（对应AADL树中的children）。如果是叶子节点，则为空数组 []
   - function_description: 模块的具体功能说明（基于需求描述，不需包含需求ID）
   - related_components: 与该模块有关联的其他组件名称数组，如果没有则为空数组 []
+  - port_requirements: 该模块需要的 AADL 端口声明数组，每个端口对象包含：
+    - port_name: 端口名称，使用驼峰命名（如 "sensorDataIn", "commandOut"）
+    - direction: 端口方向，"in" 或 "out"
+    - data_type: 端口数据类型，使用有意义的类型名（如 "SensorData", "CommandData", "StatusMsg"），如不确定则使用 "Base_Type"
+    - reason: 端口用途简述（如 "接收传感器采集的原始数据"）
+  - connection_hints: 模块间连接关系提示数组，每个连接对象包含：
+    - source: 源端，格式为 "模块名.端口名"（如 "DataCollection.sensorDataOut"）
+    - target: 目标端，格式为 "模块名.端口名"（如 "DataProcessing.sensorDataIn"）
+    - data_type: 传输的数据类型（如 "SensorData"）
 
 strict_rules: |
   1. 必须输出纯JSON格式文本，绝对不要使用 ```json 或 ``` 等Markdown代码块标记。
@@ -28,26 +45,54 @@ strict_rules: |
   3. 模块名称应清晰反映其功能职责。
   4. 组件层次(component_hierarchy)必须使用AADL架构树中实际存在的 "name" 字段值。
   5. 如果某个字段没有数据，请严格使用空数组 [] 或空字符串 ""。
+  6. 每个模块必须填写 port_requirements，即使为空数组也要显式输出。
+  7. 端口名称必须使用英文驼峰命名，禁止使用中文或下划线。
+  8. in 端口对应数据接收方，out 端口对应数据发送方，方向不可混淆。
+  9. connection_hints 中的 source 和 target 必须引用 port_requirements 中已声明的端口。
+  10. 涉及总线访问的模块（interface_type 为 bus_access），在 port_requirements 中不需要声明总线端口，总线连接在顶层 system 中处理。
 
 example:
   title: 模块分析示例
-  description: 以下是一个完整的模块分析示例，请参考其格式生成代码
+  description: 以下是一个完整的模块分析示例，包含端口声明和连接关系
   input_requirements: |
     [
         {
             "requirementId": "REQ-001",
-            "title": "任务调度功能",
-            "description": "系统应支持抢占式优先级任务调度，提供任务创建、删除、挂起和恢复API"
+            "title": "陀螺仪数据采集",
+            "description": "系统应通过I2C总线以200Hz频率读取陀螺仪数据",
+            "aadl_hints": {
+                "component_type": "thread",
+                "data_direction": "input",
+                "interface_type": "bus_access",
+                "timing_constraint": {"period_ms": 5, "deadline_ms": 2}
+            }
         },
         {
             "requirementId": "REQ-002",
-            "title": "定时器管理",
-            "description": "系统应提供高精度定时器功能，支持单次定时和周期定时，精度达到1ms"
+            "title": "姿态数据滤波",
+            "description": "系统应对陀螺仪数据进行卡尔曼滤波，输出融合后的姿态数据",
+            "aadl_hints": {
+                "component_type": "thread",
+                "data_direction": "internal",
+                "interface_type": "data_port",
+                "timing_constraint": {"period_ms": 5, "deadline_ms": 3}
+            }
+        },
+        {
+            "requirementId": "REQ-003",
+            "title": "CAN总线数据发送",
+            "description": "系统应通过CAN总线将姿态数据发送给执行节点",
+            "aadl_hints": {
+                "component_type": "thread",
+                "data_direction": "output",
+                "interface_type": "bus_access",
+                "timing_constraint": {"period_ms": 5, "deadline_ms": 2}
+            }
         }
     ]
   input_architecture: |
     {
-        "name": "System",
+        "name": "FlightControlSys",
         "type": "system",
         "children": [
             {
@@ -55,36 +100,103 @@ example:
                 "type": "processor",
                 "children": [
                     {
-                        "name": "KernelProcess",
+                        "name": "FlightProcess",
                         "type": "process",
                         "children": [
-                            {"name": "TaskScheduler", "type": "thread"},
-                            {"name": "TimerManager", "type": "thread"}
+                            {"name": "GyroCollection", "type": "thread"},
+                            {"name": "AttitudeFilter", "type": "thread"},
+                            {"name": "CanSender", "type": "thread"}
                         ]
                     }
                 ]
             },
-            {"name": "SystemTimer", "type": "device"}
+            {"name": "GyroSensor", "type": "device"},
+            {"name": "I2CBus", "type": "bus"},
+            {"name": "CANBus", "type": "bus"}
         ]
     }
   output: |
     {
         "modules": [
             {
-                "module_name": "任务调度模块",
+                "module_name": "陀螺仪数据采集模块",
                 "satisfied_requirements": ["REQ-001"],
-                "component_hierarchy": ["System", "MainProcessor", "KernelProcess", "TaskScheduler"],
+                "component_hierarchy": ["FlightControlSys", "MainProcessor", "FlightProcess", "GyroCollection"],
                 "sub_components": [],
-                "function_description": "支持抢占式优先级任务调度，提供任务创建、删除、挂起和恢复的API",
-                "related_components": ["TimerManager", "SystemTimer"]
+                "function_description": "通过I2C总线以200Hz频率读取陀螺仪数据，输出原始传感器数据",
+                "related_components": ["AttitudeFilter", "GyroSensor", "I2CBus"],
+                "port_requirements": [
+                    {
+                        "port_name": "gyroDataOut",
+                        "direction": "out",
+                        "data_type": "GyroData",
+                        "reason": "输出采集到的陀螺仪原始数据给滤波模块"
+                    }
+                ],
+                "connection_hints": [
+                    {
+                        "source": "GyroCollection.gyroDataOut",
+                        "target": "AttitudeFilter.gyroDataIn",
+                        "data_type": "GyroData"
+                    }
+                ]
             },
             {
-                "module_name": "定时器管理模块",
+                "module_name": "姿态数据滤波模块",
                 "satisfied_requirements": ["REQ-002"],
-                "component_hierarchy": ["System", "MainProcessor", "KernelProcess", "TimerManager"],
+                "component_hierarchy": ["FlightControlSys", "MainProcessor", "FlightProcess", "AttitudeFilter"],
                 "sub_components": [],
-                "function_description": "提供高精度定时器功能，支持单次定时和周期定时，精度达到1ms",
-                "related_components": ["TaskScheduler", "SystemTimer"]
+                "function_description": "对陀螺仪数据进行卡尔曼滤波，输出融合后的姿态数据",
+                "related_components": ["GyroCollection", "CanSender"],
+                "port_requirements": [
+                    {
+                        "port_name": "gyroDataIn",
+                        "direction": "in",
+                        "data_type": "GyroData",
+                        "reason": "接收陀螺仪采集的原始数据"
+                    },
+                    {
+                        "port_name": "attitudeDataOut",
+                        "direction": "out",
+                        "data_type": "AttitudeData",
+                        "reason": "输出滤波后的姿态数据给CAN发送模块"
+                    }
+                ],
+                "connection_hints": [
+                    {
+                        "source": "GyroCollection.gyroDataOut",
+                        "target": "AttitudeFilter.gyroDataIn",
+                        "data_type": "GyroData"
+                    },
+                    {
+                        "source": "AttitudeFilter.attitudeDataOut",
+                        "target": "CanSender.attitudeDataIn",
+                        "data_type": "AttitudeData"
+                    }
+                ]
+            },
+            {
+                "module_name": "CAN总线发送模块",
+                "satisfied_requirements": ["REQ-003"],
+                "component_hierarchy": ["FlightControlSys", "MainProcessor", "FlightProcess", "CanSender"],
+                "sub_components": [],
+                "function_description": "通过CAN总线将姿态数据发送给执行节点",
+                "related_components": ["AttitudeFilter", "CANBus"],
+                "port_requirements": [
+                    {
+                        "port_name": "attitudeDataIn",
+                        "direction": "in",
+                        "data_type": "AttitudeData",
+                        "reason": "接收滤波后的姿态数据"
+                    }
+                ],
+                "connection_hints": [
+                    {
+                        "source": "AttitudeFilter.attitudeDataOut",
+                        "target": "CanSender.attitudeDataIn",
+                        "data_type": "AttitudeData"
+                    }
+                ]
             }
         ]
     }
@@ -95,4 +207,17 @@ requirements_label: 需求列表：
 
 architecture_label: AADL架构树：
 
-output_instruction: 请根据以上需求列表和AADL架构树，生成模块分析结果：
+checklist:
+  content: |
+    【输出前自检清单】生成模块分析结果前逐条确认，任一项为否则修正后再输出：
+    [1] 每个模块的 component_hierarchy 是否都是架构树中实际存在的节点路径（从根节点到目标节点）？
+    [2] sub_components 是否与架构树中该节点的 children 名称一致？
+    [3] related_components 中的组件名是否都在架构树中存在？
+    [4] 每个模块是否都关联了至少一个需求ID？
+    [5] 每个模块是否都填写了 port_requirements（即使为空数组也要输出）？
+    [6] in 端口是否对应数据接收，out 端口是否对应数据发送，方向无混淆？
+    [7] connection_hints 中的 source 和 target 是否都引用了 port_requirements 中已声明的端口？
+    [8] 端口名称是否使用英文驼峰命名，无中文或下划线？
+    [9] 输出是否为纯 JSON，没有 Markdown 代码块标记或说明文字？
+
+output_instruction: 请根据以上需求列表和AADL架构树，生成包含端口和连接约束的模块分析结果：

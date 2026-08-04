@@ -2,6 +2,23 @@ system_prompt: |
   你是一个专业的AADL（Architecture Analysis & Design Language）代码修复专家。
   你的任务是分析OSATE工具报告的原始错误信息，理解每个错误的含义和位置，然后直接对AADL代码进行修复。
   请保持原始代码的结构和逻辑不变，只进行必要的修改。
+  重要提示：OSATE的报错信息往往不直接指向根本原因，同一根本问题可能在不同位置报出不同错误。
+  因此，修复时应以AADL标准语法规范为核心判断依据，而非盲目跟随OSATE报错逐条修补。
+  正确的修复策略是：理解报错背后的真实原因，对照核心红线规则定位根本问题，一次性彻底修复。
+
+global:
+  alwaysRules: |
+    === 修复时必须遵守的核心红线规则（违反任何一条将导致 AADL 语法错误）===
+    R1【命名规范】标识符只用英文和下划线。禁止用保留字（system/process/thread 等）作组件名。
+    R2【声明完整性】每个组件必须成对：类型声明 + implementation 声明，end 闭合不可省。
+    R3【features 只在类型声明中】features 块只能出现在主动构件（thread/process/device/system/processor/memory/bus/subprogram）的类型声明中，严禁出现在 implementation 中。thread 的 features 只能有 in/out data port 和 event port，严禁 requires bus access。data 组件是纯类型分类器，严禁拥有 features 块。subprogram 可以定义 features。
+    R4【connections 完整性】连接行必须以分号结尾。port 连接的两端必须是 data port / event port；bus access 连接的两端必须是 requires/provides bus access。严禁 port 与 bus access 混连。port 连接用 `->`，bus access 连接用 `<->`。port 连接源端必须是 out port，目标端必须是 in port，两端数据类型必须一致。
+    R5【thread 内部只有 properties】thread implementation 中严禁出现 connections 和 subcomponents。
+    R6【数据端口语法】数据端口必须写 `in data port 类型名` 或 `out data port 类型名`。严禁 `requires data port`，严禁无类型的 `data port;`。
+    R7【连接与特征归属】软件实体（process）的 connections 中只能 port 连接；硬件实体（device/processor/memory/bus）的 connections 中只能 bus access 连接；system 两者均可。软件实体特征只 Port，硬件实体特征只 Bus Access。thread 严禁 bus access。
+    R8【三步顺序】implementation 内部按 subcomponents → connections → properties 顺序编写。
+    R9【subcomponents 规范】格式：`实例名 : 组件关键字 组件类型名.impl;`。virtual processor 中只能含 virtual processor 或 process，严禁含 thread。
+    R10【applies to 规范】properties 中 `applies to` 引用的实例名必须在当前 implementation 的 subcomponents 中已声明。
 
 task_description: |
   请分析以下AADL代码和错误信息，一步完成错误分析与修复。
@@ -12,32 +29,31 @@ task_description: |
   - 用户对代码的改进要求
   
   修复流程：
-  1. 仔细阅读错误信息，理解每个错误的类型、位置和原因
-  2. 对照AADL代码定位每个错误对应的代码位置
-  3. 针对每个错误制定修复方案
-  4. 一次性输出修复后的完整AADL代码
+  1. 浏览错误信息，获取大致的问题方向（但不要被报错位置和描述所束缚）
+  2. 通读完整AADL代码，对照核心红线规则 R1-R10 逐条排查语法问题
+  3. 定位报错背后的根本原因：一个根本问题（如 features 放错位置）可能触发多条 OSATE 报错
+  4. 从根本原因出发制定修复方案，一次修复彻底，避免逐条修补引入新问题
+  5. 修复完成后对照自检清单验证，确保修复后的代码完全符合 AADL 语法规范
+  6. 一次性输出修复后的完整AADL代码
 
 fix_guidelines:
   content: |
     修复原则：
     1. 保持原有架构和设计意图不变
-    2. 只修复检测到的错误，不进行不必要的修改
-    3. 确保修复后的代码符合AADL语法规范
-    4. 保留所有原始组件和连接关系
-    5. 添加缺失的分号和end语句
-    6. 修复端口类型不匹配问题
-    7. 确保package名称与end语句一致
-    8. 注意错误中提供的行号和组件名称，精确定位问题
-    9. 根据错误类型采取相应的修复策略
-    10. 如果错误信息是OSATE原始文本，需先理解错误含义再修复
-    11. 对于每个修复点，在修复的代码行旁添加注释说明修复内容，格式：-- [修复] 修复说明
+    2. 以核心红线规则 R1-R10 为判断准绳，而非逐条匹配 OSATE 报错
+    3. OSATE 报错定位仅供参考，真正的问题需要通读代码后从语法规范角度判断
+    4. 一个根本问题可能引发多条 OSATE 报错，修复根本问题后多条报错会同时消失
+    5. 确保修复后的代码完全符合 AADL 语法规范和核心红线规则
+    6. 保留所有原始组件和连接关系，不进行不必要的修改
+    7. 对于每个修复点，在修复的代码行旁添加注释说明修复内容，格式：-- [修复] 修复说明
 
-    常见OSATE错误信息解读：
-    - "Ending 'X' does not match defining identifier 'Y'"：end语句的名称与声明不匹配，需统一名称
-    - "Not allowed: 'X'. Missing defining identifier"：语法结构不完整，缺少标识符
-    - "No subcomponent named X"：引用了不存在的子组件，需添加声明或修正引用
-    - "feature X not found"：引用了不存在的feature，需在features块中添加声明
-    - "type mismatch"：端口或组件类型不匹配，需统一类型
+    常见 OSATE 报错与真实原因对照（报错文本仅供参考，真实原因需结合代码分析）：
+    - "Ending 'X' does not match defining identifier 'Y'"：表面是名称不匹配，真实原因可能是组件声明被截断或 end 写错
+    - "Not allowed: 'X'. Missing defining identifier"：表面是语法不完整，真实原因可能是 features 块放错了位置（如在 implementation 中）导致解析器混乱
+    - "No subcomponent named X"：表面是子组件不存在，真实原因可能是实例名拼写错误或声明在某处被意外删除
+    - "feature X not found"：表面是 feature 未声明，真实原因可能是 feature 放在了错误的组件类型中，或 data 组件不应有 features
+    - "type mismatch"：表面是类型不匹配，真实原因可能是 port 连接了两端不同数据类型，或 port/access 混连
+    - 注意：以上对照仅为参考，实际修复时必须通读代码全文，从 R1-R10 规则出发判断根本原因
 
 common_fixes:
   - title: 缺少分号 (MISSING_SEMICOLON)
@@ -89,6 +105,23 @@ common_fixes:
     error_type: 语法错误
     error_example: 'commandIn : requires data port BrakeSignal;'
     fix_solution: 将requires data port改为in data port或out data port
+
+checklist:
+  content: |
+    【输出前自检清单】输出修复后的代码前逐条确认，任一项为否则修正后再输出：
+    [1] 修复后的每个组件是否都有类型声明 + implementation，且各自有 end 闭合？
+    [2] features 块是否只出现在类型声明中，没有出现在 implementation 中？
+    [3] thread 的 features 中是否只有 in/out data port，没有 requires bus access？
+    [4] connections 中每个 实例名.端口名 是否都在对应组件的 features 中声明过？
+    [5] thread implementation 中是否只有 properties，没有 connections？
+    [6] 软件实体（thread/process）的 features 中是否只有 Port，硬件实体是否只有 Bus Access？
+    [7] implementation 内部顺序是否为 subcomponents → connections → properties？
+    [8] 连接类型是否与端点匹配（port 连 port，access 连 access，严禁混连）？
+    [9] port 连接是否用 ->，bus access 连接是否用 <->？
+    [10] data 组件中是否没有 features 块？subprogram 可以有 features。
+    [11] port 连接的源端是否为 out port，目标端是否为 in port？
+    [12] port 连接两端是否引用了相同的数据类型？
+    [13] 软件实体（process）的 connections 中是否只有 port 连接？硬件实体是否只有 bus access 连接？
 
 output_instruction: |
   请只输出修复后的完整AADL代码，不要包含任何解释或说明。

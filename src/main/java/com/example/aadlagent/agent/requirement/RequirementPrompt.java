@@ -77,6 +77,13 @@ public class RequirementPrompt {
         prompt.append(requirementDoc);
         prompt.append("\n\n");
 
+        // 自检清单（近因效应：紧贴 output_instruction）
+        Map<String, Object> checklist = (Map<String, Object>) rulesConfig.get("checklist");
+        if (checklist != null && checklist.get("content") != null) {
+            prompt.append(checklist.get("content"));
+            prompt.append("\n\n");
+        }
+
         prompt.append(rulesConfig.get("output_instruction"));
 
         return prompt.toString();
@@ -103,22 +110,34 @@ public class RequirementPrompt {
         prompt.append("[{\n");
         prompt.append("  \"requirementId\": \"\",\n");
         prompt.append("  \"title\": \"需求标题\",\n");
-        prompt.append("  \"description\": \"需求详细描述\",\n");
+        prompt.append("  \"description\": \"需求详细描述，包含数据来源和输出目标\",\n");
         prompt.append("  \"priority\": \"高/中/低\",\n");
         prompt.append("  \"acceptanceCriteria\": [\"验收标准1\", \"验收标准2\"],\n");
         prompt.append("  \"dependencies\": [\"依赖项1\"],\n");
-        prompt.append("  \"globalRef\": [\"CONST-001\", \"PARAM-003\"]\n");
+        prompt.append("  \"globalRef\": [\"CONST-001\", \"PARAM-003\"],\n");
+        prompt.append("  \"aadl_hints\": {\n");
+        prompt.append("    \"component_type\": \"thread/device/bus/processor/memory/data\",\n");
+        prompt.append("    \"data_direction\": \"input/output/internal/bidirectional\",\n");
+        prompt.append("    \"interface_type\": \"data_port/event_port/bus_access/none\",\n");
+        prompt.append("    \"timing_constraint\": {\"period_ms\": 10, \"deadline_ms\": 5}\n");
+        prompt.append("  }\n");
         prompt.append("}]\n\n");
 
         prompt.append("【格式示例】\n");
         prompt.append("[{\n");
         prompt.append("  \"requirementId\": \"\",\n");
-        prompt.append("  \"title\": \"数据采集频率要求\",\n");
-        prompt.append("  \"description\": \"系统必须以100Hz的频率采集传感器数据\",\n");
+        prompt.append("  \"title\": \"传感器数据采集\",\n");
+        prompt.append("  \"description\": \"系统必须以100Hz的频率通过SPI总线采集传感器数据\",\n");
         prompt.append("  \"priority\": \"高\",\n");
         prompt.append("  \"acceptanceCriteria\": [\"采样频率达到100Hz\", \"数据精度达到0.1%\"],\n");
         prompt.append("  \"dependencies\": [\"章节: SEC-001\"],\n");
-        prompt.append("  \"globalRef\": [\"CONST-001\", \"PARAM-002\"]\n");
+        prompt.append("  \"globalRef\": [\"CONST-001\", \"PARAM-002\"],\n");
+        prompt.append("  \"aadl_hints\": {\n");
+        prompt.append("    \"component_type\": \"thread\",\n");
+        prompt.append("    \"data_direction\": \"input\",\n");
+        prompt.append("    \"interface_type\": \"bus_access\",\n");
+        prompt.append("    \"timing_constraint\": {\"period_ms\": 10, \"deadline_ms\": 5}\n");
+        prompt.append("  }\n");
         prompt.append("}]\n\n");
 
         prompt.append("【严格规则】\n");
@@ -126,7 +145,10 @@ public class RequirementPrompt {
         prompt.append("2. 保持需求的原始语义，不要添加、删除或修改含义\n");
         prompt.append("3. 必须输出有效的JSON数组格式\n");
         prompt.append("4. global_ref 字段必须正确引用全局上下文卡片中的锚点ID\n");
-        prompt.append("5. 不输出任何解释性文字，只输出JSON\n\n");
+        prompt.append("5. 不输出任何解释性文字，只输出JSON\n");
+        prompt.append("6. 每条需求必须填写 aadl_hints，component_type 不可省略\n");
+        prompt.append("7. 涉及硬件交互的需求，interface_type 应为 bus_access 或 data_port\n");
+        prompt.append("8. 周期性任务必须填写 timing_constraint.period_ms\n\n");
 
         prompt.append("【输入内容】\n");
         prompt.append(content);

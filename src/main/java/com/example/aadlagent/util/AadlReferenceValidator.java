@@ -134,6 +134,13 @@ public class AadlReferenceValidator {
         public int lineNumber;
     }
 
+    /** Feature 的完整信息：分类、方向、数据类型 */
+    public static class FeatureDetail {
+        public String category;    // "data_port", "event_port", "event_data_port", "bus_access", "data_access", "other"
+        public String direction;   // "in", "out", "requires", "provides"
+        public String dataType;    // data 类型名（端口引用的 data 组件名），bus access 为总线类型名，未指定时为 null
+    }
+
     /** 验证结果 */
     public static class ValidationResult {
         public List<String> errors = new ArrayList<>();
@@ -225,17 +232,33 @@ public class AadlReferenceValidator {
         // 4m. 检测设备端口类型与数据组件混淆
         checkDevicePortTypeMismatch(aadlContent, aadlDeclarations, result);
 
-        // 4n. 检测 process implementation 中非法的 bus access 连接
-        checkBusAccessInProcess(aadlContent, result);
-
         // 4o. 检测 implementation 中 subcomponents → connections → properties 顺序违规
         checkImplementationOrder(aadlContent, result);
 
-        // 4p. 检测 process/thread implementation 中的双向连接（<->）
-        checkBidirectionalInSoftwareLayer(aadlContent, result);
-
         // 4q. 检测 thread 类型声明中的 requires/provides bus access feature
         checkThreadBusAccessFeature(aadlContent, result);
+
+        // 4r. 检测连接类型与端点 feature 类型是否匹配（port 连 port，access 连 access）
+        Map<String, Map<String, String>> featureTypes = parseFeatureTypes(aadlContent);
+        log.info("featureTypes 解析完成：{} 个组件有 feature 类型分类", featureTypes.size());
+        checkConnectionTypeMatch(connectionRefs, featureTypes, subcomponentRefs, result);
+
+        // 4s. 检测连接操作符是否正确（port 用 ->，bus access 用 <->）
+        checkConnectionOperator(aadlContent, result);
+
+        // 4t. 检测 data 组件中非法的 features 块（subprogram 可以有 features）
+        checkDataComponentFeatures(aadlContent, result);
+
+        // 4u. 检测 port 连接的端口方向（源端必须 out，目标端必须 in）
+        Map<String, Map<String, FeatureDetail>> featureDetails = parseFeatureDetails(aadlContent);
+        log.info("featureDetails 解析完成：{} 个组件有 feature 详情", featureDetails.size());
+        checkPortDirection(connectionRefs, featureDetails, subcomponentRefs, result);
+
+        // 4v. 检测 port 连接两端的数据类型一致性
+        checkPortDataTypeConsistency(connectionRefs, featureDetails, subcomponentRefs, result);
+
+        // 4w. 检测连接与实体类型的匹配（软件实体只能 port 连接，硬件实体只能 bus access 连接）
+        checkConnectionEntityTypeMatch(connectionRefs, aadlDeclarations, result);
 
         // 5. 自动修正
         if (!result.errors.isEmpty() || hasAutoFixableIssues(aadlDeclarations, archComponents)
@@ -683,6 +706,296 @@ public class AadlReferenceValidator {
         }
 
         return componentFeatures;
+    }
+
+    /**
+     * 解析 AADL 代码中所有组件类型声明的 features 块，提取每个 feature 的类型分类。
+     * 用于连接类型匹配验证：port 连接的端点必须是 data/event port，bus access 连接的端点必须是 bus access。
+     *
+     * @return Map: 组件类型名 → (feature名 → 类型分类)
+     *         类型分类值: "data_port", "event_port", "event_data_port", "bus_access", "other"
+     */
+    private Map<String, Map<String, String>> parseFeatureTypes(String aadlContent) {
+        Map<String, Map<String, String>> featureTypes = new LinkedHashMap<>();
+        String[] lines = aadlContent.split("\n");
+
+        Pattern typeDeclPattern = Pattern.compile(
+                "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+(\\w+)\\s*$"
+        );
+        Pattern implDeclPattern = Pattern.compile(
+                "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+implementation\\s+(\\w+)\\.impl"
+        );
+        Pattern virtualTypePattern = Pattern.compile(
+                "^\\s*virtual\\s+processor\\s+(\\w+)\\s*$"
+        );
+
+        String currentTypeDecl = null;
+        boolean inImplementation = false;
+        boolean inFeaturesBlock = false;
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].trim();
+
+            if (line.startsWith("--")) {
+                continue;
+            }
+
+            if (implDeclPattern.matcher(line).find()) {
+                inImplementation = true;
+                inFeaturesBlock = false;
+                currentTypeDecl = null;
+                continue;
+            }
+
+            Matcher virtualTypeMatcher = virtualTypePattern.matcher(line);
+            if (virtualTypeMatcher.find()) {
+                currentTypeDecl = virtualTypeMatcher.group(1);
+                inImplementation = false;
+                inFeaturesBlock = false;
+                continue;
+            }
+
+            Matcher typeMatcher = typeDeclPattern.matcher(line);
+            if (typeMatcher.find()) {
+                currentTypeDecl = typeMatcher.group(2);
+                inImplementation = false;
+                inFeaturesBlock = false;
+                continue;
+            }
+
+            if (line.matches("end\\s+\\w+(\\.impl)?\\s*;")) {
+                currentTypeDecl = null;
+                inFeaturesBlock = false;
+                inImplementation = false;
+                continue;
+            }
+
+            if (line.equals("features") && !inImplementation && currentTypeDecl != null) {
+                inFeaturesBlock = true;
+                continue;
+            }
+
+            if (inFeaturesBlock && (line.equals("properties") || line.equals("flows") ||
+                    line.equals("connections") || line.equals("subcomponents") ||
+                    line.startsWith("annex") || line.startsWith("end "))) {
+                inFeaturesBlock = false;
+                continue;
+            }
+
+            if (inFeaturesBlock && currentTypeDecl != null && !line.isEmpty()) {
+                String featureName = null;
+                String typeCategory = null;
+
+                // 按优先级匹配 feature 类型
+                if (line.matches("\\w+\\s*:\\s*in\\s+data\\s+port.*") ||
+                    line.matches("\\w+\\s*:\\s*out\\s+data\\s+port.*")) {
+                    typeCategory = "data_port";
+                } else if (line.matches("\\w+\\s*:\\s*in\\s+event\\s+data\\s+port.*") ||
+                           line.matches("\\w+\\s*:\\s*out\\s+event\\s+data\\s+port.*")) {
+                    typeCategory = "event_data_port";
+                } else if (line.matches("\\w+\\s*:\\s*in\\s+event\\s+port.*") ||
+                           line.matches("\\w+\\s*:\\s*out\\s+event\\s+port.*")) {
+                    typeCategory = "event_port";
+                } else if (line.matches("\\w+\\s*:\\s*(requires|provides)\\s+bus\\s+access.*")) {
+                    typeCategory = "bus_access";
+                } else if (line.matches("\\w+\\s*:\\s*(requires|provides)\\s+data\\s+access.*")) {
+                    typeCategory = "data_access";
+                } else if (line.matches("\\w+\\s*:\\s*(in|out)\\s+port.*")) {
+                    typeCategory = "data_port"; // 纯 port 也归类为 data_port
+                } else {
+                    typeCategory = "other";
+                }
+
+                // 提取 feature 名
+                Matcher nameMatcher = Pattern.compile("^(\\w+)\\s*:").matcher(line);
+                if (nameMatcher.find()) {
+                    featureName = nameMatcher.group(1);
+                }
+
+                if (featureName != null) {
+                    featureTypes.computeIfAbsent(currentTypeDecl, k -> new LinkedHashMap<>())
+                            .put(featureName, typeCategory);
+                }
+            }
+        }
+
+        return featureTypes;
+    }
+
+    /**
+     * 解析 AADL 代码中所有组件类型声明的 features，提取完整信息（分类、方向、数据类型）。
+     * 用于端口方向验证和数据类型一致性验证。
+     *
+     * @return Map: 组件类型名 → (feature名 → FeatureDetail)
+     */
+    private Map<String, Map<String, FeatureDetail>> parseFeatureDetails(String aadlContent) {
+        Map<String, Map<String, FeatureDetail>> details = new LinkedHashMap<>();
+        String[] lines = aadlContent.split("\n");
+
+        Pattern typeDeclPattern = Pattern.compile(
+                "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+(\\w+)\\s*$"
+        );
+        Pattern implDeclPattern = Pattern.compile(
+                "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+implementation\\s+(\\w+)\\.impl"
+        );
+        Pattern virtualTypePattern = Pattern.compile(
+                "^\\s*virtual\\s+processor\\s+(\\w+)\\s*$"
+        );
+
+        String currentTypeDecl = null;
+        boolean inImplementation = false;
+        boolean inFeaturesBlock = false;
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].trim();
+
+            if (line.startsWith("--")) {
+                continue;
+            }
+
+            if (implDeclPattern.matcher(line).find()) {
+                inImplementation = true;
+                inFeaturesBlock = false;
+                currentTypeDecl = null;
+                continue;
+            }
+
+            Matcher virtualTypeMatcher = virtualTypePattern.matcher(line);
+            if (virtualTypeMatcher.find()) {
+                currentTypeDecl = virtualTypeMatcher.group(1);
+                inImplementation = false;
+                inFeaturesBlock = false;
+                continue;
+            }
+
+            Matcher typeMatcher = typeDeclPattern.matcher(line);
+            if (typeMatcher.find()) {
+                currentTypeDecl = typeMatcher.group(2);
+                inImplementation = false;
+                inFeaturesBlock = false;
+                continue;
+            }
+
+            if (line.matches("end\\s+\\w+(\\.impl)?\\s*;")) {
+                currentTypeDecl = null;
+                inFeaturesBlock = false;
+                inImplementation = false;
+                continue;
+            }
+
+            if (line.equals("features") && !inImplementation && currentTypeDecl != null) {
+                inFeaturesBlock = true;
+                continue;
+            }
+
+            if (inFeaturesBlock && (line.equals("properties") || line.equals("flows") ||
+                    line.equals("connections") || line.equals("subcomponents") ||
+                    line.startsWith("annex") || line.startsWith("end "))) {
+                inFeaturesBlock = false;
+                continue;
+            }
+
+            if (inFeaturesBlock && currentTypeDecl != null && !line.isEmpty()) {
+                FeatureDetail fd = parseSingleFeature(line);
+                if (fd != null) {
+                    Matcher nameMatcher = Pattern.compile("^(\\w+)\\s*:").matcher(line);
+                    if (nameMatcher.find()) {
+                        String featureName = nameMatcher.group(1);
+                        details.computeIfAbsent(currentTypeDecl, k -> new LinkedHashMap<>())
+                                .put(featureName, fd);
+                    }
+                }
+            }
+        }
+
+        return details;
+    }
+
+    /**
+     * 解析单行 feature 声明，提取分类、方向和数据类型。
+     */
+    private FeatureDetail parseSingleFeature(String line) {
+        FeatureDetail fd = new FeatureDetail();
+
+        // in data port TypeName
+        if (line.matches("\\w+\\s*:\\s*in\\s+data\\s+port.*")) {
+            fd.category = "data_port";
+            fd.direction = "in";
+            fd.dataType = extractDataType(line);
+        } else if (line.matches("\\w+\\s*:\\s*out\\s+data\\s+port.*")) {
+            fd.category = "data_port";
+            fd.direction = "out";
+            fd.dataType = extractDataType(line);
+        } else if (line.matches("\\w+\\s*:\\s*in\\s+event\\s+data\\s+port.*")) {
+            fd.category = "event_data_port";
+            fd.direction = "in";
+            fd.dataType = extractDataType(line);
+        } else if (line.matches("\\w+\\s*:\\s*out\\s+event\\s+data\\s+port.*")) {
+            fd.category = "event_data_port";
+            fd.direction = "out";
+            fd.dataType = extractDataType(line);
+        } else if (line.matches("\\w+\\s*:\\s*in\\s+event\\s+port.*")) {
+            fd.category = "event_port";
+            fd.direction = "in";
+            fd.dataType = null;
+        } else if (line.matches("\\w+\\s*:\\s*out\\s+event\\s+port.*")) {
+            fd.category = "event_port";
+            fd.direction = "out";
+            fd.dataType = null;
+        } else if (line.matches("\\w+\\s*:\\s*requires\\s+bus\\s+access.*")) {
+            fd.category = "bus_access";
+            fd.direction = "requires";
+            fd.dataType = extractAccessTypeName(line, "bus");
+        } else if (line.matches("\\w+\\s*:\\s*provides\\s+bus\\s+access.*")) {
+            fd.category = "bus_access";
+            fd.direction = "provides";
+            fd.dataType = extractAccessTypeName(line, "bus");
+        } else if (line.matches("\\w+\\s*:\\s*requires\\s+data\\s+access.*")) {
+            fd.category = "data_access";
+            fd.direction = "requires";
+            fd.dataType = extractAccessTypeName(line, "data");
+        } else if (line.matches("\\w+\\s*:\\s*provides\\s+data\\s+access.*")) {
+            fd.category = "data_access";
+            fd.direction = "provides";
+            fd.dataType = extractAccessTypeName(line, "data");
+        } else if (line.matches("\\w+\\s*:\\s*in\\s+port.*")) {
+            fd.category = "data_port";
+            fd.direction = "in";
+            fd.dataType = extractDataType(line);
+        } else if (line.matches("\\w+\\s*:\\s*out\\s+port.*")) {
+            fd.category = "data_port";
+            fd.direction = "out";
+            fd.dataType = extractDataType(line);
+        } else {
+            return null; // 无法识别的 feature 行
+        }
+
+        return fd;
+    }
+
+    /** 从端口声明行中提取数据类型名 */
+    private String extractDataType(String line) {
+        // 匹配: port TypeName; 或 port TypeName;  (TypeName 在 port 关键字之后)
+        Matcher m = Pattern.compile(
+                "(?:data\\s+port|event\\s+data\\s+port|event\\s+port|port)\\s+([A-Za-z_]\\w*)",
+                Pattern.CASE_INSENSITIVE
+        ).matcher(line);
+        if (m.find()) {
+            return m.group(1);
+        }
+        return null;
+    }
+
+    /** 从 access 声明行中提取访问的类型名 */
+    private String extractAccessTypeName(String line, String accessKind) {
+        Matcher m = Pattern.compile(
+                accessKind + "\\s+access\\s+([A-Za-z_]\\w*)",
+                Pattern.CASE_INSENSITIVE
+        ).matcher(line);
+        if (m.find()) {
+            return m.group(1);
+        }
+        return null;
     }
 
     // ========================= connections 解析 =========================
@@ -1381,26 +1694,138 @@ public class AadlReferenceValidator {
     }
 
     /**
-     * 4n. 检测 process implementation 中非法的 bus access 连接。
+     * 4r. 检测连接类型与端点 feature 类型是否匹配。
      *
-     * 分层架构规范：bus access 连接只能出现在 system implementation 中，
-     * 严禁出现在 process implementation 中。进程内部只做纯粹的 port 数据流连接。
+     * SAE AADL 标准规范：
+     * - port 连接（connName : port ...）的端点必须是 data port / event port / event data port
+     * - bus access 连接（connName : bus access ...）的端点必须是 requires/provides bus access
+     * - 严禁混连：bus access 端点不能与 port 端点直接相连
      *
-     * 检测到时报告 error，自动修正阶段会删除这些连接行。
+     * @param connections   连接引用列表
+     * @param featureTypes  组件类型 → (feature名 → 类型分类)
+     * @param subcomponentRefs subcomponents 引用列表
+     * @param result        验证结果
      */
-    private void checkBusAccessInProcess(String aadlContent, ValidationResult result) {
+    private void checkConnectionTypeMatch(List<ConnectionRef> connections,
+                                           Map<String, Map<String, String>> featureTypes,
+                                           List<SubcomponentRef> subcomponentRefs,
+                                           ValidationResult result) {
+        // 建立 implementation → (实例名 → 类型名) 映射
+        Map<String, Map<String, String>> implInstanceMap = new HashMap<>();
+        for (SubcomponentRef ref : subcomponentRefs) {
+            if (ref.parentImpl != null) {
+                implInstanceMap.computeIfAbsent(ref.parentImpl, k -> new HashMap<>())
+                        .put(ref.instanceName, ref.typeName);
+            }
+        }
+
+        for (ConnectionRef conn : connections) {
+            if (conn.parentImpl == null) {
+                continue;
+            }
+
+            Map<String, String> instanceMap = implInstanceMap.get(conn.parentImpl);
+            if (instanceMap == null) {
+                continue;
+            }
+
+            String sourceType = instanceMap.get(conn.sourceInstance);
+            String destType = instanceMap.get(conn.destInstance);
+
+            String sourceFeatureType = null;
+            String destFeatureType = null;
+
+            if (sourceType != null) {
+                Map<String, String> sourceFeatures = featureTypes.get(sourceType);
+                if (sourceFeatures != null) {
+                    sourceFeatureType = sourceFeatures.get(conn.sourceFeature);
+                }
+            }
+            if (destType != null) {
+                Map<String, String> destFeatures = featureTypes.get(destType);
+                if (destFeatures != null) {
+                    destFeatureType = destFeatures.get(conn.destFeature);
+                }
+            }
+
+            // 无法确定类型时跳过（可能 feature 尚未声明，由其他检查处理）
+            if (sourceFeatureType == null || destFeatureType == null) {
+                continue;
+            }
+
+            boolean sourceIsPort = "data_port".equals(sourceFeatureType) ||
+                    "event_port".equals(sourceFeatureType) ||
+                    "event_data_port".equals(sourceFeatureType);
+            boolean destIsPort = "data_port".equals(destFeatureType) ||
+                    "event_port".equals(destFeatureType) ||
+                    "event_data_port".equals(destFeatureType);
+            boolean sourceIsAccess = "bus_access".equals(sourceFeatureType) ||
+                    "data_access".equals(sourceFeatureType);
+            boolean destIsAccess = "bus_access".equals(destFeatureType) ||
+                    "data_access".equals(destFeatureType);
+
+            // 检查 1：port 连接的端点必须都是 port 类型
+            if ("port".equals(conn.connType)) {
+                if (!sourceIsPort || !destIsPort) {
+                    result.errors.add(String.format(
+                            "第%d行: 连接类型不匹配 - 连接 '%s' 使用 port 类型，但端点 feature 类型不匹配; " +
+                            "源端 %s.%s 类型=%s, 目标端 %s.%s 类型=%s; port 连接的两端必须是 data port / event port",
+                            conn.lineNumber, conn.connName,
+                            conn.sourceInstance, conn.sourceFeature, sourceFeatureType,
+                            conn.destInstance, conn.destFeature, destFeatureType
+                    ));
+                }
+            }
+
+            // 检查 2：bus access 连接的端点必须都是 bus access 类型
+            if ("bus access".equals(conn.connType)) {
+                if (!sourceIsAccess || !destIsAccess) {
+                    result.errors.add(String.format(
+                            "第%d行: 连接类型不匹配 - 连接 '%s' 使用 bus access 类型，但端点 feature 类型不匹配; " +
+                            "源端 %s.%s 类型=%s, 目标端 %s.%s 类型=%s; bus access 连接的两端必须是 requires/provides bus access",
+                            conn.lineNumber, conn.connName,
+                            conn.sourceInstance, conn.sourceFeature, sourceFeatureType,
+                            conn.destInstance, conn.destFeature, destFeatureType
+                    ));
+                }
+            }
+
+            // 检查 3：严禁 port 与 bus access 混连
+            if ((sourceIsPort && destIsAccess) || (sourceIsAccess && destIsPort)) {
+                result.errors.add(String.format(
+                        "第%d行: 硬件与软件隔离违规 - 连接 '%s' 混连了 port 和 bus access; " +
+                        "源端 %s.%s 类型=%s, 目标端 %s.%s 类型=%s; bus access 不能与 port 直接相连",
+                        conn.lineNumber, conn.connName,
+                        conn.sourceInstance, conn.sourceFeature, sourceFeatureType,
+                        conn.destInstance, conn.destFeature, destFeatureType
+                ));
+            }
+        }
+    }
+
+    /**
+     * 4s. 检测连接操作符是否正确。
+     *
+     * SAE AADL 标准规范：
+     * - port 连接必须使用单向操作符 ->
+     * - bus access 连接必须使用双向操作符 <->
+     *
+     * @param aadlContent AADL 代码
+     * @param result      验证结果
+     */
+    private void checkConnectionOperator(String aadlContent, ValidationResult result) {
         String[] lines = aadlContent.split("\n");
 
-        Pattern processImplPattern = Pattern.compile(
-                "^\\s*process\\s+implementation\\s+(\\w+)\\.impl"
-        );
-        // 匹配 bus access 连接行：connName : bus access ... <-> ...
-        Pattern busAccessConnPattern = Pattern.compile(
-                "^\\s*\\w+\\s*:\\s*bus\\s+access\\s+"
+        Pattern connLinePattern = Pattern.compile(
+                "^(\\w+)\\s*:\\s*(port|bus\\s+access)\\s+.*?(->|<->)\\s*"
         );
 
-        boolean inProcessImpl = false;
-        String currentProcessImplName = null;
+        boolean inConnections = false;
+        boolean inImplementation = false;
+
+        Pattern implContextPattern = Pattern.compile(
+                "^\\s*(?:system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+implementation\\s+(\\w+)\\.impl"
+        );
 
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i].trim();
@@ -1409,25 +1834,361 @@ public class AadlReferenceValidator {
                 continue;
             }
 
-            Matcher processMatcher = processImplPattern.matcher(line);
-            if (processMatcher.find()) {
-                inProcessImpl = true;
-                currentProcessImplName = processMatcher.group(1);
+            if (implContextPattern.matcher(line).find()) {
+                inImplementation = true;
+                inConnections = false;
                 continue;
             }
 
             if (line.matches("end\\s+\\w+\\.impl\\s*;")) {
-                inProcessImpl = false;
-                currentProcessImplName = null;
+                inImplementation = false;
+                inConnections = false;
                 continue;
             }
 
-            if (inProcessImpl && busAccessConnPattern.matcher(line).find()) {
+            if (line.equals("connections")) {
+                inConnections = true;
+                continue;
+            }
+
+            if (inConnections && (line.equals("properties") || line.equals("subcomponents") ||
+                    line.equals("features") || line.equals("flows") ||
+                    line.matches("end\\s+\\w+\\.impl\\s*;"))) {
+                inConnections = false;
+                continue;
+            }
+
+            if (inConnections) {
+                Matcher m = connLinePattern.matcher(line);
+                if (m.find()) {
+                    String connName = m.group(1);
+                    String connType = m.group(2).replaceAll("\\s+", " ");
+                    String operator = m.group(3);
+
+                    // port 连接必须用 ->
+                    if ("port".equals(connType) && "<->".equals(operator)) {
+                        result.warnings.add(String.format(
+                                "第%d行: 连接操作符建议 - port 连接 '%s' 使用了双向 <->; " +
+                                "port 连接应使用单向 -> 表示数据流方向",
+                                i + 1, connName
+                        ));
+                    }
+
+                    // bus access 连接必须用 <->
+                    if ("bus access".equals(connType) && "->".equals(operator)) {
+                        result.errors.add(String.format(
+                                "第%d行: 连接操作符错误 - bus access 连接 '%s' 使用了单向 ->; " +
+                                "bus access 连接必须使用双向 <->",
+                                i + 1, connName
+                        ));
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 4t. 检测 data 组件中非法的 features 块。
+     *
+     * SAE AADL 标准规范：
+     * - data 是被动构件（passive component），作为类型分类器（classifier）被端口引用
+     * - data 不应直接拥有顶层 features（如端口、访问特征）
+     * - 数据的流动和交互应由主动构件（thread、process、device）持有端口并完成收发
+     * - data 组件只需声明类型，例如 `data CommandData end CommandData;`，
+     *   然后被端口引用：`out data port CommandData;`
+     * - 注意：subprogram 可以定义 features（如 in/out parameter），不属于被动构件约束范围
+     *
+     * @param aadlContent AADL 代码
+     * @param result      验证结果
+     */
+    private void checkDataComponentFeatures(String aadlContent, ValidationResult result) {
+        String[] lines = aadlContent.split("\n");
+
+        // 匹配 data 类型声明（不含 implementation）
+        // 注意：subprogram 可以定义 features，只有 data 才是纯类型分类器
+        Pattern passiveTypePattern = Pattern.compile(
+                "^\\s*data\\s+(\\w+)\\s*$"
+        );
+        Pattern implDeclPattern = Pattern.compile(
+                "^\\s*data\\s+implementation\\s+(\\w+)\\.impl"
+        );
+
+        String currentTypeName = null;
+        String currentCompType = null;
+        boolean inPassiveType = false;
+        boolean inFeaturesBlock = false;
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].trim();
+
+            if (line.startsWith("--")) {
+                continue;
+            }
+
+            // 进入 implementation 声明 → 退出类型声明上下文
+            if (implDeclPattern.matcher(line).find()) {
+                inPassiveType = false;
+                inFeaturesBlock = false;
+                currentTypeName = null;
+                currentCompType = null;
+                continue;
+            }
+
+            // 匹配 data 类型声明
+            Matcher passiveMatcher = passiveTypePattern.matcher(line);
+            if (passiveMatcher.find()) {
+                currentCompType = "data";
+                currentTypeName = passiveMatcher.group(1);
+                inPassiveType = true;
+                inFeaturesBlock = false;
+                continue;
+            }
+
+            // 退出类型声明
+            if (inPassiveType && currentTypeName != null &&
+                    line.matches("end\\s+" + Pattern.quote(currentTypeName) + "\\s*;")) {
+                inPassiveType = false;
+                inFeaturesBlock = false;
+                currentTypeName = null;
+                currentCompType = null;
+                continue;
+            }
+
+            // 检测 features 块开始
+            if (inPassiveType && line.equals("features")) {
+                inFeaturesBlock = true;
                 result.errors.add(String.format(
-                        "第%d行: 分层架构违规 - bus access 连接出现在 process implementation '%s.impl' 中; " +
-                        "bus access 连接只能出现在 system implementation 中，进程内部只做 port 数据流连接",
-                        i + 1, currentProcessImplName
+                        "第%d行: data 组件违规 - data 组件 '%s' 中出现了 features 块; " +
+                        "data 是被动构件（类型分类器），不应直接拥有 features; " +
+                        "数据的流动应由主动构件（thread/process/device）的端口引用 data 类型来完成",
+                        i + 1, currentTypeName
                 ));
+                continue;
+            }
+
+            // features 块结束
+            if (inFeaturesBlock && (line.equals("properties") || line.equals("flows") ||
+                    line.equals("connections") || line.equals("subcomponents") ||
+                    line.startsWith("annex") || line.startsWith("end "))) {
+                inFeaturesBlock = false;
+                continue;
+            }
+        }
+    }
+
+    /**
+     * 4u. 检测 port 连接的端口方向是否正确。
+     *
+     * SAE AADL 标准规范：
+     * - 数据流向必须符合端口定义的输入输出方向
+     * - 源端（-> 左侧）必须是 out port 或 in out port
+     * - 目标端（-> 右侧）必须是 in port 或 in out port
+     * - 严禁 in → in、out → out、in → out（数据无法流出或流入）
+     *
+     * @param connections   连接引用列表
+     * @param featureDetails 组件类型 → (feature名 → FeatureDetail)
+     * @param subcomponentRefs subcomponents 引用列表
+     * @param result        验证结果
+     */
+    private void checkPortDirection(List<ConnectionRef> connections,
+                                     Map<String, Map<String, FeatureDetail>> featureDetails,
+                                     List<SubcomponentRef> subcomponentRefs,
+                                     ValidationResult result) {
+        // 建立 implementation → (实例名 → 类型名) 映射
+        Map<String, Map<String, String>> implInstanceMap = new HashMap<>();
+        for (SubcomponentRef ref : subcomponentRefs) {
+            if (ref.parentImpl != null) {
+                implInstanceMap.computeIfAbsent(ref.parentImpl, k -> new HashMap<>())
+                        .put(ref.instanceName, ref.typeName);
+            }
+        }
+
+        for (ConnectionRef conn : connections) {
+            // 只检查 port 连接的方向
+            if (!"port".equals(conn.connType) || conn.parentImpl == null) {
+                continue;
+            }
+
+            Map<String, String> instanceMap = implInstanceMap.get(conn.parentImpl);
+            if (instanceMap == null) {
+                continue;
+            }
+
+            String sourceType = instanceMap.get(conn.sourceInstance);
+            String destType = instanceMap.get(conn.destInstance);
+
+            FeatureDetail sourceFd = null;
+            FeatureDetail destFd = null;
+
+            if (sourceType != null) {
+                Map<String, FeatureDetail> sourceFeatures = featureDetails.get(sourceType);
+                if (sourceFeatures != null) {
+                    sourceFd = sourceFeatures.get(conn.sourceFeature);
+                }
+            }
+            if (destType != null) {
+                Map<String, FeatureDetail> destFeatures = featureDetails.get(destType);
+                if (destFeatures != null) {
+                    destFd = destFeatures.get(conn.destFeature);
+                }
+            }
+
+            // 无法确定方向时跳过
+            if (sourceFd == null || destFd == null) {
+                continue;
+            }
+
+            // 检查方向：源端必须是 out，目标端必须是 in
+            boolean sourceIsOut = "out".equals(sourceFd.direction);
+            boolean destIsIn = "in".equals(destFd.direction);
+
+            if (!sourceIsOut || !destIsIn) {
+                result.errors.add(String.format(
+                        "第%d行: 端口方向错误 - 连接 '%s' 的数据流方向不匹配; " +
+                        "源端 %s.%s 方向=%s, 目标端 %s.%s 方向=%s; " +
+                        "源端必须是 out port，目标端必须是 in port",
+                        conn.lineNumber, conn.connName,
+                        conn.sourceInstance, conn.sourceFeature, sourceFd.direction,
+                        conn.destInstance, conn.destFeature, destFd.direction
+                ));
+            }
+        }
+    }
+
+    /**
+     * 4v. 检测 port 连接两端的数据类型是否一致。
+     *
+     * SAE AADL 标准规范：
+     * - port 连接的两端必须引用相同的数据类型
+     * - 例如 out data port CommandData → in data port CommandData 是正确的
+     * - out data port CommandData → in data port SensorData 是类型不匹配
+     *
+     * @param connections   连接引用列表
+     * @param featureDetails 组件类型 → (feature名 → FeatureDetail)
+     * @param subcomponentRefs subcomponents 引用列表
+     * @param result        验证结果
+     */
+    private void checkPortDataTypeConsistency(List<ConnectionRef> connections,
+                                               Map<String, Map<String, FeatureDetail>> featureDetails,
+                                               List<SubcomponentRef> subcomponentRefs,
+                                               ValidationResult result) {
+        // 建立 implementation → (实例名 → 类型名) 映射
+        Map<String, Map<String, String>> implInstanceMap = new HashMap<>();
+        for (SubcomponentRef ref : subcomponentRefs) {
+            if (ref.parentImpl != null) {
+                implInstanceMap.computeIfAbsent(ref.parentImpl, k -> new HashMap<>())
+                        .put(ref.instanceName, ref.typeName);
+            }
+        }
+
+        for (ConnectionRef conn : connections) {
+            // 只检查 port 连接的数据类型
+            if (!"port".equals(conn.connType) || conn.parentImpl == null) {
+                continue;
+            }
+
+            Map<String, String> instanceMap = implInstanceMap.get(conn.parentImpl);
+            if (instanceMap == null) {
+                continue;
+            }
+
+            String sourceType = instanceMap.get(conn.sourceInstance);
+            String destType = instanceMap.get(conn.destInstance);
+
+            FeatureDetail sourceFd = null;
+            FeatureDetail destFd = null;
+
+            if (sourceType != null) {
+                Map<String, FeatureDetail> sourceFeatures = featureDetails.get(sourceType);
+                if (sourceFeatures != null) {
+                    sourceFd = sourceFeatures.get(conn.sourceFeature);
+                }
+            }
+            if (destType != null) {
+                Map<String, FeatureDetail> destFeatures = featureDetails.get(destType);
+                if (destFeatures != null) {
+                    destFd = destFeatures.get(conn.destFeature);
+                }
+            }
+
+            // 无法确定数据类型时跳过
+            if (sourceFd == null || destFd == null) {
+                continue;
+            }
+
+            // event port 没有数据类型，跳过
+            if (sourceFd.dataType == null || destFd.dataType == null) {
+                continue;
+            }
+
+            // 检查数据类型是否一致
+            if (!sourceFd.dataType.equals(destFd.dataType)) {
+                result.errors.add(String.format(
+                        "第%d行: 数据类型不匹配 - 连接 '%s' 两端的数据类型不一致; " +
+                        "源端 %s.%s 类型=%s, 目标端 %s.%s 类型=%s; " +
+                        "port 连接的两端必须引用相同的数据类型",
+                        conn.lineNumber, conn.connName,
+                        conn.sourceInstance, conn.sourceFeature, sourceFd.dataType,
+                        conn.destInstance, conn.destFeature, destFd.dataType
+                ));
+            }
+        }
+    }
+
+    /**
+     * 4w. 检测连接与实体类型的匹配：软件实体只能有 port 连接，硬件实体只能有 bus access 连接。
+     *
+     * 核心准则：
+     * - 软件实体（process）的 connections 块中只能包含 port 连接（数据流/控制流）
+     * - 硬件实体（device、processor、memory、bus）的 connections 块中只能包含 bus access 连接
+     * - system 实体作为软硬件桥接容器，port 连接和 bus access 连接均可
+     * - thread 实体不允许有 connections（由 4i 检查）
+     *
+     * @param connections   连接引用列表
+     * @param declarations  AADL 声明映射（组件名 → 声明信息，含 type 字段）
+     * @param result        验证结果
+     */
+    private void checkConnectionEntityTypeMatch(List<ConnectionRef> connections,
+                                                 Map<String, AadlDeclaration> declarations,
+                                                 ValidationResult result) {
+        for (ConnectionRef conn : connections) {
+            if (conn.parentImpl == null) {
+                continue;
+            }
+
+            AadlDeclaration implDecl = declarations.get(conn.parentImpl);
+            if (implDecl == null || implDecl.type == null) {
+                continue;
+            }
+
+            String implType = implDecl.type;
+
+            // system 作为软硬件桥接容器，port 和 bus access 均可
+            if ("system".equals(implType)) {
+                continue;
+            }
+
+            // 软件实体（process）只能有 port 连接
+            if ("process".equals(implType)) {
+                if ("bus access".equals(conn.connType)) {
+                    result.errors.add(String.format(
+                            "第%d行: 连接类型与实体类型不匹配 - 软件实体 '%s' (process) 的 connections 中出现了 bus access 连接 '%s'; " +
+                            "软件实体只能定义 port 连接（数据流/控制流），bus access 连接应出现在硬件实体或 system 实现中",
+                            conn.lineNumber, conn.parentImpl, conn.connName
+                    ));
+                }
+            }
+
+            // 硬件实体（device、processor、memory、bus）只能有 bus access 连接
+            if ("device".equals(implType) || "processor".equals(implType) ||
+                    "memory".equals(implType) || "bus".equals(implType)) {
+                if ("port".equals(conn.connType)) {
+                    result.errors.add(String.format(
+                            "第%d行: 连接类型与实体类型不匹配 - 硬件实体 '%s' (%s) 的 connections 中出现了 port 连接 '%s'; " +
+                            "硬件实体只能定义 bus access 连接，port 连接应出现在软件实体或 system 实现中",
+                            conn.lineNumber, conn.parentImpl, implType, conn.connName
+                    ));
+                }
             }
         }
     }
@@ -1500,55 +2261,6 @@ public class AadlReferenceValidator {
                     ));
                 }
                 lastSectionOrder = currentOrder;
-            }
-        }
-    }
-
-    /**
-     * 4p. 检测 process/thread implementation 中的双向连接（<->）。
-     *
-     * 分层架构规范：软件层（process / thread）中的 port 连接必须使用单向 ->，
-     * 双向 <-> 容易引发跨层耦合和语法解析问题，应避免使用。
-     */
-    private void checkBidirectionalInSoftwareLayer(String aadlContent, ValidationResult result) {
-        String[] lines = aadlContent.split("\n");
-
-        // 匹配 process 或 thread implementation
-        Pattern softwareImplPattern = Pattern.compile(
-                "^\\s*(process|thread)\\s+implementation\\s+(\\w+)\\.impl"
-        );
-        // 匹配包含 <-> 的连接行
-        Pattern bidirConnPattern = Pattern.compile("<->");
-
-        boolean inSoftwareImpl = false;
-        String currentImplName = null;
-
-        for (int i = 0; i < lines.length; i++) {
-            String line = lines[i].trim();
-
-            if (line.startsWith("--")) {
-                continue;
-            }
-
-            Matcher implMatcher = softwareImplPattern.matcher(line);
-            if (implMatcher.find()) {
-                inSoftwareImpl = true;
-                currentImplName = implMatcher.group(2);
-                continue;
-            }
-
-            if (line.matches("end\\s+\\w+\\.impl\\s*;")) {
-                inSoftwareImpl = false;
-                currentImplName = null;
-                continue;
-            }
-
-            if (inSoftwareImpl && bidirConnPattern.matcher(line).find()) {
-                result.warnings.add(String.format(
-                        "第%d行: 分层架构建议 - process/thread implementation '%s.impl' 中使用了双向连接 <->; " +
-                        "软件层组件间应使用单向 -> 进行数据流连接，避免跨层耦合",
-                        i + 1, currentImplName
-                ));
             }
         }
     }
@@ -1934,126 +2646,6 @@ public class AadlReferenceValidator {
      * @param result       验证结果（记录修正信息）
      * @return 修正后的 AADL 代码
      */
-    /**
-     * 自动修正：删除 process implementation 中非法的 bus access 连接行。
-     *
-     * 分层架构规范：bus access 连接只能出现在 system implementation 中。
-     * 进程内部的 bus access 连接行会被直接移除。
-     */
-    private String fixBusAccessInProcess(String content, ValidationResult result) {
-        String[] lines = content.split("\n");
-        List<String> resultLines = new ArrayList<>();
-
-        Pattern processImplPattern = Pattern.compile(
-                "^\\s*process\\s+implementation\\s+(\\w+)\\.impl"
-        );
-        Pattern busAccessConnPattern = Pattern.compile(
-                "^\\s*\\w+\\s*:\\s*bus\\s+access\\s+"
-        );
-
-        boolean inProcessImpl = false;
-        String currentProcessImplName = null;
-        int removedCount = 0;
-
-        for (int i = 0; i < lines.length; i++) {
-            String line = lines[i];
-            String trimmed = line.trim();
-
-            if (trimmed.startsWith("--")) {
-                resultLines.add(line);
-                continue;
-            }
-
-            Matcher processMatcher = processImplPattern.matcher(trimmed);
-            if (processMatcher.find()) {
-                inProcessImpl = true;
-                currentProcessImplName = processMatcher.group(1);
-                resultLines.add(line);
-                continue;
-            }
-
-            if (trimmed.matches("end\\s+\\w+\\.impl\\s*;")) {
-                inProcessImpl = false;
-                currentProcessImplName = null;
-                resultLines.add(line);
-                continue;
-            }
-
-            if (inProcessImpl && busAccessConnPattern.matcher(trimmed).find()) {
-                removedCount++;
-                result.fixes.add(String.format(
-                        "已删除 process implementation '%s.impl' 中非法的 bus access 连接行: %s",
-                        currentProcessImplName, trimmed));
-                continue; // 跳过该行
-            }
-
-            resultLines.add(line);
-        }
-
-        if (removedCount > 0) {
-            log.info("自动修正：从 process implementation 中删除了 {} 行非法 bus access 连接", removedCount);
-        }
-        return String.join("\n", resultLines);
-    }
-
-    /**
-     * 自动修正：将 process/thread implementation 中的双向连接（<->）替换为单向（->）。
-     *
-     * 分层架构规范：软件层组件间应使用单向 -> 进行数据流连接。
-     */
-    private String fixBidirectionalInSoftwareLayer(String content, ValidationResult result) {
-        String[] lines = content.split("\n");
-        List<String> resultLines = new ArrayList<>();
-
-        Pattern softwareImplPattern = Pattern.compile(
-                "^\\s*(process|thread)\\s+implementation\\s+(\\w+)\\.impl"
-        );
-
-        boolean inSoftwareImpl = false;
-        String currentImplName = null;
-        int fixCount = 0;
-
-        for (int i = 0; i < lines.length; i++) {
-            String line = lines[i];
-            String trimmed = line.trim();
-
-            if (trimmed.startsWith("--")) {
-                resultLines.add(line);
-                continue;
-            }
-
-            Matcher implMatcher = softwareImplPattern.matcher(trimmed);
-            if (implMatcher.find()) {
-                inSoftwareImpl = true;
-                currentImplName = implMatcher.group(2);
-                resultLines.add(line);
-                continue;
-            }
-
-            if (trimmed.matches("end\\s+\\w+\\.impl\\s*;")) {
-                inSoftwareImpl = false;
-                currentImplName = null;
-                resultLines.add(line);
-                continue;
-            }
-
-            if (inSoftwareImpl && line.contains("<->")) {
-                String fixedLine = line.replace("<->", "->");
-                fixCount++;
-                result.fixes.add(String.format(
-                        "已将 process/thread implementation '%s.impl' 中的双向连接 <-> 替换为单向 -> : %s",
-                        currentImplName, trimmed));
-                resultLines.add(fixedLine);
-            } else {
-                resultLines.add(line);
-            }
-        }
-
-        if (fixCount > 0) {
-            log.info("自动修正：在软件层中将 {} 处双向连接 <-> 替换为单向 ->", fixCount);
-        }
-        return String.join("\n", resultLines);
-    }
 
     /**
      * 自动修正：删除 thread 类型声明 features 块中的 requires/provides bus access 行。
@@ -2266,6 +2858,338 @@ public class AadlReferenceValidator {
         }
         if (removedConnCount > 0) {
             log.info("自动修正：删除了 {} 行引用被移除 bus access feature 的连接行", removedConnCount);
+        }
+        return String.join("\n", resultLines);
+    }
+
+    /**
+     * 自动修正：删除 data 组件类型声明中的整个 features 块。
+     *
+     * data 是被动构件（类型分类器），不应拥有 features。检测到 features 块时，
+     * 删除从 "features" 关键字到下一个块关键字（properties/flows/connections/subcomponents/annex/end）
+     * 之间的所有行。
+     * 注意：subprogram 可以定义 features，不属于此约束范围。
+     *
+     * @param content AADL 代码
+     * @param result  验证结果
+     * @return 修正后的 AADL 代码
+     */
+    private String fixDataComponentFeatures(String content, ValidationResult result) {
+        String[] lines = content.split("\n");
+
+        // 只匹配 data 类型声明（subprogram 可以有 features）
+        Pattern passiveTypePattern = Pattern.compile(
+                "^\\s*data\\s+(\\w+)\\s*$"
+        );
+        Pattern implDeclPattern = Pattern.compile(
+                "^\\s*data\\s+implementation\\s+(\\w+)\\.impl"
+        );
+        // 用于提取 feature 名
+        Pattern featureNamePattern = Pattern.compile(
+                "^(\\w+)\\s*:", Pattern.CASE_INSENSITIVE
+        );
+
+        // ===== 第一阶段：扫描收集需要删除的 feature 名 =====
+        Set<String> removedFeatureNames = new LinkedHashSet<>();
+        String currentTypeName = null;
+        String currentCompType = null;
+        boolean inPassiveType = false;
+        boolean inFeaturesBlock = false;
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].trim();
+
+            if (line.startsWith("--")) {
+                continue;
+            }
+
+            if (implDeclPattern.matcher(line).find()) {
+                inPassiveType = false;
+                inFeaturesBlock = false;
+                currentTypeName = null;
+                currentCompType = null;
+                continue;
+            }
+
+            Matcher passiveMatcher = passiveTypePattern.matcher(line);
+            if (passiveMatcher.find()) {
+                currentCompType = "data";
+                currentTypeName = passiveMatcher.group(1);
+                inPassiveType = true;
+                inFeaturesBlock = false;
+                continue;
+            }
+
+            if (inPassiveType && currentTypeName != null &&
+                    line.matches("end\\s+" + Pattern.quote(currentTypeName) + "\\s*;")) {
+                inPassiveType = false;
+                inFeaturesBlock = false;
+                currentTypeName = null;
+                currentCompType = null;
+                continue;
+            }
+
+            if (inPassiveType && line.equals("features")) {
+                inFeaturesBlock = true;
+                continue;
+            }
+
+            if (inFeaturesBlock && (line.equals("properties") || line.equals("flows") ||
+                    line.equals("connections") || line.equals("subcomponents") ||
+                    line.startsWith("annex") || line.startsWith("end "))) {
+                inFeaturesBlock = false;
+                continue;
+            }
+
+            if (inFeaturesBlock) {
+                Matcher nameMatcher = featureNamePattern.matcher(line);
+                if (nameMatcher.find()) {
+                    removedFeatureNames.add(nameMatcher.group(1));
+                }
+            }
+        }
+
+        if (removedFeatureNames.isEmpty()) {
+            return content; // 没有需要删除的 feature
+        }
+
+        // ===== 第二阶段：实际删除 features 块 + 引用这些 feature 的 connection 行 =====
+        List<String> resultLines = new ArrayList<>();
+        inPassiveType = false;
+        inFeaturesBlock = false;
+        currentTypeName = null;
+        currentCompType = null;
+        int removedFeatureCount = 0;
+        int removedConnCount = 0;
+
+        // connections 块跟踪
+        boolean inConnectionsBlock = false;
+        boolean inAnyImpl = false;
+
+        Pattern generalImplPattern = Pattern.compile(
+                "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+implementation\\s+(\\w+)\\.impl"
+        );
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+            String trimmed = line.trim();
+
+            if (trimmed.startsWith("--")) {
+                resultLines.add(line);
+                continue;
+            }
+
+            // === implementation 上下文跟踪 ===
+            Matcher implMatcher = generalImplPattern.matcher(trimmed);
+            if (implMatcher.find()) {
+                inAnyImpl = true;
+                inConnectionsBlock = false;
+                resultLines.add(line);
+                continue;
+            }
+
+            if (inAnyImpl && trimmed.matches("end\\s+\\w+\\.impl\\s*;")) {
+                inAnyImpl = false;
+                inConnectionsBlock = false;
+                resultLines.add(line);
+                continue;
+            }
+
+            // connections 块跟踪
+            if (inAnyImpl && trimmed.equals("connections")) {
+                inConnectionsBlock = true;
+                resultLines.add(line);
+                continue;
+            }
+
+            if (inConnectionsBlock && (trimmed.equals("subcomponents") || trimmed.equals("properties") ||
+                    trimmed.equals("flows") || trimmed.startsWith("end "))) {
+                inConnectionsBlock = false;
+                resultLines.add(line);
+                continue;
+            }
+
+            // === 删除 connections 中引用了被删除 feature 的行（级联删除）===
+            if (inConnectionsBlock && !trimmed.isEmpty()) {
+                boolean referencesRemovedFeature = false;
+                for (String featName : removedFeatureNames) {
+                    // 检查连接行是否引用了 实例名.featName
+                    if (trimmed.contains("." + featName)) {
+                        referencesRemovedFeature = true;
+                        break;
+                    }
+                }
+                if (referencesRemovedFeature) {
+                    removedConnCount++;
+                    result.fixes.add(String.format(
+                            "已删除引用被移除的被动构件 feature 的连接行: %s", trimmed));
+                    continue; // 跳过该行
+                }
+            }
+
+            // === 被动构件类型声明上下文跟踪 ===
+            if (implDeclPattern.matcher(trimmed).find()) {
+                inPassiveType = false;
+                inFeaturesBlock = false;
+                currentTypeName = null;
+                currentCompType = null;
+                resultLines.add(line);
+                continue;
+            }
+
+            Matcher passiveMatcher = passiveTypePattern.matcher(trimmed);
+            if (passiveMatcher.find()) {
+                currentCompType = "data";
+                currentTypeName = passiveMatcher.group(1);
+                inPassiveType = true;
+                inFeaturesBlock = false;
+                resultLines.add(line);
+                continue;
+            }
+
+            if (inPassiveType && currentTypeName != null &&
+                    trimmed.matches("end\\s+" + Pattern.quote(currentTypeName) + "\\s*;")) {
+                inPassiveType = false;
+                inFeaturesBlock = false;
+                currentTypeName = null;
+                currentCompType = null;
+                resultLines.add(line);
+                continue;
+            }
+
+            // === 删除 data 组件 features 块 ===
+            if (inPassiveType && trimmed.equals("features")) {
+                inFeaturesBlock = true;
+                removedFeatureCount++;
+                result.fixes.add(String.format(
+                        "已删除 data '%s' 中非法的 features 块（data 是类型分类器，不应拥有 features）",
+                        currentTypeName));
+                continue; // 跳过 "features" 行
+            }
+
+            if (inFeaturesBlock && (trimmed.equals("properties") || trimmed.equals("flows") ||
+                    trimmed.equals("connections") || trimmed.equals("subcomponents") ||
+                    trimmed.startsWith("annex") || trimmed.startsWith("end "))) {
+                inFeaturesBlock = false;
+                resultLines.add(line);
+                continue;
+            }
+
+            // 在 features 块内 → 删除所有 feature 声明行
+            if (inFeaturesBlock) {
+                continue; // 跳过该行
+            }
+
+            resultLines.add(line);
+        }
+
+        if (removedFeatureCount > 0) {
+            log.info("自动修正：从 data 组件中删除了 {} 个非法 features 块", removedFeatureCount);
+        }
+        if (removedConnCount > 0) {
+            log.info("自动修正：级联删除了 {} 行引用 data 组件 feature 的连接行", removedConnCount);
+        }
+        return String.join("\n", resultLines);
+    }
+
+    /**
+     * 自动修正：删除软件实体中的 bus access 连接和硬件实体中的 port 连接。
+     *
+     * 核心准则：
+     * - 软件实体（process）的 connections 中只允许 port 连接，bus access 连接需删除
+     * - 硬件实体（device、processor、memory、bus）的 connections 中只允许 bus access 连接，port 连接需删除
+     * - system 实体作为桥接容器，两种连接均保留
+     *
+     * @param content      AADL 代码
+     * @param declarations AADL 声明映射（组件名 → 声明信息，含 type 字段）
+     * @param result       验证结果
+     * @return 修正后的 AADL 代码
+     */
+    private String fixConnectionEntityTypeMismatch(String content,
+                                                    Map<String, AadlDeclaration> declarations,
+                                                    ValidationResult result) {
+        String[] lines = content.split("\n");
+        List<String> resultLines = new ArrayList<>();
+
+        Pattern implContextPattern = Pattern.compile(
+                "^\\s*(?:system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+implementation\\s+(\\w+)\\.impl"
+        );
+        // 连接行模式（与 parseConnections 保持一致）
+        Pattern connPattern = Pattern.compile(
+                "^(\\w+)\\s*:\\s*(port|bus\\s+access)\\s+" +
+                "(\\w+)\\.(\\w+)\\s*(->|<->)\\s*(\\w+)\\.(\\w+)"
+        );
+
+        String currentImpl = null;
+        String currentImplType = null;
+        int fixCount = 0;
+
+        for (String line : lines) {
+            String trimmed = line.trim();
+
+            // 跳过注释行
+            if (trimmed.startsWith("--")) {
+                resultLines.add(line);
+                continue;
+            }
+
+            // 跟踪 implementation 上下文
+            Matcher implMatcher = implContextPattern.matcher(trimmed);
+            if (implMatcher.find()) {
+                currentImpl = implMatcher.group(1);
+                AadlDeclaration decl = declarations.get(currentImpl);
+                currentImplType = (decl != null) ? decl.type : null;
+                resultLines.add(line);
+                continue;
+            }
+
+            // 退出 implementation 上下文
+            if (trimmed.matches("end\\s+\\w+\\.impl\\s*;")) {
+                currentImpl = null;
+                currentImplType = null;
+                resultLines.add(line);
+                continue;
+            }
+
+            // 检查连接行是否需要删除
+            if (currentImplType != null && currentImpl != null) {
+                Matcher connMatcher = connPattern.matcher(trimmed);
+                if (connMatcher.find()) {
+                    String connName = connMatcher.group(1);
+                    String connType = connMatcher.group(2).replaceAll("\\s+", " ");
+                    boolean shouldRemove = false;
+                    String reason = null;
+
+                    // 软件实体（process）中的 bus access 连接 → 删除
+                    if ("process".equals(currentImplType) && "bus access".equals(connType)) {
+                        shouldRemove = true;
+                        reason = String.format("软件实体 %s (process) 中不能有 bus access 连接", currentImpl);
+                    }
+
+                    // 硬件实体中的 port 连接 → 删除
+                    if (("device".equals(currentImplType) || "processor".equals(currentImplType) ||
+                            "memory".equals(currentImplType) || "bus".equals(currentImplType)) &&
+                            "port".equals(connType)) {
+                        shouldRemove = true;
+                        reason = String.format("硬件实体 %s (%s) 中不能有 port 连接", currentImpl, currentImplType);
+                    }
+
+                    if (shouldRemove) {
+                        fixCount++;
+                        result.fixes.add(String.format(
+                                "已删除非法连接: %s (连接名: %s)", reason, connName
+                        ));
+                        log.info("自动修正：删除 {} 中的非法连接 '{}'", currentImpl, connName);
+                        continue; // 跳过该行（不添加到结果中）
+                    }
+                }
+            }
+
+            resultLines.add(line);
+        }
+
+        if (fixCount > 0) {
+            log.info("自动修正：共删除 {} 行连接类型与实体类型不匹配的连接行", fixCount);
         }
         return String.join("\n", resultLines);
     }
@@ -2815,17 +3739,17 @@ public class AadlReferenceValidator {
         // 0e. 将 implementation 中非法的 features 块移到对应的类型声明中
         content = fixFeaturesPlacement(content, result);
 
-        // 0f. 删除 process implementation 中非法的 bus access 连接行
-        content = fixBusAccessInProcess(content, result);
-
-        // 0g. 将软件层中的双向连接 <-> 替换为单向 ->
-        content = fixBidirectionalInSoftwareLayer(content, result);
-
         // 0h. 重排 implementation 中的块顺序为 subcomponents → connections → properties
         content = fixImplementationOrder(content, result);
 
         // 0i. 删除 thread 类型声明中的非法 requires/provides bus access feature
         content = fixThreadBusAccessFeature(content, result);
+
+        // 0j. 删除 data 组件中非法的 features 块（subprogram 可以有 features）
+        content = fixDataComponentFeatures(content, result);
+
+        // 0k. 删除软件实体中的 bus access 连接和硬件实体中的 port 连接
+        content = fixConnectionEntityTypeMismatch(content, declarations, result);
 
         StringBuilder fixBlock = new StringBuilder();
         int fixCount = 0;

@@ -84,6 +84,13 @@ public class ModuleAnalysisPrompt {
         prompt.append(architectureJson);
         prompt.append("\n\n");
 
+        // 自检清单（近因效应：紧贴 output_instruction）
+        Map<String, Object> checklist = (Map<String, Object>) rulesConfig.get("checklist");
+        if (checklist != null && checklist.get("content") != null) {
+            prompt.append(checklist.get("content"));
+            prompt.append("\n\n");
+        }
+
         prompt.append(rulesConfig.get("output_instruction"));
 
         return prompt.toString();
