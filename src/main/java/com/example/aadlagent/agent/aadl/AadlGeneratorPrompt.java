@@ -97,24 +97,27 @@ public class AadlGeneratorPrompt {
     public String buildPrompt(String parsedManifest, String ragContext) {
         StringBuilder prompt = new StringBuilder();
 
+        // 1. 角色定义
         prompt.append(rulesConfig.get("system_prompt"));
         prompt.append("\n\n");
 
+        // 2. 核心红线规则（首因效应：放在最前面，模型最先读到）
+        Map<String, Object> global = (Map<String, Object>) rulesConfig.get("global");
+        prompt.append(global.get("alwaysRules"));
+        prompt.append("\n\n");
+
+        // 3. 任务目标
+        prompt.append(rulesConfig.get("task_description"));
+        prompt.append("\n\n");
+
+        // 4. RAG 参考知识
         if (ragContext != null && !ragContext.trim().isEmpty()) {
             prompt.append("【参考知识】\n");
             prompt.append(ragContext);
             prompt.append("\n\n");
         }
 
-        prompt.append(rulesConfig.get("task_description"));
-        prompt.append("\n\n");
-
-        Map<String, Object> global = (Map<String, Object>) rulesConfig.get("global");
-        prompt.append("【全局规则】\n");
-        prompt.append(global.get("alwaysRules"));
-        prompt.append("\n\n");
-
-        // 按条件过滤规则：扫描解析后的清单内容，只注入匹配的规则
+        // 5. 组件模板规则（按条件动态注入）
         String combinedInput = parsedManifest != null ? parsedManifest : "";
         String combinedLower = combinedInput.toLowerCase();
 
@@ -139,16 +142,19 @@ public class AadlGeneratorPrompt {
         }
         log.info("规则过滤完成：注入 {} 条，跳过 {} 条（共 {} 条）", injectedCount, skippedCount, rules.size());
 
+        // 6. 生成顺序
         Map<String, Object> order = (Map<String, Object>) rulesConfig.get("order");
         prompt.append("【生成顺序】\n");
         prompt.append(order.get("content"));
         prompt.append("\n\n");
 
+        // 7. 补充禁止项
         Map<String, Object> forbidden = (Map<String, Object>) rulesConfig.get("forbidden");
-        prompt.append("【禁止规则】\n");
+        prompt.append("【补充禁止项】\n");
         prompt.append(forbidden.get("content"));
         prompt.append("\n\n");
 
+        // 8. 示例
         Map<String, Object> example = (Map<String, Object>) rulesConfig.get("example");
         prompt.append("【").append(example.get("title")).append("】\n");
         prompt.append(example.get("description")).append("\n");
@@ -156,12 +162,20 @@ public class AadlGeneratorPrompt {
         prompt.append(example.get("content"));
         prompt.append("\n--- 示例结束 ---\n\n");
 
-        // 注入解析后的结构化清单（替代原始 JSON）
+        // 9. 输入清单
         prompt.append(rulesConfig.get("input_section"));
         prompt.append("\n\n");
         prompt.append(parsedManifest);
         prompt.append("\n\n");
 
+        // 10. 自检清单（近因效应：紧贴 output_instruction，模型最后读到）
+        Map<String, Object> checklist = (Map<String, Object>) rulesConfig.get("checklist");
+        if (checklist != null && checklist.get("content") != null) {
+            prompt.append(checklist.get("content"));
+            prompt.append("\n\n");
+        }
+
+        // 11. 输出指令
         prompt.append(rulesConfig.get("output_instruction"));
 
         return prompt.toString();

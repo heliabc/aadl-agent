@@ -234,6 +234,9 @@ public class AadlReferenceValidator {
         // 4p. 检测 process/thread implementation 中的双向连接（<->）
         checkBidirectionalInSoftwareLayer(aadlContent, result);
 
+        // 4q. 检测 thread 类型声明中的 requires/provides bus access feature
+        checkThreadBusAccessFeature(aadlContent, result);
+
         // 5. 自动修正
         if (!result.errors.isEmpty() || hasAutoFixableIssues(aadlDeclarations, archComponents)
                 || !result.missingFeatures.isEmpty()) {
@@ -929,6 +932,66 @@ public class AadlReferenceValidator {
         return (dataType != null && !dataType.isEmpty()) ? dataType : null;
     }
 
+    /**
+     * 当 resolveDataType 无法从连接另一端获取数据类型时，从 AADL 声明中回退查找合适的 data 组件。
+     *
+     * 查找策略：
+     * 1. 尝试从 feature 名中提取关键词（如 in_Pressure → Pressure），匹配同名 data 组件
+     * 2. 尝试 feature 名直接匹配 data 组件名
+     * 3. 如果以上都失败，返回第一个可用的 data 组件名
+     * 4. 如果没有任何 data 组件，返回 Base_Type 作为最终回退
+     *
+     * @param featName     feature 名称（如 in_Pressure, out_Control）
+     * @param declarations AADL 声明表
+     * @return 数据类型名
+     */
+    private String findFallbackDataType(String featName,
+                                         Map<String, AadlDeclaration> declarations) {
+        if (featName == null || declarations == null || declarations.isEmpty()) {
+            return "Base_Type";
+        }
+
+        // 收集所有 data 类型的组件名
+        List<String> dataComponents = new ArrayList<>();
+        for (Map.Entry<String, AadlDeclaration> entry : declarations.entrySet()) {
+            if ("data".equalsIgnoreCase(entry.getValue().type)) {
+                dataComponents.add(entry.getKey());
+            }
+        }
+
+        if (dataComponents.isEmpty()) {
+            return "Base_Type";
+        }
+
+        // 策略1：从 feature 名提取关键词匹配 data 组件
+        // 去掉 in_/out_ 前缀后尝试匹配
+        String stripped = featName;
+        if (stripped.toLowerCase().startsWith("in_")) {
+            stripped = stripped.substring(3);
+        } else if (stripped.toLowerCase().startsWith("out_")) {
+            stripped = stripped.substring(4);
+        }
+
+        for (String dataName : dataComponents) {
+            if (dataName.equalsIgnoreCase(stripped) ||
+                dataName.equalsIgnoreCase(stripped + "Data") ||
+                dataName.equalsIgnoreCase(stripped + "Type") ||
+                dataName.equalsIgnoreCase(stripped + "Signal")) {
+                return dataName;
+            }
+        }
+
+        // 策略2：feature 名直接匹配
+        for (String dataName : dataComponents) {
+            if (dataName.equalsIgnoreCase(featName)) {
+                return dataName;
+            }
+        }
+
+        // 策略3：返回第一个可用的 data 组件
+        return dataComponents.get(0);
+    }
+
     // ========================= 线程 connections 块检测 =========================
 
     /**
@@ -1017,6 +1080,102 @@ public class AadlReferenceValidator {
                         "数据端口必须使用 'in data port' 或 'out data port'",
                         i + 1, featureName
                 ));
+            }
+        }
+    }
+
+    /**
+     * 4q. 检测 thread 类型声明中的 requires bus access feature。
+     *
+     * 分层架构规范：线程（thread）专注功能逻辑与数据流转，不应直接访问物理总线。
+     * requires bus access 只能出现在 device 或 processor 的 features 中。
+     * thread 的 features 中只能有 in/out data port 或 in/out event port。
+     */
+    private void checkThreadBusAccessFeature(String aadlContent, ValidationResult result) {
+        String[] lines = aadlContent.split("\n");
+
+        // 匹配 thread 类型声明（不含 implementation）
+        Pattern threadTypePattern = Pattern.compile(
+                "^\\s*thread\\s+(\\w+)\\s*$"
+        );
+        // 匹配 requires bus access feature 行
+        Pattern busAccessFeaturePattern = Pattern.compile(
+                "^(\\w+)\\s*:\\s*requires\\s+bus\\s+access\\s+", Pattern.CASE_INSENSITIVE
+        );
+        // 匹配 provides bus access feature 行
+        Pattern providesBusAccessPattern = Pattern.compile(
+                "^(\\w+)\\s*:\\s*provides\\s+bus\\s+access\\s+", Pattern.CASE_INSENSITIVE
+        );
+
+        boolean inThreadType = false;
+        boolean inFeaturesBlock = false;
+        String currentThreadName = null;
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].trim();
+
+            if (line.startsWith("--")) {
+                continue;
+            }
+
+            // thread 类型声明
+            Matcher threadMatcher = threadTypePattern.matcher(line);
+            if (threadMatcher.find()) {
+                inThreadType = true;
+                currentThreadName = threadMatcher.group(1);
+                inFeaturesBlock = false;
+                continue;
+            }
+
+            // 退出 thread 类型声明
+            if (inThreadType && line.matches("end\\s+" + Pattern.quote(currentThreadName) + "\\s*;")) {
+                inThreadType = false;
+                currentThreadName = null;
+                inFeaturesBlock = false;
+                continue;
+            }
+
+            // 也可能是遇到 implementation 声明退出
+            if (inThreadType && line.matches("thread\\s+implementation\\s+\\w+\\.impl")) {
+                inThreadType = false;
+                currentThreadName = null;
+                inFeaturesBlock = false;
+                continue;
+            }
+
+            // features 块开始
+            if (inThreadType && line.equals("features")) {
+                inFeaturesBlock = true;
+                continue;
+            }
+
+            // 退出 features 块
+            if (inFeaturesBlock && (line.equals("properties") || line.equals("flows") ||
+                    line.equals("connections") || line.equals("subcomponents") ||
+                    line.startsWith("annex") || line.startsWith("end "))) {
+                inFeaturesBlock = false;
+                continue;
+            }
+
+            // 检测 requires bus access 或 provides bus access
+            if (inFeaturesBlock) {
+                if (busAccessFeaturePattern.matcher(line).find()) {
+                    String featureName = busAccessFeaturePattern.matcher(line).group(1);
+                    result.errors.add(String.format(
+                            "第%d行: 分层架构违规 - thread '%s' 的 feature '%s' 使用了 requires bus access; " +
+                            "线程不应直接访问物理总线，bus access 只能出现在 device 或 processor 中; " +
+                            "线程的 features 只能有 in/out data port 或 event port",
+                            i + 1, currentThreadName, featureName
+                    ));
+                }
+                if (providesBusAccessPattern.matcher(line).find()) {
+                    String featureName = providesBusAccessPattern.matcher(line).group(1);
+                    result.errors.add(String.format(
+                            "第%d行: 分层架构违规 - thread '%s' 的 feature '%s' 使用了 provides bus access; " +
+                            "线程不应直接访问物理总线，bus access 只能出现在 device 或 processor 中",
+                            i + 1, currentThreadName, featureName
+                    ));
+                }
             }
         }
     }
@@ -1897,6 +2056,221 @@ public class AadlReferenceValidator {
     }
 
     /**
+     * 自动修正：删除 thread 类型声明 features 块中的 requires/provides bus access 行。
+     *
+     * 分层架构规范：线程不应直接访问物理总线。
+     * bus access 只能出现在 device 或 processor 的 features 中。
+     */
+    private String fixThreadBusAccessFeature(String content, ValidationResult result) {
+        String[] lines = content.split("\n");
+
+        Pattern threadTypePattern = Pattern.compile(
+                "^\\s*thread\\s+(\\w+)\\s*$"
+        );
+        Pattern busAccessFeaturePattern = Pattern.compile(
+                "^\\s*(\\w+)\\s*:\\s*(requires|provides)\\s+bus\\s+access\\s+", Pattern.CASE_INSENSITIVE
+        );
+
+        // ===== 第一阶段：扫描收集需要删除的 bus access feature 名 =====
+        Set<String> removedFeatureNames = new LinkedHashSet<>();
+        boolean inThreadType = false;
+        boolean inFeaturesBlock = false;
+        String currentThreadName = null;
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].trim();
+
+            if (line.startsWith("--")) {
+                continue;
+            }
+
+            Matcher threadMatcher = threadTypePattern.matcher(line);
+            if (threadMatcher.find()) {
+                inThreadType = true;
+                currentThreadName = threadMatcher.group(1);
+                inFeaturesBlock = false;
+                continue;
+            }
+
+            if (inThreadType && line.matches("end\\s+" + Pattern.quote(currentThreadName) + "\\s*;")) {
+                inThreadType = false;
+                currentThreadName = null;
+                inFeaturesBlock = false;
+                continue;
+            }
+
+            if (inThreadType && line.matches("thread\\s+implementation\\s+\\w+\\.impl")) {
+                inThreadType = false;
+                currentThreadName = null;
+                inFeaturesBlock = false;
+                continue;
+            }
+
+            if (inThreadType && line.equals("features")) {
+                inFeaturesBlock = true;
+                continue;
+            }
+
+            if (inFeaturesBlock && (line.equals("properties") || line.equals("flows") ||
+                    line.equals("connections") || line.equals("subcomponents") ||
+                    line.startsWith("annex") || line.startsWith("end "))) {
+                inFeaturesBlock = false;
+                continue;
+            }
+
+            if (inFeaturesBlock) {
+                Matcher m = busAccessFeaturePattern.matcher(line);
+                if (m.find()) {
+                    removedFeatureNames.add(m.group(1));
+                }
+            }
+        }
+
+        if (removedFeatureNames.isEmpty()) {
+            return content; // 没有需要删除的 bus access feature
+        }
+
+        // ===== 第二阶段：实际删除 feature 行 + 引用这些 feature 的 connection 行 =====
+        List<String> resultLines = new ArrayList<>();
+        inThreadType = false;
+        inFeaturesBlock = false;
+        currentThreadName = null;
+        int removedFeatureCount = 0;
+        int removedConnCount = 0;
+
+        // 连接行模式：匹配包含 实例名.feature名 的行
+        // 被删除的 feature 名集合用于检查 connection 行是否引用了被删除的 feature
+        boolean inConnectionsBlock = false;
+        boolean inAnyImpl = false;
+
+        Pattern implDeclPattern = Pattern.compile(
+                "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+implementation\\s+(\\w+)\\.impl"
+        );
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+            String trimmed = line.trim();
+
+            if (trimmed.startsWith("--")) {
+                resultLines.add(line);
+                continue;
+            }
+
+            // === implementation 上下文跟踪 ===
+            Matcher implMatcher = implDeclPattern.matcher(trimmed);
+            if (implMatcher.find()) {
+                inAnyImpl = true;
+                inConnectionsBlock = false;
+                resultLines.add(line);
+                continue;
+            }
+
+            if (inAnyImpl && trimmed.matches("end\\s+\\w+\\.impl\\s*;")) {
+                inAnyImpl = false;
+                inConnectionsBlock = false;
+                resultLines.add(line);
+                continue;
+            }
+
+            // connections 块跟踪
+            if (inAnyImpl && trimmed.equals("connections")) {
+                inConnectionsBlock = true;
+                resultLines.add(line);
+                continue;
+            }
+
+            if (inConnectionsBlock && (trimmed.equals("subcomponents") || trimmed.equals("properties") ||
+                    trimmed.equals("flows") || trimmed.startsWith("end "))) {
+                inConnectionsBlock = false;
+                resultLines.add(line);
+                continue;
+            }
+
+            // === 删除 connections 中引用了被删除 feature 的行 ===
+            if (inConnectionsBlock && !trimmed.isEmpty()) {
+                boolean referencesRemovedFeature = false;
+                for (String featName : removedFeatureNames) {
+                    // 检查连接行是否引用了 实例名.featName
+                    if (trimmed.contains("." + featName)) {
+                        referencesRemovedFeature = true;
+                        break;
+                    }
+                }
+                if (referencesRemovedFeature) {
+                    removedConnCount++;
+                    result.fixes.add(String.format(
+                            "已删除引用被移除 bus access feature 的连接行: %s", trimmed));
+                    continue; // 跳过该行
+                }
+            }
+
+            // === thread 类型声明上下文跟踪 ===
+            Matcher threadMatcher = threadTypePattern.matcher(trimmed);
+            if (threadMatcher.find()) {
+                inThreadType = true;
+                currentThreadName = threadMatcher.group(1);
+                inFeaturesBlock = false;
+                resultLines.add(line);
+                continue;
+            }
+
+            if (inThreadType && trimmed.matches("end\\s+" + Pattern.quote(currentThreadName) + "\\s*;")) {
+                inThreadType = false;
+                currentThreadName = null;
+                inFeaturesBlock = false;
+                resultLines.add(line);
+                continue;
+            }
+
+            if (inThreadType && trimmed.matches("thread\\s+implementation\\s+\\w+\\.impl")) {
+                inThreadType = false;
+                currentThreadName = null;
+                inFeaturesBlock = false;
+                resultLines.add(line);
+                continue;
+            }
+
+            if (inThreadType && trimmed.equals("features")) {
+                inFeaturesBlock = true;
+                resultLines.add(line);
+                continue;
+            }
+
+            if (inFeaturesBlock && (trimmed.equals("properties") || trimmed.equals("flows") ||
+                    trimmed.equals("connections") || trimmed.equals("subcomponents") ||
+                    trimmed.startsWith("annex") || trimmed.startsWith("end "))) {
+                inFeaturesBlock = false;
+                resultLines.add(line);
+                continue;
+            }
+
+            // === 删除 thread features 中的 requires/provides bus access 行 ===
+            if (inFeaturesBlock) {
+                Matcher m = busAccessFeaturePattern.matcher(trimmed);
+                if (m.find()) {
+                    String featureName = m.group(1);
+                    String accessType = m.group(2);
+                    removedFeatureCount++;
+                    result.fixes.add(String.format(
+                            "已删除 thread '%s' features 中的非法 %s bus access feature: %s",
+                            currentThreadName, accessType, featureName));
+                    continue; // 跳过该行
+                }
+            }
+
+            resultLines.add(line);
+        }
+
+        if (removedFeatureCount > 0) {
+            log.info("自动修正：从 thread 类型声明中删除了 {} 行非法 bus access feature", removedFeatureCount);
+        }
+        if (removedConnCount > 0) {
+            log.info("自动修正：删除了 {} 行引用被移除 bus access feature 的连接行", removedConnCount);
+        }
+        return String.join("\n", resultLines);
+    }
+
+    /**
      * 自动修正：重排 implementation 中的块顺序为 subcomponents → connections → properties。
      *
      * 三步规范：当检测到块顺序违规时，提取各块内容并按正确顺序重新组装。
@@ -2450,6 +2824,9 @@ public class AadlReferenceValidator {
         // 0h. 重排 implementation 中的块顺序为 subcomponents → connections → properties
         content = fixImplementationOrder(content, result);
 
+        // 0i. 删除 thread 类型声明中的非法 requires/provides bus access feature
+        content = fixThreadBusAccessFeature(content, result);
+
         StringBuilder fixBlock = new StringBuilder();
         int fixCount = 0;
 
@@ -2535,6 +2912,11 @@ public class AadlReferenceValidator {
                     String featName = fe.getKey();
                     String dataType = fe.getValue();
                     if (existingFeats == null || !existingFeats.containsKey(featName)) {
+                        // 数据类型为空时，从 AADL 声明中回退查找 data 组件
+                        if (dataType == null || dataType.isEmpty()) {
+                            dataType = findFallbackDataType(featName, declarations);
+                            log.info("feature '{}' 数据类型为空，回退查找结果: {}", featName, dataType);
+                        }
                         toAdd.put(featName, dataType);
                     }
                 }
@@ -2619,13 +3001,12 @@ public class AadlReferenceValidator {
             String featName = entry.getKey();
             String dataType = entry.getValue();
             String direction = inferDirection(featName);
-            if (dataType != null && !dataType.isEmpty()) {
-                featureLines.append("    ").append(featName).append(" : ")
-                        .append(direction).append(" data port ").append(dataType).append(";\n");
-            } else {
-                featureLines.append("    ").append(featName).append(" : ")
-                        .append(direction).append(" data port;\n");
+            // 安全网：数据类型为空时使用 Base_Type，避免生成非法的 "data port;" 无类型声明
+            if (dataType == null || dataType.isEmpty()) {
+                dataType = "Base_Type";
             }
+            featureLines.append("    ").append(featName).append(" : ")
+                    .append(direction).append(" data port ").append(dataType).append(";\n");
         }
 
         // 查找类型声明行：如 "processor MainProcessor" 或 "device PowerSupply"
