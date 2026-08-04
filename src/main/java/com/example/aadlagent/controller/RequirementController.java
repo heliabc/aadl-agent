@@ -1017,7 +1017,8 @@ public class RequirementController {
                 return analysisResultJson;
             }
 
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = new ObjectMapper()
+                    .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             Map<String, Object> resultMap = mapper.readValue(analysisResultJson, new TypeReference<Map<String, Object>>() {});
 
             // 检查是否包含阶段3结果

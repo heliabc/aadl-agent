@@ -27,7 +27,8 @@ import java.util.regex.Pattern;
 @Service
 public class TraceabilityService {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     private final Map<String, List<TraceabilityRecord>> traceabilityRecords = new ConcurrentHashMap<>();
     
     private final OllamaClient ollamaClient;

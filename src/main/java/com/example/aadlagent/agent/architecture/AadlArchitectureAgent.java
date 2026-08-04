@@ -37,6 +37,7 @@ public class AadlArchitectureAgent implements Agent<AgentInput, AgentOutput> {
         this.modelService = modelService;
         this.objectMapper = JsonMapper.builder()
                 .disable(SerializationFeature.WRITE_NULL_MAP_VALUES)
+                .disable(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
                 .build();
         this.prompt = new AadlArchitecturePrompt();
     }

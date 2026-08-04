@@ -361,7 +361,8 @@ public class AadlFixerAgent implements Agent<AgentInput, AgentOutput> {
 
     private String formatJsonErrors(String jsonErrors) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = new ObjectMapper()
+                    .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             List<Map<String, Object>> errorList = mapper.readValue(jsonErrors, 
                     new TypeReference<List<Map<String, Object>>>() {});
             

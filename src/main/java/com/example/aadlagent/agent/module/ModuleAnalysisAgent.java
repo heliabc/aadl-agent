@@ -34,6 +34,8 @@ public class ModuleAnalysisAgent implements Agent<AgentInput, AgentOutput> {
     public ModuleAnalysisAgent(ModelService modelService) {
         this.modelService = modelService;
         this.objectMapper = new ObjectMapper();
+        // 容错：LLM 输出可能包含未知字段，忽略而非报错
+        this.objectMapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         this.prompt = new ModuleAnalysisPrompt();
     }
 

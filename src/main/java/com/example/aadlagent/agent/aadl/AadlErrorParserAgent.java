@@ -36,7 +36,8 @@ public class AadlErrorParserAgent implements Agent<AgentInput, AgentOutput> {
     public AadlErrorParserAgent(ModelService modelService) {
         this.modelService = modelService;
         this.prompt = new AadlErrorParserPrompt();
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = new ObjectMapper()
+                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     @Override

@@ -26,7 +26,8 @@ public class VectorSearchService {
     private final EmbeddingService embeddingService;
     private final RagConfig ragConfig;
     private final Map<String, Document> documentStore = new ConcurrentHashMap<>();
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     
     private static final String KNOWLEDGE_DIR = "./knowledge";
     private static final String STORE_FILE = KNOWLEDGE_DIR + "/store.json";

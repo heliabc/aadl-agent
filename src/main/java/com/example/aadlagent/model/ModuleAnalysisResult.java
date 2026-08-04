@@ -39,5 +39,44 @@ public class ModuleAnalysisResult {
 
         @JsonProperty("related_components")
         private List<String> relatedComponents;
+
+        @JsonProperty("port_requirements")
+        private List<PortRequirement> portRequirements;
+
+        @JsonProperty("connection_hints")
+        private List<ConnectionHint> connectionHints;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class PortRequirement {
+        @JsonProperty("port_name")
+        private String portName;
+
+        @JsonProperty("direction")
+        private String direction;
+
+        @JsonProperty("data_type")
+        private String dataType;
+
+        @JsonProperty("reason")
+        private String reason;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ConnectionHint {
+        @JsonProperty("source")
+        private String source;
+
+        @JsonProperty("target")
+        private String target;
+
+        @JsonProperty("data_type")
+        private String dataType;
     }
 }
