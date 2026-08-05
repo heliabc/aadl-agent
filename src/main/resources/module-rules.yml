@@ -13,13 +13,15 @@ process_flow: |
   3. 找出该模块内部包含的所有子组件（根据AADL树中的 children 提取）
   4. 根据需求描述该模块的功能，并提取其满足的需求ID
   5. 结合需求描述和嵌入式系统常识，列出与该模块有关联的其他组件（如依赖的 Device 外设、同 Process 下的其他 Thread 模块等）
-  6. 根据需求中的 aadl_hints.data_direction 推断该模块需要的端口：
-     - data_direction 为 "input" 的模块：需要 in data port（接收外部数据）或 requires bus access（访问总线外设）
-     - data_direction 为 "output" 的模块：需要 out data port（输出数据到外部）或 requires bus access（通过总线发送）
+  6. 根据需求中的 aadl_hints.data_direction 推断该模块需要的端口（仅 thread/process 可定义 data port，data 组件严禁拥有 features）：
+     - data_direction 为 "input" 的模块：需要 in data port（接收外部数据）
+     - data_direction 为 "output" 的模块：需要 out data port（输出数据到外部）
      - data_direction 为 "internal" 的模块：同时需要 in data port（接收上游数据）和 out data port（输出到下游）
+     - 注意：总线访问（bus access）不在 thread/process 层级处理，而是由 device 作为软硬件桥梁在顶层 system 中通过 bus access 连接处理
   7. 根据模块间的依赖关系（dependencies）和关联组件（related_components），推断模块间的连接关系：
-     - 上游模块的 out data port → 下游模块的 in data port
+     - 上游模块的 out data port → 下游模块的 in data port（软件连软件，port 连接）
      - 连接名称格式：sourcePort -> targetPort
+     - 严禁生成引用 data 组件端口的连接——data 组件是纯类型分类器，没有 features 块
 
 output_format: |
   你必须输出严格的JSON格式，包含一个根节点对象，其中包含一个 "modules" 数组。每个模块对象必须包含以下字段：
@@ -49,7 +51,9 @@ strict_rules: |
   7. 端口名称必须使用英文驼峰命名，禁止使用中文或下划线。
   8. in 端口对应数据接收方，out 端口对应数据发送方，方向不可混淆。
   9. connection_hints 中的 source 和 target 必须引用 port_requirements 中已声明的端口。
-  10. 涉及总线访问的模块（interface_type 为 bus_access），在 port_requirements 中不需要声明总线端口，总线连接在顶层 system 中处理。
+  10. 总线访问（bus access）不在 thread/process 层级处理，而是由 device 作为软硬件桥梁在顶层 system 中通过 bus access 连接处理。模块分析中只为 thread/process 推断 data port，不推断 bus access。
+  11. 严禁为 data 组件推断端口——data 组件是纯类型分类器，没有 features 块，只被主动构件的端口引用。
+  12. 软硬件分离：thread/process 只有 data port，bus/processor/memory 只有 bus access，device 可同时拥有两者。
 
 example:
   title: 模块分析示例
@@ -219,5 +223,7 @@ checklist:
     [7] connection_hints 中的 source 和 target 是否都引用了 port_requirements 中已声明的端口？
     [8] 端口名称是否使用英文驼峰命名，无中文或下划线？
     [9] 输出是否为纯 JSON，没有 Markdown 代码块标记或说明文字？
+    [10] 是否只为 thread/process 推断 data port，没有为 data 组件推断端口？
+    [11] 总线访问是否留给 device 在顶层 system 中处理，未在 thread/process 层级推断 bus access？
 
 output_instruction: 请根据以上需求列表和AADL架构树，生成包含端口和连接约束的模块分析结果：

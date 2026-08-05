@@ -19,7 +19,7 @@ global:
       - component_type 为 "bus" → 架构树中生成 bus 节点，放在 system 根下
       - component_type 为 "processor" → 架构树中生成 processor 节点，放在 system 根下
       - component_type 为 "memory" → 架构树中生成 memory 节点，放在 system 根下
-    A7【软硬件分离】软件组件（thread/process/data）和硬件组件（processor/device/bus/memory）必须分属不同的子树分支。thread/process 嵌套在 processor 下，device/bus/memory 与 processor 同级置于 system 下。
+    A7【软硬件分离最高优先级】软件组件（thread/process/data）和硬件组件（processor/device/bus/memory）必须分属不同的子树分支。thread/process 嵌套在 processor 下，device/bus/memory 与 processor 同级置于 system 下。纯软件构件（thread/process）仅允许拥有软件端口（data port），严禁包含总线访问；纯硬件构件（bus/processor/memory）仅允许拥有总线访问（bus access），严禁定义软件端口。设备（device）作为唯一的软硬件交汇桥梁，可同时拥有软件端口与总线访问。data 组件是纯类型分类器，严禁拥有任何 features。
 
 task_description: |
   分析需求列表中蕴含的功能模块、执行实体及其嵌套组织方式，利用需求中的 aadl_hints 字段确定组件类型和数据流向，构建一个层次化的 AADL 系统架构树。
@@ -55,7 +55,7 @@ strict_rules: |
   2. 绝对不要包含任何开头或结尾的文字说明。
   3. 根节点的 type 必须是 "system"，name 应使用业务相关名称。
   4. 根据需求中的 aadl_hints.component_type 确定组件类型，不得擅自更改。
-  5. 软硬件分离原则：thread/process 必须嵌套在 processor 下；device/bus/memory 与 processor 同级置于 system 下。
+  5. 软硬件分离原则：thread/process 必须嵌套在 processor 下；device/bus/memory 与 processor 同级置于 system 下。纯软件构件（thread/process）只有软件端口，纯硬件构件（bus/processor/memory）只有总线访问，device 作为软硬件桥梁可同时拥有两者，data 严禁拥有 features。
   6. 每个 processor 下应有一个 process 容器，process 内包含相关的 thread 组件。
   7. 需求中涉及总线通信（interface_type 为 bus_access）的 thread，其对应的 bus 组件必须作为独立节点放在 system 下。
   8. 需求中涉及外部设备交互（data_direction 为 input/output 且 interface_type 为 data_port）的 thread，相关的 device 组件必须放在 system 下。
@@ -141,7 +141,8 @@ checklist:
     [5] 所有 name 是否使用英文和下划线，没有使用 AADL 保留字？
     [6] 需求中 aadl_hints.component_type 为 "thread" 的功能是否都生成了对应的 thread 节点？
     [7] 需求中 interface_type 为 "bus_access" 的功能，对应的 bus 组件是否已放在 system 下？
-    [8] 软件组件（thread/process）是否嵌套在 processor 下，硬件组件（device/bus）是否与 processor 同级？
+    [8] 软件组件（thread/process）是否嵌套在 processor 下，硬件组件（device/bus/memory）是否与 processor 同级？
     [9] 输出是否为纯 JSON，没有 Markdown 代码块标记或说明文字？
+    [10] 软硬件分离是否严格遵守：thread/process 只有软件端口，bus/processor/memory 只有总线访问，device 可同时拥有两者，data 严禁拥有 features？
 
 output_instruction: 请根据以上需求列表，生成AADL架构树：

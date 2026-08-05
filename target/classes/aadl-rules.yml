@@ -24,14 +24,27 @@ global:
     === 核心红线规则（违反任何一条将导致 AADL 语法错误，必须严格遵守）===
     R1【命名规范】标识符只用英文和下划线。package 用 {项目名}_Arch，顶层 system 用 Top_{项目名}。禁止用保留字（system/process/thread 等）作组件名。
     R2【声明完整性】每个组件必须成对生成：类型声明（`组件类型 组件名 ... end 组件名;`）+ 实现声明（`组件类型 implementation 组件名.impl ... end 组件名.impl;`），两者缺一不可，end 闭合不可省略。
-    R3【features 只在主动构件的类型声明中】features 块只能出现在主动构件（thread/process/device/system/processor/memory/bus/subprogram）的类型声明中，严禁出现在 implementation 中。thread 的 features 只能有 in/out data port 和 event port，严禁 requires bus access。data 组件是纯类型分类器，严禁拥有 features 块——数据组件只需声明类型（如 `data CommandData end CommandData;`），由主动构件的端口引用（如 `out data port CommandData;`）。subprogram 可以定义 features（如 in/out parameter）。
-    R4【connections 引用与类型完整性】connections 中每个 `实例名.端口名` 必须满足：实例名在当前 subcomponents 中声明，端口名在对应组件类型的 features 中声明。连接行必须以分号结尾，严禁截断。连接类型必须与端点 feature 类型严格匹配：port 连接（`conn : port A.x -> B.y;`）的两端必须是 data port / event port / event data port；bus access 连接（`conn : bus access A.x <-> B.y;`）的两端必须是 requires/provides bus access。严禁 port 与 bus access 混连。port 连接用单向 `->`，bus access 连接用双向 `<->`。port 连接的源端（-> 左侧）必须是 out port，目标端（-> 右侧）必须是 in port，严禁 in→in、out→out、in→out。port 连接两端必须引用相同的数据类型（如 `out data port CommandData -> in data port CommandData`）。
-    R5【thread 内部只有 properties】thread implementation 中严禁出现 connections 和 subcomponents。组件间连接只能写在 system 或 process implementation 中。
-    R6【数据端口语法】数据端口必须写 `in data port 类型名` 或 `out data port 类型名`，类型名必须是已声明的 data 组件。严禁 `requires data port`，严禁无类型的 `data port;`。
-    R7【连接归属与特征归属】连接归属：任何具有容器属性的具体实体实现（implementation）中，只要内部包含子组件（subcomponents），就可以定义 connections 块。但连接类型受实体类型约束：软件实体（process）的 connections 中只能包含 port 连接（数据流/控制流），严禁出现 bus access 连接；硬件实体（device、processor、memory、bus）的 connections 中只能包含 bus access 连接，严禁出现 port 连接；system 实体作为软硬件桥接容器，port 连接和 bus access 连接均可。特征归属：软件实体（thread、process）只能定义软件级别的交互特征，即 Port（in/out data port、in/out event port）；硬件实体（bus、processor、device、memory）通过硬件物理特征交互，即 Bus Access（requires/provides bus access）。port 连接用单向 `->`，bus access 连接用双向 `<->`。thread 严禁定义 bus access 特征。
-    R8【三步顺序】implementation 内部必须按 subcomponents → connections → properties 顺序编写，严禁打乱。
-    R9【subcomponents 规范】subcomponents 不得为空（至少一个子组件）。每行格式：`实例名 : 组件关键字 组件类型名.impl;`。virtual processor 中只能含 virtual processor 或 process，严禁含 thread。
+    R3【features 归属】features 块只能出现在类型声明中，严禁出现在 implementation 中。data 组件严禁拥有 features 块。
+      可定义 port 构件：thread, process, subprogram, device, system
+      可定义 bus access 构件：bus(provides), processor(requires), memory(requires), device(requires), system
+      device 是唯一可同时拥有 port 和 bus access 的软硬件桥梁。
+    R4【connections 完整性】connections 中每个 `实例名.端口名` 必须满足：实例名在当前 subcomponents 中声明，端口名在对应组件类型的 features 中声明。连接行以分号结尾。port 连接用 `->`（源端 out → 目标端 in，类型一致），bus access 连接用 `<->`。严禁 port 与 bus access 混连。严禁引用 data 组件端口。
+    R5【thread 纯净】thread implementation 中严禁出现 connections 和 subcomponents。组件间连接只能写在 system 或 process implementation 中。
+    R6【数据端口语法】`in data port 类型名` 或 `out data port 类型名`，类型名必须是已声明的 data 组件。严禁 `requires data port`，严禁无类型声明。
+    R7【软硬件分离】软件实体（thread/process）connections 只能 port 连接；纯硬件实体（processor/memory/bus）connections 只能 bus access 连接；device 是软硬件桥梁，允许同时拥有 port 和 bus access 连接；system 均可。软件到硬件通过 Actual_Processor_Binding 属性绑定（非连接），processor 再通过 requires bus access 连入 bus。
+    R8【三步顺序】implementation 内部必须按 subcomponents → connections → properties 顺序编写。
+    R9【subcomponents 规范】格式：`实例名 : 组件关键字 组件类型名.impl;`，不得为空。父子类型必须合法（见下表），非法嵌套将被重构或删除。process 误放 processor 下时自动提取到 system 层并补 Actual_Processor_Binding；其他非法嵌套直接删除。
+
+      【subcomponent 包含关系表】
+      软件：process→thread/thread group/subprogram(group)/data；thread→subprogram(group)/data；subprogram→data；data→data/subprogram
+      硬件：processor→virtual processor/memory/bus；virtual processor→virtual processor；memory→memory/bus；bus→virtual bus；device→bus/data
+      系统：system→除 thread/thread group 外所有类型（thread 必须包装进 process）；abstract→所有类型
+      禁忌：thread 不能直接放 system 或 virtual processor 下；process 不能放 processor 下；system 不能放 process/thread 下。
+
     R10【applies to 规范】properties 中 `applies to` 引用的实例名必须在当前 implementation 的 subcomponents 中已声明。
+    R11【属性绑定完整性】process 和 thread 必须在包含它的 system 的 properties 块中通过 `Actual_Processor_Binding => reference (处理器实例名) applies to 实例名;` 声明部署绑定。缺失将导致代码生成无法确定软硬件映射。
+    R12【数据类型深度一致】连接两端 data port 引用的 data 组件若有 `Data_Size` 属性，其值必须一致。不一致将导致 SCADE/Rust 代码生成时缓冲区溢出或数据截断。
+    R13【命名空间唯一】subcomponents 实例名、connections 连接名、组件类型名三者不得重复。重名将导致编译器 AST 解析崩溃。实例名与类型名冲突时追加 `_inst` 后缀，连接名冲突时追加 `_conn` 后缀。
 
 # 同义词映射表：key 为规范词，value 为该词的所有同义词/近义词列表
 # 匹配时自动展开：若规则关键词命中某组任一成员（不区分大小写），该组全部成员参与匹配
@@ -75,11 +88,8 @@ rules:
       public
         -- 所有组件声明、组件实现、数据、程序均放在 public 中
       end 项目名_Arch;
-      
-      命名规则：
-      1. package 名称必须以项目或领域名称开头，使用下划线连接。
-      2. 严禁使用单个单词如 System、App、Main 作为 package 名称。
-      3. 推荐格式：{项目/领域名}_Arch（如：EmbeddedRT_Arch）。
+
+      命名规则见 R1，推荐格式：{项目/领域名}_Arch。
 
   - id: top_system
     title: 顶层系统模板
@@ -98,17 +108,8 @@ rules:
       end Top_{项目名}.impl;
 
       规则：
-      1. 顶层系统表示整个系统。
-      2. 系统管理器建模为 device。
-      3. 系统模块建模为 system。
-      4. AADL 中表达"子系统"的方式是：在某个 system implementation 的 subcomponents 中声明另一个 system 子组件。
-      5. 如果需求中有多个子系统，必须把这些子系统作为父 system implementation 的 system 子组件放入 subcomponents 中。
-      6. 子系统自身还必须单独生成 system 声明和 system implementation。
-      7. 外部设备全部建模为 device。
-      8. 如果需求中给出 N 个总线，则在顶层系统实现中生成 N 个 bus 子组件。
-      9. 总线实例命名为 总线类型名_1、总线类型名_2、...、总线类型名_N。
-      10. 如果需求中总线为 0 个，则不要生成 bus。
-      11. 顶层系统名称必须使用前缀 Top_ 或后缀 _Top，严禁使用 System、App、Main 等单独单词。
+      1. 子系统作为 system 子组件放入 subcomponents，同时单独生成声明和实现（详见子系统模板）。
+      2. 如果需求中给出 N 个总线，则生成 N 个 bus 子组件，命名为 总线类型名_1、...、总线类型名_N。总线为 0 时不生成 bus。
 
   - id: system_manager
     title: 系统管理器模板
@@ -141,16 +142,10 @@ rules:
       end 系统模块名.impl;
 
       规则：
-      1. 系统模块内部可以包含模块管理器、子系统、软件分区、网络接口、处理器和存储器。
-      2. 模块管理器建模为 device。
-      3. 普通业务功能层级、功能模块、功能子系统建模为 system 子组件。
-      4. 子系统不能只声明 system 类型，必须同时在父 system implementation 的 subcomponents 中实例化。
-      5. 子系统自身还必须单独生成 system 声明和 system implementation。
-      6. 只有需求明确出现"分区、进程、软件分区、运行分区、ARINC653 分区"时，才建模为 process。
-      7. 网络接口建模为 device。
-      8. 处理器建模为 processor。
-      9. 存储器建模为 memory。
-      10. 如果需求中没有某类组件，则不要生成该类组件。
+      1. 系统模块内部可包含模块管理器、子系统、软件分区、网络接口、处理器和存储器。
+      2. 普通业务功能层级、功能模块、功能子系统建模为 system 子组件（子系统规则见子系统模板）。
+      3. 只有需求明确出现"分区、进程、软件分区、运行分区、ARINC653 分区"时才建模为 process。
+      4. 如果需求中没有某类组件，则不要生成该类组件。
 
   - id: subsystem
     title: 子系统模板
@@ -168,11 +163,8 @@ rules:
       end 子系统名.impl;
 
       规则：
-      1. AADL 没有单独的 subsystem 组件类别，子系统统一建模为 system。
-      2. AADL 里表达"子系统"的方式是：在 subcomponents 中声明另一个 system 子组件。
-      3. 每个子系统既要有自己的 system 声明和 implementation，也必须放入父 system implementation 的 subcomponents 中。
-      4. 只有当需求明确描述"分区、进程、软件分区"时，才在子系统内使用 process。
-      5. 不要把普通业务功能子系统直接建模为 process。
+      1. 子系统统一建模为 system，在父 system implementation 的 subcomponents 中实例化，同时单独生成声明和实现。
+      2. 只有需求明确描述"分区、进程、软件分区"时才在子系统内使用 process，不要直接把业务子系统建模为 process。
 
   - id: module_manager
     title: 模块管理器模板
@@ -198,9 +190,7 @@ rules:
         任务名 : thread 任务名.impl;
       end 分区名.impl;
 
-      规则：
-      1. process 只用于软件分区或进程。
-      2. 每个分区内部包含其对应任务(thread)。
+      规则：process 只用于软件分区或进程，内部包含对应的 thread。
 
   - id: task
     title: 任务模板
@@ -245,11 +235,8 @@ rules:
       end 分区名_runtime.impl;
 
       规则：
-      1. 需求中"某分区运行"对应一个 virtual processor。
-      2. 需求中"网络接口运行"也对应一个 virtual processor。
-      3. virtual processor 命名为 对象名_runtime。
-      4. 所有 virtual processor 都需要单独声明和实现。
-      5. 严禁在 processor 的 subcomponents 中直接声明 process！
+      1. 需求中"某分区运行"或"网络接口运行"均对应一个 virtual processor，命名为 对象名_runtime，需单独声明和实现。
+      2. processor 的 subcomponents 中只能放 virtual processor（见 R9）。
 
   - id: memory
     title: 存储器模板
@@ -272,9 +259,7 @@ rules:
       end 分区名_memory.impl;
 
       规则：
-      1. 需求中"某分区内存"对应一个 memory 子组件。
-      2. 需求中"网络接口内存"也对应一个 memory 子组件。
-      3. 所有 memory 都需要单独声明和实现。
+      1. 需求中"某分区内存"或"网络接口内存"均对应一个 memory 子组件，命名为 对象名_memory，需单独声明和实现。
 
   - id: device
     title: 设备模板
@@ -292,10 +277,8 @@ rules:
       end 设备名.impl;
 
       规则：
-      1. 设备的数据收发通过 features 块中的 in data port / out data port 声明。
-      2. 设备访问总线必须通过 features 块中的 requires bus access 声明，严禁用 in/out 端口代替总线访问。
-      3. requires bus access 指明设备所依赖的总线类型（如 requires bus access CanBus;）。
-      4. 如果需求中没有明确的数据端口或总线访问描述，则 device 类型声明中可以省略 features 块。
+      1. 设备同时拥有 data port（软件端口）和 requires bus access（硬件总线访问），是唯一软硬件桥梁（见 R3）。
+      2. 如果需求中没有明确的数据端口或总线访问描述，则 device 类型声明中可省略 features 块。
 
   - id: bus
     title: 总线模板
@@ -324,9 +307,7 @@ rules:
       end 数据名.impl;
 
       规则：
-      1. 当需求中出现"单帧数据固定占用X字节存储空间与传输带宽"、"数据结构大小为X字节"、"固定帧长度"等描述时，必须在 data implementation 的 properties 中声明 Data_Size 属性。
-      2. 数据组件（如 BrakeSignal、ControlFrame 等）若有明确的字节大小约束，禁止生成空的 data implementation，必须携带对应的 properties 属性。
-      3. 对于结构体/记录类型的数据，若各字段有固定大小，应在 properties 中声明总 Data_Size，确保传输带宽与存储空间约束被完整映射到 AADL 模型中。
+      1. 需求中出现"固定占用X字节"、"数据结构大小为X字节"、"固定帧长度"等描述时，必须在 data implementation 的 properties 中声明 Data_Size，禁止生成空 implementation。
 
   - id: subprogram
     title: 程序模板
@@ -360,31 +341,11 @@ rules:
         end behavior;
       **};
 
-      语法说明：
-      1. error behavior 是 AADL 错误模型附件（Error Model Annex, EMV2）的声明块，用于描述组件的故障行为。
-      2. 整个 error behavior 块必须包裹在 "annex EMV2 {** ... **};" 中，严禁裸写 error behavior。
-      3. "annex EMV2 {**" 开启附件块，"**};" 闭合附件块，两者缺一不可。
-      4. events 段：声明错误事件，格式为 "事件名 : error event;"。
-      5. states 段：声明错误状态，必须有一个 "initial state"，其余为 "state"。
-      6. transitions 段：声明状态转移，格式为 "转移名 : 源状态 -[事件名]-> 目标状态;"。
-      7. error behavior 块内部以 "end behavior;" 闭合，整个附件块以 "**};" 闭合。
-
       规则：
-      1. 只有需求中明确出现"错误行为、故障状态、错误事件、容错、错误模型、EMV2"等描述时，才生成 annex EMV2 块。
-      2. 严禁省略 annex EMV2 包裹，裸写 error behavior 会导致语法错误。
-      3. events、states、transitions 三个段都必须存在，不可省略。
-      4. states 段中必须且只能有一个 initial state。
-      5. 每个 transition 引用的事件必须在 events 段中声明，引用的状态必须在 states 段中声明。
-      6. annex EMV2 块通常放在 package 的 public 段内，与其他组件声明平级。
-      7. 错误事件名、状态名、转移名使用英文标识符，下划线连接。
-      8. 转移箭头格式固定为 "源状态 -[事件名]-> 目标状态"，方括号不可省略。
-
-  - id: naming
-    title: 命名规则
-    always: true
-    content: |
-      1. 中文名称转换为英文直译，英文名称使用下划线连接。
-      2. 严禁使用 System, Process 等 AADL 保留关键字作为名称。
+      1. 只有需求中明确出现"错误行为、故障、容错、EMV2"等描述时才生成 annex EMV2 块，放在 package 的 public 段内。
+      2. 整个块必须包裹在 "annex EMV2 {** ... **};" 中，严禁裸写 error behavior。
+      3. events、states、transitions 三个段必须存在：events 声明 "事件名 : error event;"，states 必须有一个 "initial state" 其余为 "state"，transitions 格式为 "转移名 : 源状态 -[事件名]-> 目标状态;"。
+      4. 每个 transition 引用的事件和状态必须在对应段中已声明。标识符用英文下划线连接。
 
   - id: subcomponents_syntax
     title: subcomponents 语法与完整性规则
@@ -420,42 +381,7 @@ rules:
         -- 错误5：引用了未声明的组件（BrakeCtrl 在 package 中没有对应的 system 声明和 implementation）
         BrakeCtrl : system BrakeCtrl.impl;  -- 但 package 中没有 system BrakeCtrl ... end BrakeCtrl;
 
-      完整性规则（每个 subcomponent 引用必须可追溯）：
-      1. subcomponents 中引用的每一个组件，都必须在同一个 package 中有完整的"类型声明 + 实现声明"对。
-         即：若 subcomponents 中出现 `Foo : system Foo.impl;`，则 package 中必须存在：
-           system Foo
-           end Foo;
-           system implementation Foo.impl
-           ...
-           end Foo.impl;
-      2. 严禁在 subcomponents 中引用只在类型声明而没有 implementation 的组件。
-      3. 严禁在 subcomponents 中引用只在 implementation 而没有类型声明的组件。
-      4. 实例名可以与类型名相同（如 `BrakeCtrl : system BrakeCtrl.impl;`），也可以不同（如
-         `FrontBrake : system BrakeCtrl.impl;`），但类型名必须与已声明的组件类型名一致。
-
-      组件包含关系表（父组件类型 -> 允许的子组件类型）：
-        system implementation    -> system, process, processor, memory, device, bus, virtual processor, thread, data, subprogram, abstract
-        processor implementation -> virtual processor, memory, bus（严禁包含 process！）
-        process implementation   -> thread, data, subprogram
-        thread implementation    -> data, subprogram（严禁包含 connections 块！）
-        virtual processor impl   -> virtual processor, process（严禁包含 thread！线程只能放在 process 中）
-        memory implementation    -> memory, bus
-        bus implementation       -> （不允许包含任何子组件）
-        device implementation    -> （不允许包含任何子组件）
-        data implementation      -> data, subprogram
-        subprogram implementation-> （不允许包含任何子组件）
-        abstract implementation  -> system, process, processor, memory, device, bus, virtual processor, thread, data, subprogram, abstract
-
-      包含关系规则：
-      1. 严禁将 thread 直接放入 system implementation 的 subcomponents 中——thread 必须先放入
-         process，再由 process 放入 system。
-      2. 严禁将 process 直接放入 processor implementation 的 subcomponents 中——process 放在
-         system implementation 的 subcomponents 中，processor 的 subcomponents 中只能放
-         virtual processor、memory、bus。
-      3. 严禁将 system 放入 process 或 thread 中——system 是顶层容器组件。
-      4. bus、device、subprogram 的 implementation 中不允许声明任何 subcomponents，它们是叶子节点。
-      5. 严禁将 thread 直接放入 virtual processor 的 subcomponents 中——线程只能作为 process 的
-         子组件。virtual processor 的 subcomponents 中只能放 virtual processor 或 process。
+      完整性规则：subcomponents 中引用的每一个组件，必须在同一个 package 中有完整的"类型声明 + 实现声明"对。实例名可与类型名相同或不同，但类型名必须与已声明的组件一致。父子类型合法性见核心规则 R9 包含关系表。
 
   - id: properties_explanation
     title: properties 关键字用法说明
@@ -495,51 +421,114 @@ rules:
         速率：per Second（用 AADL 标准时间单位，如 100 per sec）
 
       规则：
-      1. properties 块可以出现在两个位置：
-         a) 组件类型声明中（放在 features 之后、end 之前）——声明该类型所有实现共享的固有属性。
-         b) 组件实现声明中（放在 subcomponents 之后、end 之前）——声明特定实现专属的属性。
-      2. 每个属性声明以分号结尾。
-      3. 需求中明确声明的数值约束（如"响应时间不超过10ms"、"单帧固定8字节"、"优先级为高"等）必须通过 properties 显式映射到 AADL 模型中，禁止遗漏。
-      4. 当需求中未明确给出具体数值时，不生成 properties 块。
-      5. 当属性值适用于该组件的所有实现时（如 thread 的 Period、Stack_Size、Compute_Execution_Time），应放在类型声明中而非实现声明中。
-      6. 当属性值因实现不同而变化时（如 Data_Size 因 data 实现不同而不同），放在实现声明中。
-      7. 严禁使用已废弃属性 Source_Data_Size 和 Destination_Data_Size，统一使用 Data_Size。
-      8. 属性必须应用于其适用的组件类型，严禁跨类型使用（如 Data_Size 只能用于 data，不能用于 device/memory/processor）。
-      9. 非标准属性集的属性必须带属性集前缀（如 Memory_Properties::RAM_Size），严禁直接写属性名。
-      10. 数值与单位之间用空格分隔（如 10 Kbyte，不是 10Kbyte），单位使用 AADL 标准缩写。
+      1. properties 块可出现在类型声明中（features 之后，固有属性）或实现声明中（subcomponents 之后，实现专属属性）。
+      2. 需求中明确声明的数值约束必须通过 properties 映射，未给出数值时不生成 properties 块。
+      3. 属性值适用于所有实现时放类型声明，因实现不同而变化时放实现声明。
+      4. 属性必须严格匹配适用类型（见上表），严禁跨类型使用。
+      5. 废弃属性、前缀、格式等细节见【补充禁止项】。
 
   - id: connections
     title: 连接声明模板
     always: true
     content: |
-      connections 块用于声明组件之间的连接关系，放在 system/process implementation 内部。
+      connections 块放在 system/process implementation 内部（subcomponents 之后、properties 之前）。连接语法见 R4，此处仅补充内联属性用法。
 
-      【分层原则】
-      - port 连接（数据端口连接，单向 ->）：用于软件组件之间的数据传输，可出现在 system 和 process implementation 中。
-      - bus access 连接（总线访问连接，双向 <->）：仅用于 device/processor/memory 与 bus 之间的物理拓扑连接，只能出现在 system implementation 中，严禁出现在 process implementation 中。
+      端口连接：`conn_name : port source_feature -> destination_feature;`
+      访问连接：`conn_name : bus access source_feature <-> destination_feature;`
 
-      端口连接（单向数据流）：
-        conn_name : port source_feature -> destination_feature;
-        例：data_flow : port Sensor.out_data -> Processor.in_data;
-
-      访问连接（双向共享访问）：
-        conn_name : bus access source_feature <-> destination_feature;
-        例：bus_conn : bus access Device.powerIn <-> PowerBus.powerOut;
-
-      连接内联属性（在连接声明末尾用花括号附加属性）：
-        conn_name : port source_feature -> destination_feature {属性名 => 属性值;};
-        例：current_temperature : port temperature_sensor.current_temperature -> thermostat.current_temperature {latency => 2ms..4ms;};
-        例：heat_control : port thermostat.heat_control -> heat_source.heat_control {latency => 5ms..6ms;};
+      连接内联属性（花括号包裹，分号结尾，紧跟连接末尾）：
+        conn_name : port Sensor.out_data -> Processor.in_data {latency => 2ms..4ms;};
 
       规则：
-      1. port 连接方向用 ->（单向），access 连接方向用 <->（双向）。
-      2. bus access 连接严禁使用 <> 或 ->，必须使用 <->。
-      3. 连接的两端必须是 features 中已声明的端口或访问点名称。生成每条连接前，必须逐一核对：引用的 实例名.端口名 中，端口名是否确实存在于该实例对应组件类型的 features 块中。如果该组件类型没有 features 块或 features 块中没有该端口，则严禁生成此连接。
-      4. connections 块放在 implementation 的 subcomponents 之后、properties 之前。
-      5. 当需求中明确给出连接的延迟、带宽等约束时，使用连接内联属性 {属性名 => 值;} 附加在连接声明末尾。
-      6. 常用连接内联属性：latency（延迟范围，如 latency => 2ms..4ms;）、Timing（时序）。
-      7. 内联属性以分号结尾，整体用花括号包裹，紧跟在连接声明的分号位置之前。
-      8. 连接中引用的实例名必须是当前 implementation 的 subcomponents 中已声明的子组件实例名，严禁引用未在当前 implementation 中实例化的组件。
+      1. 当需求中明确给出连接的延迟、带宽等约束时，使用连接内联属性附加在连接声明末尾。
+      2. 常用内联属性：latency（延迟范围，如 latency => 2ms..4ms;）、Timing（时序）。
+
+  - id: hardware_software_bridge
+    title: 软硬件分离完整示例
+    always: true
+    content: |
+      以下示例展示 R3/R7 软硬件分离原则的完整落地（device 作桥梁、process 端口委派、Actual_Processor_Binding 绑定）：
+
+      -- 1. 数据类型定义（纯类型，无 features）
+      data SensorData
+      end SensorData;
+
+      data implementation SensorData.impl
+        properties
+          Data_Size => 4 Bytes;
+      end SensorData.impl;
+
+      -- 2. 总线类型（纯硬件，provides bus access）
+      bus CanBus
+        features
+          can_access : provides bus access CanBus;
+      end CanBus;
+
+      bus implementation CanBus.impl
+      end CanBus.impl;
+
+      -- 3. 处理器（纯硬件，requires bus access）
+      processor MainCPU
+        features
+          cpu_bus : requires bus access CanBus;
+      end MainCPU;
+
+      processor implementation MainCPU.impl
+      end MainCPU.impl;
+
+      -- 4. 设备：软硬件桥梁（同时有 data port 和 requires bus access）
+      device SensorDevice
+        features
+          dev_bus    : requires bus access CanBus;
+          sensor_out : out data port SensorData.impl;
+      end SensorDevice;
+
+      device implementation SensorDevice.impl
+      end SensorDevice.impl;
+
+      -- 5. 软件层：线程（纯软件，只有 data port）
+      thread Processing_Thread
+        features
+          sensor_in : in data port SensorData.impl;
+      end Processing_Thread;
+
+      thread implementation Processing_Thread.impl
+      end Processing_Thread.impl;
+
+      -- 6. 进程容器（纯软件，通过端口委派接收外部数据）
+      process Bridge_Process
+        features
+          proc_sensor_in : in data port SensorData.impl;
+      end Bridge_Process;
+
+      process implementation Bridge_Process.impl
+        subcomponents
+          thread_1 : thread Processing_Thread.impl;
+        connections
+          -- 端口委派：进程端口 → 内部线程端口
+          c_delegate : port proc_sensor_in -> thread_1.sensor_in;
+      end Bridge_Process.impl;
+
+      -- 7. 顶层系统（软硬件集成容器）
+      system Top_System
+      end Top_System;
+
+      system implementation Top_System.impl
+        subcomponents
+          bus_1     : bus CanBus.impl;
+          cpu_1     : processor MainCPU.impl;
+          sensor_1  : device SensorDevice.impl;
+          process_1 : process Bridge_Process.impl;
+        connections
+          -- 硬件连硬件：总线访问连接
+          c1 : bus access sensor_1.dev_bus <-> bus_1.can_access;
+          c2 : bus access cpu_1.cpu_bus <-> bus_1.can_access;
+          -- 软件连软件：设备数据端口直连到进程
+          c3 : port sensor_1.sensor_out -> process_1.proc_sensor_in;
+        properties
+          -- 软件到硬件的绑定：进程绑定到处理器
+          Actual_Processor_Binding => (reference (cpu_1)) applies to process_1;
+      end Top_System.impl;
 
   - id: flows
     title: 流声明模板
@@ -602,32 +591,25 @@ order:
 
 forbidden:
   content: |
-    补充禁止项（核心红线规则已覆盖的不在此重复）：
-    1. 如果需求中总线为 0，则不要生成 bus。
-    2. 严禁在 processor、memory、device 等物理硬件的 subcomponents 中直接嵌套 process、thread 等软件组件。
-    3. 严禁忽略需求中明确声明的数据大小约束。凡有字节大小描述的数据组件，必须在 data implementation 的 properties 中声明 Data_Size。
-    4. 严禁使用已废弃属性 Source_Data_Size 和 Destination_Data_Size，必须使用 Data_Size 替代。
-    5. 严禁跨组件类型使用属性：Data_Size 仅用于 data；Period/Deadline/Priority/Stack_Size/Compute_Execution_Time 仅用于 thread；RAM_Size 仅用于 memory。
-    6. 严禁使用英文全拼单位（Kilobytes, Megabytes, Second, Millisecond, Hertz），必须使用 AADL 标准缩写（Kbyte, Mbyte, sec, ms, Hz）。
-    7. 严禁直接使用非标准属性名而不带属性集前缀（如直接写 Max_Capacity），必须带前缀（如 Memory_Properties::Max_Capacity）。
-    8. 属性值格式：数值与单位间有空格（10 Kbyte），范围用 .. 连接（5 ms .. 10 ms），列表用括号包裹（("Ok", "Error")）。
+    补充禁止项（核心红线规则未覆盖的细节）：
+    1. 属性值格式：数值与单位间有空格（10 Kbyte），范围用 .. 连接（5 ms .. 10 ms），列表用括号包裹（("Ok", "Error")）。
+    2. 严禁使用已废弃属性 Source_Data_Size 和 Destination_Data_Size，必须使用 Data_Size。
+    3. 非标准属性集的属性必须带前缀（如 Memory_Properties::RAM_Size），严禁直接写属性名。
 
 checklist:
   content: |
     【输出前自检清单】生成代码前逐条确认，任一项为否则修正后再输出：
-    [1] 每个组件是否都有类型声明 + implementation，且各自有 end 闭合？
-    [2] features 块是否只出现在类型声明中，没有出现在 implementation 中？
-    [3] thread 的 features 中是否只有 in/out data port，没有 requires bus access？
-    [4] connections 中每个 实例名.端口名 是否都在对应组件的 features 中声明过？
-    [5] thread implementation 中是否只有 properties，没有 connections？
-    [6] 软件实体（thread/process）的 features 中是否只有 Port，硬件实体（bus/processor/device/memory）的 features 中是否只有 Bus Access？
-    [7] implementation 内部顺序是否为 subcomponents → connections → properties？
-    [8] 连接类型是否与端点匹配（port 连 port，access 连 access，严禁混连）？
-    [9] port 连接是否用 ->，bus access 连接是否用 <->？
-    [10] data 组件中是否没有 features 块（data 是纯类型分类器，由主动构件端口引用）？subprogram 可以有 features。
-    [11] port 连接的源端（-> 左侧）是否为 out port，目标端（-> 右侧）是否为 in port？
-    [12] port 连接两端是否引用了相同的数据类型（如 out data port T -> in data port T）？
-    [13] 软件实体（process）的 connections 中是否只有 port 连接？硬件实体（device/processor/memory/bus）的 connections 中是否只有 bus access 连接？
+    [1] R2: 每个组件是否都有类型声明 + implementation，且各自有 end 闭合？
+    [2] R3: features 只在类型声明中？data 无 features？port/bus access 归属的构件类型正确？
+    [3] R4: 连接端点在 features 中已声明？port 连 port、access 连 access 无混连？port 用 ->、access 用 <->？源端 out、目标端 in？类型一致？无 data 组件端口引用？
+    [4] R5: thread implementation 中无 connections 和 subcomponents？
+    [5] R7: 软件实体 connections 只有 port 连接？纯硬件实体(processor/memory/bus)只有 bus access？device 允许两者？软件实体通过 Actual_Processor_Binding 绑定到 processor？
+    [6] R8: implementation 内部顺序 subcomponents → connections → properties？
+    [7] R9: subcomponent 父子类型合法？thread 不在 system 下？process 不在 processor 下？
+    [8] R10: applies to 引用的实例名在 subcomponents 中已声明？
+    [9] R11: 每个 process 和 thread 都有 Actual_Processor_Binding 属性绑定？
+    [10] R12: 连接两端 data port 的 Data_Size 一致？
+    [11] R13: 实例名、连接名、类型名无重名？
 
 example:
   title: AADL生成示例
