@@ -93,22 +93,66 @@ public abstract class AbstractOpenAiCompatibleClient implements LlmClient {
 
             if (response.getStatusCode().is2xxSuccessful()) {
                 String responseBody = response.getBody();
-                if (responseBody != null) {
-                    JsonNode root = objectMapper.readTree(responseBody);
-                    JsonNode choices = root.get("choices");
-                    if (choices != null && choices.isArray() && choices.size() > 0) {
-                        JsonNode messageNode = choices.get(0).get("message");
-                        if (messageNode != null) {
-                            JsonNode content = messageNode.get("content");
-                            if (content != null) {
-                                return content.asText();
-                            }
+                if (responseBody == null || responseBody.trim().isEmpty()) {
+                    log.warn("{} chat response: response body is null or empty", getClientName());
+                    return null;
+                }
+                JsonNode root = objectMapper.readTree(responseBody);
+                JsonNode choices = root.get("choices");
+                if (choices == null || !choices.isArray() || choices.size() == 0) {
+                    log.warn("{} chat response: choices is missing or empty, response body: {}",
+                            getClientName(), truncateForLog(responseBody));
+                    return null;
+                }
+                JsonNode messageNode = choices.get(0).get("message");
+                if (messageNode == null) {
+                    log.warn("{} chat response: choices[0].message is null, response body: {}",
+                            getClientName(), truncateForLog(responseBody));
+                    return null;
+                }
+                JsonNode content = messageNode.get("content");
+                if (content == null || content.isNull()) {
+                    // 部分模型（如深度推理模型）可能没有 content 但有 reasoning_content
+                    JsonNode reasoning = messageNode.get("reasoning_content");
+                    if (reasoning != null && !reasoning.isNull() && !reasoning.asText().trim().isEmpty()) {
+                        log.warn("{} chat response: content is null but reasoning_content is present; " +
+                                "check model suitability for structured output tasks", getClientName());
+                    } else {
+                        log.warn("{} chat response: message.content is null, response body: {}",
+                                getClientName(), truncateForLog(responseBody));
+                    }
+                    return null;
+                }
+                // content 可能是字符串，也可能是多模态数组（取第一个 text 部分）
+                String text;
+                if (content.isTextual()) {
+                    text = content.asText();
+                } else if (content.isArray()) {
+                    StringBuilder sb = new StringBuilder();
+                    for (JsonNode part : content) {
+                        JsonNode textNode = part.get("text");
+                        if (textNode != null && !textNode.isNull()) {
+                            sb.append(textNode.asText());
                         }
                     }
+                    text = sb.toString();
+                } else {
+                    log.warn("{} chat response: unexpected content type: {}, response body: {}",
+                            getClientName(), content.getNodeType(), truncateForLog(responseBody));
+                    return null;
                 }
+                if (text == null || text.trim().isEmpty()) {
+                    log.warn("{} chat response: content is empty string, response body: {}",
+                            getClientName(), truncateForLog(responseBody));
+                    return null;
+                }
+                return text;
+            } else {
+                log.error("{} chat request failed with status: {}, response body: {}",
+                        getClientName(), response.getStatusCode(),
+                        truncateForLog(response.getBody()));
+                return null;
             }
-            log.error("{} chat request failed with status: {}", getClientName(), response.getStatusCode());
-            return null;
         } catch (RestClientException e) {
             log.error("{} chat request exception: {}", getClientName(), e.getMessage(), e);
             return null;
@@ -116,6 +160,16 @@ public abstract class AbstractOpenAiCompatibleClient implements LlmClient {
             log.error("{} chat response parsing exception: {}", getClientName(), e.getMessage(), e);
             return null;
         }
+    }
+
+    /**
+     * 截断响应体用于日志输出，避免日志过大。
+     */
+    private String truncateForLog(String body) {
+        if (body == null) return "null";
+        String trimmed = body.trim();
+        if (trimmed.length() <= 500) return trimmed;
+        return trimmed.substring(0, 500) + "... [truncated, total " + trimmed.length() + " chars]";
     }
 
     @Override
