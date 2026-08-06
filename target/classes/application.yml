@@ -26,7 +26,7 @@ ollama:
 deepseek:
   api-key: "sk-2a3bfd0185a6426c89bf9610f60abd54"
   base-url: https://api.deepseek.com
-  chat-model: deepseek-v4-flash
+  chat-model: deepseek-chat
   timeout: 600000
 
 # 豆包（字节跳动火山引擎）API 配置（API Key 请自行填写）

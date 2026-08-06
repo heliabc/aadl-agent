@@ -111,38 +111,28 @@ public abstract class AbstractOpenAiCompatibleClient implements LlmClient {
                     return null;
                 }
                 JsonNode content = messageNode.get("content");
-                if (content == null || content.isNull()) {
-                    // 部分模型（如深度推理模型）可能没有 content 但有 reasoning_content
+                if (content == null || content.isNull() || isEmptyTextNode(content)) {
+                    // 推理模型（如 DeepSeek R1/V4、豆包推理模型）可能将思考内容放在 reasoning_content
+                    // 而 content 为空。此时尝试从 reasoning_content 提取文本作为兜底。
                     JsonNode reasoning = messageNode.get("reasoning_content");
-                    if (reasoning != null && !reasoning.isNull() && !reasoning.asText().trim().isEmpty()) {
-                        log.warn("{} chat response: content is null but reasoning_content is present; " +
-                                "check model suitability for structured output tasks", getClientName());
-                    } else {
-                        log.warn("{} chat response: message.content is null, response body: {}",
-                                getClientName(), truncateForLog(responseBody));
+                    if (reasoning != null && !reasoning.isNull() && !isEmptyTextNode(reasoning)) {
+                        String reasoningText = extractText(reasoning);
+                        if (reasoningText != null && !reasoningText.trim().isEmpty()) {
+                            log.warn("{} chat response: content is empty but reasoning_content has text; " +
+                                    "using reasoning_content as fallback ({} chars). " +
+                                    "Consider switching to a non-reasoning model for better structured output.",
+                                    getClientName(), reasoningText.length());
+                            return reasoningText;
+                        }
                     }
+                    log.warn("{} chat response: message.content is empty and reasoning_content is also empty, " +
+                            "response body: {}", getClientName(), truncateForLog(responseBody));
                     return null;
                 }
                 // content 可能是字符串，也可能是多模态数组（取第一个 text 部分）
-                String text;
-                if (content.isTextual()) {
-                    text = content.asText();
-                } else if (content.isArray()) {
-                    StringBuilder sb = new StringBuilder();
-                    for (JsonNode part : content) {
-                        JsonNode textNode = part.get("text");
-                        if (textNode != null && !textNode.isNull()) {
-                            sb.append(textNode.asText());
-                        }
-                    }
-                    text = sb.toString();
-                } else {
-                    log.warn("{} chat response: unexpected content type: {}, response body: {}",
-                            getClientName(), content.getNodeType(), truncateForLog(responseBody));
-                    return null;
-                }
+                String text = extractText(content);
                 if (text == null || text.trim().isEmpty()) {
-                    log.warn("{} chat response: content is empty string, response body: {}",
+                    log.warn("{} chat response: content text is empty, response body: {}",
                             getClientName(), truncateForLog(responseBody));
                     return null;
                 }
@@ -170,6 +160,35 @@ public abstract class AbstractOpenAiCompatibleClient implements LlmClient {
         String trimmed = body.trim();
         if (trimmed.length() <= 500) return trimmed;
         return trimmed.substring(0, 500) + "... [truncated, total " + trimmed.length() + " chars]";
+    }
+
+    /**
+     * 从 content 节点提取文本。content 可能是字符串，也可能是多模态数组（取所有 text 部分拼接）。
+     */
+    private String extractText(JsonNode content) {
+        if (content == null || content.isNull()) return null;
+        if (content.isTextual()) {
+            return content.asText();
+        }
+        if (content.isArray()) {
+            StringBuilder sb = new StringBuilder();
+            for (JsonNode part : content) {
+                JsonNode textNode = part.get("text");
+                if (textNode != null && !textNode.isNull()) {
+                    sb.append(textNode.asText());
+                }
+            }
+            return sb.toString();
+        }
+        return null;
+    }
+
+    /**
+     * 判断 content 节点是否为空文本（字符串为空 或 数组中没有 text 部分）。
+     */
+    private boolean isEmptyTextNode(JsonNode content) {
+        String text = extractText(content);
+        return text == null || text.trim().isEmpty();
     }
 
     @Override
