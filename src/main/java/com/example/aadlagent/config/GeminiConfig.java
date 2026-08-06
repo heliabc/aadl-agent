@@ -22,9 +22,6 @@ public class GeminiConfig {
     /** 对话模型名称 */
     private String chatModel = "gemini-2.0-flash";
 
-    /** 嵌入模型名称（可选，为空则不支持嵌入） */
-    private String embeddingModel = "text-embedding-004";
-
     /** 请求超时时间（毫秒） */
     private int timeout = 600000;
 }

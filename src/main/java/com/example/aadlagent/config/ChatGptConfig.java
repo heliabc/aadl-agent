@@ -17,7 +17,6 @@ public class ChatGptConfig extends BaseOpenAiConfig {
         setApiKey("");
         setBaseUrl("https://api.openai.com/v1");
         setChatModel("gpt-4o-mini");
-        setEmbeddingModel("text-embedding-3-small");
         setTimeout(600000);
     }
 }

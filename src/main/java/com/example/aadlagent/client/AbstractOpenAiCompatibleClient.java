@@ -120,60 +120,9 @@ public abstract class AbstractOpenAiCompatibleClient implements LlmClient {
 
     @Override
     public float[] embed(String text) {
-        if (config.getApiKey() == null || config.getApiKey().isEmpty()) {
-            log.warn("{} API key is not configured", getClientName());
-            return null;
-        }
-        if (config.getEmbeddingModel() == null || config.getEmbeddingModel().isEmpty()) {
-            log.warn("{} embedding model is not configured", getClientName());
-            return null;
-        }
-
-        String url = config.getBaseUrl() + "/embeddings";
-
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", config.getEmbeddingModel());
-        requestBody.put("input", text);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", "Bearer " + config.getApiKey());
-
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
-
-        try {
-            ResponseEntity<String> response = restTemplate.exchange(
-                    url, HttpMethod.POST, request, String.class
-            );
-
-            if (response.getStatusCode().is2xxSuccessful()) {
-                String responseBody = response.getBody();
-                if (responseBody != null) {
-                    JsonNode root = objectMapper.readTree(responseBody);
-                    JsonNode data = root.get("data");
-                    if (data != null && data.isArray() && data.size() > 0) {
-                        JsonNode embeddingNode = data.get(0).get("embedding");
-                        if (embeddingNode != null && embeddingNode.isArray()) {
-                            List<Float> embeddingList = objectMapper.convertValue(embeddingNode,
-                                    objectMapper.getTypeFactory().constructCollectionType(List.class, Float.class));
-                            float[] embedding = new float[embeddingList.size()];
-                            for (int i = 0; i < embeddingList.size(); i++) {
-                                embedding[i] = embeddingList.get(i);
-                            }
-                            return embedding;
-                        }
-                    }
-                }
-            }
-            log.error("{} embedding request failed with status: {}", getClientName(), response.getStatusCode());
-            return null;
-        } catch (RestClientException e) {
-            log.error("{} embedding request exception: {}", getClientName(), e.getMessage(), e);
-            return null;
-        } catch (Exception e) {
-            log.error("{} embedding response parsing exception: {}", getClientName(), e.getMessage(), e);
-            return null;
-        }
+        // RAG 嵌入统一使用 Ollama 本地模型，API 模型不提供嵌入能力
+        log.warn("{} does not support embedding; use Ollama for RAG embeddings", getClientName());
+        return null;
     }
 
     protected boolean isConfigured() {

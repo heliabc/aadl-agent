@@ -18,7 +18,6 @@ public class DoubaoConfig extends BaseOpenAiConfig {
         setApiKey("");
         setBaseUrl("https://ark.cn-beijing.volces.com/api/v3");
         setChatModel("");
-        setEmbeddingModel("");
         setTimeout(600000);
     }
 }

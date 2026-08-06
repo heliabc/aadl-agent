@@ -16,7 +16,6 @@ public class DeepSeekConfig extends BaseOpenAiConfig {
         setApiKey("");
         setBaseUrl("https://api.deepseek.com");
         setChatModel("deepseek-v4-flash");
-        setEmbeddingModel("deepseek-embedding");
         setTimeout(600000);
     }
 }

@@ -123,65 +123,9 @@ public class GeminiClient implements LlmClient {
 
     @Override
     public float[] embed(String text) {
-        if (config.getApiKey() == null || config.getApiKey().isEmpty()) {
-            log.warn("Gemini API key is not configured");
-            return null;
-        }
-        if (config.getEmbeddingModel() == null || config.getEmbeddingModel().isEmpty()) {
-            log.warn("Gemini embedding model is not configured");
-            return null;
-        }
-
-        String url = config.getBaseUrl() + "/models/" + config.getEmbeddingModel()
-                + ":embedContent?key=" + config.getApiKey();
-
-        Map<String, Object> requestBody = new HashMap<>();
-        Map<String, Object> content = new HashMap<>();
-        List<Map<String, Object>> parts = new ArrayList<>();
-        Map<String, Object> part = new HashMap<>();
-        part.put("text", text);
-        parts.add(part);
-        content.put("parts", parts);
-        requestBody.put("content", content);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
-
-        try {
-            ResponseEntity<String> response = restTemplate.exchange(
-                    url, HttpMethod.POST, request, String.class
-            );
-
-            if (response.getStatusCode().is2xxSuccessful()) {
-                String responseBody = response.getBody();
-                if (responseBody != null) {
-                    JsonNode root = objectMapper.readTree(responseBody);
-                    JsonNode embeddingNode = root.get("embedding");
-                    if (embeddingNode != null) {
-                        JsonNode valuesNode = embeddingNode.get("values");
-                        if (valuesNode != null && valuesNode.isArray()) {
-                            List<Float> embeddingList = objectMapper.convertValue(valuesNode,
-                                    objectMapper.getTypeFactory().constructCollectionType(List.class, Float.class));
-                            float[] embedding = new float[embeddingList.size()];
-                            for (int i = 0; i < embeddingList.size(); i++) {
-                                embedding[i] = embeddingList.get(i);
-                            }
-                            return embedding;
-                        }
-                    }
-                }
-            }
-            log.error("Gemini embedding request failed with status: {}", response.getStatusCode());
-            return null;
-        } catch (RestClientException e) {
-            log.error("Gemini embedding request exception: {}", e.getMessage(), e);
-            return null;
-        } catch (Exception e) {
-            log.error("Gemini embedding response parsing exception: {}", e.getMessage(), e);
-            return null;
-        }
+        // RAG 嵌入统一使用 Ollama 本地模型，Gemini 不提供嵌入能力
+        log.warn("Gemini does not support embedding; use Ollama for RAG embeddings");
+        return null;
     }
 
     @Override
