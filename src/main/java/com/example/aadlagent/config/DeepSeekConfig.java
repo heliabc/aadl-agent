@@ -1,19 +1,22 @@
 package com.example.aadlagent.config;
 
 import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * DeepSeek API 配置。
+ */
 @Data
 @Configuration
-public class DeepSeekConfig {
+@ConfigurationProperties(prefix = "deepseek")
+public class DeepSeekConfig extends BaseOpenAiConfig {
 
-    private String apiKey = "sk-70720c5e725345c1b6a287a4fe5cde6b";
-
-    private String baseUrl = "https://api.deepseek.com";
-
-    private String chatModel = "deepseek-v4-flash";
-
-    private String embeddingModel = "deepseek-embedding";
-
-    private int timeout = 600000;
+    public DeepSeekConfig() {
+        setApiKey("");
+        setBaseUrl("https://api.deepseek.com");
+        setChatModel("deepseek-v4-flash");
+        setEmbeddingModel("deepseek-embedding");
+        setTimeout(600000);
+    }
 }

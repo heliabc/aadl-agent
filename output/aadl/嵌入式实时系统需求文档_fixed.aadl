@@ -1,0 +1,133 @@
+package System 
+ public 
+   -- ======================================= 
+   -- 顶层系统容器 
+   -- ======================================= 
+   system System 
+   end System; 
+
+   system implementation System.impl 
+     subcomponents 
+       MainProcessor_inst : processor MainProcessor_inst.impl; 
+       HighPrecisionTimer_inst : device HighPrecisionTimer_inst.impl; 
+       InterruptController_inst : device InterruptController_inst.impl; 
+       SerialPort_inst : device SerialPort_inst.impl; 
+       CANController_inst : device CANController_inst.impl; 
+       EthernetInterface_inst : device EthernetInterface_inst.impl; 
+       SystemClock_inst : device SystemClock_inst.impl; 
+       WatchdogTimer_inst : device WatchdogTimer_inst.impl; 
+       RAM_inst : memory RAM_inst.impl; 
+       TaskSchedulerProcess_inst : process TaskSchedulerProcess_inst.impl; 
+     end System.impl; 
+
+   -- ======================================= 
+   -- 软件组件定义 
+   -- ======================================= 
+   process TaskSchedulerProcess 
+   end TaskSchedulerProcess; 
+
+   process implementation TaskSchedulerProcess_inst.impl 
+     subcomponents 
+       PreemptiveScheduler_inst : thread PreemptiveScheduler_inst.impl; 
+       TimerService_inst : thread TimerService_inst.impl; 
+       MemoryManager_inst : thread MemoryManager_inst.impl; 
+       FileSystemDriver_inst : thread FileSystemDriver_inst.impl; 
+     end TaskSchedulerProcess_inst.impl; 
+
+   thread PreemptiveScheduler 
+   end PreemptiveScheduler; 
+
+   thread implementation PreemptiveScheduler_inst.impl 
+   end PreemptiveScheduler_inst.impl; 
+
+   thread TimerService 
+   end TimerService; 
+
+   thread implementation TimerService_inst.impl 
+   end TimerService_inst.impl; 
+
+   thread MemoryManager 
+   end MemoryManager; 
+
+   thread implementation MemoryManager_inst.impl 
+   end MemoryManager_inst.impl; 
+
+   thread FileSystemDriver 
+   end FileSystemDriver; 
+
+   thread implementation FileSystemDriver_inst.impl 
+   end FileSystemDriver_inst.impl; 
+
+   -- ======================================= 
+   -- 硬件组件定义 
+   -- ======================================= 
+   processor MainProcessor 
+   end MainProcessor; 
+
+   processor implementation MainProcessor_inst.impl 
+     subcomponents 
+       TaskSchedulerProcess_runtime_inst : virtual processor TaskSchedulerProcess_runtime_inst.impl; 
+     end MainProcessor_inst.impl; 
+
+   virtual processor TaskSchedulerProcess_runtime 
+   end TaskSchedulerProcess_runtime; 
+
+   virtual processor implementation TaskSchedulerProcess_runtime_inst.impl 
+   end TaskSchedulerProcess_runtime_inst.impl; 
+
+   device HighPrecisionTimer 
+   end HighPrecisionTimer; 
+
+   device implementation HighPrecisionTimer_inst.impl 
+   end HighPrecisionTimer_inst.impl; 
+
+   device InterruptController 
+   end InterruptController; 
+
+   device implementation InterruptController_inst.impl 
+   end InterruptController_inst.impl; 
+
+   device SerialPort 
+   end SerialPort; 
+
+   device implementation Serial
+   end System;
+
+   device CANController 
+   end CANController; 
+
+   device implementation CANController_inst.impl 
+   end CANController_inst.impl; 
+
+   device EthernetInterface 
+   end EthernetInterface; 
+
+   device implementation EthernetInterface_inst.impl 
+   end EthernetInterface_inst.impl; 
+
+   device SystemClock 
+   end SystemClock; 
+
+   device implementation SystemClock_inst.impl 
+   end SystemClock_inst.impl; 
+
+   device WatchdogTimer 
+   end WatchdogTimer; 
+
+   device implementation WatchdogTimer_inst.impl 
+   end WatchdogTimer_inst.impl; 
+
+   memory RAM 
+   end RAM; 
+
+   memory implementation RAM_inst.impl 
+   end RAM_inst.impl;
+
+    -- =======================================
+    -- [自动修正] 以下为 AadlReferenceValidator 自动补全的组件声明
+    -- =======================================
+    -- [自动修正] 补全缺失的实现声明: SerialPort (device)
+    device implementation SerialPort.impl
+    end SerialPort.impl;
+
+end System;

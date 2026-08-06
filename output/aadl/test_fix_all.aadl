@@ -1,0 +1,148 @@
+package TestSystem
+ public
+
+   data Integer
+   end Integer;
+
+   data Float
+   end Float;
+
+   data Boolean
+   end Boolean;
+
+   system MainSystem
+   end MainSystem;
+
+   system implementation MainSystem.impl
+     subcomponents
+       MainSystem : processor MainProcessor.impl;
+       SensorDevice : device SensorDevice.impl;
+       ActuatorDevice : device ActuatorDevice.impl;
+       ControlProcess : process ControlProcess.impl;
+       SharedData : data SharedData.impl;
+       MainBus : bus MainBus.impl;
+     connections
+       Sensor_bus_access : bus access SensorDevice.busInterface -> MainBus.busPort;
+       DataConn : data port ControlProcess.dataIn -> SensorDevice.dataOut;
+       BadConn1 : data port ControlProcess.controlOut -> MainBus.busPort;
+       IncompleteConn : data port SensorDevice.
+       DataPortConn : data port ControlProcess.dataOut -> SharedData.value;
+     properties
+       Actual_Processor_Binding => (reference (MainSystem)) applies to ControlProcess;
+       Period => 10 ms applies to NonExistentThread;
+   end MainSystem.impl;
+
+   process ControlProcess
+   end ControlProcess;
+
+   process implementation ControlProcess.impl
+     subcomponents
+       SensorThread : thread SensorThread.impl;
+       ControlThread : thread ControlThread.impl;
+     features
+       dataIn : in data port Integer;
+       controlOut : out data port Float;
+     connections
+       SensorToControl : data port SensorThread.sensorOut -> ControlThread.controlIn;
+     properties
+       Period => 50 ms;
+   end ControlProcess.impl;
+
+   thread SensorThread
+   features
+     sensorOut : out data port Float;
+     busReq : requires bus access MainBus;
+   end SensorThread;
+
+   thread implementation SensorThread.impl
+     connections
+       C1 : data port sensorOut -> sensorOut;
+     properties
+       Period => 10 ms;
+   end SensorThread.impl;
+
+   thread ControlThread
+   features
+     controlIn : in data port Float;
+     commandIn : requires data port Boolean;
+   end ControlThread;
+
+   thread implementation ControlThread.impl
+   end ControlThread.impl;
+
+   data SharedData
+   features
+     value : out data port Integer;
+   end SharedData;
+
+   data implementation SharedData.impl
+   end SharedData.impl;
+
+   device SensorDevice
+   features
+     dataOut : out data port Float;
+     busInterface : provides bus access MainBus;
+   end SensorDevice;
+
+   device implementation SensorDev
+   end SensorDevice.impl;
+
+   device ActuatorDevice
+   features
+     controlIn : in data port Float;
+     busInterface : provides bus access MainBus;
+   end ActuatorDevice;
+
+   device implementation ActuatorDevice.impl
+     properties
+       Period => 20 ms;
+     subcomponents
+       InnerDev : device InnerDevice.impl;
+     connections
+       ActuatorConn : bus access busInterface <-> InnerDev.busPort;
+   end ActuatorDevice.impl;
+
+   device InnerDevice
+   features
+     busPort : provides bus access MainBus;
+   end InnerDevice;
+
+   device implementation InnerDevice.impl
+   end InnerDevice.impl;
+
+   processor MyProcessor
+   end MyProcessor;
+
+   processor implementation MyProcessor.impl
+     subcomponents
+       ControlProcess_runtime : process ControlProcess.impl;
+       RuntimeProc : virtual processor RuntimeProc.impl;
+     end MyProcessor.impl;
+
+   processor MainProcessor
+   end MainProcessor;
+
+   processor implementation MainProcessor.impl
+     subcomponents
+       ControlProcess_runtime : process ControlProcess.impl;
+       RuntimeProc : virtual processor RuntimeProc.impl;
+   end MainProcessor.impl;
+
+   virtual processor RuntimeProc
+   end RuntimeProc;
+
+   virtual processor implementation RuntimeProc.impl
+   end RuntimeProc.impl;
+
+   bus MainBus
+   end MainBus;
+
+   bus implementation MainBus.impl
+   end MainBus.impl;
+
+   device MissingImplDevice
+   features
+     status : out data port Boolean;
+   end MissingImplDevice;
+
+end TestSystem;

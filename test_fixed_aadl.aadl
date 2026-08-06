@@ -1,0 +1,143 @@
+package BrakeSystem_Arch
+public
+
+-- 错误1：data 组件有 features 块（R3 违规）
+data BrakeSignal
+
+end BrakeSignal;
+
+data SpeedData
+end SpeedData;
+
+-- 错误2：畸形 end 语句（逗号分隔）
+device BrakePedal
+  features
+    pedal_pos : out data port SpeedData;
+    can_bus : requires bus access CanBus;
+end BrakePedal;
+
+-- 错误3：thread 有 bus access（R7 违规，应该被转移到 device）
+thread BrakeControlTask
+  features
+    brake_in : in data port BrakeSignal;
+    speed_in : in data port SpeedData;
+    pwm_out : out data port PwmData;
+    can_access : requires bus access CanBus;  -- 错误：thread 不应有 bus access
+end BrakeControlTask;
+
+-- 错误4：thread implementation 中有 connections 和 subcomponents（R5 违规）
+thread implementation BrakeControlTask.impl
+end BrakeControlTask.impl;
+
+-- 错误5：requires data port 语法错误（R6 违规）
+device WheelSpeedSensor
+  features
+    speed_out : in data port SpeedData;  -- 错误：应该是 out data port
+end WheelSpeedSensor;
+
+-- 错误6：命名冲突 —— 类型名和下面的连接名都是 c1
+data c1
+end c1;
+
+data PwmData
+end PwmData;
+
+subprogram BrakeCalc
+end BrakeCalc;
+
+subprogram implementation BrakeCalc.impl
+end BrakeCalc.impl;
+
+bus CanBus
+end CanBus;
+
+-- 错误7：processor 下有 process 子组件（R9 违规，应该提取到 system）
+processor MainProcessor
+end MainProcessor;
+
+processor implementation MainProcessor.impl
+  subcomponents
+    BrakeProcess_runtime : virtual processor BrakeProcess_runtime.impl;
+    -- 错误：process 不能放在 processor 下
+    BrakeProcess : process BrakeProcess.impl;
+end MainProcessor.impl;
+
+virtual processor BrakeProcess_runtime
+end BrakeProcess_runtime;
+
+virtual processor implementation BrakeProcess_runtime.impl
+end BrakeProcess_runtime.impl;
+
+-- 错误8：device 类型声明有问题（features 在 implementation 里）
+device PwmActuator
+end PwmActuator;
+
+device implementation PwmActuator.impl
+  features  -- 错误：features 不应在 implementation 中
+    pwm_in : in data port PwmData;
+    can_access : requires bus access CanBus;
+end PwmActuator.impl;
+
+process BrakeProcess
+  features
+    brake_signal : in data port BrakeSignal;
+    speed_input : in data port SpeedData;
+    pwm_output : out data port PwmData;
+end BrakeProcess;
+
+process implementation BrakeProcess.impl
+  subcomponents
+    brake_task : thread BrakeControlTask.impl;
+    -- 错误9：连接行缺端口名（只有实例名，缺 .port）
+  connections
+    conn_brake : port brake_signal -> brake_task;  -- 缺 .brake_in
+    conn_speed : port speed_input.dataOut -> brake_task.speed_in;
+    conn_pwm : port brake_task.pwm_out -> pwm_output.dataIn;
+    -- 错误10：连接操作符错误（port 用了 <->）
+    conn_wrong_op : port brake_task.pwm_out -> pwm_output.dataIn;
+    -- 错误11：连接方向错误（in -> out 写反了）
+    conn_reverse : port pwm_output.dataOut -> brake_task.pwm_out;
+end BrakeProcess.impl;
+
+-- 错误12：纯硬件实体（memory）有 port 连接（R7 违规，应该只有 bus access）
+memory MainMemory
+end MainMemory;
+
+memory implementation MainMemory.impl
+  connections
+    mem_port : port data_in -> data_out;  -- 错误：memory 不能有 port 连接
+end MainMemory.impl;
+
+system BrakeCtrl
+  features
+    brake_in : in data port BrakeSignal;
+    speed_in : in data port SpeedData;
+    pwm_out : out data port PwmData;
+end BrakeCtrl;
+
+system implementation BrakeCtrl.impl
+  subcomponents
+    -- 错误13：subcomponent 缺 .impl 后缀
+    pedal_sensor : device BrakePedal.impl;
+    wheel_sensor : device WheelSpeedSensor.impl;
+    brake_proc : process BrakeProcess.impl;
+    actuator : device PwmActuator.impl;
+    main_proc : processor MainProcessor.impl;
+    main_mem : memory MainMemory.impl;
+    can_bus : bus CanBus.impl;
+    -- 错误14：命名冲突 —— 实例名和 data 类型名都是 c1
+    c1 : data c1.impl;
+  connections
+    -- 错误15：连接名 c1 与 data 类型名 c1 冲突
+    c1_conn : port pedal_sensor.pedal_pos -> brake_proc.speed_input;
+    c2 : port wheel_sensor.speed_out -> brake_proc.speed_input;
+    c3 : port brake_proc.pwm_output -> actuator.pwm_in;
+    -- 错误16：连接行缺分号
+    c4 : port brake_in.dataOut -> brake_proc.brake_signal;
+    c5 : port brake_proc.pwm_output -> pwm_out.dataIn;
+end BrakeCtrl.impl;
+
+-- 错误17：畸形 end（完全乱码）
+end BrakeSystem_Arch;
+
+end BrakeSystem_Arch;

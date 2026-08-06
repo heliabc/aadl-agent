@@ -1,0 +1,201 @@
+-- =======================================
+-- [验证结果] 以下问题无法定位到具体行：
+-- [ERROR] feature 类型违规 - thread 组件 'SensorThread' 的 feature 'busReq' 类型为 'bus access'，该组件不允许拥有此类 feature; thread 组件允许的 feature 类型: data port, event port, event data port, subprogram access, data access, feature group, abstract feature
+-- [WARNING] 组件 'Integer' 有类型声明但缺少 implementation 声明（第4行）
+-- [WARNING] 组件 'Float' 有类型声明但缺少 implementation 声明（第7行）
+-- [WARNING] 组件 'Boolean' 有类型声明但缺少 implementation 声明（第10行）
+-- [WARNING] 组件 'SensorDevice' 有类型声明但缺少 implementation 声明（第81行）
+-- [WARNING] 组件 'MissingImplDevice' 有类型声明但缺少 implementation 声明（第143行）
+-- [WARNING] 属性绑定完整性: 'ControlProcess' (process) 在 'MainSystem' 中缺少 Actual_Processor_Binding 属性；代码生成强依赖于软硬件部署关系，请补充部署绑定属性
+-- [WARNING] 属性绑定完整性: 'SensorThread' (thread) 在 'ControlProcess' 中缺少 Actual_Processor_Binding 属性；代码生成强依赖于软硬件部署关系，请补充部署绑定属性
+-- [WARNING] 属性绑定完整性: 'ControlThread' (thread) 在 'ControlProcess' 中缺少 Actual_Processor_Binding 属性；代码生成强依赖于软硬件部署关系，请补充部署绑定属性
+-- [WARNING] 属性绑定完整性: 'ControlProcess_runtime' (process) 在 'MyProcessor' 中缺少 Actual_Processor_Binding 属性；代码生成强依赖于软硬件部署关系，请补充部署绑定属性
+-- [WARNING] 属性绑定完整性: 'ControlProcess_runtime' (process) 在 'MainProcessor' 中缺少 Actual_Processor_Binding 属性；代码生成强依赖于软硬件部署关系，请补充部署绑定属性
+-- =======================================
+package TestSystem
+ public
+
+   data Integer
+   end Integer;
+
+   data Float
+   end Float;
+
+   data Boolean
+   end Boolean;
+
+   system MainSystem
+   end MainSystem;
+
+   system implementation MainSystem.impl
+     subcomponents
+-- [ERROR] 命名空间冲突 - 实例名 'MainSystem' 与当前 implementation 所属的类型名 'MainSystem' 相同（在 'MainSystem.impl' 中）; 子组件实例名不能与包含它的组件类型同名，可能导致编译器 AST 解析错误
+       MainSystem_inst : processor MainProcessor.impl;
+-- [ERROR] subcomponents 引用 'SensorDevice.impl' 但组件 'SensorDevice' 缺少 implementation 声明
+       SensorDevice : device SensorDevice.impl;
+       ActuatorDevice : device ActuatorDevice.impl;
+       ControlProcess : process ControlProcess.impl;
+       SharedData : data SharedData.impl;
+       MainBus : bus MainBus.impl;
+     connections
+-- [ERROR] 连接 'Sensor_bus_access' 的目标端引用 'MainBus.busPort'，但组件类型 'MainBus' 没有 features 块或 features 为空
+-- [ERROR] 连接操作符错误 - bus access 连接 'Sensor_bus_access' 使用了单向 ->; bus access 连接必须使用双向 <->
+       Sensor_bus_access : bus access SensorDevice.busInterface <-> MainBus.busPort;
+       DataConn : data port ControlProcess.dataIn -> SensorDevice.dataOut;
+       BadConn1 : data port ControlProcess.controlOut -> MainBus.busPort;
+       IncompleteConn : data port SensorDevice.
+       DataPortConn : data port ControlProcess.dataOut -> SharedData.value;
+     properties
+       Actual_Processor_Binding => (reference (MainSystem)) applies to ControlProcess;
+-- [ERROR] 属性引用错误 - 'applies to NonExistentThread' 引用的实例 'NonExistentThread' 未在当前 implementation 'MainSystem.impl' 的 subcomponents 中声明
+       Period => 10 ms applies to NonExistentThread;
+   end MainSystem.impl;
+
+   process ControlProcess
+   end ControlProcess;
+
+   process implementation ControlProcess.impl
+     subcomponents
+       SensorThread : thread SensorThread.impl;
+       ControlThread : thread ControlThread.impl;
+-- [ERROR] features 放置错误 - features 块出现在 implementation 'ControlProcess.impl' 中; features 只能出现在组件类型声明中，不能出现在 implementation 中
+     connections
+       SensorToControl : data port SensorThread.sensorOut -> ControlThread.controlIn;
+     properties
+       Period => 50 ms;
+   end ControlProcess.impl;
+
+   thread SensorThread
+   features
+     sensorOut : out data port Float;
+-- [ERROR] 分层架构违规 - thread 'SensorThread' 的 feature 'busReq' 使用了 requires bus access; 线程不应直接访问物理总线，bus access 只能出现在 device 或 processor 中; 线程的 features 只能有 in/out data port 或 event port
+     busReq : requires bus access MainBus;
+    dataIn : in data port Integer;
+    controlOut : out data port Float;
+   end SensorThread;
+
+   thread implementation SensorThread.impl
+-- [ERROR] 语法错误 - connections 块出现在线程 implementation 'SensorThread.impl' 中; 线程内部严禁包含 connections 块，连接只能写在 system 或 process 的 implementation 中
+    -- [自动修正] 已删除线程 'SensorThread.impl' 中非法的 connections 块（共 1 行），线程内部不允许包含 connections
+     properties
+       Period => 10 ms;
+   end SensorThread.impl;
+
+   thread ControlThread
+   features
+     controlIn : in data port Float;
+-- [ERROR] 语法错误 - feature 'commandIn' 使用了非法语法 'requires data port'; requires 关键字只能用于 bus access / subprogram access; 数据端口必须使用 'in data port' 或 'out data port'
+     commandIn : in data port Boolean;  -- [自动修正] 'requires data port' → 'in data port'
+   end ControlThread;
+
+   thread implementation ControlThread.impl
+   end ControlThread.impl;
+
+   data SharedData
+-- [ERROR] data 组件违规 - data 组件 'SharedData' 中出现了 features 块; data 是被动构件（类型分类器），不应直接拥有 features; 数据的流动应由主动构件（thread/process/device）的端口引用 data 类型来完成
+   features
+     value : out data port Integer;
+   end SharedData;
+
+   data implementation SharedData.impl
+   end SharedData.impl;
+
+   device SensorDevice
+   features
+     dataOut : out data port Float;
+     busInterface : provides bus access MainBus;
+   end SensorDevice;
+
+   device implementation SensorDev
+   end TestSystem;
+
+   device ActuatorDevice
+   features
+     controlIn : in data port Float;
+     busInterface : provides bus access MainBus;
+   end ActuatorDevice;
+
+   device implementation ActuatorDevice.impl
+     subcomponents
+-- [ERROR] 层级违规 - 组件 'InnerDev' (类型: device) 不能直接放在 'ActuatorDevice' (类型: device) 的 subcomponents 中; device implementation 只能包含: data
+       InnerDev : device InnerDevice.impl;
+     connections
+       ActuatorConn : bus access busInterface <-> InnerDev.busPort;
+   end ActuatorDevice.impl;
+     properties
+       Period => 20 ms;
+-- [ERROR] 三步规范违规 - implementation 'ActuatorDevice.impl' 中 'subcomponents' 出现在 'properties' 之后; 必须严格遵守顺序: subcomponents → connections → properties
+
+   device InnerDevice
+   features
+     busPort : provides bus access MainBus;
+   end InnerDevice;
+
+   device implementation InnerDevice.impl
+   end InnerDevice.impl;
+
+   processor MyProcessor
+   end MyProcessor;
+
+   processor implementation MyProcessor.impl
+     subcomponents
+-- [ERROR] 层级违规 - 组件 'ControlProcess_runtime' (类型: process) 不能直接放在 'MyProcessor' (类型: processor) 的 subcomponents 中; processor implementation 只能包含: processor, virtual processor, memory, virtual bus
+       ControlProcess_runtime : process ControlProcess.impl;
+       RuntimeProc : virtual processor RuntimeProc.impl;
+     end MyProcessor.impl;
+
+   processor MainProcessor
+   end MainProcessor;
+
+   processor implementation MainProcessor.impl
+     subcomponents
+-- [ERROR] 层级违规 - 组件 'ControlProcess_runtime' (类型: process) 不能直接放在 'MainProcessor' (类型: processor) 的 subcomponents 中; processor implementation 只能包含: processor, virtual processor, memory, virtual bus
+       ControlProcess_runtime : process ControlProcess.impl;
+       RuntimeProc : virtual processor RuntimeProc.impl;
+   end MainProcessor.impl;
+
+   virtual processor RuntimeProc
+   end RuntimeProc;
+
+   virtual processor implementation RuntimeProc.impl
+   end RuntimeProc.impl;
+
+   bus MainBus
+features
+    -- [自动修正] 补全 connections 引用中缺失的 feature 声明: busPort
+    busPort : in data port MainBus;
+   end MainBus;
+
+   bus implementation MainBus.impl
+   end MainBus.impl;
+
+   device MissingImplDevice
+   features
+     status : out data port Boolean;
+   end MissingImplDevice;
+
+
+    -- =======================================
+    -- [自动修正] 以下为 AadlReferenceValidator 自动补全的组件声明
+    -- =======================================
+    -- [自动修正] 补全缺失的实现声明: Integer (data)
+    data implementation Integer.impl
+    end Integer.impl;
+
+    -- [自动修正] 补全缺失的实现声明: Float (data)
+    data implementation Float.impl
+    end Float.impl;
+
+    -- [自动修正] 补全缺失的实现声明: Boolean (data)
+    data implementation Boolean.impl
+    end Boolean.impl;
+
+    -- [自动修正] 补全缺失的实现声明: SensorDevice (device)
+    device implementation SensorDevice.impl
+    end SensorDevice.impl;
+
+    -- [自动修正] 补全缺失的实现声明: MissingImplDevice (device)
+    device implementation MissingImplDevice.impl
+    end MissingImplDevice.impl;
+
+end TestSystem;

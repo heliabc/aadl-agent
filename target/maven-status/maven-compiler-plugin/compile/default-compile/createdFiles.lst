@@ -50,6 +50,7 @@ com\example\aadlagent\rag\model\KnowledgeEntry.class
 com\example\aadlagent\client\dto\ChatResponse.class
 com\example\aadlagent\util\AadlReferenceValidator$AadlDeclaration.class
 com\example\aadlagent\agent\AgentChain.class
+com\example\aadlagent\util\ValidatorTestRunner.class
 com\example\aadlagent\rag\model\Document$DocumentBuilder.class
 com\example\aadlagent\agent\requirement\RequirementAgent$PatternConfig.class
 com\example\aadlagent\agent\AgentOutput.class

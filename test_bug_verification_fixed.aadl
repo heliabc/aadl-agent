@@ -1,0 +1,185 @@
+package BugVerification
+public
+
+-- ============================================================
+-- Bug 3: 破坏性子串匹配测试
+-- 场景：有一个 feature 名叫 "data"，如果用 contains(".data") 匹配，
+--       会错误地把所有 .dataOut、.dataIn 等端口都当成引用了 "data" feature
+-- ============================================================
+
+thread SubstringTestThread
+  features
+    data : in data port Integer;       -- 这个 feature 名是 "data"
+    dataOut : out data port Integer;   -- 这个是合法端口，不应被误伤
+    speed : in data port Integer;
+  end SubstringTestThread;
+
+thread implementation SubstringTestThread.impl
+end SubstringTestThread.impl;
+
+device SubstringBridgeTest
+  features
+    can_access : requires bus access CanBus;
+    data : out data port Integer;      -- 桥接 device 也有叫 "data" 的端口
+    dataOut : in data port Integer;    -- 合法端口，不应被级联删除
+  end SubstringBridgeTest;
+
+device implementation SubstringBridgeTest.impl
+end SubstringBridgeTest.impl;
+
+bus CanBus
+end CanBus;
+
+bus implementation CanBus.impl
+end CanBus.impl;
+
+process SubstringTestProcess
+  features
+    data_input : in data port Integer;
+    data_output : out data port Integer;
+  end SubstringTestProcess;
+
+process implementation SubstringTestProcess.impl
+  subcomponents
+    test_thread : thread SubstringTestThread.impl;
+  connections
+    -- 这些连接引用的是 dataOut/speed 等合法端口，不应因为有叫 "data" 的 feature 被误删
+    conn1 : port data_input.dataOut -> test_thread.speed;  -- [自动修正] 补全源端端口名 .dataOut; 补全末尾分号 ';'
+    conn2 : port test_thread.dataOut -> data_output.dataIn;  -- [自动修正] 补全目标端端口名 .dataIn; 补全末尾分号 ';'
+  end SubstringTestProcess.impl;
+
+-- ============================================================
+-- Bug 4: 双向端口解析测试
+-- 场景：in out data port / event data port / event port
+-- ============================================================
+
+device BidirectionalTestDevice
+  features
+    bi_data : in out data port Integer;          -- 双向数据端口
+    bi_event_data : in out event data port Integer;  -- 双向事件数据端口
+    bi_event : in out event port;                -- 双向事件端口
+    normal_in : in data port Integer;
+    normal_out : out data port Integer;
+  end BidirectionalTestDevice;
+
+device implementation BidirectionalTestDevice.impl
+end BidirectionalTestDevice.impl;
+
+system BidirectionalTestSystem
+  features
+    bi_port : in out data port Integer;
+  end BidirectionalTestSystem;
+
+system implementation BidirectionalTestSystem.impl
+  subcomponents
+    dev1 : device BidirectionalTestDevice.impl;
+  connections
+    -- 双向端口之间的连接
+    conn_bi : port bi_port.dataOut -> dev1.bi_data;  -- [自动修正] 补全源端端口名 .dataOut; 补全末尾分号 ';'
+  end BidirectionalTestSystem.impl;
+
+-- ============================================================
+-- Bug 5: 栈状态污染测试
+-- 场景：end 语句语法合法但名称错误，不应盲目 pop 导致后续错位
+-- ============================================================
+
+system StackTestSystem
+  features
+    input1 : in data port Integer;
+  end StackTestSystem;   -- 这个是正确的
+
+data StackTestData
+end StackTestData;
+
+thread StackTestThread
+  features
+    sig : in data port StackTestData;
+  end StackTestThread;
+
+thread implementation StackTestThread.impl
+end StackTestThread.impl;
+
+-- 故意写一个名称错误但语法合法的 end：应该是 end WrongSystem; 实际写的是 end system;
+-- 如果栈被污染，后面的所有 end 都会被错改
+system WrongSystem
+  features
+    out1 : out data port Integer;
+  end WrongSystem;
+
+device WrongDevice
+  features
+    p1 : in data port Integer;
+  end WrongDevice;  -- 这个是正确的，如果栈被污染会被当成畸形改掉
+
+-- ============================================================
+-- 回归测试：之前修复的 2 个 bug
+-- ============================================================
+
+-- Bug 1 回归：桥接 device 应插到 package 末尾，不能插到 data 组件内部
+data RegressionTestData
+  end RegressionTestData;
+
+thread RegressionTestThread
+  features
+    sig_in : in data port RegressionTestData;
+  end RegressionTestThread;
+
+thread implementation RegressionTestThread.impl
+end RegressionTestThread.impl;
+
+-- Bug 2 回归：features 带行尾注释应能正确从 impl 移到类型声明
+device RegressionTestDevice
+features
+    data_in : in data port Integer;
+    can_bus : requires bus access CanBus;
+end RegressionTestDevice;
+
+device implementation RegressionTestDevice.impl
+end RegressionTestDevice.impl;
+
+process RegressionTestProcess
+end RegressionTestProcess;
+
+process implementation RegressionTestProcess.impl
+  subcomponents
+    t1 : thread RegressionTestThread.impl;
+  connections
+    c1 : port t1.sig_in -> t1.sig_in;
+  end RegressionTestProcess.impl;
+
+
+    -- [自动修正] 桥接 device：承接 thread 'RegressionTestThread' 的 bus access
+  device RegressionTestThread_Bridge
+    features
+      bus_access : requires bus access CanBus;
+      sig_in : out data port RegressionTestData;
+  end RegressionTestThread_Bridge;
+
+  device implementation RegressionTestThread_Bridge.impl
+  end RegressionTestThread_Bridge.impl;
+
+
+    -- =======================================
+    -- [自动修正] 以下为 AadlReferenceValidator 自动补全的组件声明
+    -- =======================================
+    -- [自动修正] 补全缺失的实现声明: StackTestSystem (system)
+    system implementation StackTestSystem.impl
+    end StackTestSystem.impl;
+
+    -- [自动修正] 补全缺失的实现声明: StackTestData (data)
+    data implementation StackTestData.impl
+    end StackTestData.impl;
+
+    -- [自动修正] 补全缺失的实现声明: WrongSystem (system)
+    system implementation WrongSystem.impl
+    end WrongSystem.impl;
+
+    -- [自动修正] 补全缺失的实现声明: WrongDevice (device)
+    device implementation WrongDevice.impl
+    end WrongDevice.impl;
+
+    -- [自动修正] 补全缺失的实现声明: RegressionTestData (data)
+    data implementation RegressionTestData.impl
+    end RegressionTestData.impl;
+
+end BugVerification;

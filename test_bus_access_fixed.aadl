@@ -1,0 +1,73 @@
+package BusAccessTest
+public
+
+-- 总线定义
+bus CanBus
+end CanBus;
+
+bus implementation CanBus.impl
+end CanBus.impl;
+
+-- 数据类型
+data VehicleSpeed
+end VehicleSpeed;
+
+-- 有问题的 thread：直接有 bus access（违规）
+thread SpeedSensorThread
+  features
+    speed_out : out data port VehicleSpeed;
+  end SpeedSensorThread;
+
+thread implementation SpeedSensorThread.impl
+end SpeedSensorThread.impl;
+
+-- process 包含该 thread
+process VehicleControlProcess
+  features
+    vehicle_speed : out data port VehicleSpeed;
+  end VehicleControlProcess;
+
+process implementation VehicleControlProcess.impl
+  subcomponents
+    speed_sensor : thread SpeedSensorThread.impl;
+  connections
+    c1 : port speed_sensor.speed_out -> vehicle_speed;
+  end VehicleControlProcess.impl;
+
+-- 最上层 system
+system VehicleSystem
+  features
+    speed_output : out data port VehicleSpeed;
+  end VehicleSystem;
+
+system implementation VehicleSystem.impl
+  subcomponents
+      speed_sensor_Bridge : device SpeedSensorThread_Bridge.impl;
+    control_proc : process VehicleControlProcess.impl;
+  connections
+      conn_speed_sensor_speed_out : port control_proc.speed_out -> speed_sensor_Bridge.speed_out;
+    conn1 : port control_proc.vehicle_speed -> speed_output;
+    properties
+    Actual_Connection_Binding => (reference(CanBus)) applies to conn_speed_sensor_speed_out;
+  end VehicleSystem.impl;
+
+
+    -- [自动修正] 桥接 device：承接 thread 'SpeedSensorThread' 的 bus access
+  device SpeedSensorThread_Bridge
+    features
+      can_bus_access : requires bus access CanBus;
+      speed_out : in data port VehicleSpeed;
+  end SpeedSensorThread_Bridge;
+
+  device implementation SpeedSensorThread_Bridge.impl
+  end SpeedSensorThread_Bridge.impl;
+
+
+    -- =======================================
+    -- [自动修正] 以下为 AadlReferenceValidator 自动补全的组件声明
+    -- =======================================
+    -- [自动修正] 补全缺失的实现声明: VehicleSpeed (data)
+    data implementation VehicleSpeed.impl
+    end VehicleSpeed.impl;
+
+end BusAccessTest;

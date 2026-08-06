@@ -22,6 +22,38 @@ ollama:
   embedding-model: qwen3-embedding:latest
   timeout: 900000
 
+# DeepSeek API 配置（API Key 请自行填写）
+deepseek:
+  api-key: ""
+  base-url: https://api.deepseek.com
+  chat-model: deepseek-v4-flash
+  embedding-model: deepseek-embedding
+  timeout: 600000
+
+# 豆包（字节跳动火山引擎）API 配置（API Key 请自行填写）
+doubao:
+  api-key: ""
+  base-url: https://ark.cn-beijing.volces.com/api/v3
+  chat-model: ""
+  embedding-model: ""
+  timeout: 600000
+
+# ChatGPT (OpenAI) API 配置（API Key 请自行填写）
+chatgpt:
+  api-key: ""
+  base-url: https://api.openai.com/v1
+  chat-model: gpt-4o-mini
+  embedding-model: text-embedding-3-small
+  timeout: 600000
+
+# Google Gemini API 配置（API Key 请自行填写）
+gemini:
+  api-key: ""
+  base-url: https://generativelanguage.googleapis.com/v1
+  chat-model: gemini-2.0-flash
+  embedding-model: text-embedding-004
+  timeout: 600000
+
 rag:
   top-k: 5
   rerank-top-k: 3
