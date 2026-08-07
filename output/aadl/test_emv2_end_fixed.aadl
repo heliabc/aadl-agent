@@ -1,0 +1,41 @@
+package TestPackage;
+
+system Top_Sys
+end Top_Sys;
+
+system implementation Top_Sys.impl
+annex EMV2 {**
+  error behavior SysErrBehavior
+    events
+      power_fail : error event;
+    states
+      normal : initial state;
+      failed : state;
+    transitions
+      t1 : normal -[power_fail]-> failed;
+  end behavior;
+
+  error type MyErrorType
+    type extensions Fault;
+  end error type;
+
+  propagation MyProp
+    out_power_fail : out propagation error event;
+  end propagation;
+
+  error type set MyErrorSet
+    types MyErrorType;
+  end error type set;
+
+  error flow MyErrorFlow
+    end to end flow fl1 : in_err -> out_err;
+  end error flow;
+
+  error behavior CorrectBehavior
+    states
+      ok : initial state;
+  end behavior;
+**};
+end Top_Sys.impl;
+
+end TestPackage;

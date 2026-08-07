@@ -295,6 +295,20 @@ public class AadlReferenceValidator {
     // ========================= 公共入口 =========================
 
     /**
+     * 纯语法验证（不依赖架构树）。
+     * 用于 fix agent 迭代修复场景，只检查 AADL 代码本身的语法正确性，
+     * 不对比架构树（不检查幻觉组件、遗漏组件、类型不匹配等需要真值表的检查）。
+     *
+     * @param aadlContent 待验证的 AADL 代码
+     * @return 验证结果（含修正后的代码）
+     */
+    public ValidationResult validateSyntax(String aadlContent) {
+        AadlInputParser.ParseResult emptyResult = new AadlInputParser.ParseResult();
+        // archComponents 为空，与架构树对比的检查会自动跳过
+        return validate(aadlContent, emptyResult);
+    }
+
+    /**
      * 验证并修正 AADL 代码。
      *
      * @param aadlContent  生成的 AADL 代码
@@ -361,8 +375,11 @@ public class AadlReferenceValidator {
         // 4j. 检测非法语法 requires data port（应为 in/out data port）
         checkIllegalRequiresDataPort(aadlContent, result);
 
-        // 4k. 检测 properties 中 applies to 引用了未声明的子组件实例
-        checkAppliesToReferences(aadlContent, subcomponentRefs, result);
+        // 4k. 检测 properties 中 applies to 引用了未声明的子组件实例或连接名
+        checkAppliesToReferences(aadlContent, subcomponentRefs, connectionRefs, result);
+
+        // 4ka. 检测 reference 属性值的括号格式（列表型属性应为 (reference (...)) 双括号）
+        checkReferenceParentheses(aadlContent, result);
 
         // 4l. 检测截断/不完整的连接行（缺少分号或端口名）
         checkIncompleteConnections(aadlContent, result);
@@ -531,12 +548,22 @@ public class AadlReferenceValidator {
 
         // 缺少 Actual_Processor_Binding
         if (msg.contains("actual_processor_binding") || msg.contains("处理器绑定") || msg.contains("部署绑定")) {
-            return "在包含该 process/thread 的 system implementation 的 properties 块中添加：Actual_Processor_Binding => reference (处理器实例名) applies to 实例名;";
+            return "在包含该 process/thread 的 system implementation 的 properties 块中添加：Actual_Processor_Binding => (reference (处理器实例名)) applies to 实例名;";
         }
 
         // 数据类型不一致
         if (msg.contains("数据类型") && (msg.contains("不一致") || msg.contains("不匹配"))) {
             return "确保连接两端的 data port 引用相同的数据类型组件。检查两端 features 中声明的类型名是否一致。";
+        }
+
+        // reference 缺少外层括号
+        if (msg.contains("reference") && msg.contains("外层列表括号")) {
+            return "列表类型属性的 reference 值必须使用双括号格式：(reference (目标名))。将 reference (xxx) 改为 (reference (xxx))。";
+        }
+
+        // applies to 引用连接名（属于正常情况，此处仅提供更详细说明）
+        if (msg.contains("applies to") && msg.contains("subcomponents 或 connections")) {
+            return "applies to 可以引用 subcomponents 中的实例名或 connections 中的连接名。确保引用的名称在当前 implementation 作用域内已声明。";
         }
 
         // Data_Size 不一致
@@ -2051,12 +2078,17 @@ public class AadlReferenceValidator {
     // ========================= applies to 引用检测 =========================
 
     /**
-     * 4k. 检测 properties 中 applies to 引用了未声明的子组件实例。
-     * 例如：Actual_Processor_Binding => (reference (MainProcessor)) applies to MainProcess;
-     * 如果 MainProcess 不在当前 implementation 的 subcomponents 中，则报错。
+     * 4k. 检测 properties 中 applies to 引用了未声明的子组件实例或连接名。
+     *
+     * AADL 中 applies to 可以引用：
+     * 1. 子组件实例名（subcomponent instance）—— 最常见，如 Actual_Processor_Binding 绑定到 process 实例
+     * 2. 连接名（connection name）—— 如 Allowed_Connection_Binding 绑定到 port 连接
+     *
+     * 只要是当前 implementation 的 subcomponents 或 connections 中声明的名称，都是合法的 applies to 目标。
      */
     private void checkAppliesToReferences(String aadlContent,
                                            List<SubcomponentRef> subcomponentRefs,
+                                           List<ConnectionRef> connectionRefs,
                                            ValidationResult result) {
         String[] lines = aadlContent.split("\n");
 
@@ -2079,6 +2111,15 @@ public class AadlReferenceValidator {
             if (ref.parentImpl != null) {
                 implInstances.computeIfAbsent(ref.parentImpl, k -> new HashSet<>())
                         .add(ref.instanceName);
+            }
+        }
+
+        // 按 parentImpl 分组 connection 名称（applies to 也可以引用连接名）
+        Map<String, Set<String>> implConnections = new HashMap<>();
+        for (ConnectionRef ref : connectionRefs) {
+            if (ref.parentImpl != null && ref.connName != null) {
+                implConnections.computeIfAbsent(ref.parentImpl, k -> new HashSet<>())
+                        .add(ref.connName);
             }
         }
 
@@ -2110,14 +2151,80 @@ public class AadlReferenceValidator {
 
             Matcher m = appliesToPattern.matcher(line);
             if (m.find() && currentImpl != null) {
-                String targetInstance = m.group(1);
+                String targetName = m.group(1);
                 Set<String> instances = implInstances.get(currentImpl);
-                if (instances == null || !instances.contains(targetInstance)) {
+                Set<String> connections = implConnections.get(currentImpl);
+
+                boolean found = (instances != null && instances.contains(targetName))
+                             || (connections != null && connections.contains(targetName));
+
+                if (!found) {
                     result.errors.add(String.format(
-                            "第%d行: 属性引用错误 - 'applies to %s' 引用的实例 '%s' 未在当前 implementation '%s.impl' 的 subcomponents 中声明",
-                            i + 1, targetInstance, targetInstance, currentImpl
+                            "第%d行: 属性引用错误 - 'applies to %s' 引用的名称 '%s' 未在当前 implementation '%s.impl' 的 subcomponents 或 connections 中声明",
+                            i + 1, targetName, targetName, currentImpl
                     ));
                 }
+            }
+        }
+    }
+
+    // ========================= reference 括号格式检测 =========================
+
+    /**
+     * 4ka. 检测 properties 中 reference 值的括号格式是否正确。
+     *
+     * AADL 中，列表类型的属性值（如 Actual_Processor_Binding、Allowed_Connection_Binding）
+     * 需要使用双括号格式：(reference (TargetName))
+     *   - 外层括号表示这是一个列表值（list value）
+     *   - 内层括号是 reference 关键字的引用语法
+     *
+     * 常见错误：只写 reference (TargetName)，缺少外层括号。
+     *
+     * 自动修复：将 reference (xxx) 替换为 (reference (xxx))
+     */
+    private void checkReferenceParentheses(String aadlContent, ValidationResult result) {
+        String[] lines = aadlContent.split("\n");
+
+        // 匹配：属性值中 reference (xxx) 格式（缺少外层列表括号的情况）
+        // 排除已经是 (reference (xxx)) 的正确格式
+        Pattern singleParenPattern = Pattern.compile(
+                "(?<![(\\s])reference\\s*\\(([^)]+)\\)(?![)\\s])", Pattern.CASE_INSENSITIVE
+        );
+
+        // 更精确的模式：在 => 后面跟着 reference (xxx)，且前面没有 (
+        // 例如：Actual_Processor_Binding => reference (CPU) applies to proc;
+        Pattern missingOuterParenPattern = Pattern.compile(
+                "=>\\s*reference\\s*\\((\\w+)\\)", Pattern.CASE_INSENSITIVE
+        );
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+            String trimmed = line.trim();
+
+            if (trimmed.startsWith("--")) {
+                continue;
+            }
+
+            Matcher m = missingOuterParenPattern.matcher(line);
+            if (m.find()) {
+                String refTarget = m.group(1);
+                result.errors.add(String.format(
+                        "第%d行: 属性语法错误 - reference 值缺少外层列表括号; " +
+                        "列表类型属性应使用 (reference (%s)) 格式，而非 reference (%s)",
+                        i + 1, refTarget, refTarget
+                ));
+
+                // 自动修复：将 reference (xxx) 替换为 (reference (xxx))
+                String fixedLine = line.replaceAll(
+                        "(=>\\s*)reference\\s*\\(" + refTarget + "\\)",
+                        "$1(reference (" + refTarget + "))"
+                );
+                result.fixes.add(new ValidationFix(
+                        i + 1,
+                        line.trim(),
+                        fixedLine.trim(),
+                        "补充 reference 的外层列表括号：reference (" + refTarget + ") → (reference (" + refTarget + "))"
+                ));
             }
         }
     }
@@ -4940,7 +5047,7 @@ public class AadlReferenceValidator {
                             }
                             if (refactorInfo != null && refactorInfo[3] != null) {
                                 result.fixes.add(String.format(
-                                        "已将 process '%s' 从 processor '%s' 提取到 system '%s' 中，并补充 Actual_Processor_Binding => reference (%s)",
+                                        "已将 process '%s' 从 processor '%s' 提取到 system '%s' 中，并补充 Actual_Processor_Binding => (reference (%s))",
                                         instanceName, currentImpl, refactorInfo[3], refactorInfo[4]
                                 ));
                             } else {
@@ -5065,7 +5172,7 @@ public class AadlReferenceValidator {
                     resultLines.add("    properties");
                     for (String[] r : refactors) {
                         resultLines.add(String.format(
-                                "      Actual_Processor_Binding => reference (%s) applies to %s;",
+                                "      Actual_Processor_Binding => (reference (%s)) applies to %s;",
                                 r[4], r[0]
                         ));
                     }
@@ -5108,7 +5215,7 @@ public class AadlReferenceValidator {
                     List<String[]> refactors = systemRefactors.get(currentImpl);
                     for (String[] r : refactors) {
                         resultLines.add(String.format(
-                                "      Actual_Processor_Binding => reference (%s) applies to %s;",
+                                "      Actual_Processor_Binding => (reference (%s)) applies to %s;",
                                 r[4], r[0]
                         ));
                     }
@@ -6183,9 +6290,26 @@ public class AadlReferenceValidator {
         // 记录重复项（避免重复报错）
         Map<String, Set<String>> reportedDups = new HashMap<>();
 
+        // 收集需要自动重命名的实例（实例名=类型名的情况）
+        // key=原实例名, value=新实例名
+        Map<String, String> autoRenames = new LinkedHashMap<>();
+
         for (SubcomponentRef ref : subcomponentRefs) {
             if (ref.parentImpl == null) continue;
             Set<String> names = implInstances.computeIfAbsent(ref.parentImpl, k -> new LinkedHashSet<>());
+
+            // 规则0：实例名不能与其引用的组件类型名相同（R13强制规则）
+            // 例如：MainProcessor : processor MainProcessor.impl; → 应改为 main_cpu : processor MainProcessor.impl;
+            if (ref.typeName != null && ref.instanceName.equals(ref.typeName)) {
+                String newInstanceName = generateInstanceName(ref.componentKeyword, ref.typeName, autoRenames.values());
+                autoRenames.put(ref.instanceName, newInstanceName);
+                result.errors.add(String.format(
+                        "第%d行: 命名空间冲突 - 实例名 '%s' 与其引用的组件类型名 '%s' 完全相同（违反R13强制规则）; " +
+                        "实例名必须与类型名区分，建议改为 '%s'（已自动修正）",
+                        ref.lineNumber, ref.instanceName, ref.typeName, newInstanceName
+                ));
+            }
+
             // 规则1：实例名不能与当前 impl 所属的类型名相同
             if (ref.instanceName.equals(ref.parentImpl)) {
                 result.errors.add(String.format(
@@ -6207,6 +6331,41 @@ public class AadlReferenceValidator {
                 }
             } else {
                 names.add(ref.instanceName);
+            }
+        }
+
+        // 执行自动重命名：如果有实例名=类型名的情况，全局替换
+        if (!autoRenames.isEmpty() && result.fixedContent == null) {
+            String fixed = applyInstanceRenames(aadlContent, autoRenames);
+            result.fixedContent = fixed;
+            for (Map.Entry<String, String> e : autoRenames.entrySet()) {
+                result.fixes.add(String.format(
+                        "实例名自动重命名：'%s' → '%s'（避免实例名与类型名相同，违反R13）",
+                        e.getKey(), e.getValue()
+                ));
+            }
+            // 更新 subcomponentRefs 中的实例名（后续验证使用修正后的名称）
+            for (SubcomponentRef ref : subcomponentRefs) {
+                if (autoRenames.containsKey(ref.instanceName)) {
+                    ref.instanceName = autoRenames.get(ref.instanceName);
+                }
+            }
+            // 更新 connectionRefs 中的实例引用
+            for (ConnectionRef conn : connectionRefs) {
+                if (conn.sourceInstance != null && autoRenames.containsKey(conn.sourceInstance)) {
+                    conn.sourceInstance = autoRenames.get(conn.sourceInstance);
+                }
+                if (conn.destInstance != null && autoRenames.containsKey(conn.destInstance)) {
+                    conn.destInstance = autoRenames.get(conn.destInstance);
+                }
+            }
+            // 重新构建 implInstances（因为名称变了）
+            implInstances.clear();
+            for (SubcomponentRef ref : subcomponentRefs) {
+                if (ref.parentImpl != null) {
+                    implInstances.computeIfAbsent(ref.parentImpl, k -> new LinkedHashSet<>())
+                            .add(ref.instanceName);
+                }
             }
         }
 
@@ -6249,6 +6408,134 @@ public class AadlReferenceValidator {
     }
 
     /**
+     * 根据组件类型生成合适的实例名后缀。
+     * 命名规则（与R13一致）：
+     * - processor → _cpu
+     * - memory → _mem（RAM→_ram, Flash/ROM→_rom）
+     * - device → _dev
+     * - process → _proc
+     * - thread → _thr
+     * - bus → _bus（总线一般已有数字后缀）
+     * - system/subsystem → _sys
+     * - virtual processor → _vp
+     * - data/subprogram → _inst
+     */
+    private String generateInstanceName(String componentKeyword, String typeName, Collection<String> existingNames) {
+        if (typeName == null || typeName.isEmpty()) {
+            return "instance";
+        }
+
+        // 默认策略：将大驼峰类型名转为小驼峰（首字母小写）
+        // 例：MainProcessor → mainProcessor，KernelProcess → kernelProcess
+        String candidate = toCamelCase(typeName);
+
+        // 如果名称已存在，加数字后缀
+        int counter = 1;
+        Set<String> existing = new HashSet<>(existingNames);
+        while (existing.contains(candidate)) {
+            candidate = toCamelCase(typeName) + counter;
+            counter++;
+        }
+
+        return candidate;
+    }
+
+    /**
+     * 将大驼峰命名转为小驼峰（首字母小写）。
+     * 例如：MainProcessor → mainProcessor
+     */
+    private String toCamelCase(String name) {
+        if (name == null || name.isEmpty()) return name;
+        if (name.length() == 1) return name.toLowerCase();
+        return Character.toLowerCase(name.charAt(0)) + name.substring(1);
+    }
+
+    /**
+     * 将大驼峰命名转换为小写下划线命名。
+     * 例如：MainProcessor → main_processor, CANController → can_controller
+     */
+    private String toSnakeCase(String name) {
+        if (name == null || name.isEmpty()) return name;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < name.length(); i++) {
+            char c = name.charAt(i);
+            if (Character.isUpperCase(c)) {
+                if (i > 0) {
+                    // 检查是否是连续大写字母中的最后一个（如 CANController 中的 N 后面跟 C）
+                    char prev = name.charAt(i - 1);
+                    char next = (i + 1 < name.length()) ? name.charAt(i + 1) : 'a';
+                    if (Character.isUpperCase(prev) && Character.isLowerCase(next)) {
+                        sb.append("_");
+                    } else if (Character.isLowerCase(prev)) {
+                        sb.append("_");
+                    }
+                }
+                sb.append(Character.toLowerCase(c));
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
+     * 在AADL代码中执行实例名全局替换。
+     * 需要替换的位置：
+     * 1. subcomponents 行：`OldName : category Type.impl;` → `NewName : category Type.impl;`
+     * 2. connections 行：`port OldName.port -> ...` 或 `... -> OldName.port`
+     * 3. properties 行：`reference (OldName)`、`applies to OldName`
+     *
+     * 使用单词边界匹配避免误替换（如替换 CPU 时不应影响 CPUImpl）。
+     */
+    private String applyInstanceRenames(String aadlContent, Map<String, String> renames) {
+        String[] lines = aadlContent.split("\n");
+        List<String> result = new ArrayList<>();
+
+        for (String line : lines) {
+            String modified = line;
+            // 跳过纯注释行（但代码行尾的注释不影响替换）
+            String trimmed = line.trim();
+            if (trimmed.startsWith("--")) {
+                result.add(line);
+                continue;
+            }
+
+            for (Map.Entry<String, String> e : renames.entrySet()) {
+                String oldName = e.getKey();
+                String newName = e.getValue();
+
+                // 使用单词边界替换，确保精确匹配
+                // 但注意在 AADL 中，实例名出现在：
+                // 1. 行首（subcomponents 声明）：`OldName :`
+                // 2. 点号前面（端口引用）：`OldName.port`
+                // 3. 括号内（reference/applies to）：`(OldName)` 或 `to OldName`
+                // 4. 箭头旁边：`-> OldName.`
+                modified = replaceWord(modified, oldName, newName);
+            }
+
+            result.add(modified);
+        }
+
+        return String.join("\n", result);
+    }
+
+    /**
+     * 安全的单词替换：只替换作为独立标识符出现的 oldName。
+     */
+    private String replaceWord(String text, String oldWord, String newWord) {
+        // 匹配 oldWord 作为独立标识符：前后不能是字母/数字/下划线/点
+        // 注意：点号后面的是端口名，所以 OldName.port 中的 OldName 前面可能是空格、箭头、括号等
+        Pattern p = Pattern.compile("(?<![A-Za-z0-9_.])" + Pattern.quote(oldWord) + "(?![A-Za-z0-9_])");
+        Matcher m = p.matcher(text);
+        StringBuffer sb = new StringBuffer();
+        while (m.find()) {
+            m.appendReplacement(sb, Matcher.quoteReplacement(newWord));
+        }
+        m.appendTail(sb);
+        return sb.toString();
+    }
+
+    /**
      * 4aa. 检测畸形 end 语句。
      * 通过追踪组件声明栈来识别畸形 end：凡是以 "end " 开头但不符合正常格式的，都算畸形。
      * 正常格式：end 标识符; 或 end 标识符.impl;
@@ -6256,7 +6543,7 @@ public class AadlReferenceValidator {
     private void checkMalformedEndStatements(String aadlContent, ValidationResult result) {
         String[] lines = aadlContent.split("\n");
         // 组件声明开头：类型关键字 + 组件名（可选 .impl）
-        Pattern declStartPattern = Pattern.compile(
+        Pattern implStartPattern = Pattern.compile(
                 "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|" +
                 "virtual\\s+processor|virtual\\s+bus|thread\\s+group|abstract)\\s+" +
                 "implementation\\s+([A-Za-z_]\\w*)\\.impl\\b",
@@ -6268,25 +6555,107 @@ public class AadlReferenceValidator {
                 "([A-Za-z_]\\w*)\\s*$",
                 Pattern.CASE_INSENSITIVE
         );
-        // 正常 end 语句
+        // EMV2 块开始模式 -> 期望的 end 名称
+        // 注意：长模式在前，避免短模式先匹配（如 composite error behavior 须在 error behavior 前）
+        String[][] emv2BlockPatterns = {
+            {"^\\s*composite\\s+error\\s+behavior\\s+([A-Za-z_]\\w*)\\s*$", "behavior"},
+            {"^\\s*error\\s+behavior\\s+([A-Za-z_]\\w*)\\s*$", "behavior"},
+            {"^\\s*error\\s+type\\s+set\\s+([A-Za-z_]\\w*)\\s*$", "error type set"},
+            {"^\\s*error\\s+type\\s+([A-Za-z_]\\w*)\\s*$", "error type"},
+            {"^\\s*error\\s+flow\\s+([A-Za-z_]\\w*)\\s*$", "error flow"},
+            {"^\\s*propagation\\s+([A-Za-z_]\\w*)\\s*$", "propagation"},
+        };
+        // EMV2 内部以 end 开头但不是块结束的语句（如 end to end flow 声明）
+        // 注意：不要添加 propagation / error type 等作为块结束的关键字，避免误判
+        Pattern emv2InternalEndPattern = Pattern.compile(
+                "^\\s*end\\s+to\\s+end\\s+flow\\b",
+                Pattern.CASE_INSENSITIVE
+        );
+        // 正常 end 语句格式（支持多单词 end 名称，如 end error type;）
         Pattern normalEndPattern = Pattern.compile(
-                "^\\s*end\\s+[A-Za-z_]\\w*(?:\\.impl)?\\s*;\\s*$"
+                "^\\s*end\\s+(.+?)\\s*;\\s*$", Pattern.CASE_INSENSITIVE
         );
         // 疑似 end 语句：以 end 开头，以分号结尾
         Pattern suspiciousEndPattern = Pattern.compile(
                 "^\\s*end\\s+.*;\\s*$", Pattern.CASE_INSENSITIVE
         );
 
+        // 块栈：存期望的 end 名称
+        Stack<String> blockStack = new Stack<>();
+        // package 声明模式（去掉末尾分号）
+        Pattern packageStartPattern = Pattern.compile(
+                "^\\s*package\\s+([A-Za-z_]\\w*(?:\\.[A-Za-z_]\\w*)*)\\s*;?",
+                Pattern.CASE_INSENSITIVE
+        );
+
         for (int i = 0; i < lines.length; i++) {
             String trimmed = lines[i].trim();
             if (trimmed.startsWith("--")) continue;
 
-            if (suspiciousEndPattern.matcher(trimmed).find()
-                    && !normalEndPattern.matcher(trimmed).matches()) {
-                result.errors.add(String.format(
-                        "第%d行: 畸形 end 语句 '%s' — 不符合 'end 标识符[.impl];' 的规范格式",
-                        i + 1, trimmed
-                ));
+            // package 声明开头
+            Matcher pkgMatcher = packageStartPattern.matcher(trimmed);
+            if (pkgMatcher.find()) {
+                blockStack.push(pkgMatcher.group(1));
+                continue;
+            }
+
+            // 普通 AADL implementation 声明开头
+            Matcher implMatcher = implStartPattern.matcher(trimmed);
+            if (implMatcher.find()) {
+                blockStack.push(implMatcher.group(2) + ".impl");
+                continue;
+            }
+            // 普通 AADL 类型声明开头
+            Matcher typeMatcher = typeStartPattern.matcher(trimmed);
+            if (typeMatcher.find() && !trimmed.toLowerCase().contains("implementation")) {
+                blockStack.push(typeMatcher.group(2));
+                continue;
+            }
+
+            // EMV2 块开始
+            boolean emv2Found = false;
+            for (String[] pair : emv2BlockPatterns) {
+                Pattern p = Pattern.compile(pair[0], Pattern.CASE_INSENSITIVE);
+                Matcher m = p.matcher(trimmed);
+                if (m.find()) {
+                    blockStack.push(pair[1]);
+                    emv2Found = true;
+                    break;
+                }
+            }
+            if (emv2Found) continue;
+
+            // 跳过 EMV2 内部以 end 开头但不是块结束的语句（如 end to end flow 声明）
+            if (emv2InternalEndPattern.matcher(trimmed).find()) {
+                continue;
+            }
+
+            // end 语句检查
+            if (suspiciousEndPattern.matcher(trimmed).find()) {
+                Matcher endMatcher = normalEndPattern.matcher(trimmed);
+                if (endMatcher.matches()) {
+                    // 格式正常，检查名称是否匹配
+                    String endName = endMatcher.group(1);
+                    if (!blockStack.isEmpty()) {
+                        String expected = blockStack.peek();
+                        if (!endName.equalsIgnoreCase(expected)) {
+                            result.errors.add(String.format(
+                                    "第%d行: end 语句名称错误 '%s' — 当前块期望结束为 'end %s;'",
+                                    i + 1, trimmed, expected
+                            ));
+                        }
+                        blockStack.pop();
+                    }
+                } else {
+                    // 格式畸形
+                    result.errors.add(String.format(
+                            "第%d行: 畸形 end 语句 '%s' — 不符合 'end 标识符;' 的规范格式",
+                            i + 1, trimmed
+                    ));
+                    if (!blockStack.isEmpty()) {
+                        blockStack.pop();
+                    }
+                }
             }
         }
     }
@@ -6317,20 +6686,35 @@ public class AadlReferenceValidator {
                 "([A-Za-z_]\\w*)\\s*$",
                 Pattern.CASE_INSENSITIVE
         );
-        // 正常 end 语句
+        // EMV2 块开始模式 -> 期望的 end 名称（长模式在前）
+        String[][] emv2BlockPatterns = {
+            {"^\\s*composite\\s+error\\s+behavior\\s+([A-Za-z_]\\w*)\\s*$", "behavior"},
+            {"^\\s*error\\s+behavior\\s+([A-Za-z_]\\w*)\\s*$", "behavior"},
+            {"^\\s*error\\s+type\\s+set\\s+([A-Za-z_]\\w*)\\s*$", "error type set"},
+            {"^\\s*error\\s+type\\s+([A-Za-z_]\\w*)\\s*$", "error type"},
+            {"^\\s*error\\s+flow\\s+([A-Za-z_]\\w*)\\s*$", "error flow"},
+            {"^\\s*propagation\\s+([A-Za-z_]\\w*)\\s*$", "propagation"},
+        };
+        // EMV2 内部以 end 开头但不是块结束的语句（end to end flow 声明）
+        Pattern emv2InternalEndPattern = Pattern.compile(
+                "^\\s*end\\s+to\\s+end\\s+flow\\b",
+                Pattern.CASE_INSENSITIVE
+        );
+        // 正常 end 语句（支持多单词名称，如 end error type;）
         Pattern normalEndPattern = Pattern.compile(
-                "^(\\s*)end\\s+([A-Za-z_]\\w*(?:\\.impl)?)\\s*;\\s*$"
+                "^(\\s*)end\\s+(.+?)\\s*;\\s*$", Pattern.CASE_INSENSITIVE
         );
         // 疑似畸形 end 语句
         Pattern suspiciousEndPattern = Pattern.compile(
                 "^(\\s*)end\\s+.*;\\s*$", Pattern.CASE_INSENSITIVE
         );
-        // package 声明
+        // package 声明（去掉末尾分号）
         Pattern packageStartPattern = Pattern.compile(
-                "^\\s*package\\s+(\\S+)", Pattern.CASE_INSENSITIVE
+                "^\\s*package\\s+([A-Za-z_]\\w*(?:\\.[A-Za-z_]\\w*)*)\\s*;?",
+                Pattern.CASE_INSENSITIVE
         );
 
-        // 组件栈：存组件全名（如 "PwmBus" 或 "PwmBus.impl"）
+        // 组件栈：存期望的 end 名称（如 "PwmBus.impl"、"behavior"、"error type"）
         Stack<String> componentStack = new Stack<>();
 
         for (int i = 0; i < lines.length; i++) {
@@ -6366,6 +6750,26 @@ public class AadlReferenceValidator {
                 continue;
             }
 
+            // EMV2 块开头（error behavior / error type / propagation 等）
+            boolean emv2Found = false;
+            for (String[] pair : emv2BlockPatterns) {
+                Pattern p = Pattern.compile(pair[0], Pattern.CASE_INSENSITIVE);
+                Matcher m = p.matcher(trimmed);
+                if (m.find()) {
+                    componentStack.push(pair[1]);
+                    resultLines.add(line);
+                    emv2Found = true;
+                    break;
+                }
+            }
+            if (emv2Found) continue;
+
+            // 跳过 EMV2 内部以 end 开头但不是块结束的语句
+            if (emv2InternalEndPattern.matcher(trimmed).find()) {
+                resultLines.add(line);
+                continue;
+            }
+
             // 正常 end 语句：先校验名称是否匹配，匹配才弹出栈顶；不匹配则交由下方畸形逻辑修正
             // 去掉行尾注释后再匹配，支持 "end Foo;  -- xxx" 这种写法
             String trimmedNoComment = trimmed.replaceAll("--.*$", "").trim();
@@ -6387,12 +6791,18 @@ public class AadlReferenceValidator {
                 }
             }
 
-            // 畸形 end 语句：用栈顶名字替换（同样去掉行尾注释再匹配）
+            // 畸形/名称错误的 end 语句：用栈顶名字替换（同样去掉行尾注释再匹配）
             Matcher susMatcher = suspiciousEndPattern.matcher(trimmedNoComment);
             if (susMatcher.find()) {
                 // 从原始行提取缩进
                 Matcher indentMatcher = Pattern.compile("^(\\s*)").matcher(line);
                 String indent = indentMatcher.find() ? indentMatcher.group(1) : "";
+                // 提取行尾注释（如果有的话），修复后保留
+                String trailingComment = "";
+                int commentIdx = line.indexOf("--");
+                if (commentIdx >= 0) {
+                    trailingComment = "  " + line.substring(commentIdx).trim();
+                }
 
                 if (componentStack.isEmpty()) {
                     // 栈空说明没有未关闭的组件，这行畸形 end 是多余的，直接删除
@@ -6405,11 +6815,11 @@ public class AadlReferenceValidator {
                 }
 
                 String correctName = componentStack.pop();
-                String fixedLine = indent + "end " + correctName + ";";
+                String fixedLine = indent + "end " + correctName + ";" + trailingComment;
 
                 fixCount++;
                 result.fixes.add(String.format(
-                        "第%d行: 已修正畸形 end 语句 '%s' → 'end %s;'（基于当前组件上下文）",
+                        "第%d行: 已修正 end 语句 '%s' → 'end %s;'（基于当前块上下文）",
                         i + 1, trimmed, correctName
                 ));
                 resultLines.add(fixedLine);

@@ -110,7 +110,12 @@ public class OllamaClient implements LlmClient {
                     log.warn("Ollama chat response: response body is null");
                 }
             } else {
-                log.error("Ollama chat request failed with status: {}", response.getStatusCode());
+                if (response.getStatusCode() == HttpStatus.NOT_FOUND) {
+                    log.error("Ollama chat 404: 模型 '{}' 不存在。请检查 application.yml 中的 ollama.chat-model 配置，" +
+                            "或运行 'ollama pull {}' 下载模型。可用模型列表: 'ollama list'", model, model);
+                } else {
+                    log.error("Ollama chat request failed with status: {}", response.getStatusCode());
+                }
             }
             return null;
         } catch (RestClientException e) {

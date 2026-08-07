@@ -172,8 +172,12 @@ public class AadlInputParser {
     private void buildComponentList(StringBuilder sb, List<ArchNode> nodes) {
         sb.append("═══════════════════════════════════════════════════════════\n");
         sb.append("【组件清单】以下为全部组件，AADL 中不得出现清单之外的组件，也不得遗漏任何组件。\n");
+        sb.append("核心原则：subcomponents 中实例名绝对不能与组件类型名相同！\n");
+        sb.append("   区分方法：类型名用大驼峰（如 MainProcessor），实例名用小驼峰或加功能后缀（如 mainCpu、main_cpu、cpu0 均可）\n");
+        sb.append("   错误：MainProcessor : processor MainProcessor.impl;\n");
+        sb.append("   正确：mainCpu : processor MainProcessor.impl;  或  cpu0 : processor MainProcessor.impl;\n");
         sb.append("═══════════════════════════════════════════════════════════\n");
-        sb.append(String.format("  %-30s %-15s %s%n", "组件名", "AADL类型", "逻辑父节点"));
+        sb.append(String.format("  %-30s %-15s %s%n", "组件名(类型名)", "AADL类型", "逻辑父节点"));
         sb.append("  ─────────────────────────────────────────────────────────\n");
 
         for (ArchNode node : nodes) {

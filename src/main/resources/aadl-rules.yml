@@ -7,11 +7,30 @@ task_description: |
   任务目标：根据架构树和模块分析结果，按照给定的规则生成完整的AADL模型文件。
 
 input_section: |
+  【最高优先级警告 - 生成前必读】
+  在生成任何 subcomponents 实例之前，必须记住：实例名绝对不能和组件类型名完全相同！
+  这是最常见也是最严重的错误！
+  
+  核心原则：类型名用大驼峰（如 MainProcessor），实例名只要不同即可：
+  - 小驼峰（mainProcessor）
+  - 小写下划线（main_processor）
+  - 数字编号（cpu0）
+  - 加描述性后缀（mainCpu、cpu_main）
+  风格不限，只要不与类型名完全相同！
+  
+  错误示例（绝对禁止）：
+    MainProcessor : processor MainProcessor.impl;
+  正确示例（都可以）：
+    mainProcessor : processor MainProcessor.impl;
+    main_cpu : processor MainProcessor.impl;
+    cpu0 : processor MainProcessor.impl;
+  
   以下是根据架构树和模块分析解析出的结构化组件清单和约束。请严格按照此清单生成 AADL 代码：
   - 清单中列出的组件必须全部出现在 AADL 代码中，不得遗漏。
   - 不得生成清单之外的组件。
   - 每个组件的 AADL 类型必须与清单中指定的类型完全一致。
   - 模块约束中的功能描述和关联组件信息必须映射到 AADL 的 properties 和 connections 中。
+  - 【再次强调】生成 subcomponents 时，实例名只要不等于类型名即可，不要直接复制类型名作实例名！
 
 architecture_label: 架构树：
 
@@ -50,11 +69,11 @@ global:
     R7a【总线建模规范】正确的总线建模步骤：
       1. 纯硬件组件（processor/memory）通过 `requires bus access` 连接到 bus（bus access 连接，用 `<->`）。
       2. 建立一个 device 组件作为软硬件数据桥梁：它既有 data port（与软件的 port 相连），又有 `requires bus access`（连到 bus）。
-      3. 软件组件与 device 之间的 port 连接（数据线），通过 `Allowed_Connection_Binding => reference (总线实例名) applies to 连接名;` 属性绑定到指定总线上，明确数据在哪条总线上传输。
+      3. 软件组件与 device 之间的 port 连接（数据线），通过 `Allowed_Connection_Binding => (reference (总线实例名)) applies to 连接名;` 属性绑定到指定总线上，明确数据在哪条总线上传输。
       4. bus 组件自身通过 `provides bus access` 声明总线访问点。
     R7b【连接类型与实体匹配】软件实体（thread/process）connections 只能有 port 连接；纯硬件实体（processor/memory/bus）connections 只能有 bus access 连接；device 同时允许 port 和 bus access；system 均可。
     R8【三步顺序】implementation 内部必须按 subcomponents → connections → properties 顺序编写。
-    R9【subcomponents 规范】格式：`实例名 : 组件关键字 组件类型名.impl;`，不得为空。父子类型必须合法（见下表），非法嵌套将被重构或删除。process 误放 processor 下时自动提取到 system 层并补 Actual_Processor_Binding；其他非法嵌套直接删除。
+    R9【subcomponents 规范】格式：`实例名 : 组件关键字 组件类型名.impl;`，不得为空。**【命名核心要求】实例名严禁与组件类型名完全相同！** 类型名用大驼峰，实例名用小驼峰/小写下划线/数字编号等方式区分即可。父子类型必须合法（见下表），非法嵌套将被重构或删除。process 误放 processor 下时自动提取到 system 层并补 Actual_Processor_Binding；其他非法嵌套直接删除。
 
       【subcomponent 包含关系表】
       软件：process→thread/thread group/subprogram(group)/data；thread→subprogram(group)/data；subprogram→data；data→data/subprogram
@@ -62,10 +81,30 @@ global:
       系统：system→除 thread/thread group 外所有类型（thread 必须包装进 process）；abstract→所有类型
       禁忌：thread 不能直接放 system 或 virtual processor 下；process 不能放 processor 下；system 不能放 process/thread 下。
 
-    R10【applies to 规范】properties 中 `applies to` 引用的实例名必须在当前 implementation 的 subcomponents 中已声明。
-    R11【属性绑定完整性】process 和 thread 必须在包含它的 system 的 properties 块中通过 `Actual_Processor_Binding => reference (处理器实例名) applies to 实例名;` 声明部署绑定。缺失将导致代码生成无法确定软硬件映射。
+    R10【applies to 规范】properties 中 `applies to` 引用的名称必须在当前 implementation 的 subcomponents 或 connections 中已声明（可以引用子组件实例名，也可以引用连接名，如 Allowed_Connection_Binding 绑定到 port 连接）。
+    R11【属性绑定完整性】process 和 thread 必须在包含它的 system 的 properties 块中通过 `Actual_Processor_Binding => (reference (处理器实例名)) applies to 实例名;` 声明部署绑定。缺失将导致代码生成无法确定软硬件映射。
     R12【数据类型深度一致】连接两端 data port 引用的 data 组件若有 `Data_Size` 属性，其值必须一致。不一致将导致 SCADE/Rust 代码生成时缓冲区溢出或数据截断。
-    R13【命名空间唯一】subcomponents 实例名、connections 连接名、组件类型名三者不得重复。重名将导致编译器 AST 解析崩溃。实例名与类型名冲突时追加 `_inst` 后缀，连接名冲突时追加 `_conn` 后缀。
+    R13【命名空间唯一-强制-最高优先级】subcomponents 实例名、connections 连接名、组件类型名三者不得重复！
+      【最严重违规】实例名严禁与组件类型名完全相同！这是最常见的错误！
+      
+      核心原则：类型名用大驼峰（如 MainProcessor、KernelProcess），实例名只要与类型名不同即可，可以是：
+      - 小驼峰命名（如 mainProcessor、kernelProc）
+      - 小写下划线命名（如 main_processor、kernel_proc）
+      - 加功能后缀（如 main_cpu、kernel_proc、can_dev、can_bus_1）
+      - 数字编号（如 cpu0、ram0、sensor1）
+      只要不与类型名完全相同即可，具体命名风格可根据上下文灵活选择。
+      
+      正确示例（实例名≠类型名）：
+        `main_cpu : processor MainProcessor.impl;`
+        `mainProcessor : processor MainProcessor.impl;`
+        `cpu0 : processor MainProcessor.impl;`
+        `kernel_proc : process KernelProcess.impl;`
+      
+      错误示例（绝对禁止，违反将导致AADL编译失败）：
+        `MainProcessor : processor MainProcessor.impl;`  -- 实例名=类型名！
+        `KernelProcess : process KernelProcess.impl;`    -- 实例名=类型名！
+      
+      实例名与类型名冲突时，静态分析器会自动重命名；但请在生成时就遵守规则。
 
 # 同义词映射表：key 为规范词，value 为该词的所有同义词/近义词列表
 # 匹配时自动展开：若规则关键词命中某组任一成员（不区分大小写），该组全部成员参与匹配
@@ -121,16 +160,25 @@ rules:
 
       system implementation Top_{项目名}.impl
       subcomponents
-        系统管理器名 : device 系统管理器名.impl;
-        系统模块名 : system 系统模块名.impl;
-        子系统名 : system 子系统名.impl;
-        设备名 : device 设备名.impl;
-        总线实例名 : bus 总线类型名.impl;
+        sys_mgr : device 系统管理器名.impl;
+        sys_mod : system 系统模块名.impl;
+        -- 子系统实例名用小驼峰（如 nav_subsys、ctrl_subsys），类型名为子系统名
+        子系统实例名 : system 子系统名.impl;
+        -- 设备实例名用小驼峰（如 serial_dev、can_dev），类型名为设备名
+        设备实例名 : device 设备名.impl;
+        -- 总线实例名：总线类型名_1、总线类型名_2...（与类型名区分）
+        总线类型名_1 : bus 总线类型名.impl;
       end Top_{项目名}.impl;
 
-      规则：
-      1. 子系统作为 system 子组件放入 subcomponents，同时单独生成声明和实现（详见子系统模板）。
-      2. 如果需求中给出 N 个总线，则生成 N 个 bus 子组件，命名为 总线类型名_1、...、总线类型名_N。总线为 0 时不生成 bus。
+      【实例命名规范-核心原则】
+      - 实例名严禁与组件类型名完全相同！例如不能写 `MainProcessor : processor MainProcessor.impl;`
+      - 类型名用大驼峰，实例名用小驼峰/小写下划线/数字编号等方式区分即可，命名风格灵活选择
+      - 以下都是合法示例（注意实例名≠类型名）：
+        * `mainCpu : processor MainProcessor.impl;`（小驼峰）
+        * `main_cpu : processor MainProcessor.impl;`（小写下划线）
+        * `cpu0 : processor MainProcessor.impl;`（数字编号）
+        * `kernelProc : process KernelProcess.impl;`（小驼峰）
+      - 错误示例：`MainProcessor : processor MainProcessor.impl;`（实例名=类型名，违反R13）
 
   - id: system_manager
     title: 系统管理器模板
@@ -154,13 +202,19 @@ rules:
 
       system implementation 系统模块名.impl
       subcomponents
-        系统模块管理器名 : device 系统模块管理器名.impl;
-        子系统名 : system 子系统名.impl;
-        软件分区名 : process 软件分区名.impl;
-        网络接口名 : device 网络接口名.impl;
-        处理器名 : processor 处理器名.impl;
-        存储器名 : memory 存储器名.impl;
+        -- 注意：实例名严禁与类型名相同！
+        modMgr       : device 模块管理器名.impl;       -- 小驼峰
+        navSubsys    : system NavigationSubsystem.impl;  -- 小驼峰
+        kernelProc   : process KernelPartition.impl;     -- 小驼峰
+        ethDev       : device EthernetInterface.impl;    -- 小驼峰
+        mainCpu      : processor MainProcessor.impl;     -- 小驼峰
+        mainRam      : memory MainMemory.impl;           -- 小驼峰
+        canBus1      : bus CanBus.impl;                  -- 数字编号
       end 系统模块名.impl;
+
+      【命名核心原则】
+      错误：`NavigationSubsystem : system NavigationSubsystem.impl;`（实例名=类型名，绝对禁止）
+      正确：只要实例名≠类型名即可，小驼峰、小写下划线、数字编号都可以
 
       规则：
       1. 系统模块内部可包含模块管理器、子系统、软件分区、网络接口、处理器和存储器。
@@ -178,10 +232,15 @@ rules:
 
       system implementation 子系统名.impl
       subcomponents
-        子子系统名 : system 子子系统名.impl;
-        设备名 : device 设备名.impl;
-        软件分区名 : process 软件分区名.impl;
+        -- 注意：实例名严禁与类型名相同！
+        detectSubsys : system DetectionSubsystem.impl;   -- 小驼峰
+        tempSensor   : device TempSensor.impl;          -- 小驼峰
+        ctrlProc     : process ControlProcess.impl;     -- 小驼峰
       end 子系统名.impl;
+
+      【命名核心原则】
+      错误：`DetectionSubsystem : system DetectionSubsystem.impl;`（实例名=类型名，绝对禁止）
+      正确：只要实例名≠类型名即可，命名风格灵活选择
 
       规则：
       1. 子系统统一建模为 system，在父 system implementation 的 subcomponents 中实例化，同时单独生成声明和实现。
@@ -208,8 +267,15 @@ rules:
 
       process implementation 分区名.impl
       subcomponents
-        任务名 : thread 任务名.impl;
+        -- 注意：实例名严禁与类型名相同！
+        schedThr  : thread TaskScheduler.impl;      -- 小驼峰
+        timerThr  : thread TimerManager.impl;       -- 小驼峰
+        commThr   : thread CommThread.impl;         -- 小驼峰
       end 分区名.impl;
+
+      【命名核心原则】
+      错误：`TaskScheduler : thread TaskScheduler.impl;`（实例名=类型名，绝对禁止）
+      正确：只要实例名≠类型名即可
 
       规则：process 只用于软件分区或进程，内部包含对应的 thread。
 
@@ -245,8 +311,9 @@ rules:
 
       processor implementation 处理器名.impl
       subcomponents
-        分区名_runtime : virtual processor 分区名_runtime.impl;
-        网络接口名_runtime : virtual processor 网络接口名_runtime.impl;
+        -- 注意：实例名严禁与类型名相同！
+        partVp  : virtual processor 分区名_runtime.impl;     -- 小驼峰
+        netVp   : virtual processor 网络接口名_runtime.impl;  -- 小驼峰
       end 处理器名.impl;
 
       virtual processor 分区名_runtime
@@ -255,8 +322,18 @@ rules:
       virtual processor implementation 分区名_runtime.impl
       end 分区名_runtime.impl;
 
+      virtual processor 网络接口名_runtime
+      end 网络接口名_runtime;
+
+      virtual processor implementation 网络接口名_runtime.impl
+      end 网络接口名_runtime.impl;
+
+      【命名核心原则】
+      错误：`KernelPartition_runtime : virtual processor KernelPartition_runtime.impl;`（实例名=类型名，绝对禁止）
+      正确：只要实例名≠类型名即可
+
       规则：
-      1. 需求中"某分区运行"或"网络接口运行"均对应一个 virtual processor，命名为 对象名_runtime，需单独声明和实现。
+      1. 需求中"某分区运行"或"网络接口运行"均对应一个 virtual processor，类型名为 对象名_runtime，实例名加 _vp 后缀（如 part_vp、net_vp）。
       2. processor 的 subcomponents 中只能放 virtual processor（见 R9）。
 
   - id: memory
@@ -269,8 +346,9 @@ rules:
 
       memory implementation 存储器名.impl
       subcomponents
-        分区名_memory : memory 分区名_memory.impl;
-        网络接口名_memory : memory 网络接口名_memory.impl;
+        -- 注意：实例名严禁与类型名相同！
+        partMem  : memory 分区名_memory.impl;     -- 小驼峰
+        ifMem    : memory 网络接口名_memory.impl;  -- 小驼峰
       end 存储器名.impl;
 
       memory 分区名_memory
@@ -279,8 +357,18 @@ rules:
       memory implementation 分区名_memory.impl
       end 分区名_memory.impl;
 
+      memory 网络接口名_memory
+      end 网络接口名_memory;
+
+      memory implementation 网络接口名_memory.impl
+      end 网络接口名_memory.impl;
+
+      【命名核心原则】
+      错误：`KernelPartition_memory : memory KernelPartition_memory.impl;`（实例名=类型名，绝对禁止）
+      正确：只要实例名≠类型名即可
+
       规则：
-      1. 需求中"某分区内存"或"网络接口内存"均对应一个 memory 子组件，命名为 对象名_memory，需单独声明和实现。
+      1. 需求中"某分区内存"或"网络接口内存"均对应一个 memory 子组件，类型名为 对象名_memory，实例名加 _mem 后缀，需单独声明和实现。
 
   - id: device
     title: 设备模板
@@ -367,6 +455,13 @@ rules:
       2. 整个块必须包裹在 "annex EMV2 {** ... **};" 中，严禁裸写 error behavior。
       3. events、states、transitions 三个段必须存在：events 声明 "事件名 : error event;"，states 必须有一个 "initial state" 其余为 "state"，transitions 格式为 "转移名 : 源状态 -[事件名]-> 目标状态;"。
       4. 每个 transition 引用的事件和状态必须在对应段中已声明。标识符用英文下划线连接。
+      5. 【重要】error behavior 块的结束语句是 `end behavior;`，不是 `end 错误行为名;`！
+         - error behavior <名字>  →  end behavior; （end 后跟 behavior 关键字，不是块名）
+         - error type <名字>      →  end error type;
+         - error type set <名字>  →  end error type set;
+         - propagation <名字>     →  end propagation;
+         - error flow <名字>      →  end error flow;
+         记住：EMV2 块的 end 后面跟的是块类型关键字，不是块的名字！
 
   - id: subcomponents_syntax
     title: subcomponents 语法与完整性规则
@@ -383,12 +478,14 @@ rules:
           subsystem、module、component 等非标准关键字。
         - 组件类型名.impl：必须引用已在 package 中声明过类型和实现的组件，后缀 .impl 不可省略。
 
-      正确示例：
+      正确示例（注意：实例名只要与类型名不同即可，风格灵活）：
         subcomponents
-          BrakeCtrl : system BrakeCtrl.impl;
-          TempSensor : device TempSensor.impl;
-          CanBus_1  : bus CanBus.impl;
-          MainTask   : thread MainTask.impl;
+          brakeCtrl    : system BrakeController.impl;    -- 小驼峰
+          temp_sensor  : device TempSensor.impl;         -- 小写下划线
+          canBus1      : bus CanBus.impl;                -- 数字编号
+          mainTask     : thread MainTask.impl;           -- 小驼峰
+          main_cpu     : processor MainProcessor.impl;   -- 下划线+后缀（可选风格）
+          kernel_proc  : process KernelProcess.impl;     -- 下划线+后缀（可选风格）
 
       错误示例（这些是常见的出错模式，严禁出现）：
         -- 错误1：缺少 .impl 后缀
@@ -401,8 +498,11 @@ rules:
         BrakeCtrl.impl : system BrakeCtrl.impl;
         -- 错误5：引用了未声明的组件（BrakeCtrl 在 package 中没有对应的 system 声明和 implementation）
         BrakeCtrl : system BrakeCtrl.impl;  -- 但 package 中没有 system BrakeCtrl ... end BrakeCtrl;
+        -- 错误6（最常见）：实例名与类型名完全相同，违反R13
+        BrakeController : system BrakeController.impl;   -- 严禁！实例名=类型名
+        MainProcessor : processor MainProcessor.impl;    -- 严禁！只要名字不同即可，如 mainCpu、cpu0 都行
 
-      完整性规则：subcomponents 中引用的每一个组件，必须在同一个 package 中有完整的"类型声明 + 实现声明"对。实例名可与类型名相同或不同，但类型名必须与已声明的组件一致。父子类型合法性见核心规则 R9 包含关系表。
+      完整性规则：subcomponents 中引用的每一个组件，必须在同一个 package 中有完整的"类型声明 + 实现声明"对。**实例名严禁与组件类型名完全相同**（R13强制规则），用小驼峰/小写下划线/数字编号等方式与大驼峰的类型名区分即可，具体风格灵活选择。父子类型合法性见核心规则 R9 包含关系表。
 
   - id: properties_explanation
     title: properties 关键字用法说明
@@ -424,7 +524,7 @@ rules:
         - Priority => N;                 -- 优先级（thread 用）
         - Stack_Size => N Bytes;         -- 栈大小（thread 用）
         - Max_Queue_Size => N;           -- 最大队列长度（port 用）
-        - Actual_Processor_Binding => reference (处理器名) applies to 软件组件;  -- 处理器绑定
+        - Actual_Processor_Binding => (reference (处理器名)) applies to 软件组件;  -- 处理器绑定
         - Memory_Properties::RAM_Size => N Bytes;  -- 内存大小（memory 组件用，必须带属性集前缀）
 
       属性适用性表（严格匹配，不可跨类型使用）：
@@ -533,6 +633,9 @@ forbidden:
 checklist:
   content: |
     【输出前自检清单】生成代码前逐条确认，任一项为否则修正后再输出：
+    [0] R13【最高优先级】检查每一个 subcomponents 行：实例名是否与类型名相同？
+        - 如果发现 `XxxYyy : keyword XxxYyy.impl;` 这种实例名=类型名的，必须立即重命名！
+        - 只要实例名和类型名不一样就行，小驼峰、小写下划线、数字编号都可以
     [1] R2: 每个组件是否都有类型声明 + implementation，且各自有 end 闭合？
     [2] R3: features 只在类型声明中？data 无 features？port/bus access 归属的构件类型正确？
     [3] R4: 连接端点在 features 中已声明？子组件端点用「实例名.端口名」、父组件端口委派直接写端口名？port 连 port、access 连 access 无混连？port 用 ->（双向端口可用 <->）、access 用 <->？端口方向是否正确：同级连接 out->in（严禁 in->in、out->out）、向下委派 in->in（父端口在左、子端口在右）、向上委派 out->out（子端口在左、父端口在右）？类型一致？无 data 组件端口引用？
@@ -545,7 +648,7 @@ checklist:
     [10] R10: applies to 引用的实例名在 subcomponents 中已声明？
     [11] R11: 每个 process 和 thread 都有 Actual_Processor_Binding 属性绑定？
     [12] R12: 连接两端 data port 的 Data_Size 一致？
-    [13] R13: 实例名、连接名、类型名无重名？
+    [13] 再次确认[0]：所有实例名都不等于类型名！这是最容易犯的错误！
 
 example:
   title: AADL生成示例
@@ -583,29 +686,29 @@ example:
 
     system implementation Top_System.impl 
       subcomponents 
-        MainProcessor      : processor MainProcessor.impl; 
-        RAM                : memory RAM.impl; 
-        Flash              : memory Flash.impl; 
-        SerialPort         : device SerialPort.impl; 
-        CANController      : device CANController.impl; 
-        EthernetController : device EthernetController.impl; 
-        HardwareTimer      : device HardwareTimer.impl; 
-        WatchdogTimer      : device WatchdogTimer.impl; 
-        CanBus_1           : bus CanBus.impl;
-        KernelProcess      : process KernelProcess.impl; 
+        main_cpu           : processor MainProcessor.impl;     -- 实例名加 _cpu 后缀
+        main_ram           : memory RAM.impl;                  -- 实例名加 _ram 后缀
+        flash_rom          : memory Flash.impl;                -- 实例名加 _rom 后缀
+        serial_dev         : device SerialPort.impl;           -- 实例名加 _dev 后缀
+        can_dev            : device CANController.impl;        -- 实例名加 _dev 后缀
+        eth_dev            : device EthernetController.impl;   -- 实例名加 _dev 后缀
+        timer_dev          : device HardwareTimer.impl;        -- 实例名加 _dev 后缀
+        wdt_dev            : device WatchdogTimer.impl;        -- 实例名加 _dev 后缀
+        can_bus_1          : bus CanBus.impl;
+        kernel_proc        : process KernelProcess.impl;       -- 实例名加 _proc 后缀
       connections 
         -- 软件与 device 桥接：port 连接（数据线）
-        data_flow : port SerialPort.out_data -> KernelProcess.in_data;
+        data_flow : port serial_dev.out_data -> kernel_proc.in_data;
         -- 硬件总线连接：processor/memory 通过 bus access 连到 bus
-        proc_bus : bus access MainProcessor.bus_if <-> CanBus_1.busOut;
-        ram_bus  : bus access RAM.bus_if <-> CanBus_1.busOut;
+        proc_bus : bus access main_cpu.bus_if <-> can_bus_1.busOut;
+        ram_bus  : bus access main_ram.bus_if <-> can_bus_1.busOut;
         -- device 桥接：同时连 port（软件侧）和 bus access（硬件侧）
-        can_bus_conn : bus access CANController.canIn <-> CanBus_1.busOut;
+        can_bus_conn : bus access can_dev.canIn <-> can_bus_1.busOut;
       properties 
         -- 软件部署绑定：process → processor
-        Actual_Processor_Binding => (reference (MainProcessor)) applies to KernelProcess; 
+        Actual_Processor_Binding => (reference (main_cpu)) applies to kernel_proc; 
         -- 数据线绑定到总线：明确数据在哪条总线上传输
-        Allowed_Connection_Binding => (reference (CanBus_1)) applies to data_flow;
+        Allowed_Connection_Binding => (reference (can_bus_1)) applies to data_flow;
     end Top_System.impl; 
 
     -- ======================================= 
@@ -619,22 +722,22 @@ example:
 
     process implementation KernelProcess.impl 
       subcomponents 
-        TaskScheduler        : thread TaskScheduler.impl; 
-        TimerManager         : thread TimerManager.impl; 
-        InterruptHandler     : thread InterruptHandler.impl; 
-        MemoryManager        : thread MemoryManager.impl; 
-        CommunicationManager : thread CommunicationManager.impl; 
-        FileSystem           : thread FileSystem.impl; 
-        WatchdogManager      : thread WatchdogManager.impl; 
-        FaultDetector        : thread FaultDetector.impl; 
-        PerformanceMonitor   : thread PerformanceMonitor.impl; 
+        sched_thr           : thread TaskScheduler.impl;        -- 实例名加 _thr 后缀
+        timer_thr           : thread TimerManager.impl;         -- 实例名加 _thr 后缀
+        int_handler_thr     : thread InterruptHandler.impl;     -- 实例名加 _thr 后缀
+        mem_mgr_thr         : thread MemoryManager.impl;        -- 实例名加 _thr 后缀
+        comm_thr            : thread CommunicationManager.impl; -- 实例名加 _thr 后缀
+        fs_thr              : thread FileSystem.impl;           -- 实例名加 _thr 后缀
+        wdt_thr             : thread WatchdogManager.impl;      -- 实例名加 _thr 后缀
+        fault_thr           : thread FaultDetector.impl;        -- 实例名加 _thr 后缀
+        perf_thr            : thread PerformanceMonitor.impl;   -- 实例名加 _thr 后缀
       connections
         -- 向下委派(Delegation Down)：父 in -> 子 in（父端口在左侧，无前缀）
-        c_down : port in_data -> CommunicationManager.in_data;
+        c_down : port in_data -> comm_thr.in_data;
         -- 向上委派(Delegation Up)：子 out -> 父 out（父端口在右侧，无前缀）
-        c_up : port CommunicationManager.out_data -> out_data;
+        c_up : port comm_thr.out_data -> out_data;
         -- 同级连接(Peer-to-Peer)：out -> in（子组件之间）
-        c_peer : port CommunicationManager.out_data -> TaskScheduler.in_data;
+        c_peer : port comm_thr.out_data -> sched_thr.in_data;
     end KernelProcess.impl; 
 
     thread TaskScheduler

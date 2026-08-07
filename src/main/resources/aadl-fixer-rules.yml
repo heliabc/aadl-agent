@@ -27,7 +27,20 @@ global:
     R7【连接与特征归属】软件实体（process）的 connections 中只能 port 连接；硬件实体（device/processor/memory/bus）的 connections 中只能 bus access 连接；system 两者均可。软件实体特征只 Port，硬件实体特征只 Bus Access。thread 严禁 bus access。
     R8【三步顺序】implementation 内部按 subcomponents → connections → properties 顺序编写。
     R9【subcomponents 规范】格式：`实例名 : 组件关键字 组件类型名.impl;`。virtual processor 中只能含 virtual processor 或 process，严禁含 thread。
-    R10【applies to 规范】properties 中 `applies to` 引用的实例名必须在当前 implementation 的 subcomponents 中已声明。
+      【最高优先级】实例名严禁与组件类型名完全相同！
+      类型名用大驼峰，实例名只要不同即可：小驼峰、小写下划线、数字编号都可以。
+      错误：`MainProcessor : processor MainProcessor.impl;`
+      正确：`mainCpu : processor MainProcessor.impl;` 或 `cpu0 : processor MainProcessor.impl;`
+    R10【applies to 规范】properties 中 `applies to` 引用的名称必须在当前 implementation 的 subcomponents 或 connections 中已声明（可以引用子组件实例名，也可以引用连接名）。
+    R11【EMV2 end 规范】EMV2 annex 中各块的 end 语句后跟类型关键字，不是块名：
+      - error behavior <名字>  →  end behavior;
+      - composite error behavior <名字> → end behavior;
+      - error type <名字> → end error type;
+      - error type set <名字> → end error type set;
+      - propagation <名字> → end propagation;
+      - error flow <名字> → end error flow;
+      错误：`end SysErrBehavior;`（error behavior 块用了块名）
+      正确：`end behavior;`（end 后跟 behavior 关键字）
 
 task_description: |
   请分析以下AADL代码和错误信息，一步完成错误分析与修复。
@@ -344,7 +357,7 @@ static_analysis_fixes:
     before: |
       system implementation MySystem.impl
         properties             -- [错误] properties 在 connections 之前
-          Actual_Processor_Binding => reference (cpu) applies to proc;
+          Actual_Processor_Binding => (reference (cpu)) applies to proc;
         connections
           c1 : port a.data_out -> b.data_in;
         subcomponents
@@ -359,7 +372,7 @@ static_analysis_fixes:
         connections
           c1 : port a.data_out -> b.data_in;
         properties
-          Actual_Processor_Binding => reference (cpu) applies to proc;
+          Actual_Processor_Binding => (reference (cpu)) applies to proc;
       end MySystem.impl;
 
   - id: NAMING_COLLISION
@@ -368,16 +381,20 @@ static_analysis_fixes:
     error_pattern: "命名空间冲突 - 实例名/连接名与类型名相同或重复声明"
     severity: error
     fix_strategy: |
-      重命名冲突的标识符：
-      - 实例名与类型名冲突：实例名追加 _inst 后缀
+      重命名冲突的标识符，核心原则是实例名不能与类型名完全相同：
+      - 将大驼峰类型名改为小驼峰（如 MainProcessor → mainProcessor）
+      - 或改为小写下划线（如 MainProcessor → main_processor）
+      - 或加数字编号（如 MainProcessor → cpu0）
+      - 或加功能后缀（如 MainProcessor → mainCpu、main_cpu）均可
+      风格不限，只要实例名≠类型名即可。
       - 连接名与类型名冲突：连接名追加 _conn 后缀
       - 同一作用域内实例名重复：追加数字后缀（_2, _3）
-      - 连接名与实例名重名：连接名追加 _conn 后缀
       重命名后同步更新所有引用该名称的连接行和 properties。
     before: |
       system implementation MySystem.impl
         subcomponents
-          MySystem : system MySystem.impl;  -- [错误] 实例名与类型名相同
+          MainProcessor : processor MainProcessor.impl;  -- [错误] 实例名=类型名
+          KernelProcess : process KernelProcess.impl;    -- [错误] 实例名=类型名
         connections
           c1 : port a.data_out -> b.data_in;
           c1 : port b.data_out -> c.data_in;  -- [错误] 连接名重复
@@ -385,10 +402,11 @@ static_analysis_fixes:
     after: |
       system implementation MySystem.impl
         subcomponents
-          MySystem_inst : system MySystem.impl;  -- [修复] 修改：实例名追加 _inst
+          mainProcessor : processor MainProcessor.impl;  -- [修复] 修改：实例名改为小驼峰
+          kernelProc : process KernelProcess.impl;       -- [修复] 修改：实例名改为小驼峰
         connections
           c1 : port a.data_out -> b.data_in;
-          c1_conn : port b.data_out -> c.data_in;  -- [修复] 修改：连接名追加 _conn
+          c1_conn : port b.data_out -> c.data_in;        -- [修复] 修改：连接名追加 _conn
       end MySystem.impl;
 
   - id: DANGLING_CONNECTION_REF
@@ -437,7 +455,7 @@ static_analysis_fixes:
           mainProc : process MainProc.impl;
         properties
           -- [修复] 新增：补充 Actual_Processor_Binding 绑定
-          Actual_Processor_Binding => reference (cpu) applies to mainProc;
+          Actual_Processor_Binding => (reference (cpu)) applies to mainProc;
       end Top.impl;
 
   - id: MISSING_BINDING
@@ -447,7 +465,7 @@ static_analysis_fixes:
     severity: warning
     fix_strategy: |
       在包含该 process/thread 的 system implementation 的 properties 块中添加：
-      Actual_Processor_Binding => reference (处理器实例名) applies to 实例名;
+      Actual_Processor_Binding => (reference (处理器实例名)) applies to 实例名;
       确保引用的处理器实例名在 subcomponents 中已声明。
     before: |
       system implementation Top.impl
@@ -463,7 +481,38 @@ static_analysis_fixes:
           mainProc : process MainProc.impl;
         properties
           -- [修复] 新增：补充部署绑定属性
+          Actual_Processor_Binding => (reference (cpu)) applies to mainProc;
+      end Top.impl;
+
+  - id: REFERENCE_PARENTHESES
+    title: reference 属性值缺少外层列表括号
+    detector: checkReferenceParentheses
+    error_pattern: "reference 值缺少外层列表括号"
+    severity: error
+    fix_strategy: |
+      列表类型属性（如 Actual_Processor_Binding、Allowed_Connection_Binding）的值必须使用双括号格式：
+      正确格式：(reference (目标名))
+      错误格式：reference (目标名)
+      - 外层括号表示这是一个列表值（AADL 列表属性语法）
+      - 内层括号是 reference 关键字的引用语法
+      修复方法：在 reference (xxx) 外层再加一对括号 → (reference (xxx))
+    before: |
+      system implementation Top.impl
+        subcomponents
+          cpu : processor CPU.impl;
+          mainProc : process MainProc.impl;
+        properties
+          -- [错误] 缺少外层括号
           Actual_Processor_Binding => reference (cpu) applies to mainProc;
+      end Top.impl;
+    after: |
+      system implementation Top.impl
+        subcomponents
+          cpu : processor CPU.impl;
+          mainProc : process MainProc.impl;
+        properties
+          -- [修复] 修改：补充 reference 的外层列表括号
+          Actual_Processor_Binding => (reference (cpu)) applies to mainProc;
       end Top.impl;
 
   - id: DATA_SIZE_MISMATCH
@@ -497,6 +546,9 @@ static_analysis_fixes:
 checklist:
   content: |
     【输出前自检清单】输出修复后的代码前逐条确认，任一项为否则修正后再输出：
+    [0] 【最高优先级】检查每一个 subcomponents 行：实例名是否与类型名相同？
+        - 如果发现 `XxxYyy : keyword XxxYyy.impl;` 这种实例名=类型名的，必须立即重命名！
+        - 只要实例名≠类型名即可，小驼峰、小写下划线、数字编号都可以
     [1] 修复后的每个组件是否都有类型声明 + implementation，且各自有 end 闭合？
     [2] features 块是否只出现在类型声明中，没有出现在 implementation 中？
     [3] thread 的 features 中是否只有 in/out data port，没有 requires bus access？
@@ -511,6 +563,9 @@ checklist:
     [12] port 连接两端是否引用了相同的数据类型？
     [13] 软件实体（process）的 connections 中是否只有 port 连接？硬件实体是否只有 bus access 连接？
     [14] 每一处修改是否都添加了 `-- [修复]` 标记注释？标记说明是否清晰描述了改动内容？
+    [15] reference 属性值格式是否正确？列表类型属性必须用双括号 `(reference (目标名))`，不能只有单括号 `reference (目标名)`？
+    [16] applies to 引用的名称是否在当前作用域的 subcomponents 或 connections 中已声明？（连接名也是合法的 applies to 目标）
+    [17] 再次确认[0]：所有实例名都不等于类型名！这是最容易犯的错误！
 
 output_instruction: |
   请只输出修复后的完整AADL代码，不要包含任何解释或说明。
