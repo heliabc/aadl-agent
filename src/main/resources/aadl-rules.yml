@@ -60,6 +60,17 @@ global:
          子组件的输出端口（内部数据的源头）指向父容器的输出端口（向外发送的出口）。左侧是子组件端口，右侧是父组件自身的端口（无前缀）。
          示例：`c3 : port Thread_B.data_out -> parent_out_port;`
       特殊：in out 双向端口在同级连接中可作为源端或目标端；在委派中只能 in out <-> in out。
+      【bus access 连接方向规则】bus access 必须使用双向操作符 `<->`，方向规则如下：
+      ① 同级连接 (Peer-to-Peer)：requires <-> provides（一端索取，一端提供）
+         场景：设备挂载到总线上
+         示例：`conn_1 : bus access CANController.canIn <-> CanBus_1.busOut;`
+         严禁：同级组件之间绝对不能出现 requires <-> requires 或 provides <-> provides。
+      ② 委派连接 (Delegation)：两端方向必须相同
+         场景 1（向外提供总线）：父 provides <-> 子 provides
+         示例：`conn_delegate_1 : bus access line1 <-> line1_bus.busOut;`
+         场景 2（向外索取总线）：父 requires <-> 子 requires
+         示例：`conn_delegate_2 : bus access parent_req_bus <-> CPU.bus_if;`
+         严禁：委派连接两端方向不一致（provides <-> requires 是错误的）。
     R5【thread 纯净】thread implementation 中严禁出现 connections 和 subcomponents。组件间连接只能写在 system 或 process implementation 中。
     R6【数据端口语法】`in data port 类型名` 或 `out data port 类型名`，类型名必须是已声明的 data 组件。严禁 `requires data port`，严禁无类型声明。
     R7【软硬件关系两种模式】软件与硬件之间只有两种合法关系，严禁用 port 直接连接软件组件和纯硬件组件：
@@ -629,6 +640,10 @@ forbidden:
     1. 属性值格式：数值与单位间有空格（10 Kbyte），范围用 .. 连接（5 ms .. 10 ms），列表用括号包裹（("Ok", "Error")）。
     2. 严禁使用已废弃属性 Source_Data_Size 和 Destination_Data_Size，必须使用 Data_Size。
     3. 非标准属性集的属性必须带前缀（如 Memory_Properties::RAM_Size），严禁直接写属性名。
+    4. 【严禁使用大括号】AADL 不是 C/Java，块用 `end 名称;` 闭合，绝对不能用 `{ }` 包裹块内容！
+       - 错误：`system MySystem { ... }`
+       - 正确：`system MySystem ... end MySystem;`
+       - 唯一例外：annex 块使用 `{**` 和 `**}`（如 `annex EMV2 {** ... **};`），普通组件块绝对不能用 `{}`
 
 checklist:
   content: |
@@ -638,7 +653,7 @@ checklist:
         - 只要实例名和类型名不一样就行，小驼峰、小写下划线、数字编号都可以
     [1] R2: 每个组件是否都有类型声明 + implementation，且各自有 end 闭合？
     [2] R3: features 只在类型声明中？data 无 features？port/bus access 归属的构件类型正确？
-    [3] R4: 连接端点在 features 中已声明？子组件端点用「实例名.端口名」、父组件端口委派直接写端口名？port 连 port、access 连 access 无混连？port 用 ->（双向端口可用 <->）、access 用 <->？端口方向是否正确：同级连接 out->in（严禁 in->in、out->out）、向下委派 in->in（父端口在左、子端口在右）、向上委派 out->out（子端口在左、父端口在右）？类型一致？无 data 组件端口引用？
+    [3] R4: 连接端点在 features 中已声明？子组件端点用「实例名.端口名」、父组件端口委派直接写端口名？port 连 port、access 连 access 无混连？port 用 ->（双向端口可用 <->）、access 用 <->？端口方向是否正确：同级连接 out->in（严禁 in->in、out->out）、向下委派 in->in（父端口在左、子端口在右）、向上委派 out->out（子端口在左、父端口在右）？类型一致？无 data 组件端口引用？bus access 方向是否正确：同级 requires<->provides（严禁 requires<->requires、provides<->provides）、委派两端方向相同（provides<->provides 或 requires<->requires）？
     [4] R5: thread implementation 中无 connections 和 subcomponents？
     [5] R7: 软件与硬件关系是否正确？部署用 Actual_Processor_Binding（非连接）？数据交互通过 device 桥接，不直接用 port 连软件和纯硬件？
     [6] R7a: 总线建模是否规范？processor/memory 通过 bus access 连 bus？device 同时有 port（连软件）和 bus access（连 bus）？数据线通过 Allowed_Connection_Binding 绑定到 bus？
@@ -649,6 +664,7 @@ checklist:
     [11] R11: 每个 process 和 thread 都有 Actual_Processor_Binding 属性绑定？
     [12] R12: 连接两端 data port 的 Data_Size 一致？
     [13] 再次确认[0]：所有实例名都不等于类型名！这是最容易犯的错误！
+    [14] 检查是否误用了大括号：所有组件块都是用 `end 名称;` 闭合的吗？有没有出现 `{` 或 `}`（annex EMV2 的 `{**`/`**}` 除外）？
 
 example:
   title: AADL生成示例

@@ -413,6 +413,9 @@ public class AadlReferenceValidator {
         // 4u. 检测 port 连接的端口方向（源端必须 out，目标端必须 in；代理连接两端方向相同）
         checkPortDirection(connectionRefs, featureDetails, subcomponentRefs, result);
 
+        // 4u2. 检测 bus access 连接的方向规则
+        checkBusAccessDirection(connectionRefs, featureDetails, subcomponentRefs, result);
+
         // 4s. 检测连接操作符是否正确（port 用 ->，bus access 用 <->；in out 双向端口允许 <->）
         checkConnectionOperator(connectionRefs, featureDetails, subcomponentRefs, result);
 
@@ -476,6 +479,17 @@ public class AadlReferenceValidator {
                 return "向上委派必须 out -> out。确保子组件端口和父组件端口都是 out 方向。格式：port Child.data_out -> parent_out;";
             }
             return "检查连接两端的端口方向是否匹配对应连接模式（同级 out->in、向下委派 in->in、向上委派 out->out）。";
+        }
+
+        // 总线方向错误
+        if (msg.contains("总线方向错误") || msg.contains("bus access 方向不匹配")) {
+            if (msg.contains("同级连接")) {
+                return "同级 bus access 连接必须 requires <-> provides。确保一端是 requires bus access，另一端是 provides bus access。";
+            }
+            if (msg.contains("委派") || msg.contains("Delegation")) {
+                return "委派 bus access 连接两端方向必须相同。向外提供总线：父 provides <-> 子 provides；向外索取总线：父 requires <-> 子 requires。";
+            }
+            return "检查 bus access 连接两端的方向：同级连接 requires<->provides，委派连接两端方向相同。";
         }
 
         // features 放置错误
@@ -2924,6 +2938,194 @@ public class AadlReferenceValidator {
             if (!directionOk) {
                 result.errors.add(String.format(
                         "第%d行: 端口方向错误 - %s '%s' 的数据流方向不匹配; " +
+                        "源端 %s 方向=%s, 目标端 %s 方向=%s; %s",
+                        conn.lineNumber, connTypeDesc, conn.connName,
+                        sourceDesc, sourceDir, destDesc, destDir, expectedRule
+                ));
+            }
+        }
+    }
+
+    /**
+     * 4u2. 检测 bus access 连接的方向规则。
+     *
+     * AADL 标准规范：
+     * - bus access 连接必须使用双向操作符 <->
+     *
+     * A. 同级组件连接 (Peer-to-Peer)
+     * 规则：必须是 requires <-> provides（一端索取，一端提供）
+     * 场景：同一个系统内的设备挂载到总线上
+     * 示例：conn_1 : bus access CANController.canIn <-> CanBus_1.busOut;
+     *
+     * B. 跨级委派连接 (Delegation)
+     * 场景 1（向外提供总线）：父容器 provides <-> 内部子组件 provides
+     *   示例：conn_delegate_1 : bus access line1 <-> line1_bus.busOut;
+     * 场景 2（向外索取总线）：父容器 requires <-> 内部子组件 requires
+     *   示例：conn_delegate_2 : bus access parent_req_bus <-> CPU.bus_if;
+     *
+     * @param connections    连接列表
+     * @param featureDetails feature 详情（含方向信息）
+     * @param subcomponentRefs 子组件引用
+     * @param result         验证结果
+     */
+    private void checkBusAccessDirection(List<ConnectionRef> connections,
+                                          Map<String, Map<String, FeatureDetail>> featureDetails,
+                                          List<SubcomponentRef> subcomponentRefs,
+                                          ValidationResult result) {
+        // 建立 implementation → (实例名 → 类型名) 映射
+        Map<String, Map<String, String>> implInstanceMap = new HashMap<>();
+        for (SubcomponentRef ref : subcomponentRefs) {
+            if (ref.parentImpl != null) {
+                implInstanceMap.computeIfAbsent(ref.parentImpl, k -> new HashMap<>())
+                        .put(ref.instanceName, ref.typeName);
+            }
+        }
+
+        for (ConnectionRef conn : connections) {
+            // 只检查 bus access 连接
+            if (!"bus access".equals(conn.connType) || conn.parentImpl == null) {
+                continue;
+            }
+
+            Map<String, String> instanceMap = implInstanceMap.get(conn.parentImpl);
+            if (instanceMap == null) {
+                continue;
+            }
+
+            String parentTypeName = conn.parentImpl;
+
+            // 获取源端方向和目标端方向
+            String sourceDir = null;
+            String destDir = null;
+            String sourceDesc = null;
+            String destDesc = null;
+            boolean sourceIsParent = false;
+            boolean destIsParent = false;
+
+            if (conn.sourceInstance != null) {
+                // 源端是子组件实例
+                String sourceType = instanceMap.get(conn.sourceInstance);
+                if (sourceType != null) {
+                    Map<String, FeatureDetail> sourceFeatures = featureDetails.get(sourceType);
+                    if (sourceFeatures != null) {
+                        FeatureDetail fd = sourceFeatures.get(conn.sourceFeature);
+                        if (fd != null) {
+                            sourceDir = fd.direction;
+                        }
+                    }
+                }
+                sourceDesc = conn.sourceInstance + "." + conn.sourceFeature;
+            } else {
+                // 源端是父组件 feature（代理连接）
+                sourceIsParent = true;
+                Map<String, FeatureDetail> parentFeatures = featureDetails.get(parentTypeName);
+                if (parentFeatures != null) {
+                    FeatureDetail fd = parentFeatures.get(conn.sourceFeature);
+                    if (fd != null) {
+                        sourceDir = fd.direction;
+                    }
+                }
+                sourceDesc = conn.sourceFeature + "(父)";
+            }
+
+            if (conn.destInstance != null) {
+                // 目标端是子组件实例
+                String destType = instanceMap.get(conn.destInstance);
+                if (destType != null) {
+                    Map<String, FeatureDetail> destFeatures = featureDetails.get(destType);
+                    if (destFeatures != null) {
+                        FeatureDetail fd = destFeatures.get(conn.destFeature);
+                        if (fd != null) {
+                            destDir = fd.direction;
+                        }
+                    }
+                }
+                destDesc = conn.destInstance + "." + conn.destFeature;
+            } else {
+                // 目标端是父组件 feature（代理连接）
+                destIsParent = true;
+                Map<String, FeatureDetail> parentFeatures = featureDetails.get(parentTypeName);
+                if (parentFeatures != null) {
+                    FeatureDetail fd = parentFeatures.get(conn.destFeature);
+                    if (fd != null) {
+                        destDir = fd.direction;
+                    }
+                }
+                destDesc = conn.destFeature + "(父)";
+            }
+
+            // 无法确定方向时跳过
+            if (sourceDir == null || destDir == null) {
+                continue;
+            }
+
+            // 只处理 requires/provides 方向的 bus access
+            boolean sourceIsBusAccess = "requires".equals(sourceDir) || "provides".equals(sourceDir);
+            boolean destIsBusAccess = "requires".equals(destDir) || "provides".equals(destDir);
+            if (!sourceIsBusAccess || !destIsBusAccess) {
+                continue;
+            }
+
+            boolean directionOk;
+            String connTypeDesc;
+            String expectedRule;
+
+            if (sourceIsParent && !destIsParent) {
+                // 委派连接：父 -> 子（父 feature 在左侧，子 feature 在右侧）
+                // 向外提供总线：父 provides <-> 子 provides
+                // 向外索取总线：父 requires <-> 子 requires
+                connTypeDesc = "跨级委派(Delegation)";
+                if (sourceDir.equals(destDir)) {
+                    directionOk = true;
+                    expectedRule = "委派连接：父端 " + sourceDir + " <-> 子端 " + destDir + "（方向相同，合法）";
+                } else {
+                    directionOk = false;
+                    expectedRule = "委派连接规则：父端与子端方向必须相同（provides<->provides 或 requires<->requires）；" +
+                            "当前父端=" + sourceDir + "，子端=" + destDir;
+                }
+            } else if (!sourceIsParent && destIsParent) {
+                // 委派连接：子 -> 父（子 feature 在左侧，父 feature 在右侧）
+                // 向外提供总线：子 provides <-> 父 provides
+                // 向外索取总线：子 requires <-> 父 requires
+                connTypeDesc = "跨级委派(Delegation)";
+                if (sourceDir.equals(destDir)) {
+                    directionOk = true;
+                    expectedRule = "委派连接：子端 " + sourceDir + " <-> 父端 " + destDir + "（方向相同，合法）";
+                } else {
+                    directionOk = false;
+                    expectedRule = "委派连接规则：子端与父端方向必须相同（provides<->provides 或 requires<->requires）；" +
+                            "当前子端=" + sourceDir + "，父端=" + destDir;
+                }
+            } else if (sourceIsParent && destIsParent) {
+                // 双端代理（两端都是父 feature，少见但合法）：方向必须相同
+                connTypeDesc = "双端代理";
+                directionOk = sourceDir.equals(destDir);
+                expectedRule = "双端代理：两端方向必须相同（provides<->provides 或 requires<->requires）";
+            } else {
+                // 同级组件连接 (Peer-to-Peer): requires <-> provides
+                // 两端都是子组件实例
+                connTypeDesc = "同级连接(Peer-to-Peer)";
+                boolean oneRequiresOneProvides =
+                        ("requires".equals(sourceDir) && "provides".equals(destDir)) ||
+                        ("provides".equals(sourceDir) && "requires".equals(destDir));
+                directionOk = oneRequiresOneProvides;
+                if (!directionOk) {
+                    if ("requires".equals(sourceDir) && "requires".equals(destDir)) {
+                        expectedRule = "同级连接严禁 requires <-> requires；正确规则为 requires <-> provides（一端索取，一端提供）";
+                    } else if ("provides".equals(sourceDir) && "provides".equals(destDir)) {
+                        expectedRule = "同级连接严禁 provides <-> provides；正确规则为 requires <-> provides（一端索取，一端提供）";
+                    } else {
+                        expectedRule = "同级连接规则：requires <-> provides（一端索取总线，一端提供总线）；" +
+                                "严禁 requires<->requires、provides<->provides";
+                    }
+                } else {
+                    expectedRule = "同级连接：" + sourceDir + " <-> " + destDir + "（合法）";
+                }
+            }
+
+            if (!directionOk) {
+                result.errors.add(String.format(
+                        "第%d行: 总线方向错误 - %s '%s' 的 bus access 方向不匹配; " +
                         "源端 %s 方向=%s, 目标端 %s 方向=%s; %s",
                         conn.lineNumber, connTypeDesc, conn.connName,
                         sourceDesc, sourceDir, destDesc, destDir, expectedRule
@@ -6552,19 +6754,21 @@ public class AadlReferenceValidator {
         Pattern typeStartPattern = Pattern.compile(
                 "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|" +
                 "virtual\\s+processor|virtual\\s+bus|thread\\s+group|abstract)\\s+" +
-                "([A-Za-z_]\\w*)\\s*$",
+                "([A-Za-z_]\\w*)\\s*\\{?\\s*$",
                 Pattern.CASE_INSENSITIVE
         );
         // EMV2 块开始模式 -> 期望的 end 名称
         // 注意：长模式在前，避免短模式先匹配（如 composite error behavior 须在 error behavior 前）
         String[][] emv2BlockPatterns = {
-            {"^\\s*composite\\s+error\\s+behavior\\s+([A-Za-z_]\\w*)\\s*$", "behavior"},
-            {"^\\s*error\\s+behavior\\s+([A-Za-z_]\\w*)\\s*$", "behavior"},
-            {"^\\s*error\\s+type\\s+set\\s+([A-Za-z_]\\w*)\\s*$", "error type set"},
-            {"^\\s*error\\s+type\\s+([A-Za-z_]\\w*)\\s*$", "error type"},
-            {"^\\s*error\\s+flow\\s+([A-Za-z_]\\w*)\\s*$", "error flow"},
-            {"^\\s*propagation\\s+([A-Za-z_]\\w*)\\s*$", "propagation"},
+            {"^\\s*composite\\s+error\\s+behavior\\s+([A-Za-z_]\\w*)\\s*\\{?\\s*$", "behavior"},
+            {"^\\s*error\\s+behavior\\s+([A-Za-z_]\\w*)\\s*\\{?\\s*$", "behavior"},
+            {"^\\s*error\\s+type\\s+set\\s+([A-Za-z_]\\w*)\\s*\\{?\\s*$", "error type set"},
+            {"^\\s*error\\s+type\\s+([A-Za-z_]\\w*)\\s*\\{?\\s*$", "error type"},
+            {"^\\s*error\\s+flow\\s+([A-Za-z_]\\w*)\\s*\\{?\\s*$", "error flow"},
+            {"^\\s*propagation\\s+([A-Za-z_]\\w*)\\s*\\{?\\s*$", "propagation"},
         };
+        // 单独的右大括号行（大模型可能错误地生成 C/Java 风格的块语法）
+        Pattern closingBracePattern = Pattern.compile("^\\s*\\}\\s*$");
         // EMV2 内部以 end 开头但不是块结束的语句（如 end to end flow 声明）
         // 注意：不要添加 propagation / error type 等作为块结束的关键字，避免误判
         Pattern emv2InternalEndPattern = Pattern.compile(
@@ -6630,6 +6834,11 @@ public class AadlReferenceValidator {
                 continue;
             }
 
+            // 跳过单独的右大括号（大模型错误生成的 C/Java 风格语法，不影响栈结构）
+            if (closingBracePattern.matcher(trimmed).matches()) {
+                continue;
+            }
+
             // end 语句检查
             if (suspiciousEndPattern.matcher(trimmed).find()) {
                 Matcher endMatcher = normalEndPattern.matcher(trimmed);
@@ -6683,18 +6892,20 @@ public class AadlReferenceValidator {
         Pattern typeStartPattern = Pattern.compile(
                 "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|" +
                 "virtual\\s+processor|virtual\\s+bus|thread\\s+group|abstract)\\s+" +
-                "([A-Za-z_]\\w*)\\s*$",
+                "([A-Za-z_]\\w*)\\s*\\{?\\s*$",
                 Pattern.CASE_INSENSITIVE
         );
         // EMV2 块开始模式 -> 期望的 end 名称（长模式在前）
         String[][] emv2BlockPatterns = {
-            {"^\\s*composite\\s+error\\s+behavior\\s+([A-Za-z_]\\w*)\\s*$", "behavior"},
-            {"^\\s*error\\s+behavior\\s+([A-Za-z_]\\w*)\\s*$", "behavior"},
-            {"^\\s*error\\s+type\\s+set\\s+([A-Za-z_]\\w*)\\s*$", "error type set"},
-            {"^\\s*error\\s+type\\s+([A-Za-z_]\\w*)\\s*$", "error type"},
-            {"^\\s*error\\s+flow\\s+([A-Za-z_]\\w*)\\s*$", "error flow"},
-            {"^\\s*propagation\\s+([A-Za-z_]\\w*)\\s*$", "propagation"},
+            {"^\\s*composite\\s+error\\s+behavior\\s+([A-Za-z_]\\w*)\\s*\\{?\\s*$", "behavior"},
+            {"^\\s*error\\s+behavior\\s+([A-Za-z_]\\w*)\\s*\\{?\\s*$", "behavior"},
+            {"^\\s*error\\s+type\\s+set\\s+([A-Za-z_]\\w*)\\s*\\{?\\s*$", "error type set"},
+            {"^\\s*error\\s+type\\s+([A-Za-z_]\\w*)\\s*\\{?\\s*$", "error type"},
+            {"^\\s*error\\s+flow\\s+([A-Za-z_]\\w*)\\s*\\{?\\s*$", "error flow"},
+            {"^\\s*propagation\\s+([A-Za-z_]\\w*)\\s*\\{?\\s*$", "propagation"},
         };
+        // 单独的右大括号行（大模型可能错误地生成 C/Java 风格的块语法）
+        Pattern closingBracePattern = Pattern.compile("^\\s*\\}\\s*$");
         // EMV2 内部以 end 开头但不是块结束的语句（end to end flow 声明）
         Pattern emv2InternalEndPattern = Pattern.compile(
                 "^\\s*end\\s+to\\s+end\\s+flow\\b",
@@ -6766,6 +6977,12 @@ public class AadlReferenceValidator {
 
             // 跳过 EMV2 内部以 end 开头但不是块结束的语句
             if (emv2InternalEndPattern.matcher(trimmed).find()) {
+                resultLines.add(line);
+                continue;
+            }
+
+            // 跳过单独的右大括号（大模型错误生成的 C/Java 风格语法，保留在输出中但不影响栈）
+            if (closingBracePattern.matcher(trimmed).matches()) {
                 resultLines.add(line);
                 continue;
             }

@@ -1,0 +1,149 @@
+package Test_Bus_Dir
+public
+
+-- =======================================
+-- 测试 1：同级连接 - 正确（requires <-> provides）
+-- =======================================
+bus CanBus
+  features
+    busOut : provides bus access CanBus;
+end CanBus;
+
+bus implementation CanBus.impl
+end CanBus.impl;
+
+device CANController
+  features
+    canIn : requires bus access CanBus;
+    out_data : out data port SerialData;
+end CANController;
+
+device implementation CANController.impl
+end CANController.impl;
+
+-- =======================================
+-- 测试 2：同级连接 - 错误（requires <-> requires）
+-- =======================================
+device DeviceA
+  features
+    bus_if : requires bus access I2CBus;
+end DeviceA;
+
+device implementation DeviceA.impl
+end DeviceA.impl;
+
+device DeviceB
+  features
+    bus_if : requires bus access I2CBus;
+end DeviceB;
+
+device implementation DeviceB.impl
+end DeviceB.impl;
+
+-- =======================================
+-- 测试 3：同级连接 - 错误（provides <-> provides）
+-- =======================================
+bus BusX
+  features
+    out1 : provides bus access BusX;
+    out2 : provides bus access BusX;
+end BusX;
+
+bus implementation BusX.impl
+end BusX.impl;
+
+-- =======================================
+-- 测试 4：委派连接 - 正确（父 provides <-> 子 provides）
+-- =======================================
+system PowerSupplySys
+  features
+    line1 : provides bus access PowerBus;
+end PowerSupplySys;
+
+system implementation PowerSupplySys.impl
+  subcomponents
+    line1_bus : bus PowerBus.impl;
+  connections
+    conn_delegate_1 : bus access line1 <-> line1_bus.busOut;
+end PowerSupplySys.impl;
+
+bus PowerBus
+  features
+    busOut : provides bus access PowerBus;
+end PowerBus;
+
+bus implementation PowerBus.impl
+end PowerBus.impl;
+
+-- =======================================
+-- 测试 5：委派连接 - 正确（父 requires <-> 子 requires）
+-- =======================================
+system System_A
+  features
+    parent_req_bus : requires bus access MainBus;
+end System_A;
+
+system implementation System_A.impl
+  subcomponents
+    cpu : processor MainProcessor.impl;
+  connections
+    conn_delegate_2 : bus access parent_req_bus <-> cpu.bus_if;
+end System_A.impl;
+
+processor MainProcessor
+  features
+    bus_if : requires bus access MainBus;
+end MainProcessor;
+
+processor implementation MainProcessor.impl
+end MainProcessor.impl;
+
+-- =======================================
+-- 测试 6：委派连接 - 错误（父 provides <-> 子 requires，方向不一致）
+-- =======================================
+system BadDelegateSys
+  features
+    ext_bus : provides bus access SomeBus;
+end BadDelegateSys;
+
+system implementation BadDelegateSys.impl
+  subcomponents
+    internal_bus : bus SomeBus.impl;
+  connections
+    bad_conn : bus access ext_bus <-> internal_bus.busIn;
+end BadDelegateSys.impl;
+
+bus SomeBus
+  features
+    busIn : requires bus access SomeBus;
+end SomeBus;
+
+bus implementation SomeBus.impl
+end SomeBus.impl;
+
+-- =======================================
+-- 顶层系统（包含所有测试组件）
+-- =======================================
+system Top_System
+end Top_System;
+
+system implementation Top_System.impl
+  subcomponents
+    can_bus_1 : bus CanBus.impl;
+    can_dev : device CANController.impl;
+    dev_a : device DeviceA.impl;
+    dev_b : device DeviceB.impl;
+    bus_x : bus BusX.impl;
+    power_sys : system PowerSupplySys.impl;
+    sys_a : system System_A.impl;
+    bad_sys : system BadDelegateSys.impl;
+  connections
+    -- 正确：requires <-> provides（同级）
+    conn_correct_1 : bus access can_dev.canIn <-> can_bus_1.busOut;
+    -- 错误：requires <-> requires（同级）
+    conn_bad_requires : bus access dev_a.bus_if <-> dev_b.bus_if;
+    -- 错误：provides <-> provides（同级）
+    conn_bad_provides : bus access bus_x.out1 <-> bus_x.out2;
+end Top_System.impl;
+
+end Test_Bus_Dir;

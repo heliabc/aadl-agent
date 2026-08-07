@@ -22,6 +22,12 @@ global:
       ② 向下委派 (Delegation Down)：in -> in。父容器输入端口（左侧，无前缀）指向子组件输入端口（右侧）。示例：`c : port parent_in -> Child.in_port;`
       ③ 向上委派 (Delegation Up)：out -> out。子组件输出端口（左侧）指向父容器输出端口（右侧，无前缀）。示例：`c : port Child.out_port -> parent_out;`
       特殊：in out 双向端口在同级连接中可作为源端或目标端；在委派中只能 in out <-> in out。
+      【bus access 连接方向规则】bus access 必须使用双向操作符 `<->`，方向规则如下：
+      ① 同级连接 (Peer-to-Peer)：requires <-> provides（一端索取，一端提供）。严禁 requires <-> requires、provides <-> provides。
+         示例：`conn_1 : bus access CANController.canIn <-> CanBus_1.busOut;`
+      ② 委派连接 (Delegation)：两端方向必须相同（provides <-> provides 或 requires <-> requires）。严禁方向不一致。
+         向外提供总线：父 provides <-> 子 provides，示例：`conn : bus access line1 <-> line1_bus.busOut;`
+         向外索取总线：父 requires <-> 子 requires，示例：`conn : bus access parent_req_bus <-> CPU.bus_if;`
     R5【thread 内部只有 properties】thread implementation 中严禁出现 connections 和 subcomponents。
     R6【数据端口语法】数据端口必须写 `in data port 类型名` 或 `out data port 类型名`。严禁 `requires data port`，严禁无类型的 `data port;`。
     R7【连接与特征归属】软件实体（process）的 connections 中只能 port 连接；硬件实体（device/processor/memory/bus）的 connections 中只能 bus access 连接；system 两者均可。软件实体特征只 Port，硬件实体特征只 Bus Access。thread 严禁 bus access。

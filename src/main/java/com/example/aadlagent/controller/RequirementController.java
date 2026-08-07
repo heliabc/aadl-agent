@@ -18,6 +18,7 @@ import com.example.aadlagent.session.SessionManager;
 import com.example.aadlagent.service.TaskCancellationService;
 import com.example.aadlagent.service.TraceabilityService;
 import com.example.aadlagent.util.DocFileReader;
+import com.example.aadlagent.util.AadlReferenceValidator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -53,6 +54,7 @@ public class RequirementController {
     private final SessionManager sessionManager;
     private final TraceabilityService traceabilityService;
     private final TaskCancellationService cancellationService;
+    private final AadlReferenceValidator aadlValidator;
 
     public RequirementController(RequirementAgent requirementAgent, AadlArchitectureAgent architectureAgent,
                                  ModuleAnalysisAgent moduleAnalysisAgent, AadlGeneratorAgent aadlGeneratorAgent,
@@ -60,7 +62,8 @@ public class RequirementController {
                                  DocFileReader docFileReader, FileConfig fileConfig, 
                                  ModelService modelService, DeepSeekConfig deepSeekConfig,
                                  RagService ragService, SessionManager sessionManager,
-                                 TraceabilityService traceabilityService, TaskCancellationService cancellationService) {
+                                 TraceabilityService traceabilityService, TaskCancellationService cancellationService,
+                                 AadlReferenceValidator aadlValidator) {
         this.requirementAgent = requirementAgent;
         this.architectureAgent = architectureAgent;
         this.moduleAnalysisAgent = moduleAnalysisAgent;
@@ -75,6 +78,7 @@ public class RequirementController {
         this.sessionManager = sessionManager;
         this.traceabilityService = traceabilityService;
         this.cancellationService = cancellationService;
+        this.aadlValidator = aadlValidator;
     }
 
     @PostMapping("/analyze")
@@ -946,6 +950,75 @@ public class RequirementController {
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
             error.put("message", "读取文件失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
+    }
+
+    /**
+     * 测试 AADL 静态验证和自动修复功能（不调用大模型）。
+     * 输入 AADL 内容，输出验证结果和自动修复后的代码。
+     *
+     * 请求体：
+     * - content: AADL 代码内容（与 file 二选一）
+     * - file: output/aadl 目录下的文件名（与 content 二选一）
+     * - outputFile: 可选，修复后保存的文件名
+     */
+    @PostMapping("/validate-aadl")
+    public ResponseEntity<Map<String, Object>> validateAadl(@RequestBody Map<String, Object> request) {
+        String content = (String) request.get("content");
+        String fileName = (String) request.get("file");
+        String outputFileName = (String) request.get("outputFile");
+
+        if ((content == null || content.trim().isEmpty()) && 
+            (fileName == null || fileName.trim().isEmpty())) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "AADL内容或文件名不能为空");
+            return ResponseEntity.badRequest().body(error);
+        }
+
+        try {
+            // 读取文件或直接使用内容
+            String aadlContent = content;
+            if (aadlContent == null || aadlContent.trim().isEmpty()) {
+                String aadlFilePath = Paths.get(fileConfig.getAadlPath(), fileName).toString();
+                if (!java.nio.file.Files.exists(java.nio.file.Paths.get(aadlFilePath))) {
+                    Map<String, Object> error = new HashMap<>();
+                    error.put("success", false);
+                    error.put("message", "AADL文件不存在: " + fileName);
+                    return ResponseEntity.badRequest().body(error);
+                }
+                aadlContent = docFileReader.readFile(aadlFilePath);
+            }
+
+            // 执行静态验证和自动修复
+            AadlReferenceValidator.ValidationResult result = aadlValidator.validateSyntax(aadlContent);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("originalContent", aadlContent);
+            response.put("fixedContent", result.fixedContent);
+            response.put("errors", result.errors);
+            response.put("warnings", result.warnings);
+            response.put("fixes", result.fixes);
+            response.put("errorCount", result.errors.size());
+            response.put("warningCount", result.warnings.size());
+            response.put("fixCount", result.fixes.size());
+            response.put("hasIssues", result.hasIssues());
+
+            // 如果指定了输出文件名，保存修复后的文件
+            if (outputFileName != null && !outputFileName.trim().isEmpty() && result.fixedContent != null) {
+                String outputFilePath = Paths.get(fileConfig.getAadlPath(), outputFileName).toString();
+                docFileReader.writeFile(result.fixedContent, outputFilePath);
+                response.put("savedTo", outputFileName);
+            }
+
+            return ResponseEntity.ok(response);
+
+        } catch (IOException e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "处理文件失败: " + e.getMessage());
             return ResponseEntity.badRequest().body(error);
         }
     }
