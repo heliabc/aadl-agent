@@ -2221,11 +2221,9 @@ public class AadlReferenceValidator {
                         "(=>\\s*)reference\\s*\\(" + refTarget + "\\)",
                         "$1(reference (" + refTarget + "))"
                 );
-                result.fixes.add(new ValidationFix(
-                        i + 1,
-                        line.trim(),
-                        fixedLine.trim(),
-                        "补充 reference 的外层列表括号：reference (" + refTarget + ") → (reference (" + refTarget + "))"
+                result.fixes.add(String.format(
+                        "第%d行: 已修正 reference 属性格式 - 补充外层列表括号：reference (%s) → (reference (%s))",
+                        i + 1, refTarget, refTarget
                 ));
             }
         }
