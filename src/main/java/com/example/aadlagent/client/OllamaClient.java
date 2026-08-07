@@ -6,10 +6,11 @@ import com.example.aadlagent.client.dto.EmbeddingResponse;
 import com.example.aadlagent.config.OllamaConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.*;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +24,23 @@ public class OllamaClient implements LlmClient {
 
     public OllamaClient(OllamaConfig config) {
         this.config = config;
-        this.restTemplate = new RestTemplate();
+        this.restTemplate = createRestTemplate();
+    }
+
+    private RestTemplate createRestTemplate() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(config.getTimeout());
+        factory.setReadTimeout(config.getTimeout());
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.setRequestFactory(factory);
+        // 配置错误处理器，让我们能够自己处理HTTP错误响应而不抛出异常
+        restTemplate.setErrorHandler(new DefaultResponseErrorHandler() {
+            @Override
+            public boolean hasError(org.springframework.http.client.ClientHttpResponse response) throws java.io.IOException {
+                return false;
+            }
+        });
+        return restTemplate;
     }
 
     @Override
@@ -33,7 +50,7 @@ public class OllamaClient implements LlmClient {
 
     @Override
     public String chat(String prompt, Double temperature, Integer maxTokens, String modelName) {
-        String url = config.getBaseUrl() + "/api/chat";
+        String url = buildUrl("/api/chat");
 
         Map<String, Object> requestBody = new HashMap<>();
         // 使用指定的模型名称，否则使用默认配置
@@ -44,7 +61,7 @@ public class OllamaClient implements LlmClient {
         message.put("role", "user");
         message.put("content", prompt);
 
-        requestBody.put("messages", new Object[]{message});
+        requestBody.put("messages", Arrays.asList(message));
         requestBody.put("stream", false);
 
         if (temperature != null) {
@@ -60,21 +77,14 @@ public class OllamaClient implements LlmClient {
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
 
         try {
-            ResponseEntity<String> rawResponse = restTemplate.exchange(
-                    url,
-                    HttpMethod.POST,
-                    request,
-                    String.class
-            );
-            
-            log.debug("Ollama chat raw response (status={}): {}", rawResponse.getStatusCode(), rawResponse.getBody());
-
             ResponseEntity<ChatResponse> response = restTemplate.exchange(
                     url,
                     HttpMethod.POST,
                     request,
                     ChatResponse.class
             );
+
+            log.debug("Ollama chat response status: {}", response.getStatusCode());
 
             if (response.getStatusCode().is2xxSuccessful()) {
                 ChatResponse chatResponse = response.getBody();
@@ -87,11 +97,21 @@ public class OllamaClient implements LlmClient {
                         String content = chatResponse.getMessage().getContent();
                         log.debug("Ollama chat message content: null={}, length={}", 
                                 content == null, content != null ? content.length() : -1);
-                        return cleanThinkingContent(content);
+                        String cleaned = cleanThinkingContent(content);
+                        if (cleaned == null || cleaned.isEmpty()) {
+                            log.warn("Ollama chat response: content is empty after cleaning thinking tags; " +
+                                    "original content length={}", content == null ? "null" : content.length());
+                        }
+                        return cleaned;
+                    } else {
+                        log.warn("Ollama chat response: message is null in response");
                     }
+                } else {
+                    log.warn("Ollama chat response: response body is null");
                 }
+            } else {
+                log.error("Ollama chat request failed with status: {}", response.getStatusCode());
             }
-            log.error("Ollama chat request failed with status: {}", response.getStatusCode());
             return null;
         } catch (RestClientException e) {
             log.error("Ollama chat request exception: {}", e.getMessage(), e);
@@ -105,7 +125,7 @@ public class OllamaClient implements LlmClient {
             return null;
         }
 
-        String url = config.getBaseUrl() + "/api/embed";
+        String url = buildUrl("/api/embed");
 
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", config.getEmbeddingModel());
@@ -169,7 +189,7 @@ public class OllamaClient implements LlmClient {
 
     @Override
     public boolean checkModel(String modelName) {
-        String url = config.getBaseUrl() + "/api/tags";
+        String url = buildUrl("/api/tags");
 
         try {
             ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
@@ -193,6 +213,20 @@ public class OllamaClient implements LlmClient {
     @Override
     public String getModelName() {
         return config.getChatModel();
+    }
+
+    /**
+     * 构建URL，确保正确处理斜杠
+     */
+    private String buildUrl(String path) {
+        String baseUrl = config.getBaseUrl();
+        if (baseUrl.endsWith("/")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+        }
+        if (!path.startsWith("/")) {
+            path = "/" + path;
+        }
+        return baseUrl + path;
     }
 
     /**

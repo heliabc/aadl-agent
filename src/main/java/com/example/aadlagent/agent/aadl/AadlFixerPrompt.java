@@ -89,6 +89,22 @@ public class AadlFixerPrompt {
             prompt.append("修复方案: ").append(fix.get("fix_solution")).append("\n\n");
         }
 
+        // 8b. 静态语法分析修复规则（内置分析器检测的无法自动修复的错误）
+        Object staticFixesObj = rulesConfig.get("static_analysis_fixes");
+        if (staticFixesObj instanceof List) {
+            List<Map<String, Object>> staticFixes = (List<Map<String, Object>>) staticFixesObj;
+            prompt.append("【静态语法分析修复规则】\n");
+            prompt.append("以下错误由内置静态语法分析器检测，无法自动修复，需要根据上下文修复：\n\n");
+            for (Map<String, Object> rule : staticFixes) {
+                prompt.append("--- ").append(rule.get("id")).append(": ").append(rule.get("title")).append(" ---\n");
+                prompt.append("严重级别: ").append(rule.get("severity")).append("\n");
+                prompt.append("错误特征: ").append(rule.get("error_pattern")).append("\n");
+                prompt.append("修复策略:\n").append(rule.get("fix_strategy")).append("\n");
+                prompt.append("修复前:\n").append(rule.get("before")).append("\n");
+                prompt.append("修复后:\n").append(rule.get("after")).append("\n\n");
+            }
+        }
+
         // 9. 自检清单（近因效应：紧贴 output_instruction，模型最后读到）
         Map<String, Object> checklist = (Map<String, Object>) rulesConfig.get("checklist");
         if (checklist != null && checklist.get("content") != null) {

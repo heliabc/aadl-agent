@@ -109,6 +109,14 @@ public class AadlFixerAgent implements Agent<AgentInput, AgentOutput> {
             log.info("正在解析LLM响应...");
             String fixedAadl = extractAadlContent(llmResponse);
 
+            // 验证修复标记是否存在
+            int fixMarkerCount = countFixMarkers(fixedAadl);
+            if (fixMarkerCount == 0) {
+                log.warn("修复后的代码中未检测到任何 -- [修复] 标记，可能未按要求标注修改点");
+            } else {
+                log.info("修复后的代码中检测到 {} 个 -- [修复] 标记", fixMarkerCount);
+            }
+
             List<String> remainingErrors = validateAadl(fixedAadl);
             log.info("修复后验证结果: {} 个错误", remainingErrors.size());
 
@@ -120,6 +128,7 @@ public class AadlFixerAgent implements Agent<AgentInput, AgentOutput> {
             log.info("AadlFixerAgent执行完成!");
             log.info("组件数量: {} 个", componentCount);
             log.info("连接数量: {} 个", connectionCount);
+            log.info("修复标记: {} 个", fixMarkerCount);
             log.info("剩余错误: {} 个", remainingErrors.size());
             log.info("总耗时: {}ms", executionTime);
             log.info("========================================");
@@ -327,6 +336,23 @@ public class AadlFixerAgent implements Agent<AgentInput, AgentOutput> {
 
     private int countConnections(String aadlContent) {
         Pattern pattern = Pattern.compile("connections");
+        Matcher matcher = pattern.matcher(aadlContent);
+        int count = 0;
+        while (matcher.find()) {
+            count++;
+        }
+        return count;
+    }
+
+    /**
+     * 统计修复代码中 -- [修复] 标记的数量。
+     * 用于验证 LLM 是否按规则在每处修改旁添加了修复标记。
+     */
+    private int countFixMarkers(String aadlContent) {
+        if (aadlContent == null || aadlContent.isEmpty()) {
+            return 0;
+        }
+        Pattern pattern = Pattern.compile("--\\s*\\[修复\\]");
         Matcher matcher = pattern.matcher(aadlContent);
         int count = 0;
         while (matcher.find()) {

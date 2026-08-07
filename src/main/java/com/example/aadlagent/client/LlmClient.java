@@ -20,4 +20,11 @@ public interface LlmClient {
      * 检查指定模型是否可用
      */
     boolean checkModel(String modelName);
+
+    /**
+     * 测试API连接是否真正可用（发送一个简单的测试请求）
+     */
+    default boolean testConnection() {
+        return isAvailable();
+    }
 }

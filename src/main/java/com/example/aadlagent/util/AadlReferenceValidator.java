@@ -282,6 +282,8 @@ public class AadlReferenceValidator {
         public List<String> errors = new ArrayList<>();
         public List<String> warnings = new ArrayList<>();
         public List<String> fixes = new ArrayList<>();
+        /** 修复建议列表，与 errors 一一对应（相同索引） */
+        public List<String> suggestions = new ArrayList<>();
         public String fixedContent;
         /** 需要自动补全的 feature 列表：key = 组件类型名, value = {feature名 → 数据类型} */
         public Map<String, Map<String, String>> missingFeatures = new LinkedHashMap<>();
@@ -420,7 +422,160 @@ public class AadlReferenceValidator {
                     componentFeatures, result);
         }
 
+        // 6. 为每个错误生成修复建议
+        for (String error : result.errors) {
+            result.suggestions.add(generateSuggestion(error));
+        }
+
         return result;
+    }
+
+    // ========================= 修复建议生成 =========================
+
+    /**
+     * 根据错误消息内容，通过模式匹配生成对应的修复建议。
+     * 覆盖常见 AADL 语法错误的修复指导。
+     *
+     * @param errorMessage 错误消息
+     * @return 修复建议字符串，无匹配时返回通用建议
+     */
+    private String generateSuggestion(String errorMessage) {
+        if (errorMessage == null || errorMessage.isEmpty()) {
+            return "请检查 AADL 语法规范。";
+        }
+        String msg = errorMessage.toLowerCase();
+
+        // 端口方向错误
+        if (msg.contains("端口方向错误") || msg.contains("数据流方向不匹配")) {
+            if (msg.contains("同级连接")) {
+                return "同级组件连接必须 out -> in。将源端端口改为 out data port，或将目标端端口改为 in data port。";
+            }
+            if (msg.contains("向下委派")) {
+                return "向下委派必须 in -> in。确保父组件端口和子组件端口都是 in 方向。格式：port parent_in -> Child.data_in;";
+            }
+            if (msg.contains("向上委派")) {
+                return "向上委派必须 out -> out。确保子组件端口和父组件端口都是 out 方向。格式：port Child.data_out -> parent_out;";
+            }
+            return "检查连接两端的端口方向是否匹配对应连接模式（同级 out->in、向下委派 in->in、向上委派 out->out）。";
+        }
+
+        // features 放置错误
+        if (msg.contains("features") && (msg.contains("implementation") || msg.contains("implementation"))) {
+            return "将 features 块从 implementation 声明中移除，放到对应的类型声明（type declaration）中。";
+        }
+
+        // data 组件有 features
+        if (msg.contains("data") && msg.contains("features")) {
+            return "data 组件是纯类型分类器，严禁拥有 features 块。删除 data 组件中的 features 块。";
+        }
+
+        // thread 内有 connections
+        if (msg.contains("thread") && msg.contains("connections")) {
+            return "thread implementation 中严禁出现 connections 块。将连接移到包含该线程的 process 或 system implementation 中。";
+        }
+
+        // requires data port 非法
+        if (msg.contains("requires data port") || msg.contains("requires") && msg.contains("data port")) {
+            return "数据端口只能使用 in/out 方向关键字。将 'requires data port' 改为 'in data port' 或 'out data port'。";
+        }
+
+        // thread 有 bus access
+        if (msg.contains("thread") && msg.contains("bus access")) {
+            return "thread 严禁声明 requires/provides bus access。删除 thread features 中的 bus access 行，总线访问通过 device 桥接。";
+        }
+
+        // 缺少分号
+        if (msg.contains("缺少分号") || msg.contains("分号结尾")) {
+            return "在该行末尾添加分号 ';'。AADL 中每个声明和连接行必须以分号结尾。";
+        }
+
+        // 缺少 end 语句
+        if (msg.contains("缺少") && msg.contains("end")) {
+            return "在组件声明末尾添加 'end 组件名;' 或 'end 组件名.impl;'。类型声明用组件名，实现声明用 组件名.impl。";
+        }
+
+        // 缺少 implementation 声明
+        if (msg.contains("缺少") && msg.contains("implementation")) {
+            return "添加对应的 implementation 声明：组件类型 implementation 组件名.impl ... end 组件名.impl;";
+        }
+
+        // 缺少类型声明
+        if (msg.contains("缺少") && msg.contains("类型声明")) {
+            return "添加对应的类型声明：组件类型 组件名 ... end 组件名;";
+        }
+
+        // 悬空引用 - 未声明
+        if (msg.contains("未声明") || msg.contains("引用") && msg.contains("不存在")) {
+            return "确保 subcomponents 中引用的组件类型名在同一个 package 中有完整的类型声明 + 实现声明。检查拼写是否一致。";
+        }
+
+        // 嵌套违规
+        if (msg.contains("嵌套") || msg.contains("包含") && msg.contains("不允许") || msg.contains("非法")) {
+            return "检查父子组件类型是否合法。thread 不能直接放 system 下（需包装进 process）；process 不能放 processor 下。参考 R9 包含关系表。";
+        }
+
+        // 连接引用悬空 feature
+        if (msg.contains("feature") && (msg.contains("不存在") || msg.contains("未声明") || msg.contains("找不到"))) {
+            return "确保连接引用的 '实例名.端口名' 中的端口名在对应组件类型的 features 块中已声明。检查拼写和组件归属。";
+        }
+
+        // 连接类型不匹配
+        if (msg.contains("port") && msg.contains("access") && (msg.contains("混连") || msg.contains("不匹配"))) {
+            return "port 连接只能连接 data port/event port，bus access 连接只能连接 requires/provides bus access。严禁混连。";
+        }
+
+        // 连接操作符错误
+        if (msg.contains("操作符") || msg.contains("->") && msg.contains("<->")) {
+            return "port 连接用 '->'（双向 in out 端口可用 '<->'），bus access 连接用 '<->'。检查连接操作符是否正确。";
+        }
+
+        // 缺少 Actual_Processor_Binding
+        if (msg.contains("actual_processor_binding") || msg.contains("处理器绑定") || msg.contains("部署绑定")) {
+            return "在包含该 process/thread 的 system implementation 的 properties 块中添加：Actual_Processor_Binding => reference (处理器实例名) applies to 实例名;";
+        }
+
+        // 数据类型不一致
+        if (msg.contains("数据类型") && (msg.contains("不一致") || msg.contains("不匹配"))) {
+            return "确保连接两端的 data port 引用相同的数据类型组件。检查两端 features 中声明的类型名是否一致。";
+        }
+
+        // Data_Size 不一致
+        if (msg.contains("data_size") || msg.contains("数据大小")) {
+            return "确保连接两端 data 组件的 Data_Size 属性值一致。修改其中一方的 Data_Size 使其与另一方匹配。";
+        }
+
+        // 命名冲突
+        if (msg.contains("重名") || msg.contains("命名冲突") || msg.contains("重复")) {
+            return "subcomponents 实例名、connections 连接名、组件类型名三者不得重复。实例名冲突追加 _inst，连接名冲突追加 _conn。";
+        }
+
+        // 畸形 end 语句
+        if (msg.contains("end") && (msg.contains("畸形") || msg.contains("格式错误") || msg.contains("不匹配"))) {
+            return "检查 end 语句格式：类型声明用 'end 组件名;'，实现声明用 'end 组件名.impl;'。确保名称与声明完全一致。";
+        }
+
+        // 遗漏组件
+        if (msg.contains("遗漏") || msg.contains("缺失") && msg.contains("组件")) {
+            return "架构树中存在但 AADL 中缺失的组件，需要补充完整的类型声明 + 实现声明。";
+        }
+
+        // 幻觉组件
+        if (msg.contains("幻觉") || msg.contains("多余") && msg.contains("组件")) {
+            return "AADL 中声明了但架构树中不存在的组件。如果确实需要，更新架构树；否则删除多余的组件声明。";
+        }
+
+        // applies to 引用未声明
+        if (msg.contains("applies to") && (msg.contains("未声明") || msg.contains("不存在"))) {
+            return "properties 中 'applies to' 引用的实例名必须在当前 implementation 的 subcomponents 中已声明。检查实例名拼写。";
+        }
+
+        // 顺序违规
+        if (msg.contains("顺序") || msg.contains("subcomponents") && msg.contains("connections") && msg.contains("properties")) {
+            return "implementation 内部必须按 subcomponents → connections → properties 顺序编写。调整块的顺序。";
+        }
+
+        // 通用建议
+        return "请对照 AADL 核心红线规则 R1-R13 检查并修复此问题。";
     }
 
     // ========================= AADL 声明解析 =========================
@@ -2466,11 +2621,29 @@ public class AadlReferenceValidator {
     /**
      * 4u. 检测 port 连接的端口方向是否正确。
      *
-     * SAE AADL 标准规范：
-     * - 数据流向必须符合端口定义的输入输出方向
-     * - 源端（-> 左侧）必须是 out port 或 in out port
-     * - 目标端（-> 右侧）必须是 in port 或 in out port
-     * - 严禁 in → in、out → out、in → out（数据无法流出或流入）
+     * AADL 端口方向委派规则（三种合法连接模式）：
+     *
+     * 1. 同级组件连接 (Peer-to-Peer)：
+     *    - 规则：out -> in
+     *    - 语义：数据从源组件的输出端口流出，流入目标组件的输入端口
+     *    - 示例：conn1 : port Thread_A.data_out -> Thread_B.data_in;
+     *    - 严禁：in -> in、out -> out（同级组件之间绝对不能出现）
+     *
+     * 2. 向下委派 (Delegation Down)：
+     *    - 规则：in -> in
+     *    - 语义：父容器的输入端口（外部数据的源头）指向子组件的输入端口（数据的终点）
+     *    - 示例：conn2 : port parent_in_port -> Thread_A.data_in;
+     *    - 源端是父组件端口（无实例名前缀），目标端是子组件端口
+     *
+     * 3. 向上委派 (Delegation Up)：
+     *    - 规则：out -> out
+     *    - 语义：子组件的输出端口（内部数据的源头）指向父容器的输出端口（向外发送的出口）
+     *    - 示例：conn3 : port Thread_B.data_out -> parent_out_port;
+     *    - 源端是子组件端口，目标端是父组件端口（无实例名前缀）
+     *
+     * 特殊情况：in out 双向端口
+     *    - 同级连接中，in out 可作为源端（等同 out）或目标端（等同 in）
+     *    - 委派连接中，in out 父端口只能委派给 in out 子端口（双向委派）
      *
      * @param connections   连接引用列表
      * @param featureDetails 组件类型 → (feature名 → FeatureDetail)
@@ -2508,6 +2681,8 @@ public class AadlReferenceValidator {
             String destDir = null;
             String sourceDesc = null;
             String destDesc = null;
+            boolean sourceIsParent = false;
+            boolean destIsParent = false;
 
             if (conn.sourceInstance != null) {
                 // 源端是子组件实例
@@ -2524,6 +2699,7 @@ public class AadlReferenceValidator {
                 sourceDesc = conn.sourceInstance + "." + conn.sourceFeature;
             } else {
                 // 源端是父组件端口（代理连接）
+                sourceIsParent = true;
                 Map<String, FeatureDetail> parentFeatures = featureDetails.get(parentTypeName);
                 if (parentFeatures != null) {
                     FeatureDetail fd = parentFeatures.get(conn.sourceFeature);
@@ -2531,7 +2707,7 @@ public class AadlReferenceValidator {
                         sourceDir = fd.direction;
                     }
                 }
-                sourceDesc = "父." + conn.sourceFeature;
+                sourceDesc = conn.sourceFeature + "(父端口)";
             }
 
             if (conn.destInstance != null) {
@@ -2549,6 +2725,7 @@ public class AadlReferenceValidator {
                 destDesc = conn.destInstance + "." + conn.destFeature;
             } else {
                 // 目标端是父组件端口（代理连接）
+                destIsParent = true;
                 Map<String, FeatureDetail> parentFeatures = featureDetails.get(parentTypeName);
                 if (parentFeatures != null) {
                     FeatureDetail fd = parentFeatures.get(conn.destFeature);
@@ -2556,7 +2733,7 @@ public class AadlReferenceValidator {
                         destDir = fd.direction;
                     }
                 }
-                destDesc = "父." + conn.destFeature;
+                destDesc = conn.destFeature + "(父端口)";
             }
 
             // 无法确定方向时跳过
@@ -2564,39 +2741,80 @@ public class AadlReferenceValidator {
                 continue;
             }
 
+            // "requires"/"provides" 不适用 port 方向，视为未知跳过
+            boolean sourceIsPort = "in".equals(sourceDir) || "out".equals(sourceDir) || "in out".equals(sourceDir);
+            boolean destIsPort = "in".equals(destDir) || "out".equals(destDir) || "in out".equals(destDir);
+            if (!sourceIsPort || !destIsPort) {
+                continue;
+            }
+
             boolean directionOk;
+            String connTypeDesc;
             String expectedRule;
 
-            if (conn.isDelegation) {
-                // 代理连接（port delegation）：两端方向必须相同
-                // 输入代理：父 in -> 子 in
-                // 输出代理：子 out -> 父 out
-                // 双向代理：父 in out <-> 子 in out
-                // "requires"/"provides" 不适用 port 方向，视为未知跳过
-                boolean sourceIsPort = "in".equals(sourceDir) || "out".equals(sourceDir) || "in out".equals(sourceDir);
-                boolean destIsPort = "in".equals(destDir) || "out".equals(destDir) || "in out".equals(destDir);
-                if (!sourceIsPort || !destIsPort) {
-                    continue;
-                }
-                directionOk = sourceDir.equals(destDir);
-                if ("source".equals(conn.parentSide)) {
-                    expectedRule = "输入代理连接：父端 in -> 子端 in（方向必须相同）";
-                } else if ("dest".equals(conn.parentSide)) {
-                    expectedRule = "输出代理连接：子端 out -> 父端 out（方向必须相同）";
+            if (sourceIsParent && !destIsParent) {
+                // 向下委派 (Delegation Down): 父 in -> 子 in
+                // 父组件端口是源端（左侧），子组件端口是目标端（右侧）
+                connTypeDesc = "向下委派(Delegation Down)";
+                if ("in out".equals(sourceDir) && "in out".equals(destDir)) {
+                    // 双向委派：父 in out -> 子 in out
+                    directionOk = true;
+                    expectedRule = "向下委派：父端 in out -> 子端 in out（双向委派，合法）";
+                } else if ("in".equals(sourceDir) && "in".equals(destDir)) {
+                    directionOk = true;
+                    expectedRule = "向下委派：父端 in -> 子端 in（合法）";
                 } else {
-                    expectedRule = "代理连接：两端方向必须相同（in->in 或 out->out）";
+                    directionOk = false;
+                    expectedRule = "向下委派规则：父端 in -> 子端 in（方向必须相同且为 in）；" +
+                            "当前源端(父)=" + sourceDir + "，目标端(子)=" + destDir;
                 }
+            } else if (!sourceIsParent && destIsParent) {
+                // 向上委派 (Delegation Up): 子 out -> 父 out
+                // 子组件端口是源端（左侧），父组件端口是目标端（右侧）
+                connTypeDesc = "向上委派(Delegation Up)";
+                if ("in out".equals(sourceDir) && "in out".equals(destDir)) {
+                    // 双向委派：子 in out -> 父 in out
+                    directionOk = true;
+                    expectedRule = "向上委派：子端 in out -> 父端 in out（双向委派，合法）";
+                } else if ("out".equals(sourceDir) && "out".equals(destDir)) {
+                    directionOk = true;
+                    expectedRule = "向上委派：子端 out -> 父端 out（合法）";
+                } else {
+                    directionOk = false;
+                    expectedRule = "向上委派规则：子端 out -> 父端 out（方向必须相同且为 out）；" +
+                            "当前源端(子)=" + sourceDir + "，目标端(父)=" + destDir;
+                }
+            } else if (sourceIsParent && destIsParent) {
+                // 双端代理（两端都是父端口，少见但合法）：方向必须相同
+                connTypeDesc = "双端代理";
+                directionOk = sourceDir.equals(destDir);
+                expectedRule = "双端代理：两端方向必须相同（in->in 或 out->out）";
             } else {
-                // 同级连接（assembly connection）：源端 out -> 目标端 in
-                // 特殊情况：双向端口 in out 可以连接到 in 或 out
+                // 同级组件连接 (Peer-to-Peer): out -> in
+                // 两端都是子组件实例
+                connTypeDesc = "同级连接(Peer-to-Peer)";
+                // in out 双向端口可作为源端（等同 out）或目标端（等同 in）
                 boolean sourceIsOut = "out".equals(sourceDir) || "in out".equals(sourceDir);
                 boolean destIsIn = "in".equals(destDir) || "in out".equals(destDir);
                 directionOk = sourceIsOut && destIsIn;
-                expectedRule = "同级连接：源端必须是 out port，目标端必须是 in port";
+                if (!directionOk) {
+                    // 生成更具体的错误信息
+                    if ("in".equals(sourceDir) && "in".equals(destDir)) {
+                        expectedRule = "同级连接严禁 in -> in；正确规则为 out -> in（数据从源组件输出端口流向目标组件输入端口）";
+                    } else if ("out".equals(sourceDir) && "out".equals(destDir)) {
+                        expectedRule = "同级连接严禁 out -> out；正确规则为 out -> in（数据从源组件输出端口流向目标组件输入端口）";
+                    } else if ("in".equals(sourceDir) && "out".equals(destDir)) {
+                        expectedRule = "同级连接严禁 in -> out（方向完全反了）；正确规则为 out -> in（数据从源组件输出端口流向目标组件输入端口）";
+                    } else {
+                        expectedRule = "同级连接规则：源端 out -> 目标端 in（in out 双向端口可作为源端或目标端）；" +
+                                "严禁 in -> in、out -> out、in -> out";
+                    }
+                } else {
+                    expectedRule = "同级连接：源端 out -> 目标端 in（合法）";
+                }
             }
 
             if (!directionOk) {
-                String connTypeDesc = conn.isDelegation ? "代理连接" : "同级连接";
                 result.errors.add(String.format(
                         "第%d行: 端口方向错误 - %s '%s' 的数据流方向不匹配; " +
                         "源端 %s 方向=%s, 目标端 %s 方向=%s; %s",

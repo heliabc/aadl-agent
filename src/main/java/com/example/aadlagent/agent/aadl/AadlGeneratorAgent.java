@@ -200,8 +200,12 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
         // 记录验证结果到日志
         if (!validationResult.errors.isEmpty()) {
             log.warn("引用完整性验证发现 {} 个错误:", validationResult.errors.size());
-            for (String error : validationResult.errors) {
-                log.warn("  [ERROR] {}", error);
+            for (int i = 0; i < validationResult.errors.size(); i++) {
+                log.warn("  [ERROR] {}", validationResult.errors.get(i));
+                if (i < validationResult.suggestions.size() && validationResult.suggestions.get(i) != null
+                        && !validationResult.suggestions.get(i).isEmpty()) {
+                    log.warn("  [SUGGEST] {}", validationResult.suggestions.get(i));
+                }
             }
         }
         if (!validationResult.warnings.isEmpty()) {
@@ -233,6 +237,7 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
     /**
      * 将验证结果以 AADL 注释（--）形式嵌入代码顶部。
      * 这样用户在查看生成的 AADL 文件时即可看到验证报告。
+     * 每个错误下方附带对应的修复建议。
      */
     private String embedValidationReport(String aadlContent,
                                           AadlReferenceValidator.ValidationResult result) {
@@ -245,11 +250,16 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
         if (result.errors.isEmpty() && result.warnings.isEmpty() && result.fixes.isEmpty()) {
             report.append("-- 验证通过，无问题。\n");
         } else {
-            // 错误
+            // 错误 + 修复建议
             if (!result.errors.isEmpty()) {
                 report.append(String.format("-- [错误] (%d 项):%n", result.errors.size()));
                 for (int i = 0; i < result.errors.size(); i++) {
                     report.append(String.format("--   %d. %s%n", i + 1, result.errors.get(i)));
+                    // 附带修复建议
+                    if (i < result.suggestions.size() && result.suggestions.get(i) != null
+                            && !result.suggestions.get(i).isEmpty()) {
+                        report.append(String.format("--      修复建议: %s%n", result.suggestions.get(i)));
+                    }
                 }
             }
 

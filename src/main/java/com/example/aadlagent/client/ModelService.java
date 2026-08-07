@@ -92,4 +92,42 @@ public class ModelService {
 
         return status;
     }
+
+    /**
+     * 测试指定模型的API连接
+     */
+    public Map<String, Object> testConnection(ModelType modelType) {
+        Map<String, Object> result = new HashMap<>();
+        LlmClient client = getClient(modelType);
+        result.put("model", modelType.name());
+        result.put("displayName", getDisplayName(modelType));
+        result.put("configured", client.isAvailable());
+        
+        if (!client.isAvailable()) {
+            result.put("success", false);
+            result.put("message", "模型未配置（API Key或基础URL缺失）");
+            return result;
+        }
+        
+        try {
+            boolean connected = client.testConnection();
+            result.put("success", connected);
+            result.put("message", connected ? "连接成功" : "连接失败：API返回空响应");
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "连接异常: " + e.getMessage());
+        }
+        return result;
+    }
+
+    private String getDisplayName(ModelType modelType) {
+        switch (modelType) {
+            case DEEPSEEK: return "DeepSeek";
+            case DOUBAO: return "豆包（火山引擎）";
+            case CHATGPT: return "ChatGPT (OpenAI)";
+            case GEMINI: return "Gemini (Google)";
+            case OLLAMA:
+            default: return "Ollama (本地)";
+        }
+    }
 }

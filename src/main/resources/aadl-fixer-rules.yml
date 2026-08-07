@@ -1,10 +1,14 @@
 system_prompt: |
   你是一个专业的AADL（Architecture Analysis & Design Language）代码修复专家。
-  你的任务是分析OSATE工具报告的原始错误信息，理解每个错误的含义和位置，然后直接对AADL代码进行修复。
+  你的任务是分析错误信息，理解每个错误的含义和位置，然后直接对AADL代码进行修复。
   请保持原始代码的结构和逻辑不变，只进行必要的修改。
-  重要提示：OSATE的报错信息往往不直接指向根本原因，同一根本问题可能在不同位置报出不同错误。
-  因此，修复时应以AADL标准语法规范为核心判断依据，而非盲目跟随OSATE报错逐条修补。
-  正确的修复策略是：理解报错背后的真实原因，对照核心红线规则定位根本问题，一次性彻底修复。
+  错误信息可能来自多个来源：
+  - 内置静态语法分析器（基于规则的代码扫描，报告行号和具体违规类型）
+  - OSATE工具报告的原始错误文本（可能不直接指向根本原因）
+  - 结构化的JSON格式错误列表
+  - 用户对代码的改进要求
+  重要提示：无论是哪种来源的报错，修复时都应以AADL标准语法规范为核心判断依据，而非盲目跟随报错逐条修补。
+  同一根本问题可能在不同的错误来源中报出不同错误。正确的修复策略是：理解报错背后的真实原因，对照核心红线规则定位根本问题，一次性彻底修复。
 
 global:
   alwaysRules: |
@@ -12,7 +16,12 @@ global:
     R1【命名规范】标识符只用英文和下划线。禁止用保留字（system/process/thread 等）作组件名。
     R2【声明完整性】每个组件必须成对：类型声明 + implementation 声明，end 闭合不可省。
     R3【features 只在类型声明中】features 块只能出现在主动构件（thread/process/device/system/processor/memory/bus/subprogram）的类型声明中，严禁出现在 implementation 中。thread 的 features 只能有 in/out data port 和 event port，严禁 requires bus access。data 组件是纯类型分类器，严禁拥有 features 块。subprogram 可以定义 features。
-    R4【connections 完整性】连接行必须以分号结尾。port 连接的两端必须是 data port / event port；bus access 连接的两端必须是 requires/provides bus access。严禁 port 与 bus access 混连。port 连接用 `->`，bus access 连接用 `<->`。port 连接源端必须是 out port，目标端必须是 in port，两端数据类型必须一致。
+    R4【connections 完整性】连接行必须以分号结尾。port 连接的两端必须是 data port / event port；bus access 连接的两端必须是 requires/provides bus access。严禁 port 与 bus access 混连。port 连接用 `->`，bus access 连接用 `<->`。两端数据类型必须一致。
+      端口方向三种合法连接模式（严格遵守，违反将报错）：
+      ① 同级组件连接 (Peer-to-Peer)：out -> in。数据从源组件输出端口流向目标组件输入端口。严禁 in -> in、out -> out。
+      ② 向下委派 (Delegation Down)：in -> in。父容器输入端口（左侧，无前缀）指向子组件输入端口（右侧）。示例：`c : port parent_in -> Child.in_port;`
+      ③ 向上委派 (Delegation Up)：out -> out。子组件输出端口（左侧）指向父容器输出端口（右侧，无前缀）。示例：`c : port Child.out_port -> parent_out;`
+      特殊：in out 双向端口在同级连接中可作为源端或目标端；在委派中只能 in out <-> in out。
     R5【thread 内部只有 properties】thread implementation 中严禁出现 connections 和 subcomponents。
     R6【数据端口语法】数据端口必须写 `in data port 类型名` 或 `out data port 类型名`。严禁 `requires data port`，严禁无类型的 `data port;`。
     R7【连接与特征归属】软件实体（process）的 connections 中只能 port 连接；硬件实体（device/processor/memory/bus）的 connections 中只能 bus access 连接；system 两者均可。软件实体特征只 Port，硬件实体特征只 Bus Access。thread 严禁 bus access。
@@ -22,7 +31,8 @@ global:
 
 task_description: |
   请分析以下AADL代码和错误信息，一步完成错误分析与修复。
-  错误信息可能是以下任何一种格式：
+  错误信息可能来自以下来源之一或组合：
+  - 内置静态语法分析器报告（格式：第N行: 错误类型 - 详细描述; 修复建议: xxx）
   - OSATE工具报告的原始错误文本（包含行号、错误描述等）
   - 结构化的JSON格式错误列表
   - 原始文本格式的错误列表
@@ -31,10 +41,11 @@ task_description: |
   修复流程：
   1. 浏览错误信息，获取大致的问题方向（但不要被报错位置和描述所束缚）
   2. 通读完整AADL代码，对照核心红线规则 R1-R10 逐条排查语法问题
-  3. 定位报错背后的根本原因：一个根本问题（如 features 放错位置）可能触发多条 OSATE 报错
-  4. 从根本原因出发制定修复方案，一次修复彻底，避免逐条修补引入新问题
-  5. 修复完成后对照自检清单验证，确保修复后的代码完全符合 AADL 语法规范
-  6. 一次性输出修复后的完整AADL代码
+  3. 定位报错背后的根本原因：一个根本问题（如 features 放错位置）可能触发多条报错
+  4. 参考错误信息中附带的「修复建议」（如有），结合代码上下文制定修复方案
+  5. 从根本原因出发一次性修复彻底，避免逐条修补引入新问题
+  6. 修复完成后对照自检清单验证，确保修复后的代码完全符合 AADL 语法规范
+  7. 一次性输出修复后的完整AADL代码
 
 fix_guidelines:
   content: |
@@ -45,7 +56,22 @@ fix_guidelines:
     4. 一个根本问题可能引发多条 OSATE 报错，修复根本问题后多条报错会同时消失
     5. 确保修复后的代码完全符合 AADL 语法规范和核心红线规则
     6. 保留所有原始组件和连接关系，不进行不必要的修改
-    7. 对于每个修复点，在修复的代码行旁添加注释说明修复内容，格式：-- [修复] 修复说明
+
+    【修复标记规则（强制执行）】
+    每一处修改都必须在修改的代码行旁添加修复标记注释，格式：
+      -- [修复] 修复说明
+    标记规则：
+    - 新增的代码行：在新增行上方或行尾添加 `-- [修复] 新增：说明原因`
+    - 修改的代码行：在修改行上方或行尾添加 `-- [修复] 修改：说明改动内容`
+    - 删除的代码行：在删除位置保留一行注释 `-- [修复] 删除：说明删除原因`
+    - 一处修复只需一个标记，不要对同一改动重复标记
+    - 标记说明应简洁明了，如 `-- [修复] 修改：将 requires data port 改为 in data port`
+    示例：
+      -- [修复] 修改：将 features 从 implementation 移到类型声明
+      features
+        data_in : in data port SensorData;
+      -- [修复] 新增：补充缺失的分号
+      end SensorReader;
 
     常见 OSATE 报错与真实原因对照（报错文本仅供参考，真实原因需结合代码分析）：
     - "Ending 'X' does not match defining identifier 'Y'"：表面是名称不匹配，真实原因可能是组件声明被截断或 end 写错
@@ -106,6 +132,368 @@ common_fixes:
     error_example: 'commandIn : requires data port BrakeSignal;'
     fix_solution: 将requires data port改为in data port或out data port
 
+# ============================================================
+# 静态语法分析修复规则
+# 以下错误由内置静态语法分析器检测，无法自动修复，需要LLM根据上下文修复
+# 每条规则包含：错误标识、检测方法、错误消息模式、修复策略、代码示例
+# ============================================================
+static_analysis_fixes:
+
+  - id: FEATURES_IN_IMPL
+    title: features 块出现在 implementation 中
+    detector: checkFeaturesPlacement
+    error_pattern: "features 放置错误 - features 块出现在 implementation 中"
+    severity: error
+    fix_strategy: |
+      将 features 块从 implementation 声明中完整剪切，粘贴到对应的类型声明（type declaration）中。
+      注意：一个组件的类型声明和实现声明是分开的，features 只能在类型声明中。
+    before: |
+      system MySystem
+      end MySystem;
+
+      system implementation MySystem.impl
+        features               -- [错误] features 不能在 implementation 中
+          data_in : in data port SensorData;
+        subcomponents
+          sensor : device Sensor.impl;
+      end MySystem.impl;
+    after: |
+      system MySystem
+        features               -- [修复] 修改：将 features 移到类型声明中
+          data_in : in data port SensorData;
+      end MySystem;
+
+      system implementation MySystem.impl
+        subcomponents
+          sensor : device Sensor.impl;
+      end MySystem.impl;
+
+  - id: THREAD_CONNECTIONS_BLOCK
+    title: 线程 implementation 中出现 connections 块
+    detector: checkThreadConnectionsBlock
+    error_pattern: "connections 块出现在线程 implementation 中"
+    severity: error
+    fix_strategy: |
+      删除 thread implementation 中的 connections 块。
+      将其中的连接行移到包含该线程的 process 或 system implementation 的 connections 块中。
+      如果连接引用了线程的端口，确保端口在 thread 的类型声明 features 中已声明。
+    before: |
+      thread implementation TaskA.impl
+        connections             -- [错误] thread 内不能有 connections
+          c1 : port self.data_out -> TaskB.data_in;
+      end TaskA.impl;
+    after: |
+      thread implementation TaskA.impl
+      end TaskA.impl;
+
+      -- [修复] 修改：将连接移到 process implementation 中
+      process implementation MyProcess.impl
+        subcomponents
+          taskA : thread TaskA.impl;
+          taskB : thread TaskB.impl;
+        connections
+          c1 : port taskA.data_out -> taskB.data_in;
+      end MyProcess.impl;
+
+  - id: THREAD_BUS_ACCESS
+    title: thread 类型声明中出现 requires/provides bus access
+    detector: checkThreadBusAccessFeature
+    error_pattern: "thread 的 feature 使用了 requires/provides bus access"
+    severity: error
+    fix_strategy: |
+      删除 thread 类型声明 features 中的 bus access 行。
+      如果线程需要访问总线，应通过 device 桥接：线程的 port 连到 device 的 port，device 通过 bus access 连到 bus。
+      同时删除所有引用该 bus access feature 的连接行。
+    before: |
+      thread SensorReader
+        features
+          data_out : out data port SensorData;
+          bus_if : requires bus access CanBus;  -- [错误] thread 严禁 bus access
+      end SensorReader;
+    after: |
+      thread SensorReader
+        features
+          data_out : out data port SensorData;
+          -- [修复] 删除：移除 thread 的 bus access，改用 device 桥接
+      end SensorReader;
+
+  - id: FEATURE_TYPE_VIOLATION
+    title: 组件 feature 类型不被允许
+    detector: checkFeatureTypeCompliance
+    error_pattern: "feature 类型违规 - 组件的 feature 类型不被允许"
+    severity: error
+    fix_strategy: |
+      根据组件类型删除不被允许的 feature。各组件允许的 feature 类型：
+      - thread/process/subprogram/device/system：可定义 port（data port/event port/event data port）
+      - bus/processor/memory/device/system：可定义 bus access（provides/requires）
+      - device：唯一可同时拥有 port 和 bus access
+      - data：严禁任何 features
+    before: |
+      data SensorData
+        features               -- [错误] data 组件不能有 features
+          raw_value : in data port;  -- [错误] data 组件不允许 port
+      end SensorData;
+    after: |
+      -- [修复] 删除：移除 data 组件的整个 features 块
+      data SensorData
+      end SensorData;
+
+  - id: CONNECTION_TYPE_MISMATCH
+    title: port 连接与 bus access 连接混连
+    detector: checkConnectionTypeMatch
+    error_pattern: "连接类型不匹配 - port 连接的端点类型不是 port / bus access 连接的端点类型不是 bus access"
+    severity: error
+    fix_strategy: |
+      检查连接两端的 feature 类型：
+      - port 连接（port source -> destination）的两端必须是 data port / event port / event data port
+      - bus access 连接（bus access source <-> destination）的两端必须是 requires/provides bus access
+      如果一端是 port 另一端是 bus access，需要重新设计连接：通过 device 桥接软件 port 和硬件 bus access。
+    before: |
+      -- [错误] port 连接引用了 bus access 端点
+      c1 : port Sensor.data_out -> CanBus.bus_out;
+    after: |
+      -- [修复] 修改：通过 device 桥接，port 连 device 的 port，device 通过 bus access 连 bus
+      c1 : port Sensor.data_out -> SensorDevice.data_in;
+      c2 : bus access SensorDevice.bus_if <-> CanBus.bus_out;
+
+  - id: PORT_DIRECTION_ERROR
+    title: 端口方向不匹配
+    detector: checkPortDirection
+    error_pattern: "端口方向错误 - 数据流方向不匹配"
+    severity: error
+    fix_strategy: |
+      根据连接类型修正端口方向：
+      ① 同级连接 (Peer-to-Peer)：源端必须 out，目标端必须 in。改端口方向或交换源/目标。
+      ② 向下委派 (Delegation Down)：父端口（左侧无前缀）和子端口（右侧）必须都是 in。
+      ③ 向上委派 (Delegation Up)：子端口（左侧）和父端口（右侧无前缀）必须都是 out。
+      特殊：in out 双向端口在同级连接中可作源端或目标端；在委派中只能 in out <-> in out。
+    before: |
+      -- [错误] 同级连接 in -> in（必须 out -> in）
+      c1 : port ThreadA.data_in -> ThreadB.data_in;
+      -- [错误] 向下委派 out -> in（必须 in -> in）
+      c2 : port parent_out -> ThreadA.data_in;
+      -- [错误] 向上委派 in -> out（必须 out -> out）
+      c3 : port ThreadB.data_in -> parent_out;
+    after: |
+      -- [修复] 修改：同级连接改为 out -> in
+      c1 : port ThreadA.data_out -> ThreadB.data_in;
+      -- [修复] 修改：向下委派改为 in -> in（父端口也改为 in）
+      c2 : port parent_in -> ThreadA.data_in;
+      -- [修复] 修改：向上委派改为 out -> out（子端口也改为 out）
+      c3 : port ThreadB.data_out -> parent_out;
+
+  - id: PORT_DATA_TYPE_MISMATCH
+    title: 连接两端数据类型不一致
+    detector: checkPortDataTypeConsistency
+    error_pattern: "数据类型不匹配 - 连接两端的数据类型不一致"
+    severity: error
+    fix_strategy: |
+      使连接两端的 data port 引用相同的数据类型组件。
+      修改其中一端的端口声明，使其引用与另一端相同的数据类型名。
+      如果两种数据类型语义不同，需要评估是否应该建立转换逻辑而非直接连接。
+    before: |
+      thread SensorReader
+        features
+          data_out : out data port SensorData;  -- 类型 A
+      end SensorReader;
+
+      thread Controller
+        features
+          data_in : in data port ControlData;   -- 类型 B（与 A 不一致）
+      end Controller;
+
+      -- [错误] 连接两端类型不一致
+      c1 : port SensorReader.data_out -> Controller.data_in;
+    after: |
+      -- [修复] 修改：将 Controller.data_in 的类型改为 SensorData
+      thread Controller
+        features
+          data_in : in data port SensorData;    -- [修复] 修改：类型改为 SensorData
+      end Controller;
+
+  - id: ENTITY_CONNECTION_MISMATCH
+    title: 软件实体出现 bus access 连接 / 纯硬件实体出现 port 连接
+    detector: checkConnectionEntityTypeMatch
+    error_pattern: "连接类型与实体类型不匹配 - 软件实体出现 bus access / 纯硬件实体出现 port"
+    severity: error
+    fix_strategy: |
+      软件实体（thread/process）的 connections 中只能有 port 连接。
+      纯硬件实体（processor/memory/bus）的 connections 中只能有 bus access 连接。
+      如果软件实体需要与硬件交互，通过 device 桥接：软件 port → device port，device bus access → bus。
+    before: |
+      process implementation MyProcess.impl
+        connections
+          -- [错误] process 中出现 bus access 连接
+          c1 : bus access proc.bus_if <-> CanBus.bus_out;
+      end MyProcess.impl;
+    after: |
+      -- [修复] 修改：process 中只保留 port 连接，bus access 移到 system 层
+      process implementation MyProcess.impl
+        connections
+          c1 : port taskA.data_out -> sensorDevice.data_in;  -- [修复] 修改：改为 port 连接
+      end MyProcess.impl;
+
+  - id: IMPL_ORDER_VIOLATION
+    title: implementation 内部块顺序违规
+    detector: checkImplementationOrder
+    error_pattern: "三步规范违规 - implementation 中块顺序错误"
+    severity: error
+    fix_strategy: |
+      重新排列 implementation 内部的块顺序为：subcomponents → connections → properties。
+      删除不在此顺序中的块或将其移到正确位置。
+    before: |
+      system implementation MySystem.impl
+        properties             -- [错误] properties 在 connections 之前
+          Actual_Processor_Binding => reference (cpu) applies to proc;
+        connections
+          c1 : port a.data_out -> b.data_in;
+        subcomponents
+          a : thread A.impl;
+          b : thread B.impl;
+      end MySystem.impl;
+    after: |
+      system implementation MySystem.impl
+        subcomponents          -- [修复] 修改：调整为正确顺序
+          a : thread A.impl;
+          b : thread B.impl;
+        connections
+          c1 : port a.data_out -> b.data_in;
+        properties
+          Actual_Processor_Binding => reference (cpu) applies to proc;
+      end MySystem.impl;
+
+  - id: NAMING_COLLISION
+    title: 实例名/连接名/类型名重名冲突
+    detector: checkNamingCollision
+    error_pattern: "命名空间冲突 - 实例名/连接名与类型名相同或重复声明"
+    severity: error
+    fix_strategy: |
+      重命名冲突的标识符：
+      - 实例名与类型名冲突：实例名追加 _inst 后缀
+      - 连接名与类型名冲突：连接名追加 _conn 后缀
+      - 同一作用域内实例名重复：追加数字后缀（_2, _3）
+      - 连接名与实例名重名：连接名追加 _conn 后缀
+      重命名后同步更新所有引用该名称的连接行和 properties。
+    before: |
+      system implementation MySystem.impl
+        subcomponents
+          MySystem : system MySystem.impl;  -- [错误] 实例名与类型名相同
+        connections
+          c1 : port a.data_out -> b.data_in;
+          c1 : port b.data_out -> c.data_in;  -- [错误] 连接名重复
+      end MySystem.impl;
+    after: |
+      system implementation MySystem.impl
+        subcomponents
+          MySystem_inst : system MySystem.impl;  -- [修复] 修改：实例名追加 _inst
+        connections
+          c1 : port a.data_out -> b.data_in;
+          c1_conn : port b.data_out -> c.data_in;  -- [修复] 修改：连接名追加 _conn
+      end MySystem.impl;
+
+  - id: DANGLING_CONNECTION_REF
+    title: 连接引用了组件中不存在的端口
+    detector: checkConnectionReferences
+    error_pattern: "连接的端引用实例的 features 中不存在某端口"
+    severity: error
+    fix_strategy: |
+      检查连接行中 实例名.端口名 的端口名是否在对应组件类型的 features 块中已声明。
+      如果端口名拼写错误，修正为正确的端口名。
+      如果端口确实不存在，需要在组件类型声明的 features 块中补充声明该端口。
+    before: |
+      thread SensorReader
+        features
+          data_out : out data port SensorData;
+      end SensorReader;
+
+      -- [错误] 引用了不存在的端口 data_in
+      c1 : port SensorReader.data_in -> Controller.data_in;
+    after: |
+      -- [修复] 修改：修正端口名为 data_out
+      c1 : port SensorReader.data_out -> Controller.data_in;
+
+  - id: CONTAINMENT_VIOLATION
+    title: 子组件嵌套类型违规
+    detector: checkContainmentCompliance
+    error_pattern: "嵌套违规 - 子组件类型不被父组件允许"
+    severity: error
+    fix_strategy: |
+      根据父子类型映射表修正嵌套关系：
+      - thread 不能直接放 system 下 → 包装进 process
+      - process 不能放 processor 下 → 提取到 system 层并补 Actual_Processor_Binding
+      - system 不能放 process/thread 下
+      如果是 process 误放 processor 下，提取到 system 层并补充 Actual_Processor_Binding 属性。
+      其他非法嵌套直接删除该子组件声明。
+    before: |
+      system implementation Top.impl
+        subcomponents
+          cpu : processor CPU.impl;
+          mainProc : process MainProc.impl;  -- [错误] process 不能放 system 下直接绑 processor
+      end Top.impl;
+    after: |
+      system implementation Top.impl
+        subcomponents
+          cpu : processor CPU.impl;
+          mainProc : process MainProc.impl;
+        properties
+          -- [修复] 新增：补充 Actual_Processor_Binding 绑定
+          Actual_Processor_Binding => reference (cpu) applies to mainProc;
+      end Top.impl;
+
+  - id: MISSING_BINDING
+    title: process/thread 缺少 Actual_Processor_Binding 属性
+    detector: checkPropertyBindingCompleteness
+    error_pattern: "属性绑定完整性: 实例缺少 Actual_Processor_Binding 属性"
+    severity: warning
+    fix_strategy: |
+      在包含该 process/thread 的 system implementation 的 properties 块中添加：
+      Actual_Processor_Binding => reference (处理器实例名) applies to 实例名;
+      确保引用的处理器实例名在 subcomponents 中已声明。
+    before: |
+      system implementation Top.impl
+        subcomponents
+          cpu : processor CPU.impl;
+          mainProc : process MainProc.impl;
+        -- [警告] 缺少 Actual_Processor_Binding
+      end Top.impl;
+    after: |
+      system implementation Top.impl
+        subcomponents
+          cpu : processor CPU.impl;
+          mainProc : process MainProc.impl;
+        properties
+          -- [修复] 新增：补充部署绑定属性
+          Actual_Processor_Binding => reference (cpu) applies to mainProc;
+      end Top.impl;
+
+  - id: DATA_SIZE_MISMATCH
+    title: 连接两端 Data_Size 不匹配
+    detector: checkDataSizeConsistency
+    error_pattern: "数据类型一致性: 连接两端 Data_Size 不匹配"
+    severity: warning
+    fix_strategy: |
+      确保连接两端 data 组件的 Data_Size 属性值一致。
+      修改其中一方的 Data_Size 使其与另一方匹配，选择语义正确的一方作为基准。
+    before: |
+      data SensorData
+      end SensorData;
+      data implementation SensorData.impl
+        properties
+          Data_Size => 8 Bytes;   -- 8 字节
+      end SensorData.impl;
+
+      data ControlData
+      end ControlData;
+      data implementation ControlData.impl
+        properties
+          Data_Size => 16 Bytes;  -- [警告] 与连接对端 8 Bytes 不匹配
+      end ControlData.impl;
+    after: |
+      data implementation ControlData.impl
+        properties
+          Data_Size => 8 Bytes;   -- [修复] 修改：改为与连接对端一致的 8 Bytes
+      end ControlData.impl;
+
 checklist:
   content: |
     【输出前自检清单】输出修复后的代码前逐条确认，任一项为否则修正后再输出：
@@ -119,13 +507,15 @@ checklist:
     [8] 连接类型是否与端点匹配（port 连 port，access 连 access，严禁混连）？
     [9] port 连接是否用 ->，bus access 连接是否用 <->？
     [10] data 组件中是否没有 features 块？subprogram 可以有 features。
-    [11] port 连接的源端是否为 out port，目标端是否为 in port？
+    [11] port 连接方向是否正确？同级连接 out->in（严禁 in->in、out->out）、向下委派 in->in（父端口在左）、向上委派 out->out（父端口在右）？
     [12] port 连接两端是否引用了相同的数据类型？
     [13] 软件实体（process）的 connections 中是否只有 port 连接？硬件实体是否只有 bus access 连接？
+    [14] 每一处修改是否都添加了 `-- [修复]` 标记注释？标记说明是否清晰描述了改动内容？
 
 output_instruction: |
   请只输出修复后的完整AADL代码，不要包含任何解释或说明。
+  【强制要求】每一处修改的代码行旁必须添加 `-- [修复]` 标记注释，未添加标记的修复视为不完整。
   使用以下格式：
   ```aadl
-  [修复后的AADL代码]
+  [修复后的AADL代码，每处修改旁带 -- [修复] 标记]
   ```

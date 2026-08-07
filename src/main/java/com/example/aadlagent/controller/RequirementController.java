@@ -987,6 +987,15 @@ public class RequirementController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/test-connection")
+    public ResponseEntity<Map<String, Object>> testConnection(@RequestBody Map<String, String> request) {
+        String modelTypeStr = request.get("model");
+        ModelType modelType = parseModelType(modelTypeStr);
+        
+        Map<String, Object> result = modelService.testConnection(modelType);
+        return ResponseEntity.ok(result);
+    }
+
     @GetMapping("/health")
     public ResponseEntity<Map<String, Object>> healthCheck() {
         Map<String, Object> response = new HashMap<>();

@@ -279,6 +279,37 @@ connections:
     auto_fix_missing_port: "源端补 .dataOut，目标端补 .dataIn"
     
   must_end_with_semicolon: true
+  
+  # 端口方向委派规则（三种合法连接模式）
+  port_direction_rules:
+    # 1. 同级组件连接 (Peer-to-Peer)
+    peer_to_peer:
+      rule: "out -> in"
+      description: "数据从源组件的输出端口流出，流入目标组件的输入端口"
+      example: "c1 : port Thread_A.data_out -> Thread_B.data_in;"
+      forbidden:
+        - "in -> in: 同级组件之间严禁"
+        - "out -> out: 同级组件之间严禁"
+        - "in -> out: 方向完全反了"
+      in_out_special: "in out 双向端口可作为源端（等同 out）或目标端（等同 in）"
+    
+    # 2. 向下委派 (Delegation Down)
+    delegation_down:
+      rule: "in -> in"
+      description: "父容器的输入端口（外部数据的源头）指向子组件的输入端口（数据的终点）"
+      example: "c2 : port parent_in_port -> Thread_A.data_in;"
+      source_format: "父组件端口名（无实例名前缀）"
+      dest_format: "子组件实例名.端口名"
+      in_out_special: "父 in out -> 子 in out（双向委派）"
+    
+    # 3. 向上委派 (Delegation Up)
+    delegation_up:
+      rule: "out -> out"
+      description: "子组件的输出端口（内部数据的源头）指向父容器的输出端口（向外发送的出口）"
+      example: "c3 : port Thread_B.data_out -> parent_out_port;"
+      source_format: "子组件实例名.端口名"
+      dest_format: "父组件端口名（无实例名前缀）"
+      in_out_special: "子 in out -> 父 in out（双向委派）"
 
 # ============================================================
 # 8. 实现内部块顺序约束

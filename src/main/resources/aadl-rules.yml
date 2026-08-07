@@ -28,8 +28,19 @@ global:
       可定义 port 构件：thread, process, subprogram, device, system
       可定义 bus access 构件：bus(provides), processor(requires), memory(requires), device(requires), system
       device 是唯一可同时拥有 port 和 bus access 的软硬件桥梁。
-    R4【connections 完整性】connections 中每个端点必须满足：子组件端点用 `实例名.端口名` 格式（实例名在当前 subcomponents 中声明，端口名在对应组件类型的 features 中声明）；父组件自身的 port 直接写端口名（端口委派 Port Delegation，用于将外层端口映射到内部子组件端口）。连接行以分号结尾。port 连接用 `->`（源端 out → 目标端 in，类型一致；双向 in out port 可用 `<->`），bus access 连接用 `<->`。严禁 port 与 bus access 混连。严禁引用 data 组件端口。
-      端口委派示例：`c_delegate : port in_data -> ThreadA.in_data;`（左端 in_data 是父组件自身的 port，右端是子组件的 port，方向相同：in→in 为输入委派，out→out 为输出委派）
+    R4【connections 完整性】connections 中每个端点必须满足：子组件端点用 `实例名.端口名` 格式（实例名在当前 subcomponents 中声明，端口名在对应组件类型的 features 中声明）；父组件自身的 port 直接写端口名（端口委派 Port Delegation，用于将外层端口映射到内部子组件端口）。连接行以分号结尾。port 连接用 `->`（双向 in out port 可用 `<->`），bus access 连接用 `<->`。严禁 port 与 bus access 混连。严禁引用 data 组件端口。
+      端口方向三种合法连接模式（严格遵守，违反将报错）：
+      ① 同级组件连接 (Peer-to-Peer)：out -> in
+         数据从源组件的输出端口流出，流入目标组件的输入端口。
+         示例：`c1 : port Thread_A.data_out -> Thread_B.data_in;`
+         严禁：同级组件之间绝对不能出现 in -> in 或 out -> out。
+      ② 向下委派 (Delegation Down)：in -> in
+         父容器的输入端口（外部数据的源头）指向子组件的输入端口（数据的终点）。左侧是父组件自身的端口（无前缀），右侧是子组件端口。
+         示例：`c2 : port parent_in_port -> Thread_A.data_in;`
+      ③ 向上委派 (Delegation Up)：out -> out
+         子组件的输出端口（内部数据的源头）指向父容器的输出端口（向外发送的出口）。左侧是子组件端口，右侧是父组件自身的端口（无前缀）。
+         示例：`c3 : port Thread_B.data_out -> parent_out_port;`
+      特殊：in out 双向端口在同级连接中可作为源端或目标端；在委派中只能 in out <-> in out。
     R5【thread 纯净】thread implementation 中严禁出现 connections 和 subcomponents。组件间连接只能写在 system 或 process implementation 中。
     R6【数据端口语法】`in data port 类型名` 或 `out data port 类型名`，类型名必须是已声明的 data 组件。严禁 `requires data port`，严禁无类型声明。
     R7【软硬件关系两种模式】软件与硬件之间只有两种合法关系，严禁用 port 直接连接软件组件和纯硬件组件：
@@ -524,7 +535,7 @@ checklist:
     【输出前自检清单】生成代码前逐条确认，任一项为否则修正后再输出：
     [1] R2: 每个组件是否都有类型声明 + implementation，且各自有 end 闭合？
     [2] R3: features 只在类型声明中？data 无 features？port/bus access 归属的构件类型正确？
-    [3] R4: 连接端点在 features 中已声明？子组件端点用「实例名.端口名」、父组件端口委派直接写端口名？port 连 port、access 连 access 无混连？port 用 ->（双向端口可用 <->）、access 用 <->？源端 out、目标端 in（同级）或方向相同（委派）？类型一致？无 data 组件端口引用？
+    [3] R4: 连接端点在 features 中已声明？子组件端点用「实例名.端口名」、父组件端口委派直接写端口名？port 连 port、access 连 access 无混连？port 用 ->（双向端口可用 <->）、access 用 <->？端口方向是否正确：同级连接 out->in（严禁 in->in、out->out）、向下委派 in->in（父端口在左、子端口在右）、向上委派 out->out（子端口在左、父端口在右）？类型一致？无 data 组件端口引用？
     [4] R5: thread implementation 中无 connections 和 subcomponents？
     [5] R7: 软件与硬件关系是否正确？部署用 Actual_Processor_Binding（非连接）？数据交互通过 device 桥接，不直接用 port 连软件和纯硬件？
     [6] R7a: 总线建模是否规范？processor/memory 通过 bus access 连 bus？device 同时有 port（连软件）和 bus access（连 bus）？数据线通过 Allowed_Connection_Binding 绑定到 bus？
@@ -603,6 +614,7 @@ example:
     process KernelProcess 
       features
         in_data : in data port SerialData;
+        out_data : out data port SerialData;
     end KernelProcess; 
 
     process implementation KernelProcess.impl 
@@ -617,11 +629,17 @@ example:
         FaultDetector        : thread FaultDetector.impl; 
         PerformanceMonitor   : thread PerformanceMonitor.impl; 
       connections
-        -- 端口委派：进程端口 → 内部线程端口
-        c_delegate : port in_data -> CommunicationManager.in_data;
+        -- 向下委派(Delegation Down)：父 in -> 子 in（父端口在左侧，无前缀）
+        c_down : port in_data -> CommunicationManager.in_data;
+        -- 向上委派(Delegation Up)：子 out -> 父 out（父端口在右侧，无前缀）
+        c_up : port CommunicationManager.out_data -> out_data;
+        -- 同级连接(Peer-to-Peer)：out -> in（子组件之间）
+        c_peer : port CommunicationManager.out_data -> TaskScheduler.in_data;
     end KernelProcess.impl; 
 
     thread TaskScheduler
+      features
+        in_data : in data port SerialData;
     end TaskScheduler;
     thread implementation TaskScheduler.impl
     end TaskScheduler.impl;
@@ -644,6 +662,7 @@ example:
     thread CommunicationManager
       features
         in_data : in data port SerialData;
+        out_data : out data port SerialData;
     end CommunicationManager;
     thread implementation CommunicationManager.impl
     end CommunicationManager.impl;
