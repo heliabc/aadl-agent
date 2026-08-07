@@ -64,7 +64,7 @@ agent:
   requirement:
     max-retries: 3
     temperature: 0.1
-    max-tokens: 8192
+    max-tokens: 32768
     chunk-size: 8000
     overlap-percent: 15
     direct-process-threshold: 10000
@@ -72,21 +72,21 @@ agent:
   architecture:
     max-retries: 3
     temperature: 0.1
-    max-tokens: 8192
+    max-tokens: 32768
   module:
     max-retries: 3
     temperature: 0.1
-    max-tokens: 16384
+    max-tokens: 32768
   aadl:
     max-retries: 3
     temperature: 0.1
-    max-tokens: 16384
+    max-tokens: 32768
   aadl-fixer:
     max-retries: 3
     temperature: 0.1
-    max-tokens: 16384
+    max-tokens: 32768
   rewrite:
     model-type: OLLAMA
     ollama-model-name: "qwen3:8b"
     temperature: 0.3
-    max-tokens: 512
+    max-tokens: 2048

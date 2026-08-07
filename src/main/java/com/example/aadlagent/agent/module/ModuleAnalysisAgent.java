@@ -7,6 +7,7 @@ import com.example.aadlagent.client.LlmClient;
 import com.example.aadlagent.client.ModelService;
 import com.example.aadlagent.client.ModelType;
 import com.example.aadlagent.model.ModuleAnalysisResult;
+import com.example.aadlagent.util.JsonRepairUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -145,24 +146,13 @@ public class ModuleAnalysisAgent implements Agent<AgentInput, AgentOutput> {
     }
 
     private ModuleAnalysisResult parseResult(String response) throws Exception {
-        String jsonContent = extractJson(response);
+        String jsonContent = JsonRepairUtil.extractAndFixJson(response);
 
         if (jsonContent == null || jsonContent.trim().isEmpty()) {
             throw new IllegalArgumentException("无法从响应中提取JSON内容");
         }
 
         return objectMapper.readValue(jsonContent, ModuleAnalysisResult.class);
-    }
-
-    private String extractJson(String response) {
-        int startIndex = response.indexOf('{');
-        int endIndex = response.lastIndexOf('}');
-
-        if (startIndex >= 0 && endIndex > startIndex) {
-            return response.substring(startIndex, endIndex + 1);
-        }
-
-        return null;
     }
 
     @Override

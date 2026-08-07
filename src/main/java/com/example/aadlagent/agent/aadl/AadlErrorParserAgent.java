@@ -6,6 +6,7 @@ import com.example.aadlagent.agent.AgentOutput;
 import com.example.aadlagent.client.LlmClient;
 import com.example.aadlagent.client.ModelService;
 import com.example.aadlagent.client.ModelType;
+import com.example.aadlagent.util.JsonRepairUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -138,29 +139,8 @@ public class AadlErrorParserAgent implements Agent<AgentInput, AgentOutput> {
     }
 
     private String extractJsonContent(String response) {
-        String cleaned = response.trim();
-
-        if (cleaned.startsWith("```json")) {
-            int start = cleaned.indexOf("```json") + 7;
-            int end = cleaned.lastIndexOf("```");
-            if (end > start) {
-                cleaned = cleaned.substring(start, end).trim();
-            }
-        } else if (cleaned.startsWith("```")) {
-            int start = cleaned.indexOf("```") + 3;
-            int end = cleaned.lastIndexOf("```");
-            if (end > start) {
-                cleaned = cleaned.substring(start, end).trim();
-            }
-        }
-
-        int jsonStart = cleaned.indexOf('[');
-        int jsonEnd = cleaned.lastIndexOf(']');
-        if (jsonStart != -1 && jsonEnd != -1 && jsonEnd > jsonStart) {
-            cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
-        }
-
-        return cleaned;
+        String json = JsonRepairUtil.extractAndFixJson(response);
+        return json != null ? json : "";
     }
 
     @SuppressWarnings("unchecked")

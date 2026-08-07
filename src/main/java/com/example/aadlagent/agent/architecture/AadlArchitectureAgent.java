@@ -7,6 +7,7 @@ import com.example.aadlagent.client.LlmClient;
 import com.example.aadlagent.client.ModelService;
 import com.example.aadlagent.client.ModelType;
 import com.example.aadlagent.model.AadlArchitectureModel;
+import com.example.aadlagent.util.JsonRepairUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -137,24 +138,13 @@ public class AadlArchitectureAgent implements Agent<AgentInput, AgentOutput> {
     }
 
     private AadlArchitectureModel parseArchitecture(String response) throws Exception {
-        String jsonContent = extractJson(response);
+        String jsonContent = JsonRepairUtil.extractAndFixJson(response);
 
         if (jsonContent == null || jsonContent.trim().isEmpty()) {
             throw new IllegalArgumentException("无法从响应中提取JSON内容");
         }
 
         return objectMapper.readValue(jsonContent, AadlArchitectureModel.class);
-    }
-
-    private String extractJson(String response) {
-        int startIndex = response.indexOf('{');
-        int endIndex = response.lastIndexOf('}');
-
-        if (startIndex >= 0 && endIndex > startIndex) {
-            return response.substring(startIndex, endIndex + 1);
-        }
-
-        return null;
     }
 
     private void printArchitectureTree(AadlArchitectureModel model, int indent) {
