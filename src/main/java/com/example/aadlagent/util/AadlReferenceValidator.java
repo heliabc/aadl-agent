@@ -1,6 +1,7 @@
 package com.example.aadlagent.util;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -19,6 +20,7 @@ import java.util.regex.Pattern;
  * 6. 检测 subcomponents 层级违规（如 process 直接放在 processor 下）
  */
 @Slf4j
+@Component
 public class AadlReferenceValidator {
 
     /**
