@@ -149,17 +149,28 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
     private String extractAadlContent(String response) {
         String cleaned = response.trim();
 
+        // 1. 优先尝试 aadl 代码块
         if (cleaned.startsWith("```aadl")) {
             int start = cleaned.indexOf("```aadl") + 7;
             int end = cleaned.lastIndexOf("```");
             if (end > start) {
                 cleaned = cleaned.substring(start, end).trim();
             }
-        } else if (cleaned.startsWith("```")) {
+        }
+        // 2. 通用代码块
+        else if (cleaned.startsWith("```")) {
             int start = cleaned.indexOf("```") + 3;
             int end = cleaned.lastIndexOf("```");
             if (end > start) {
                 cleaned = cleaned.substring(start, end).trim();
+            }
+        }
+        // 3. 没有代码块时：跳过前面的 JSON/解释文字，找到 AADL 代码的真正起点
+        else {
+            int packageIndex = findAadlStartIndex(cleaned);
+            if (packageIndex > 0) {
+                log.info("检测到 AADL 代码前有前置内容（长度: {} 字符），已剥离", packageIndex);
+                cleaned = cleaned.substring(packageIndex).trim();
             }
         }
 
@@ -179,6 +190,42 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
         }
 
         return cleaned;
+    }
+
+    /**
+     * 查找 AADL 代码的起始位置。
+     * 跳过前面的 JSON、解释文字等，找到第一个 package 声明的位置。
+     * 如果找不到，返回 -1 表示无需调整。
+     */
+    private int findAadlStartIndex(String text) {
+        // 已经以 package 开头，不用找
+        if (text.startsWith("package")) {
+            return -1;
+        }
+
+        // 找 "package " 或 "package\t" 或 "package\n" 的位置
+        Pattern pkgPattern = Pattern.compile("(?m)^\\s*package\\s+\\w+");
+        Matcher matcher = pkgPattern.matcher(text);
+        if (matcher.find()) {
+            int start = matcher.start();
+            // 确保前面不是 JSON 字符串里的 package（比如 "package": {）
+            // 检查前面字符：如果是引号，说明是 JSON 字段名，跳过
+            String before = text.substring(Math.max(0, start - 3), start);
+            if (before.contains("\"")) {
+                // 可能是 JSON 字段，继续找下一个
+                while (matcher.find()) {
+                    start = matcher.start();
+                    before = text.substring(Math.max(0, start - 3), start);
+                    if (!before.contains("\"")) {
+                        return start;
+                    }
+                }
+                return -1; // 所有匹配都在 JSON 里
+            }
+            return start;
+        }
+
+        return -1;
     }
 
     /**

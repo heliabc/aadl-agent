@@ -19,7 +19,13 @@ architecture_label: 架构树：
 
 modules_label: 模块分析：
 
-output_instruction: 请输出完整的AADL代码：
+output_instruction: |
+  【输出要求 - 必须严格遵守】
+  1. 直接输出 AADL 源代码（纯文本），不要输出 JSON、不要输出解释文字、不要输出 Markdown、不要用代码块包裹
+  2. 输出内容必须以 `package` 开头，以 `end 包名;` 结尾
+  3. 不要输出任何形式的结构化表示（JSON、XML、伪代码等），只输出真实可编译的 AADL 语法
+  4. 不要在代码前后加"以下是AADL代码"、"```aadl"之类的标记，直接输出代码本身
+  5. 现在开始输出完整的 AADL 代码：
 
 global:
   alwaysRules: |
