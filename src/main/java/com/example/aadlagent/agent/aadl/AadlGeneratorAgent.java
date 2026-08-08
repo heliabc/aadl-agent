@@ -12,6 +12,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -237,7 +241,7 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
     /**
      * 将验证结果以 AADL 注释（--）形式嵌入代码顶部。
      * 这样用户在查看生成的 AADL 文件时即可看到验证报告。
-     * 每个错误下方附带对应的修复建议。
+     * 每个错误下方附带对应的修复建议；已自动修复的错误直接标注在错误行后。
      */
     private String embedValidationReport(String aadlContent,
                                           AadlReferenceValidator.ValidationResult result) {
@@ -250,13 +254,28 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
         if (result.errors.isEmpty() && result.warnings.isEmpty() && result.fixes.isEmpty()) {
             report.append("-- 验证通过，无问题。\n");
         } else {
-            // 错误 + 修复建议
+            // 用于跟踪哪些修复项已经被匹配到错误上
+            Set<String> matchedFixes = new HashSet<>();
+
+            // 错误 + 修复建议 + 自动修复标注
             if (!result.errors.isEmpty()) {
                 report.append(String.format("-- [错误] (%d 项):%n", result.errors.size()));
                 for (int i = 0; i < result.errors.size(); i++) {
-                    report.append(String.format("--   %d. %s%n", i + 1, result.errors.get(i)));
-                    // 附带修复建议
-                    if (i < result.suggestions.size() && result.suggestions.get(i) != null
+                    String err = result.errors.get(i);
+                    report.append(String.format("--   %d. %s%n", i + 1, err));
+
+                    // 查找对应的自动修复
+                    List<String> relatedFixes = findRelatedFixes(err, result.fixes, matchedFixes);
+                    if (!relatedFixes.isEmpty()) {
+                        for (String fix : relatedFixes) {
+                            report.append(String.format("--      [已自动修复] %s%n", fix));
+                            matchedFixes.add(fix);
+                        }
+                    }
+
+                    // 附带修复建议（未自动修复的错误才显示修复建议）
+                    if (relatedFixes.isEmpty() && i < result.suggestions.size()
+                            && result.suggestions.get(i) != null
                             && !result.suggestions.get(i).isEmpty()) {
                         report.append(String.format("--      修复建议: %s%n", result.suggestions.get(i)));
                     }
@@ -271,21 +290,144 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
                 }
             }
 
-            // 自动修复
-            if (!result.fixes.isEmpty()) {
-                report.append(String.format("-- [自动修复] (%d 项):%n", result.fixes.size()));
-                for (int i = 0; i < result.fixes.size(); i++) {
-                    report.append(String.format("--   %d. %s%n", i + 1, result.fixes.get(i)));
+            // 未匹配到错误的修复项（单独列出，作为补充说明）
+            int unmatchedFixCount = result.fixes.size() - matchedFixes.size();
+            if (unmatchedFixCount > 0) {
+                report.append(String.format("-- [其他自动修复] (%d 项):%n", unmatchedFixCount));
+                int idx = 1;
+                for (String fix : result.fixes) {
+                    if (!matchedFixes.contains(fix)) {
+                        report.append(String.format("--   %d. %s%n", idx++, fix));
+                    }
                 }
             }
 
-            report.append(String.format("-- 汇总: %d 错误, %d 警告, %d 修复%n",
-                    result.errors.size(), result.warnings.size(), result.fixes.size()));
+            long autoFixedErrors = result.errors.stream()
+                    .filter(err -> !findRelatedFixes(err, result.fixes, new HashSet<>()).isEmpty())
+                    .count();
+            report.append(String.format("-- 汇总: %d 错误 (其中 %d 项已自动修复), %d 警告, 共 %d 项自动修复%n",
+                    result.errors.size(), autoFixedErrors, result.warnings.size(), result.fixes.size()));
         }
 
         report.append("-- =========================================================\n\n");
 
         return report.toString() + aadlContent;
+    }
+
+    /**
+     * 从修复列表中找出与给定错误相关的修复项。
+     * 通过提取错误中的关键实体（组件名、连接名、行号等）进行启发式匹配。
+     *
+     * @param error       错误信息
+     * @param fixes       所有修复项
+     * @param skipFixes   已匹配过的修复项（跳过避免重复匹配）
+     * @return 相关的修复项列表
+     */
+    private List<String> findRelatedFixes(String error, List<String> fixes, Set<String> skipFixes) {
+        List<String> related = new ArrayList<>();
+        if (error == null || fixes == null || fixes.isEmpty()) {
+            return related;
+        }
+
+        // 提取关键实体：组件名（单引号中的名称）
+        List<String> keyNames = new ArrayList<>();
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("'([^']+)'").matcher(error);
+        while (m.find()) {
+            keyNames.add(m.group(1));
+        }
+
+        // 提取行号
+        String lineNum = null;
+        m = java.util.regex.Pattern.compile("第(\\d+)行").matcher(error);
+        if (m.find()) {
+            lineNum = m.group(1);
+        }
+
+        // 提取连接名
+        String connName = null;
+        m = java.util.regex.Pattern.compile("连接 '([^']+)'").matcher(error);
+        if (m.find()) {
+            connName = m.group(1);
+        }
+
+        // 对每个修复项进行匹配
+        for (String fix : fixes) {
+            if (skipFixes != null && skipFixes.contains(fix)) {
+                continue;
+            }
+
+            boolean matched = false;
+
+            // 1. 行号匹配（end 语句修正等行内修复）
+            if (lineNum != null && fix.startsWith("第" + lineNum + "行:")) {
+                matched = true;
+            }
+            // 2. 组件名匹配（遗漏组件 → 补全组件声明）
+            else if (error.contains("遗漏组件")) {
+                for (String name : keyNames) {
+                    if (fix.contains("已补全缺失组件声明: " + name)
+                            || fix.contains("已补全类型声明: " + name)
+                            || fix.contains("已补全实现声明: " + name)) {
+                        matched = true;
+                        break;
+                    }
+                }
+            }
+            // 3. 组件缺少类型/实现声明 → 补全类型/实现声明
+            else if (error.contains("缺少类型声明") || error.contains("缺少实现声明")) {
+                for (String name : keyNames) {
+                    if (fix.contains("已补全类型声明: " + name)
+                            || fix.contains("已补全实现声明: " + name)) {
+                        matched = true;
+                        break;
+                    }
+                }
+            }
+            // 4. subcomponents 引用类型未声明 → 补全对应组件声明
+            else if (error.contains("subcomponents 引用") && error.contains("未声明")) {
+                // 错误格式：第N行: subcomponents 引用 'xxx' 的类型 'YYY' 未声明
+                // 从错误中提取类型名（第二个单引号中的内容）
+                if (keyNames.size() >= 2) {
+                    String typeName = keyNames.get(1);
+                    if (fix.contains("已补全缺失组件声明: " + typeName)
+                            || fix.contains("已补全类型声明: " + typeName)
+                            || fix.contains("已补全实现声明: " + typeName)) {
+                        matched = true;
+                    }
+                }
+            }
+            // 5. 连接缺少 feature → 补全 feature 声明
+            else if (error.contains("没有 features 块") || error.contains("features 为空")) {
+                // 错误格式：连接 'xxx' 的源端引用 'yyy.zzz'，但组件类型 'YYY' 没有 features 块
+                // 提取组件类型名（最后一个单引号中的内容）和 feature 名
+                if (!keyNames.isEmpty()) {
+                    String lastTypeName = keyNames.get(keyNames.size() - 1);
+                    // 从 yyy.zzz 中提取 feature 名
+                    java.util.regex.Matcher fm = java.util.regex.Pattern
+                            .compile("'([^']+)\\.([^']+)'").matcher(error);
+                    if (fm.find()) {
+                        String featName = fm.group(2);
+                        if (fix.contains("已补全缺失 feature 声明: " + lastTypeName + "." + featName)) {
+                            matched = true;
+                        }
+                    }
+                    // 兜底：只要组件类型名匹配
+                    if (!matched && fix.contains("已补全缺失 feature 声明: " + lastTypeName + ".")) {
+                        matched = true;
+                    }
+                }
+            }
+            // 6. 连接缺少分号 → 补全连接分号
+            else if (connName != null && fix.contains("已补全连接 '" + connName + "' 缺失的末尾分号")) {
+                matched = true;
+            }
+
+            if (matched) {
+                related.add(fix);
+            }
+        }
+
+        return related;
     }
 
     private String fixMissingEndStatements(String aadlContent) {

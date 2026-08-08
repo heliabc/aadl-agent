@@ -236,6 +236,35 @@ public class AadlReferenceValidator {
         return name != null && AADL_RESERVED_WORDS.contains(name.toLowerCase());
     }
 
+    /**
+     * 判断给定类型名是否为合法的 AADL 组件类型。
+     * 用于过滤架构树中可能出现的非组件节点（如 port、interface 等 feature）。
+     */
+    private boolean isValidAadlComponentType(String type) {
+        if (type == null || type.trim().isEmpty()) {
+            return false;
+        }
+        String normalized = type.trim().toLowerCase().replace('_', ' ');
+        return CONTAINMENT_RULES.containsKey(normalized);
+    }
+
+    /**
+     * 判断是否为纯硬件组件类型（只能有 bus access，不能有 data port）。
+     * 纯硬件组件：processor, virtual processor, memory, bus, virtual bus
+     * 注意：device 是软硬件交汇点，既可以有 data port 也可以有 bus access，因此不算纯硬件。
+     */
+    private boolean isHardwareComponentType(String type) {
+        if (type == null || type.trim().isEmpty()) {
+            return false;
+        }
+        String normalized = type.trim().toLowerCase().replace('_', ' ');
+        return normalized.equals("processor")
+                || normalized.equals("virtual processor")
+                || normalized.equals("memory")
+                || normalized.equals("bus")
+                || normalized.equals("virtual bus");
+    }
+
     // ========================= 数据结构 =========================
 
     /** AADL 代码中解析出的组件声明 */
@@ -869,6 +898,16 @@ public class AadlReferenceValidator {
         }
 
         for (AadlInputParser.ArchNode archComp : archComponents.values()) {
+            // 架构树中存在非法组件类型：不报"遗漏组件"错误，报架构树本身的问题
+            if (!isValidAadlComponentType(archComp.type)) {
+                result.errors.add(String.format(
+                        "架构树非法组件类型: '%s' 的类型 '%s' 不是合法的 AADL 组件类型，" +
+                                "可能是将特征(feature)如 port/interface/bus_access 等误当作了组件。" +
+                                "合法组件类型：system/process/thread/processor/device/bus/memory/data 等 14 种",
+                        archComp.name, archComp.type
+                ));
+                continue;
+            }
             if (!declarations.containsKey(archComp.name)) {
                 // 保留字命名的组件降级为警告：LLM 通常已按命名规则重命名（如 System → Top_BSCU）
                 if (isReservedWord(archComp.name)) {
@@ -7449,10 +7488,15 @@ public class AadlReferenceValidator {
                 if (isReservedWord(archComp.name)) {
                     result.warnings.add(String.format(
                             "组件 '%s' (%s) 使用了 AADL 保留关键字作为名称，已跳过自动补全。" +
-                            "LLM 可能已按照命名规则使用合规名称替代",
+                                    "LLM 可能已按照命名规则使用合规名称替代",
                             archComp.name, archComp.type
                     ));
                     log.warn("跳过保留字组件自动补全: {} ({})", archComp.name, archComp.type);
+                    continue;
+                }
+                // 跳过类型不是合法 AADL 组件的节点（可能是大模型把 port/interface 等 feature 当成了组件）
+                if (!isValidAadlComponentType(archComp.type)) {
+                    log.debug("跳过非AADL组件类型的架构树节点: {} (type={})", archComp.name, archComp.type);
                     continue;
                 }
                 AadlDeclaration decl = declarations.get(archComp.name);
@@ -7550,15 +7594,24 @@ public class AadlReferenceValidator {
                     continue;
                 }
 
-                content = injectMissingFeatures(content, typeName, toAdd);
+                // 获取组件类型，用于决定补 data port 还是 bus access
+                String compType = (decl != null) ? decl.type : "system";
+
+                content = injectMissingFeatures(content, typeName, compType, toAdd);
                 featureFixCount += toAdd.size();
                 for (Map.Entry<String, String> fe : toAdd.entrySet()) {
                     String featName = fe.getKey();
                     String dataType = fe.getValue();
                     String direction = inferDirection(featName);
-                    String typeDesc = (dataType != null && !dataType.isEmpty())
-                            ? direction + " data port " + dataType
-                            : direction + " data port";
+                    String typeDesc;
+                    if (isHardwareComponentType(compType)) {
+                        // 纯硬件组件补 bus access
+                        typeDesc = direction + " bus access";
+                    } else {
+                        typeDesc = (dataType != null && !dataType.isEmpty())
+                                ? direction + " data port " + dataType
+                                : direction + " data port";
+                    }
                     result.fixes.add(String.format(
                             "已补全缺失 feature 声明: %s.%s (%s)", typeName, featName, typeDesc
                     ));
@@ -7612,26 +7665,40 @@ public class AadlReferenceValidator {
     /**
      * 在组件类型声明中注入缺失的 feature 声明。
      * 如果类型声明已有 features 块，在块末尾追加；如果没有 features 块，在类型名行之后新建。
+     * 根据组件类型决定补 data port 还是 bus access：
+     * - 纯硬件组件（processor/memory/bus/virtual processor/virtual bus）：补 bus access
+     * - 软件/复合组件（system/process/thread/device 等）：补 data port
      *
      * @param content      AADL 代码
      * @param typeName     组件类型名
+     * @param componentType 组件类型（system/process/thread/processor/...）
      * @param missingFeats 需要补全的 feature（feature名 → 数据类型，数据类型可能为空字符串）
      * @return 修正后的 AADL 代码
      */
-    private String injectMissingFeatures(String content, String typeName, Map<String, String> missingFeats) {
+    private String injectMissingFeatures(String content, String typeName, String componentType,
+                                          Map<String, String> missingFeats) {
         String[] lines = content.split("\n");
         StringBuilder featureLines = new StringBuilder();
-        List<String> featNames = new ArrayList<>(missingFeats.keySet());
+        boolean isHardware = isHardwareComponentType(componentType);
+
         for (Map.Entry<String, String> entry : missingFeats.entrySet()) {
             String featName = entry.getKey();
             String dataType = entry.getValue();
             String direction = inferDirection(featName);
-            // 安全网：数据类型为空时使用 Base_Type，避免生成非法的 "data port;" 无类型声明
-            if (dataType == null || dataType.isEmpty()) {
-                dataType = "Base_Type";
+
+            if (isHardware) {
+                // 纯硬件组件：生成 bus access（不需要数据类型）
+                featureLines.append("    ").append(featName).append(" : ")
+                        .append(direction).append(" bus access;\n");
+            } else {
+                // 软件/复合组件：生成 data port
+                // 安全网：数据类型为空时使用 Base_Type，避免生成非法的 "data port;" 无类型声明
+                if (dataType == null || dataType.isEmpty()) {
+                    dataType = "Base_Type";
+                }
+                featureLines.append("    ").append(featName).append(" : ")
+                        .append(direction).append(" data port ").append(dataType).append(";\n");
             }
-            featureLines.append("    ").append(featName).append(" : ")
-                    .append(direction).append(" data port ").append(dataType).append(";\n");
         }
 
         // 查找类型声明行：如 "processor MainProcessor" 或 "device PowerSupply"

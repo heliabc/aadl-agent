@@ -48,6 +48,11 @@ public class ModuleAnalysisPrompt {
         prompt.append(rulesConfig.get("task_description"));
         prompt.append("\n\n");
 
+        // 组件类型定义（帮助模型正确理解架构树中的 type 字段）
+        prompt.append("【AADL 组件类型定义】\n");
+        prompt.append(rulesConfig.get("component_types"));
+        prompt.append("\n\n");
+
         prompt.append("【处理流程】\n");
         prompt.append(rulesConfig.get("process_flow"));
         prompt.append("\n\n");
