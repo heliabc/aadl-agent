@@ -144,7 +144,22 @@ public class AadlArchitectureAgent implements Agent<AgentInput, AgentOutput> {
             throw new IllegalArgumentException("无法从响应中提取JSON内容");
         }
 
-        return objectMapper.readValue(jsonContent, AadlArchitectureModel.class);
+        // 兼容两种格式：
+        //   1. 扁平结构：{"name": "xxx", "type": "system", ...}
+        //   2. 带 root 包装：{"root": {"name": "xxx", ...}}
+        // 先尝试扁平结构（直接解析），如果 name 为空再尝试提取 root
+        AadlArchitectureModel architecture = objectMapper.readValue(jsonContent, AadlArchitectureModel.class);
+
+        if (architecture != null && architecture.getName() == null) {
+            // 可能是带 root 包装的格式，尝试提取 root 节点
+            com.fasterxml.jackson.databind.JsonNode rootNode = objectMapper.readTree(jsonContent);
+            if (rootNode.has("root")) {
+                com.fasterxml.jackson.databind.JsonNode inner = rootNode.get("root");
+                architecture = objectMapper.treeToValue(inner, AadlArchitectureModel.class);
+            }
+        }
+
+        return architecture;
     }
 
     private void printArchitectureTree(AadlArchitectureModel model, int indent) {

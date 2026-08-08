@@ -47,12 +47,14 @@ public class AadlArchitectureModel {
         private String name;
 
         /** 特征类型：data_port / bus_access / event_port / event_data_port */
+        @JsonAlias({"type", "featureType"})
         private String kind;
 
         /** 方向：in / out / inout */
         private String direction;
 
         /** 数据类型（仅 data_port 类需要，bus_access 不需要） */
+        @JsonAlias({"dataType", "data_type_name"})
         private String data_type;
     }
 }

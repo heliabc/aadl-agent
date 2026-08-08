@@ -64,48 +64,40 @@ component_types: |
   - abstract：抽象组件，早期设计阶段使用
 
 output_format: |
-  【输出格式】严格的 JSON 格式，结构如下：
+  【输出格式】严格的 JSON 格式，直接输出架构对象（不要外层 root 包装）：
   {
-    "root": {
-      "name": "系统名称",
-      "type": "system",
-      "description": "一句话描述",
-      "features": [
-        {"name": "端口名", "type": "data port / event port / bus access / subprogram access", "direction": "in / out / in out / requires / provides", "dataType": "数据类型（port 时）"}
-      ],
-      "subcomponents": [
-        {
-          "name": "子组件名",
-          "type": "组件类型",
-          "description": "描述",
-          "features": [...],
-          "subcomponents": [...],
-          "properties": {
-            "Actual_Processor_Binding": "绑定的 processor 名（process/thread 用）"
-          },
-          "bindings": {
-            "processor": "部署到的 processor 名（仅 process/thread）",
-            "memory": "绑定到的 memory 名（可选）",
-            "bus": "连接到的 bus 名（device/processor/memory）"
-          }
+    "name": "系统名称",
+    "type": "system",
+    "description": "一句话描述",
+    "features": [
+      {"name": "端口名", "kind": "data_port / event_port / bus_access / subprogram_access", "direction": "in / out / inout / requires / provides", "data_type": "数据类型（port 时）"}
+    ],
+    "subcomponents": [
+      {
+        "name": "子组件名",
+        "type": "组件类型",
+        "description": "描述",
+        "features": [...],
+        "subcomponents": [...],
+        "properties": {
+          "Actual_Processor_Binding": "绑定的 processor 名（process/thread 用）"
         }
-      ],
-      "connections": [
-        {"name": "连接名", "type": "port connection / access connection", "source": "源端点", "destination": "目的端点"}
-      ],
-      "properties": {}
-    }
+      }
+    ],
+    "connections": [
+      {"name": "连接名", "kind": "port_connection / access_connection", "source": "源端点", "destination": "目的端点"}
+    ],
+    "properties": {}
   }
 
   注意：
-  - name 必须用大驼峰，首字母大写，不含空格和特殊字符
+  - 直接输出对象，不要用 {"root": {...}} 包裹
+  - name 用大驼峰，首字母大写
   - type 只能是 14 种标准类型之一
+  - features 中的字段名用 kind（不是 type），data_type（不是 dataType）
   - features 只放接口，不放子组件
-  - 软件实体（system/process/thread）的 features 中只有 port，没有 bus access
-  - 硬件实体（processor/memory/bus）的 features 中只有 bus access，没有 data port
-  - device 的 features 中可以同时有 port 和 bus access
+  - 软件实体 features 只有 port，硬件实体只有 bus access，device 两者都有
   - properties 中放 AADL 属性键值对
-  - bindings 中的部署关系通过 properties.Actual_Processor_Binding 体现
   - connections 描述同级组件间的连接关系
 
 example:
@@ -115,123 +107,121 @@ example:
     飞控系统包含飞控计算机和传感器组。飞控计算机运行飞行控制软件，包括姿态控制和导航两个进程。飞控计算机有主处理器和内存。传感器组包含 GPS 和 IMU，通过 SPI 总线连接。飞行控制软件部署在主处理器上。
   output: |
     {
-      "root": {
-        "name": "FlightControlSystem",
-        "type": "system",
-        "description": "飞行控制系统顶层",
-        "features": [],
-        "subcomponents": [
-          {
-            "name": "FlightControlComputer",
-            "type": "system",
-            "description": "飞控计算机子系统",
-            "features": [],
-            "subcomponents": [
-              {
-                "name": "MainProcessor",
-                "type": "processor",
-                "description": "主处理器",
-                "features": [
-                  {"name": "spi_bus_access", "type": "bus access", "direction": "requires"}
-                ],
-                "subcomponents": [],
-                "properties": {}
-              },
-              {
-                "name": "MainMemory",
-                "type": "memory",
-                "description": "主内存",
-                "features": [
-                  {"name": "bus_access", "type": "bus access", "direction": "requires"}
-                ],
-                "subcomponents": [],
-                "properties": {}
-              },
-              {
-                "name": "FlightControlSoftware",
-                "type": "system",
-                "description": "飞行控制软件",
-                "features": [],
-                "subcomponents": [
-                  {
-                    "name": "AttitudeControlProcess",
-                    "type": "process",
-                    "description": "姿态控制进程",
-                    "features": [
-                      {"name": "sensor_data_in", "type": "data port", "direction": "in", "dataType": "SensorData"},
-                      {"name": "control_out", "type": "data port", "direction": "out", "dataType": "ControlSignal"}
-                    ],
-                    "subcomponents": [],
-                    "properties": {
-                      "Actual_Processor_Binding": "MainProcessor"
-                    }
-                  },
-                  {
-                    "name": "NavigationProcess",
-                    "type": "process",
-                    "description": "导航进程",
-                    "features": [
-                      {"name": "gps_data_in", "type": "data port", "direction": "in", "dataType": "GpsData"},
-                      {"name": "nav_out", "type": "data port", "direction": "out", "dataType": "NavData"}
-                    ],
-                    "subcomponents": [],
-                    "properties": {
-                      "Actual_Processor_Binding": "MainProcessor"
-                    }
+      "name": "FlightControlSystem",
+      "type": "system",
+      "description": "飞行控制系统顶层",
+      "features": [],
+      "subcomponents": [
+        {
+          "name": "FlightControlComputer",
+          "type": "system",
+          "description": "飞控计算机子系统",
+          "features": [],
+          "subcomponents": [
+            {
+              "name": "MainProcessor",
+              "type": "processor",
+              "description": "主处理器",
+              "features": [
+                {"name": "spi_bus_access", "kind": "bus_access", "direction": "requires"}
+              ],
+              "subcomponents": [],
+              "properties": {}
+            },
+            {
+              "name": "MainMemory",
+              "type": "memory",
+              "description": "主内存",
+              "features": [
+                {"name": "bus_access", "kind": "bus_access", "direction": "requires"}
+              ],
+              "subcomponents": [],
+              "properties": {}
+            },
+            {
+              "name": "FlightControlSoftware",
+              "type": "system",
+              "description": "飞行控制软件",
+              "features": [],
+              "subcomponents": [
+                {
+                  "name": "AttitudeControlProcess",
+                  "type": "process",
+                  "description": "姿态控制进程",
+                  "features": [
+                    {"name": "sensor_data_in", "kind": "data_port", "direction": "in", "data_type": "SensorData"},
+                    {"name": "control_out", "kind": "data_port", "direction": "out", "data_type": "ControlSignal"}
+                  ],
+                  "subcomponents": [],
+                  "properties": {
+                    "Actual_Processor_Binding": "MainProcessor"
                   }
-                ],
-                "properties": {}
-              }
-            ],
-            "properties": {}
-          },
-          {
-            "name": "SensorGroup",
-            "type": "system",
-            "description": "传感器组",
-            "features": [],
-            "subcomponents": [
-              {
-                "name": "SpiBus",
-                "type": "bus",
-                "description": "SPI 总线",
-                "features": [
-                  {"name": "bus_access1", "type": "bus access", "direction": "provides"},
-                  {"name": "bus_access2", "type": "bus access", "direction": "provides"},
-                  {"name": "bus_access3", "type": "bus access", "direction": "provides"}
-                ],
-                "subcomponents": [],
-                "properties": {}
-              },
-              {
-                "name": "GpsDevice",
-                "type": "device",
-                "description": "GPS 传感器",
-                "features": [
-                  {"name": "gps_data_out", "type": "data port", "direction": "out", "dataType": "GpsData"},
-                  {"name": "spi_access", "type": "bus access", "direction": "requires"}
-                ],
-                "subcomponents": [],
-                "properties": {}
-              },
-              {
-                "name": "ImuDevice",
-                "type": "device",
-                "description": "IMU 传感器",
-                "features": [
-                  {"name": "imu_data_out", "type": "data port", "direction": "out", "dataType": "ImuData"},
-                  {"name": "spi_access", "type": "bus access", "direction": "requires"}
-                ],
-                "subcomponents": [],
-                "properties": {}
-              }
-            ],
-            "properties": {}
-          }
-        ],
-        "connections": [],
-        "properties": {}
-      }
+                },
+                {
+                  "name": "NavigationProcess",
+                  "type": "process",
+                  "description": "导航进程",
+                  "features": [
+                    {"name": "gps_data_in", "kind": "data_port", "direction": "in", "data_type": "GpsData"},
+                    {"name": "nav_out", "kind": "data_port", "direction": "out", "data_type": "NavData"}
+                  ],
+                  "subcomponents": [],
+                  "properties": {
+                    "Actual_Processor_Binding": "MainProcessor"
+                  }
+                }
+              ],
+              "properties": {}
+            }
+          ],
+          "properties": {}
+        },
+        {
+          "name": "SensorGroup",
+          "type": "system",
+          "description": "传感器组",
+          "features": [],
+          "subcomponents": [
+            {
+              "name": "SpiBus",
+              "type": "bus",
+              "description": "SPI 总线",
+              "features": [
+                {"name": "bus_access1", "kind": "bus_access", "direction": "provides"},
+                {"name": "bus_access2", "kind": "bus_access", "direction": "provides"},
+                {"name": "bus_access3", "kind": "bus_access", "direction": "provides"}
+              ],
+              "subcomponents": [],
+              "properties": {}
+            },
+            {
+              "name": "GpsDevice",
+              "type": "device",
+              "description": "GPS 传感器",
+              "features": [
+                {"name": "gps_data_out", "kind": "data_port", "direction": "out", "data_type": "GpsData"},
+                {"name": "spi_access", "kind": "bus_access", "direction": "requires"}
+              ],
+              "subcomponents": [],
+              "properties": {}
+            },
+            {
+              "name": "ImuDevice",
+              "type": "device",
+              "description": "IMU 传感器",
+              "features": [
+                {"name": "imu_data_out", "kind": "data_port", "direction": "out", "data_type": "ImuData"},
+                {"name": "spi_access", "kind": "bus_access", "direction": "requires"}
+              ],
+              "subcomponents": [],
+              "properties": {}
+            }
+          ],
+          "properties": {}
+        }
+      ],
+      "connections": [],
+      "properties": {}
     }
 
 input_section: |
