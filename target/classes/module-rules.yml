@@ -9,8 +9,8 @@ task_description: |
 
 component_types: |
   【AADL 合法组件类型总览】
-  架构树中所有节点的 type 只能是以下 14 种之一。其他任何类型（如 interface、port、data_port、bus_access 等）都不是 AADL 组件，而是特征(feature)——特征是组件内部的声明，不是独立组件。
-  组件是有独立声明的构件（system/thread/device/bus 等），在架构树中是节点；特征(feature)是组件内部的属性（port、bus access、data access 等），依附于组件存在，不是独立节点。
+  架构树中所有节点的 type 只能是以下 14 种之一。其他任何类型（如 interface、port、data port、bus access 等）都不是 AADL 组件，而是接口(feature)——接口是组件内部的声明，不是独立组件。
+  组件是有独立声明的构件（system/thread/device/bus 等），在架构树中是节点；接口(feature)是组件内部的属性（port、bus access、data access 等），依附于组件存在，不是独立节点。
 
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   【软件层构件 (Software Components)】——共 6 种
@@ -95,19 +95,20 @@ component_types: |
       - 模块分析注意：如果架构树中有 abstract 节点，其功能职责不明确，需谨慎处理。
 
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  【重要区分：组件 vs 特征(feature)】
+  【重要区分：组件 vs 接口(feature)】
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   - 组件：有独立声明的构件（system/thread/device/bus 等 14 种），在架构树中是节点，有自己的 name 和 type
-  - 特征(feature)：组件内部的属性声明（端口、总线访问、数据访问等），不是独立节点，依附于组件存在
-  - 模块分析时的影响：功能模块是组件（主要是 thread），端口是特征（模块内部的声明），不要把特征当成组件来分析。
+  - 接口(feature)：组件内部的属性声明（端口、总线访问、数据访问等），不是独立节点，依附于组件存在
+  - 模块分析时的影响：功能模块是组件（主要是 thread），端口是接口（模块内部的声明），不要把接口当成组件来分析。
 
 process_flow: |
   1. 从需求列表中识别相关的需求，划分功能模块（每个 thread 对应一个功能模块）
   2. 对每个模块，结合输入中的AADL架构树分析其组件层次（如从根节点一直到该模块对应的具体节点）
-  3. 找出该模块内部包含的所有子组件（根据AADL树中的 children 提取）
+  3. 找出该模块内部包含的所有子组件（根据AADL树中的 subcomponents 数组提取）
   4. 根据需求描述该模块的功能，并提取其满足的需求ID
   5. 结合需求描述和嵌入式系统常识，列出与该模块有关联的其他组件（如依赖的 Device 外设、同 Process 下的其他 Thread 模块等）
-  6. 根据需求中的 aadl_hints.data_direction 推断该模块需要的端口（仅 thread/process 可定义 data port，data 组件严禁拥有 features）：
+  6. 参考架构树中该组件的 features 数组（如果有的话），结合需求中的 aadl_hints.data_direction，推断该模块需要的端口：
+     - 架构树中已声明的 feature 可以作为端口推断的参考，但你仍需根据需求补充完整
      - data_direction 为 "input" 的模块：需要 in data port（接收外部数据）
      - data_direction 为 "output" 的模块：需要 out data port（输出数据到外部）
      - data_direction 为 "internal" 的模块：同时需要 in data port（接收上游数据）和 out data port（输出到下游）
@@ -117,12 +118,29 @@ process_flow: |
      - 连接名称格式：sourcePort -> targetPort
      - 严禁生成引用 data 组件端口的连接——data 组件是纯类型分类器，没有 features 块
 
+  【架构树格式说明】
+  输入的架构树 JSON 中每个节点包含：
+  - name: 组件名称
+  - type: 组件类型（14 种 AADL 组件之一）
+  - subcomponents: 子组件数组（只有独立构件放这里）
+  - features: 接口数组（组件内部的端口/总线访问声明，不是独立组件）
+    每个 feature 包含：
+    - name: 接口名称
+    - kind: 接口类型（data port / event port / event data port / bus access / data access / subprogram access / feature group）
+    - direction: 方向（port 类用 in/out；access 类用 provides/requires）
+    - data_type: 类型名（port 类填数据类型，如 "SensorData"；access 类填被访问的组件名，如 "CanBus"）
+
+  【注意：bus 是组件，不是接口】
+  - bus / virtual bus 是 14 种组件类型之一，在架构树中是独立节点（有 name 和 type）
+  - bus access 是接口类型，是组件内部的声明，放在 features 数组里
+  - 不要混淆 bus（组件）和 bus access（接口）
+
 output_format: |
   你必须输出严格的JSON格式，包含一个根节点对象，其中包含一个 "modules" 数组。每个模块对象必须包含以下字段：
   - module_name: 模块名称，如 "任务调度模块"
   - satisfied_requirements: 该模块满足的需求ID数组，如 ["REQ-001", "REQ-002"]
   - component_hierarchy: 组件层次数组，从AADL树顶级到该模块所在层次的节点名称，如 ["FlightControlSys", "MainProcessor", "KernelProcess", "TaskScheduler"]
-  - sub_components: 该模块内部包含的子组件名称数组（对应AADL树中的children）。如果是叶子节点，则为空数组 []
+  - sub_components: 该模块内部包含的子组件名称数组（对应AADL树中的 subcomponents）。如果是叶子节点，则为空数组 []
   - function_description: 模块的具体功能说明（基于需求描述，不需包含需求ID）
   - related_components: 与该模块有关联的其他组件名称数组，如果没有则为空数组 []
   - port_requirements: 该模块需要的 AADL 端口声明数组，每个端口对象包含：
@@ -161,7 +179,7 @@ example:
             "aadl_hints": {
                 "component_type": "thread",
                 "data_direction": "input",
-                "interface_type": "bus_access",
+                "interface_type": "bus access",
                 "timing_constraint": {"period_ms": 5, "deadline_ms": 2}
             }
         },
@@ -172,7 +190,7 @@ example:
             "aadl_hints": {
                 "component_type": "thread",
                 "data_direction": "internal",
-                "interface_type": "data_port",
+                "interface_type": "data port",
                 "timing_constraint": {"period_ms": 5, "deadline_ms": 3}
             }
         },
@@ -183,7 +201,7 @@ example:
             "aadl_hints": {
                 "component_type": "thread",
                 "data_direction": "output",
-                "interface_type": "bus_access",
+                "interface_type": "bus access",
                 "timing_constraint": {"period_ms": 5, "deadline_ms": 2}
             }
         }
@@ -192,15 +210,22 @@ example:
     {
         "name": "FlightControlSys",
         "type": "system",
-        "children": [
+        "subcomponents": [
             {
                 "name": "MainProcessor",
                 "type": "processor",
-                "children": [
+                "features": [
+                    {"name": "canBusIf", "kind": "bus access", "direction": "provides", "data_type": "CANBus"}
+                ],
+                "subcomponents": [
                     {
                         "name": "FlightProcess",
                         "type": "process",
-                        "children": [
+                        "features": [
+                            {"name": "gyroDataIn", "kind": "data port", "direction": "in", "data_type": "GyroData"},
+                            {"name": "attitudeDataOut", "kind": "data port", "direction": "out", "data_type": "AttitudeData"}
+                        ],
+                        "subcomponents": [
                             {"name": "GyroCollection", "type": "thread"},
                             {"name": "AttitudeFilter", "type": "thread"},
                             {"name": "CanSender", "type": "thread"}
@@ -208,7 +233,14 @@ example:
                     }
                 ]
             },
-            {"name": "GyroSensor", "type": "device"},
+            {
+                "name": "GyroSensor",
+                "type": "device",
+                "features": [
+                    {"name": "gyroDataOut", "kind": "data port", "direction": "out", "data_type": "GyroData"},
+                    {"name": "i2cBusIf", "kind": "bus access", "direction": "provides", "data_type": "I2CBus"}
+                ]
+            },
             {"name": "I2CBus", "type": "bus"},
             {"name": "CANBus", "type": "bus"}
         ]
@@ -309,7 +341,7 @@ checklist:
   content: |
     【输出前自检清单】生成模块分析结果前逐条确认，任一项为否则修正后再输出：
     [1] 每个模块的 component_hierarchy 是否都是架构树中实际存在的节点路径（从根节点到目标节点）？
-    [2] sub_components 是否与架构树中该节点的 children 名称一致？
+    [2] sub_components 是否与架构树中该节点的 subcomponents 名称一致？
     [3] related_components 中的组件名是否都在架构树中存在？
     [4] 每个模块是否都关联了至少一个需求ID？
     [5] 每个模块是否都填写了 port_requirements（即使为空数组也要输出）？

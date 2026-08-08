@@ -34,6 +34,21 @@ public class AadlInputParser {
         public String parent;
         public int depth;
         public List<ArchNode> children = new ArrayList<>();
+        /** 特征列表（组件内部的端口/总线访问等，不是独立组件） */
+        public List<FeatureInfo> features = new ArrayList<>();
+    }
+
+    /** 架构树中的特征（feature）信息 */
+    public static class FeatureInfo {
+        public String name;
+        /** 特征类型：data_port / bus_access / event_port / event_data_port */
+        public String kind;
+        /** 方向：in / out / inout */
+        public String direction;
+        /** 数据类型（仅 data_port 类需要） */
+        public String dataType;
+        /** 所属组件名称 */
+        public String componentName;
     }
 
     /** 模块分析信息 */
@@ -227,6 +242,26 @@ public class AadlInputParser {
         sb.append(isLast ? "+-- " : "|-- ");
         sb.append(node.name).append(" (").append(node.type).append(")\n");
 
+        // 打印 features（如果有的话）
+        if (node.features != null && !node.features.isEmpty()) {
+            String featPrefix = prefix + (isLast ? "    " : "|   ") + "    ";
+            for (int i = 0; i < node.features.size(); i++) {
+                FeatureInfo f = node.features.get(i);
+                boolean isLastFeat = (i == node.features.size() - 1);
+                sb.append(featPrefix);
+                sb.append(isLastFeat ? "└─ " : "├─ ");
+                sb.append("feature: ").append(f.name)
+                        .append(" (").append(f.kind);
+                if (f.direction != null && !f.direction.isEmpty()) {
+                    sb.append(", ").append(f.direction);
+                }
+                if (f.dataType != null && !f.dataType.isEmpty()) {
+                    sb.append(", ").append(f.dataType);
+                }
+                sb.append(")\n");
+            }
+        }
+
         for (int i = 0; i < node.children.size(); i++) {
             String childPrefix = prefix + (isLast ? "    " : "|   ");
             printTreeNode(sb, node.children.get(i), childPrefix, i == node.children.size() - 1);
@@ -331,12 +366,31 @@ public class AadlInputParser {
             componentMap.put(archNode.name, archNode);
         }
 
-        if (node.has("children") && node.get("children").isArray()) {
-            for (JsonNode child : node.get("children")) {
+        // 解析子组件（优先 subcomponents，兼容旧字段 children）
+        JsonNode subcompNode = node.has("subcomponents") ? node.get("subcomponents")
+                : node.has("children") ? node.get("children") : null;
+        if (subcompNode != null && subcompNode.isArray()) {
+            for (JsonNode child : subcompNode) {
                 ArchNode childNode = parseArchNode(child, archNode.name, depth + 1, registry, componentMap);
                 if (childNode != null) {
                     archNode.children.add(childNode);
                 }
+            }
+        }
+
+        // 解析特征（features 数组）——特征不是独立组件，不注册到 componentMap
+        if (node.has("features") && node.get("features").isArray()) {
+            for (JsonNode featNode : node.get("features")) {
+                if (!featNode.has("name")) {
+                    continue;
+                }
+                FeatureInfo feat = new FeatureInfo();
+                feat.name = featNode.get("name").asText();
+                feat.kind = getText(featNode, "kind");
+                feat.direction = getText(featNode, "direction");
+                feat.dataType = getText(featNode, "data_type");
+                feat.componentName = archNode.name;
+                archNode.features.add(feat);
             }
         }
 

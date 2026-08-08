@@ -68,12 +68,7 @@ public class AadlArchitecturePrompt {
         prompt.append(rulesConfig.get("output_format"));
         prompt.append("\n\n");
 
-        // 7. 严格规则
-        prompt.append("【严格规则】\n");
-        prompt.append(rulesConfig.get("strict_rules"));
-        prompt.append("\n\n");
-
-        // 8. 示例
+        // 7. 示例
         Map<String, Object> example = (Map<String, Object>) rulesConfig.get("example");
         prompt.append("【").append(example.get("title")).append("】\n");
         prompt.append(example.get("description")).append("\n");
@@ -83,7 +78,7 @@ public class AadlArchitecturePrompt {
         prompt.append(example.get("output"));
         prompt.append("\n\n");
 
-        // 9. 输入清单
+        // 8. 输入清单
         prompt.append(rulesConfig.get("input_section"));
         prompt.append("\n\n");
         prompt.append(rulesConfig.get("input_label"));
@@ -91,14 +86,14 @@ public class AadlArchitecturePrompt {
         prompt.append(requirementsJson);
         prompt.append("\n\n");
 
-        // 10. 自检清单（近因效应：紧贴 output_instruction）
+        // 9. 自检清单（近因效应：紧贴 output_instruction）
         Map<String, Object> checklist = (Map<String, Object>) rulesConfig.get("checklist");
         if (checklist != null && checklist.get("content") != null) {
             prompt.append(checklist.get("content"));
             prompt.append("\n\n");
         }
 
-        // 11. 输出指令
+        // 10. 输出指令
         prompt.append(rulesConfig.get("output_instruction"));
 
         return prompt.toString();

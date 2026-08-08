@@ -118,7 +118,7 @@ public class RequirementPrompt {
         prompt.append("  \"aadl_hints\": {\n");
         prompt.append("    \"component_type\": \"thread/device/bus/processor/memory/data\",\n");
         prompt.append("    \"data_direction\": \"input/output/internal/bidirectional\",\n");
-        prompt.append("    \"interface_type\": \"data_port/event_port/bus_access/none\",\n");
+        prompt.append("    \"interface_type\": \"data port/event port/bus access/none\",\n");
         prompt.append("    \"timing_constraint\": {\"period_ms\": 10, \"deadline_ms\": 5}\n");
         prompt.append("  }\n");
         prompt.append("}]\n\n");
@@ -135,7 +135,7 @@ public class RequirementPrompt {
         prompt.append("  \"aadl_hints\": {\n");
         prompt.append("    \"component_type\": \"thread\",\n");
         prompt.append("    \"data_direction\": \"input\",\n");
-        prompt.append("    \"interface_type\": \"bus_access\",\n");
+        prompt.append("    \"interface_type\": \"bus access\",\n");
         prompt.append("    \"timing_constraint\": {\"period_ms\": 10, \"deadline_ms\": 5}\n");
         prompt.append("  }\n");
         prompt.append("}]\n\n");
@@ -147,7 +147,7 @@ public class RequirementPrompt {
         prompt.append("4. global_ref 字段必须正确引用全局上下文卡片中的锚点ID\n");
         prompt.append("5. 不输出任何解释性文字，只输出JSON\n");
         prompt.append("6. 每条需求必须填写 aadl_hints，component_type 不可省略\n");
-        prompt.append("7. 涉及硬件交互的需求，interface_type 应为 bus_access 或 data_port\n");
+        prompt.append("7. 涉及硬件交互的需求，interface_type 应为 bus access 或 data port\n");
         prompt.append("8. 周期性任务必须填写 timing_constraint.period_ms\n\n");
 
         prompt.append("【输入内容】\n");

@@ -109,7 +109,7 @@ public class AadlArchitectureAgent implements Agent<AgentInput, AgentOutput> {
                     log.info("========================================");
                     log.info("AadlArchitectureAgent执行成功!");
                     log.info("根节点名称: {}", architecture.getName());
-                    log.info("子组件数量: {}", architecture.getChildren() != null ? architecture.getChildren().size() : 0);
+                    log.info("子组件数量: {}", architecture.getSubcomponents() != null ? architecture.getSubcomponents().size() : 0);
                     log.info("总耗时: {}ms", executionTime);
                     log.info("========================================");
 
@@ -154,8 +154,8 @@ public class AadlArchitectureAgent implements Agent<AgentInput, AgentOutput> {
         String prefix = "  ".repeat(indent);
         log.info("{}+ {} ({})", prefix, model.getName(), model.getType());
 
-        if (model.getChildren() != null && !model.getChildren().isEmpty()) {
-            for (AadlArchitectureModel child : model.getChildren()) {
+        if (model.getSubcomponents() != null && !model.getSubcomponents().isEmpty()) {
+            for (AadlArchitectureModel child : model.getSubcomponents()) {
                 printArchitectureTree(child, indent + 1);
             }
         }

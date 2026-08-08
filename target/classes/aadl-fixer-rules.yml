@@ -33,10 +33,7 @@ global:
     R7【连接与特征归属】软件实体（process）的 connections 中只能 port 连接；硬件实体（device/processor/memory/bus）的 connections 中只能 bus access 连接；system 两者均可。软件实体特征只 Port，硬件实体特征只 Bus Access。thread 严禁 bus access。
     R8【三步顺序】implementation 内部按 subcomponents → connections → properties 顺序编写。
     R9【subcomponents 规范】格式：`实例名 : 组件关键字 组件类型名.impl;`。virtual processor 中只能含 virtual processor 或 process，严禁含 thread。
-      【最高优先级】实例名严禁与组件类型名完全相同！
-      类型名用大驼峰，实例名只要不同即可：小驼峰、小写下划线、数字编号都可以。
-      错误：`MainProcessor : processor MainProcessor.impl;`
-      正确：`mainCpu : processor MainProcessor.impl;` 或 `cpu0 : processor MainProcessor.impl;`
+      【最高优先级】实例名 ≠ 类型名（小驼峰/下划线/数字编号均可），详见下方自检 [0]。
     R10【applies to 规范】properties 中 `applies to` 引用的名称必须在当前 implementation 的 subcomponents 或 connections 中已声明（可以引用子组件实例名，也可以引用连接名）。
     R11【EMV2 end 规范】EMV2 annex 中各块的 end 语句后跟类型关键字，不是块名：
       - error behavior <名字>  →  end behavior;
@@ -551,27 +548,11 @@ static_analysis_fixes:
 
 checklist:
   content: |
-    【输出前自检清单】输出修复后的代码前逐条确认，任一项为否则修正后再输出：
-    [0] 【最高优先级】检查每一个 subcomponents 行：实例名是否与类型名相同？
-        - 如果发现 `XxxYyy : keyword XxxYyy.impl;` 这种实例名=类型名的，必须立即重命名！
-        - 只要实例名≠类型名即可，小驼峰、小写下划线、数字编号都可以
-    [1] 修复后的每个组件是否都有类型声明 + implementation，且各自有 end 闭合？
-    [2] features 块是否只出现在类型声明中，没有出现在 implementation 中？
-    [3] thread 的 features 中是否只有 in/out data port，没有 requires bus access？
-    [4] connections 中每个 实例名.端口名 是否都在对应组件的 features 中声明过？
-    [5] thread implementation 中是否只有 properties，没有 connections？
-    [6] 软件实体（thread/process）的 features 中是否只有 Port，硬件实体是否只有 Bus Access？
-    [7] implementation 内部顺序是否为 subcomponents → connections → properties？
-    [8] 连接类型是否与端点匹配（port 连 port，access 连 access，严禁混连）？
-    [9] port 连接是否用 ->，bus access 连接是否用 <->？
-    [10] data 组件中是否没有 features 块？subprogram 可以有 features。
-    [11] port 连接方向是否正确？同级连接 out->in（严禁 in->in、out->out）、向下委派 in->in（父端口在左）、向上委派 out->out（父端口在右）？
-    [12] port 连接两端是否引用了相同的数据类型？
-    [13] 软件实体（process）的 connections 中是否只有 port 连接？硬件实体是否只有 bus access 连接？
-    [14] 每一处修改是否都添加了 `-- [修复]` 标记注释？标记说明是否清晰描述了改动内容？
-    [15] reference 属性值格式是否正确？列表类型属性必须用双括号 `(reference (目标名))`，不能只有单括号 `reference (目标名)`？
-    [16] applies to 引用的名称是否在当前作用域的 subcomponents 或 connections 中已声明？（连接名也是合法的 applies to 目标）
-    [17] 再次确认[0]：所有实例名都不等于类型名！这是最容易犯的错误！
+    【输出前自检】对照核心红线规则 R1-R11 逐条检查，任一项不满足则修正后再输出：
+    ⚠️【最高优先级 R9】逐个确认 subcomponents 行：实例名 ≠ 类型名？发现相同立即重命名。
+    依次过一遍：R2声明完整性 → R3features归属 → R4连接正确性 → R5线程纯净 → R7连接与实体归属 → R8块顺序 → R9命名+包含关系 → R10applies to → R11EMV2 end格式。
+    额外检查：每处修改都有 `-- [修复]` 标记？reference 格式是双括号 `(reference (xxx))`？port 连 port / access 连 access 无混连？两端数据类型一致？
+    ⚠️【再查 R9】最后再确认一遍：没有任何实例名等于类型名！
 
 output_instruction: |
   请只输出修复后的完整AADL代码，不要包含任何解释或说明。

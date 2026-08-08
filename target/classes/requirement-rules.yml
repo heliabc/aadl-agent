@@ -19,7 +19,7 @@ output_format: |
   - aadl_hints: AADL建模提示对象，包含以下子字段：
     - component_type: 建议的AADL组件类型，从以下中选择：thread（并发任务）, process（进程容器）, device（硬件外设）, bus（通信总线）, processor（处理器）, memory（存储）, data（数据类型）
     - data_direction: 数据流向，取值为 "input"（外部输入到系统）、"output"（系统输出到外部）、"internal"（系统内部流转）、"bidirectional"（双向交互）
-    - interface_type: 接口类型，取值为 "data_port"（数据端口）、"event_port"（事件端口）、"bus_access"（总线访问）、"none"（内部逻辑无外部接口）
+    - interface_type: 接口类型，取值为 "data port"（数据端口）、"event port"（事件端口）、"bus access"（总线访问）、"none"（内部逻辑无外部接口）
     - timing_constraint: 时序约束对象，包含 period_ms（周期，毫秒，无周期则为null）和 deadline_ms（截止时间，毫秒，无要求则为null）
 
 format_example: |
@@ -38,7 +38,7 @@ format_example: |
           "aadl_hints": {
               "component_type": "thread",
               "data_direction": "input",
-              "interface_type": "bus_access",
+              "interface_type": "bus access",
               "timing_constraint": {
                   "period_ms": 10,
                   "deadline_ms": 5
@@ -59,8 +59,8 @@ strict_rules: |
   9. 必须输出 globalRef 字段，列出该需求受哪些全局锚点影响
   10. 对于"参见X章"类引用，原样照抄原文，禁止自行解释
   11. 每条需求必须填写 aadl_hints，component_type 不可省略
-  12. 涉及外部硬件交互（传感器采集、执行器控制、总线通信）的需求，component_type 应为 thread，interface_type 应为 bus_access 或 data_port
-  13. 涉及纯数据处理或算法计算的需求，component_type 应为 thread，interface_type 应为 data_port
+  12. 涉及外部硬件交互（传感器采集、执行器控制、总线通信）的需求，component_type 应为 thread，interface_type 应为 bus access 或 data port
+  13. 涉及纯数据处理或算法计算的需求，component_type 应为 thread，interface_type 应为 data port
   14. 描述硬件外设本身（如传感器型号、总线类型）的需求，component_type 应为 device 或 bus
   15. 周期性任务必须填写 timing_constraint.period_ms，非周期任务 period_ms 设为 null
 
@@ -85,7 +85,7 @@ example:
             "aadl_hints": {
                 "component_type": "thread",
                 "data_direction": "input",
-                "interface_type": "bus_access",
+                "interface_type": "bus access",
                 "timing_constraint": {
                     "period_ms": 5,
                     "deadline_ms": 2
@@ -106,7 +106,7 @@ example:
             "aadl_hints": {
                 "component_type": "thread",
                 "data_direction": "internal",
-                "interface_type": "data_port",
+                "interface_type": "data port",
                 "timing_constraint": {
                     "period_ms": 5,
                     "deadline_ms": 3
@@ -127,7 +127,7 @@ example:
             "aadl_hints": {
                 "component_type": "thread",
                 "data_direction": "output",
-                "interface_type": "bus_access",
+                "interface_type": "bus access",
                 "timing_constraint": {
                     "period_ms": 5,
                     "deadline_ms": 2
@@ -148,7 +148,7 @@ example:
             "aadl_hints": {
                 "component_type": "thread",
                 "data_direction": "input",
-                "interface_type": "data_port",
+                "interface_type": "data port",
                 "timing_constraint": {
                     "period_ms": 100,
                     "deadline_ms": 50
