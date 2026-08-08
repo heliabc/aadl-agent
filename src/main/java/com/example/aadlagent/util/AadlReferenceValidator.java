@@ -7679,6 +7679,7 @@ public class AadlReferenceValidator {
                                           Map<String, String> missingFeats) {
         String[] lines = content.split("\n");
         StringBuilder featureLines = new StringBuilder();
+        List<String> featNames = new ArrayList<>(missingFeats.keySet());
         boolean isHardware = isHardwareComponentType(componentType);
 
         for (Map.Entry<String, String> entry : missingFeats.entrySet()) {
