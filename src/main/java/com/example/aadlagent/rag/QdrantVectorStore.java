@@ -411,10 +411,19 @@ public class QdrantVectorStore {
 
         try {
             String url = getBaseUrl() + "/collections/" + collectionName + "/points/count";
-            ResponseEntity<Map> response = restTemplate.postForEntity(url, new HttpEntity<>(createHeaders()), Map.class);
+            Map<String, Object> requestBody = new HashMap<>();
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, createHeaders());
+            ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
             
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                return ((Number) response.getBody().get("count")).longValue();
+                Map<String, Object> result = (Map<String, Object>) response.getBody().get("result");
+                if (result != null && result.get("points_count") != null) {
+                    return ((Number) result.get("points_count")).longValue();
+                }
+                // 兼容旧格式
+                if (response.getBody().get("count") != null) {
+                    return ((Number) response.getBody().get("count")).longValue();
+                }
             }
         } catch (Exception e) {
             log.error("Failed to count points in {}: {}", collectionName, e.getMessage());
