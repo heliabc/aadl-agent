@@ -513,7 +513,10 @@ public class AadlReferenceValidator {
         public List<String> fixes = new ArrayList<>();
         /** 修复建议列表，与 errors 一一对应（相同索引） */
         public List<String> suggestions = new ArrayList<>();
+        /** 纯净的修复后代码（不含静态分析注入的注释标记），可直接传入修复 agent 或保存 */
         public String fixedContent;
+        /** 带注释标注的代码（含 -- [ERROR] / -- [WARNING] / -- [自动修正] 标记），用于展示给用户 */
+        public String annotatedContent;
         /** 需要自动补全的 feature 列表：key = 组件类型名, value = {feature名 → 数据类型} */
         public Map<String, Map<String, String>> missingFeatures = new LinkedHashMap<>();
         public boolean hasIssues() {
@@ -547,6 +550,7 @@ public class AadlReferenceValidator {
     public ValidationResult validate(String aadlContent, AadlInputParser.ParseResult parseResult) {
         ValidationResult result = new ValidationResult();
         result.fixedContent = aadlContent;
+        result.annotatedContent = aadlContent;
 
         if (aadlContent == null || aadlContent.trim().isEmpty()) {
             result.errors.add("AADL 内容为空");
@@ -673,10 +677,16 @@ public class AadlReferenceValidator {
                 || !result.missingFeatures.isEmpty()) {
             String fixedProtected = applyFixes(protectedContent, aadlDeclarations, archComponents,
                     componentFeatures, featureDetails, subcomponentRefs, connectionRefs, result);
-            result.fixedContent = restoreAnnexBlocks(fixedProtected);
+            String restored = restoreAnnexBlocks(fixedProtected);
+            // annotatedContent: 带注释标记的版本（用于展示给用户看）
+            result.annotatedContent = restored;
+            // fixedContent: 纯净版本（可直接传入修复 agent 或保存）
+            result.fixedContent = stripStaticAnalysisAnnotations(restored);
         } else {
-            // 没有修复，直接恢复原始内容（或保留原始内容）
+            // 没有修复，直接恢复原始内容
             result.fixedContent = aadlContent;
+            // 生成带注释标注的版本用于展示
+            result.annotatedContent = annotateErrorsAndWarningsInline(aadlContent, result);
         }
 
         // 6. 为每个错误生成修复建议
@@ -7975,6 +7985,65 @@ public class AadlReferenceValidator {
     }
 
     /**
+     * 清理 AADL 代码中所有静态分析器注入的注释标记，返回纯净的 AADL 代码。
+     * 这些标记包括：
+     *   1. -- [ERROR] / -- [WARNING] / -- [错误] / -- [警告] 整行注释
+     *   2. -- [自动修正] / -- [自动修复] / -- [修复] / -- [修复建议] 整行注释
+     *   3. -- [验证结果] / -- [错误报告] 等报告标题行
+     *   4. 行尾的 -- [自动修正] / -- [ERROR] 等标记注释
+     *   5. "=====" 分隔线注释行
+     *
+     * 用户原始的普通 AADL 注释（不含上述标记的）会被保留。
+     */
+    private String stripStaticAnalysisAnnotations(String content) {
+        if (content == null || content.isEmpty()) {
+            return content;
+        }
+
+        String[] lines = content.split("\n", -1);
+        List<String> cleanedLines = new ArrayList<>();
+
+        // 整行是静态分析注释的模式（整行跳过）
+        Pattern fullLineCommentPattern = Pattern.compile(
+                "^\\s*--\\s*(=+|\\[(ERROR|WARNING|错误|警告|自动修正|自动修复|修复|修复建议|验证结果|错误报告)\\].*)$",
+                Pattern.CASE_INSENSITIVE
+        );
+
+        // 行尾的标记注释模式（只移除注释部分，保留代码）
+        Pattern trailingCommentPattern = Pattern.compile(
+                "\\s+--\\s*\\[(自动修正|自动修复|修复|修复建议|ERROR|WARNING|错误|警告)\\][^\\r\\n]*$",
+                Pattern.CASE_INSENSITIVE
+        );
+
+        for (String line : lines) {
+            // 检查是否是整行静态分析注释（整行跳过）
+            Matcher fullMatcher = fullLineCommentPattern.matcher(line);
+            if (fullMatcher.matches()) {
+                continue;
+            }
+
+            // 移除行尾的标记注释
+            Matcher trailingMatcher = trailingCommentPattern.matcher(line);
+            String cleaned = trailingMatcher.replaceAll("");
+            cleaned = cleaned.replaceAll("\\s+$", "");
+
+            cleanedLines.add(cleaned);
+        }
+
+        // 移除顶部连续空行
+        while (!cleanedLines.isEmpty() && cleanedLines.get(0).trim().isEmpty()) {
+            cleanedLines.remove(0);
+        }
+
+        // 移除底部连续空行
+        while (!cleanedLines.isEmpty() && cleanedLines.get(cleanedLines.size() - 1).trim().isEmpty()) {
+            cleanedLines.remove(cleanedLines.size() - 1);
+        }
+
+        return String.join("\n", cleanedLines);
+    }
+
+    /**
      * 在原始内容中，对每个有错误/警告的行，在其前一行插入注释标注。
      * 错误标注为 "-- [ERROR] 消息"，警告标注为 "-- [WARNING] 消息"。
      * 同一行有多个问题时，每个问题单独一行注释。
@@ -8344,7 +8413,7 @@ public class AadlReferenceValidator {
             }
         }
         if (dataTypeFixCount > 0) {
-            fixBlock.append("-- [自动修正] 补全引用中未声明的 data 类型\n");
+            fixBlock.append("    -- [自动修正] 补全引用中未声明的 data 类型\n");
             fixBlock.append(dataTypeFixBlock);
             fixCount += dataTypeFixCount;
             log.info("自动修正：共补全 {} 个未声明的 data 类型", dataTypeFixCount);

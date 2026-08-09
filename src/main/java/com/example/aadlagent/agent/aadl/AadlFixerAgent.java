@@ -74,9 +74,10 @@ public class AadlFixerAgent implements Agent<AgentInput, AgentOutput> {
             // 如果没有传入错误，先运行一次静态语法检查获取错误
             log.info("未传入错误信息，运行静态语法分析获取初始错误...");
             ValidationResult initialResult = validator.validateSyntax(currentAadl);
-            // 先应用自动修复
-            currentAadl = initialResult.fixedContent != null ? initialResult.fixedContent : currentAadl;
-            currentAadl = sanitizeAadlContent(currentAadl);
+            // 先应用自动修复（fixedContent 已是纯净代码，可直接使用）
+            if (initialResult.fixedContent != null) {
+                currentAadl = initialResult.fixedContent;
+            }
             if (initialResult.errors.isEmpty()) {
                 log.info("初始代码无错误，无需修复");
                 long executionTime = System.currentTimeMillis() - startTime;

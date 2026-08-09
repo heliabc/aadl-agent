@@ -1016,6 +1016,7 @@ public class RequirementController {
             response.put("success", true);
             response.put("originalContent", aadlContent);
             response.put("fixedContent", result.fixedContent);
+            response.put("annotatedContent", result.annotatedContent);
             response.put("errors", result.errors);
             response.put("warnings", result.warnings);
             response.put("fixes", result.fixes);
@@ -1024,7 +1025,7 @@ public class RequirementController {
             response.put("fixCount", result.fixes.size());
             response.put("hasIssues", result.hasIssues());
 
-            // 如果指定了输出文件名，保存修复后的文件
+            // 如果指定了输出文件名，保存修复后的文件（保存纯净版本）
             if (outputFileName != null && !outputFileName.trim().isEmpty() && result.fixedContent != null) {
                 String outputFilePath = Paths.get(fileConfig.getAadlPath(), outputFileName).toString();
                 docFileReader.writeFile(result.fixedContent, outputFilePath);
