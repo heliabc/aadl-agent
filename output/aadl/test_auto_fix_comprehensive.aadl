@@ -1,0 +1,136 @@
+package TestFix_Arch
+public
+
+-- ============================================================
+--  自动修复综合测试用例
+--  包含以下错误场景（共11类）：
+--    1. 畸形 end 语句（尾逗号）
+--    2. data 组件有非法 features 块
+--    3. thread 有非法 bus access（仅检测，不自动修复）
+--    4. thread implementation 中有非法 connections 块
+--    5. features 放错位置（在 implementation 中）
+--    6. requires/provides data port 非法语法
+--    7. 连接操作符错误（port用<->，access用->）
+--    8. 命名冲突（实例名与类型名重名）
+--    9. reference 属性括号格式错误
+--   10. implementation 块顺序错误
+--   11. 引用了未声明的组件类型（幻觉组件自动补全）
+-- ============================================================
+
+annex EMV2 {**
+  error behavior ThreeErrorStates
+    events
+      BadValueEvent  : error event;
+      NoValueEvent   : error event;
+    states
+      Operational    : initial state;
+      BadValueState  : state;
+    transitions
+      T1 : Operational -[BadValueEvent]-> BadValueState;
+  end behavior;
+**};
+
+-- ===== 错误1：畸形 end 语句 =====
+system Top_TestFix
+end Top_TestFix,
+
+-- ===== 错误2：data组件有非法features =====
+data SensorData
+  features
+    value : out data port Integer;
+end SensorData;
+
+data CommandData
+end CommandData;
+
+-- ===== 错误3：thread有非法bus access（仅检测） =====
+thread SensorThread
+  features
+    in_data  : in data port SensorData;
+    out_data : out data port SensorData;
+    can_bus  : requires bus access CanBus;
+end SensorThread;
+
+thread implementation SensorThread.impl
+  -- ===== 错误4：thread impl中有非法connections块 =====
+  connections
+    D1 : port in_data -> out_data;
+end SensorThread.impl;
+
+-- ===== 错误5：features放错位置（在impl中而非type中） =====
+process MainProcess
+end MainProcess;
+
+process implementation MainProcess.impl
+  features
+    sensor_in  : in data port SensorData;
+    cmd_out    : out data port CommandData;
+  subcomponents
+    sensor_th : thread SensorThread.impl;
+  connections
+    C1 : port sensor_in -> sensor_th.in_data;
+end MainProcess.impl;
+
+-- ===== 错误6：requires/provides data port 非法语法 =====
+device SerialDevice
+  features
+    tx_data : requires data port SensorData;
+    rx_data : provides data port CommandData;
+end SerialDevice;
+
+device implementation SerialDevice.impl
+end SerialDevice.impl;
+
+-- ===== 错误7：连接操作符错误 =====
+processor MainProcessor
+  features
+    bus_if : requires bus access CanBus;
+end MainProcessor;
+
+processor implementation MainProcessor.impl
+  -- ===== 错误8：命名冲突（实例名=类型名） =====
+  subcomponents
+    MainProcessor : processor MainProcessor.impl;
+end MainProcessor.impl;
+
+memory RAM
+  features
+    bus_if : requires bus access CanBus;
+end RAM;
+
+memory implementation RAM.impl
+  -- ===== 错误9：reference括号格式错 =====
+  properties
+    Allowed_Connection_Binding => reference (can_bus1) applies to bus_if;
+end RAM.impl;
+
+bus CanBus
+end CanBus;
+
+-- ===== 错误10：块顺序错误 =====
+bus implementation CanBus.impl
+  properties
+    Bus_Type => "CAN";
+  subcomponents
+  connections
+end CanBus.impl;
+
+system implementation Top_TestFix.impl
+  subcomponents
+    main_proc  : process MainProcess.impl;
+    serial_dev : device SerialDevice.impl;
+    main_cpu   : processor MainProcessor.impl;
+    main_ram   : memory RAM.impl;
+    can_bus1   : bus CanBus.impl;
+    -- ===== 错误11：引用了未声明的组件 =====
+    display_dev : device DisplayDevice.impl;
+  connections
+    -- port连接错误用了<->
+    Conn1 : port main_proc.sensor_in <-> serial_dev.tx_data;
+    -- bus access连接错误用了->
+    Bus1 : bus access main_cpu.bus_if -> can_bus1.busOut;
+  properties
+    Actual_Processor_Binding => (reference (main_cpu)) applies to main_proc;
+end Top_TestFix.impl;
+
+end TestFix_Arch;

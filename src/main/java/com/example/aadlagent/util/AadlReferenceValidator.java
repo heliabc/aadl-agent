@@ -231,9 +231,207 @@ public class AadlReferenceValidator {
             "component", "module", "subsystem"
     ));
 
+    // ========================= 统一正则表达式常量（避免各处不一致）=========================
+
+    /**
+     * 所有AADL组件类型关键字的正则片段（不含virtual）。
+     * 用于内联组合到更大的正则中。
+     * 注意：thread group和subprogram group用可选group匹配。
+     */
+    private static final String COMPONENT_TYPES_REGEX =
+            "system|process|thread(?:\\s+group)?|processor|memory|device|bus|data|subprogram(?:\\s+group)?|abstract";
+
+    /**
+     * virtual组件类型关键字的正则片段。
+     */
+    private static final String VIRTUAL_TYPES_REGEX = "virtual\\s+(?:processor|bus)";
+
+    /**
+     * 所有组件类型（含virtual）的正则片段。
+     */
+    private static final String ALL_COMPONENT_TYPES_REGEX =
+            "(?:" + COMPONENT_TYPES_REGEX + "|" + VIRTUAL_TYPES_REGEX + ")";
+
+    /**
+     * 类型声明正则（支持extends）：匹配 "system Foo" 或 "system Foo extends Bar"。
+     * group(1)=类型关键字, group(2)=组件名
+     */
+    private static final Pattern TYPE_DECL_PATTERN = Pattern.compile(
+            "^\\s*(" + COMPONENT_TYPES_REGEX + ")\\s+(\\w+)(?:\\s+extends\\s+\\w+)?\\s*$"
+    );
+
+    /**
+     * virtual类型声明正则（支持extends）：匹配 "virtual processor Foo"。
+     * group(1)=virtual类型(virtual processor/virtual bus), group(2)=组件名
+     */
+    private static final Pattern VIRTUAL_TYPE_DECL_PATTERN = Pattern.compile(
+            "^\\s*(" + VIRTUAL_TYPES_REGEX + ")\\s+(\\w+)(?:\\s+extends\\s+\\w+)?\\s*$"
+    );
+
+    /**
+     * 实现声明正则：匹配 "system implementation Foo.impl"。
+     * group(1)=类型关键字, group(2)=组件名(不含.impl)
+     */
+    private static final Pattern IMPL_DECL_PATTERN = Pattern.compile(
+            "^\\s*(" + COMPONENT_TYPES_REGEX + ")\\s+implementation\\s+(\\w+)\\.impl(?:\\s+extends\\s+\\w+\\.impl)?\\s*$"
+    );
+
+    /**
+     * virtual实现声明正则：匹配 "virtual processor implementation Foo.impl"。
+     * group(1)=virtual类型, group(2)=组件名
+     */
+    private static final Pattern VIRTUAL_IMPL_DECL_PATTERN = Pattern.compile(
+            "^\\s*(" + VIRTUAL_TYPES_REGEX + ")\\s+implementation\\s+(\\w+)\\.impl(?:\\s+extends\\s+\\w+\\.impl)?\\s*$"
+    );
+
+    /**
+     * subcomponent声明行正则：匹配 "inst : type Type.impl;"。
+     * group(1)=实例名, group(2)=组件关键字, group(3)=类型名
+     */
+    private static final Pattern SUBCOMP_PATTERN = Pattern.compile(
+            "^\\s*(\\w+)\\s*:\\s*(" + ALL_COMPONENT_TYPES_REGEX + ")\\s+(\\w+)\\.impl\\s*;.*$"
+    );
+
+    /**
+     * impl上下文开始正则（进入某个implementation）。
+     * group(1)=impl名(不含.impl)
+     */
+    private static final Pattern IMPL_CONTEXT_PATTERN = Pattern.compile(
+            "^\\s*(" + ALL_COMPONENT_TYPES_REGEX + ")\\s+implementation\\s+(\\w+)\\.impl(?:\\s+extends\\s+[\\w.]+)?\\s*$"
+    );
+
     /** 检查名称是否为 AADL 保留字（不区分大小写） */
     private boolean isReservedWord(String name) {
         return name != null && AADL_RESERVED_WORDS.contains(name.toLowerCase());
+    }
+
+    /**
+     * 去除行尾注释并 trim。
+     * AADL 注释以 "--" 开头到行尾，但在 annex {** ... **} 块内不应处理。
+     * 注意：所有parse/check/fix方法应使用 protectAnnexBlocks 预处理内容，
+     *       这样annex内部行会被注释掉，自动被startsWith("--")检查跳过。
+     */
+    private String stripComment(String line) {
+        if (line == null) return "";
+        // 如果是被保护的annex行，直接返回空（整行都是注释）
+        if (line.startsWith(ANNEX_PROTECT_PREFIX)) {
+            return "";
+        }
+        int idx = line.indexOf("--");
+        if (idx >= 0) {
+            line = line.substring(0, idx);
+        }
+        return line.trim();
+    }
+
+    /**
+     * Annex块保护前缀标记。
+     * 在解析/修复前，annex {** ... **} 内部的每一行会被此前缀注释掉，
+     * 避免被误识别为AADL声明、subcomponent、connection、end语句等。
+     * 处理完成后由 restoreAnnexBlocks 移除此前缀恢复原始内容。
+     */
+    private static final String ANNEX_PROTECT_PREFIX = "-- __ANNEX_PROTECTED__: ";
+
+    /**
+     * 预处理AADL内容，将annex块（annex Name {** ... **};）内部的所有行
+     * 用注释前缀保护起来，防止被正则表达式错误匹配。
+     * 注意：{** 和 **} 所在行保持不变，只保护它们之间的行。
+     *
+     * @param content 原始AADL内容
+     * @return 保护后的AADL内容
+     */
+    private String protectAnnexBlocks(String content) {
+        if (content == null || !content.contains("{**")) {
+            return content; // 快速路径：没有annex块
+        }
+        String[] lines = content.split("\n", -1); // -1保留末尾空行
+        StringBuilder sb = new StringBuilder();
+        boolean inAnnex = false;
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+
+            if (!inAnnex) {
+                // 检查是否进入annex块：行中包含 {** 但不包含 **}（或**}在{**之前）
+                int openIdx = line.indexOf("{**");
+                int closeIdx = line.indexOf("**}");
+                if (openIdx >= 0 && (closeIdx < 0 || closeIdx < openIdx)) {
+                    inAnnex = true;
+                    // {** 所在行不保护（可能有前缀如 "annex EMV2 {**"）
+                    sb.append(line);
+                    // 检查同一行是否立即关闭（罕见情况：{** ... **}; 在同一行）
+                    if (closeIdx > openIdx) {
+                        inAnnex = false;
+                    }
+                } else {
+                    sb.append(line);
+                }
+            } else {
+                // 在annex块内部，检查是否退出
+                int closeIdx = line.indexOf("**}");
+                if (closeIdx >= 0) {
+                    inAnnex = false;
+                    // **} 所在行不保护
+                    sb.append(line);
+                } else {
+                    // 保护annex内部行：用注释前缀标记
+                    // 保留原始缩进，在缩进后插入前缀
+                    int indentLen = 0;
+                    while (indentLen < line.length() && (line.charAt(indentLen) == ' ' || line.charAt(indentLen) == '\t')) {
+                        indentLen++;
+                    }
+                    sb.append(line.substring(0, indentLen));
+                    sb.append(ANNEX_PROTECT_PREFIX);
+                    sb.append(line.substring(indentLen));
+                }
+            }
+
+            if (i < lines.length - 1) {
+                sb.append("\n");
+            }
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * 恢复被 protectAnnexBlocks 保护的annex块内容，移除保护前缀。
+     *
+     * @param content 保护后的AADL内容
+     * @return 恢复后的AADL内容
+     */
+    private String restoreAnnexBlocks(String content) {
+        if (content == null || !content.contains(ANNEX_PROTECT_PREFIX)) {
+            return content;
+        }
+        // 逐行移除保护前缀
+        String[] lines = content.split("\n", -1);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+            // 移除保护前缀（前缀前可能有缩进）
+            int prefixIdx = line.indexOf(ANNEX_PROTECT_PREFIX);
+            if (prefixIdx >= 0) {
+                line = line.substring(0, prefixIdx) + line.substring(prefixIdx + ANNEX_PROTECT_PREFIX.length());
+            }
+            sb.append(line);
+            if (i < lines.length - 1) {
+                sb.append("\n");
+            }
+        }
+        return sb.toString();
+    }
+
+    /** 判断一行（去除注释后）是否以指定关键字结尾（如 "end Xxx;"） */
+    private static boolean matchesEndDecl(String lineNoComment, String keyword, String name) {
+        // 匹配 "end keyword name;" 或 "end name;" 模式（去除注释后）
+        return lineNoComment.matches("end\\s+(?:\\w+\\s+)?" + Pattern.quote(name) + "\\s*;");
+    }
+
+    /** 判断一行（去除注释后）是否匹配 end Xxx.impl; */
+    private static boolean matchesEndImpl(String lineNoComment, String name) {
+        return lineNoComment.matches("end\\s+\\w+\\.impl\\s*;") ||
+               lineNoComment.matches("end\\s+" + Pattern.quote(name) + "\\.impl\\s*;");
     }
 
     /**
@@ -355,24 +553,28 @@ public class AadlReferenceValidator {
             return result;
         }
 
+        // 0. 预处理：保护annex块（EMV2等 {** ... **}），防止内部内容被误解析
+        //     annex内部行会被注释掉，避免end behavior;等被误识别为组件end语句
+        String protectedContent = protectAnnexBlocks(aadlContent);
+
         // 1. 从 ParseResult 获取组件真值表（无需重复解析 JSON）
         Map<String, AadlInputParser.ArchNode> archComponents = parseResult.archComponents;
         log.info("使用解析器提供的组件真值表：{} 个组件", archComponents.size());
 
-        // 2. 解析 AADL 声明
-        Map<String, AadlDeclaration> aadlDeclarations = parseAadlDeclarations(aadlContent);
+        // 2. 解析 AADL 声明（使用受保护的内容）
+        Map<String, AadlDeclaration> aadlDeclarations = parseAadlDeclarations(protectedContent);
         log.info("AADL 声明解析完成：{} 个组件声明", aadlDeclarations.size());
 
         // 3. 解析 subcomponents 引用
-        List<SubcomponentRef> subcomponentRefs = parseSubcomponentRefs(aadlContent);
+        List<SubcomponentRef> subcomponentRefs = parseSubcomponentRefs(protectedContent);
         log.info("subcomponents 引用解析完成：{} 条", subcomponentRefs.size());
 
         // 3b. 解析组件 features（类型声明中的端口/访问点）
-        Map<String, Map<String, String>> componentFeatures = parseFeatures(aadlContent);
+        Map<String, Map<String, String>> componentFeatures = parseFeatures(protectedContent);
         log.info("features 解析完成：{} 个组件有 features 声明", componentFeatures.size());
 
         // 3c. 解析 connections 引用
-        List<ConnectionRef> connectionRefs = parseConnections(aadlContent);
+        List<ConnectionRef> connectionRefs = parseConnections(protectedContent);
         log.info("connections 引用解析完成：{} 条", connectionRefs.size());
 
         // 4. 交叉验证
@@ -395,49 +597,49 @@ public class AadlReferenceValidator {
         checkContainmentCompliance(subcomponentRefs, aadlDeclarations, result);
 
         // 4g. 检测 features 放置错误（features 出现在 implementation 中）
-        checkFeaturesPlacement(aadlContent, result);
+        checkFeaturesPlacement(protectedContent, result);
 
         // 4h. 检测 connections 引用悬空 feature（引用了组件中不存在的端口）
         checkConnectionReferences(connectionRefs, componentFeatures, subcomponentRefs, aadlDeclarations, result);
 
         // 4i. 检测线程 implementation 中非法包含 connections 块
-        checkThreadConnectionsBlock(aadlContent, aadlDeclarations, result);
+        checkThreadConnectionsBlock(protectedContent, aadlDeclarations, result);
 
         // 4j. 检测非法语法 requires data port（应为 in/out data port）
-        checkIllegalRequiresDataPort(aadlContent, result);
+        checkIllegalRequiresDataPort(protectedContent, result);
 
         // 4k. 检测 properties 中 applies to 引用了未声明的子组件实例或连接名
-        checkAppliesToReferences(aadlContent, subcomponentRefs, connectionRefs, result);
+        checkAppliesToReferences(protectedContent, subcomponentRefs, connectionRefs, result);
 
         // 4ka. 检测 reference 属性值的括号格式（列表型属性应为 (reference (...)) 双括号）
-        checkReferenceParentheses(aadlContent, result);
+        checkReferenceParentheses(protectedContent, result);
 
         // 4l. 检测截断/不完整的连接行（缺少分号或端口名）
-        checkIncompleteConnections(aadlContent, result);
+        checkIncompleteConnections(protectedContent, result);
 
         // 4m. 检测设备端口类型与数据组件混淆
-        checkDevicePortTypeMismatch(aadlContent, aadlDeclarations, result);
+        checkDevicePortTypeMismatch(protectedContent, aadlDeclarations, result);
 
         // 4o. 检测 implementation 中 subcomponents → connections → properties 顺序违规
-        checkImplementationOrder(aadlContent, result);
+        checkImplementationOrder(protectedContent, result);
 
         // 4q. 检测 thread 类型声明中的 requires/provides bus access feature
-        checkThreadBusAccessFeature(aadlContent, result);
+        checkThreadBusAccessFeature(protectedContent, result);
 
         // 预解析 feature 详情（供后续方向检测、操作符检测、feature 合规检测使用）
-        Map<String, Map<String, FeatureDetail>> featureDetails = parseFeatureDetails(aadlContent);
+        Map<String, Map<String, FeatureDetail>> featureDetails = parseFeatureDetails(protectedContent);
         log.info("featureDetails 解析完成：{} 个组件有 feature 详情", featureDetails.size());
 
         // 4qa. 检测 feature 类型与组件类型是否匹配（每种组件允许的 feature 类别不同）
         checkFeatureTypeCompliance(aadlDeclarations, featureDetails, result);
 
         // 4r. 检测连接类型与端点 feature 类型是否匹配（port 连 port，access 连 access）
-        Map<String, Map<String, String>> featureTypes = parseFeatureTypes(aadlContent);
+        Map<String, Map<String, String>> featureTypes = parseFeatureTypes(protectedContent);
         log.info("featureTypes 解析完成：{} 个组件有 feature 类型分类", featureTypes.size());
         checkConnectionTypeMatch(connectionRefs, featureTypes, subcomponentRefs, result);
 
         // 4t. 检测 data 组件中非法的 features 块（subprogram 可以有 features）
-        checkDataComponentFeatures(aadlContent, result);
+        checkDataComponentFeatures(protectedContent, result);
 
         // 4u. 检测 port 连接的端口方向（源端必须 out，目标端必须 in；代理连接两端方向相同）
         checkPortDirection(connectionRefs, featureDetails, subcomponentRefs, result);
@@ -455,22 +657,26 @@ public class AadlReferenceValidator {
         checkConnectionEntityTypeMatch(connectionRefs, aadlDeclarations, result);
 
         // 4x. 检测属性绑定完整性（process/thread 缺少 Actual_Processor_Binding）
-        checkPropertyBindingCompleteness(aadlContent, subcomponentRefs, result);
+        checkPropertyBindingCompleteness(protectedContent, subcomponentRefs, result);
 
         // 4y. 检测数据类型一致性深度校验（连接两端 Data_Size 不匹配）
-        checkDataSizeConsistency(aadlContent, connectionRefs, featureDetails, subcomponentRefs, result);
+        checkDataSizeConsistency(protectedContent, connectionRefs, featureDetails, subcomponentRefs, result);
 
         // 4z. 检测命名空间冲突（实例名/连接名/类型名重名）
-        checkNamingCollision(aadlContent, subcomponentRefs, connectionRefs, aadlDeclarations, result);
+        checkNamingCollision(protectedContent, subcomponentRefs, connectionRefs, aadlDeclarations, result);
 
         // 4aa. 检测畸形 end 语句（逗号、多余空格、多个标识符等）
-        checkMalformedEndStatements(aadlContent, result);
+        checkMalformedEndStatements(protectedContent, result);
 
-        // 5. 自动修正
+        // 5. 自动修正（使用受保护的内容，修复完成后恢复annex块）
         if (!result.errors.isEmpty() || hasAutoFixableIssues(aadlDeclarations, archComponents)
                 || !result.missingFeatures.isEmpty()) {
-            result.fixedContent = applyFixes(aadlContent, aadlDeclarations, archComponents,
-                    componentFeatures, result);
+            String fixedProtected = applyFixes(protectedContent, aadlDeclarations, archComponents,
+                    componentFeatures, subcomponentRefs, connectionRefs, result);
+            result.fixedContent = restoreAnnexBlocks(fixedProtected);
+        } else {
+            // 没有修复，直接恢复原始内容（或保留原始内容）
+            result.fixedContent = aadlContent;
         }
 
         // 6. 为每个错误生成修复建议
@@ -662,34 +868,21 @@ public class AadlReferenceValidator {
         Map<String, AadlDeclaration> declarations = new LinkedHashMap<>();
         String[] lines = aadlContent.split("\n");
 
-        // 类型声明模式：system Foo / process Bar / thread Baz ...（不含 implementation）
-        Pattern typeDeclPattern = Pattern.compile(
-                "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+(\\w+)\\s*$"
-        );
-        // 实现声明模式：system implementation Foo.impl
-        Pattern implDeclPattern = Pattern.compile(
-                "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+implementation\\s+(\\w+)\\.impl\\s*$"
-        );
-        // virtual processor 特殊处理
-        Pattern virtualTypePattern = Pattern.compile(
-                "^\\s*virtual\\s+processor\\s+(\\w+)\\s*$"
-        );
-        Pattern virtualImplPattern = Pattern.compile(
-                "^\\s*virtual\\s+processor\\s+implementation\\s+(\\w+)\\.impl\\s*$"
-        );
-
         for (int i = 0; i < lines.length; i++) {
-            String line = lines[i].trim();
-
-            // 跳过注释行
-            if (line.startsWith("--")) {
+            // 跳过纯注释行（stripComment 前判断）
+            String rawTrimmed = lines[i].trim();
+            if (rawTrimmed.startsWith("--")) {
+                continue;
+            }
+            String line = stripComment(lines[i]);
+            if (line.isEmpty()) {
                 continue;
             }
 
             // 实现声明（优先匹配，因为 "system implementation" 也包含 "system"）
-            Matcher implMatcher = implDeclPattern.matcher(line);
+            Matcher implMatcher = IMPL_DECL_PATTERN.matcher(line);
             if (implMatcher.find()) {
-                String type = implMatcher.group(1);
+                String type = implMatcher.group(1).replaceAll("\\s+", " ");
                 String name = implMatcher.group(2);
                 AadlDeclaration decl = declarations.computeIfAbsent(name, k -> new AadlDeclaration());
                 decl.name = name;
@@ -699,22 +892,23 @@ public class AadlReferenceValidator {
                 continue;
             }
 
-            // virtual processor 实现声明
-            Matcher virtualImplMatcher = virtualImplPattern.matcher(line);
+            // virtual 实现声明（virtual processor / virtual bus）
+            Matcher virtualImplMatcher = VIRTUAL_IMPL_DECL_PATTERN.matcher(line);
             if (virtualImplMatcher.find()) {
-                String name = virtualImplMatcher.group(1);
+                String type = virtualImplMatcher.group(1).replaceAll("\\s+", " ");
+                String name = virtualImplMatcher.group(2);
                 AadlDeclaration decl = declarations.computeIfAbsent(name, k -> new AadlDeclaration());
                 decl.name = name;
-                decl.type = "virtual processor";
+                decl.type = type;
                 decl.hasImplDecl = true;
                 decl.implDeclLine = i + 1;
                 continue;
             }
 
             // 类型声明
-            Matcher typeMatcher = typeDeclPattern.matcher(line);
+            Matcher typeMatcher = TYPE_DECL_PATTERN.matcher(line);
             if (typeMatcher.find()) {
-                String type = typeMatcher.group(1);
+                String type = typeMatcher.group(1).replaceAll("\\s+", " ");
                 String name = typeMatcher.group(2);
                 AadlDeclaration decl = declarations.computeIfAbsent(name, k -> new AadlDeclaration());
                 decl.name = name;
@@ -724,13 +918,14 @@ public class AadlReferenceValidator {
                 continue;
             }
 
-            // virtual processor 类型声明
-            Matcher virtualTypeMatcher = virtualTypePattern.matcher(line);
+            // virtual 类型声明（virtual processor / virtual bus）
+            Matcher virtualTypeMatcher = VIRTUAL_TYPE_DECL_PATTERN.matcher(line);
             if (virtualTypeMatcher.find()) {
-                String name = virtualTypeMatcher.group(1);
+                String type = virtualTypeMatcher.group(1).replaceAll("\\s+", " ");
+                String name = virtualTypeMatcher.group(2);
                 AadlDeclaration decl = declarations.computeIfAbsent(name, k -> new AadlDeclaration());
                 decl.name = name;
-                decl.type = "virtual processor";
+                decl.type = type;
                 decl.hasTypeDecl = true;
                 decl.typeDeclLine = i + 1;
                 continue;
@@ -766,9 +961,13 @@ public class AadlReferenceValidator {
         );
 
         for (int i = 0; i < lines.length; i++) {
-            String line = lines[i].trim();
-
-            if (line.startsWith("--")) {
+            // 跳过纯注释行
+            String rawTrimmed = lines[i].trim();
+            if (rawTrimmed.startsWith("--")) {
+                continue;
+            }
+            String line = stripComment(lines[i]);
+            if (line.isEmpty()) {
                 continue;
             }
 
@@ -779,7 +978,7 @@ public class AadlReferenceValidator {
                 continue;
             }
 
-            // 检测 end ...impl; 退出 implementation 上下文
+            // 检测 end ...impl; 退出 implementation 上下文（stripComment 后匹配，支持尾注释）
             if (line.matches("end\\s+\\w+\\.impl\\s*;")) {
                 currentImpl = null;
                 continue;
@@ -1007,15 +1206,19 @@ public class AadlReferenceValidator {
 
         // 类型声明模式（不含 implementation）
         Pattern typeDeclPattern = Pattern.compile(
-                "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+(\\w+)\\s*$"
+                "^\\s*(system|process|thread(?:\\s+group)?|processor|memory|device|bus|data|subprogram(?:\\s+group)?|abstract)\\s+(\\w+)\\s*$"
         );
         // 实现声明模式
         Pattern implDeclPattern = Pattern.compile(
-                "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+implementation\\s+(\\w+)\\.impl"
+                "^\\s*(system|process|thread(?:\\s+group)?|processor|memory|device|bus|data|subprogram(?:\\s+group)?|abstract)\\s+implementation\\s+(\\w+)\\.impl"
         );
         // virtual processor 类型声明
         Pattern virtualTypePattern = Pattern.compile(
                 "^\\s*virtual\\s+processor\\s+(\\w+)\\s*$"
+        );
+        // virtual bus 类型声明
+        Pattern virtualBusTypePattern = Pattern.compile(
+                "^\\s*virtual\\s+bus\\s+(\\w+)\\s*$"
         );
         // feature 行模式：featureName : in data port TypeName / out data port TypeName / ...
         // 捕获: 1=featureName, 2=方向+端口类型, 4=数据类型(可选)
@@ -1032,9 +1235,13 @@ public class AadlReferenceValidator {
         boolean inFeaturesBlock = false;
 
         for (int i = 0; i < lines.length; i++) {
-            String line = lines[i].trim();
-
-            if (line.startsWith("--")) {
+            // 跳过纯注释行
+            String rawTrimmed = lines[i].trim();
+            if (rawTrimmed.startsWith("--")) {
+                continue;
+            }
+            String line = stripComment(lines[i]);
+            if (line.isEmpty()) {
                 continue;
             }
 
@@ -1055,6 +1262,15 @@ public class AadlReferenceValidator {
                 continue;
             }
 
+            // virtual bus 类型声明
+            Matcher virtualBusTypeMatcher = virtualBusTypePattern.matcher(line);
+            if (virtualBusTypeMatcher.find()) {
+                currentTypeDecl = virtualBusTypeMatcher.group(1);
+                inImplementation = false;
+                inFeaturesBlock = false;
+                continue;
+            }
+
             // 类型声明
             Matcher typeMatcher = typeDeclPattern.matcher(line);
             if (typeMatcher.find()) {
@@ -1064,7 +1280,7 @@ public class AadlReferenceValidator {
                 continue;
             }
 
-            // end 语句退出当前声明
+            // end 语句退出当前声明（stripComment 后匹配，支持尾注释）
             if (line.matches("end\\s+\\w+(\\.impl)?\\s*;")) {
                 currentTypeDecl = null;
                 inFeaturesBlock = false;
@@ -1113,13 +1329,16 @@ public class AadlReferenceValidator {
         String[] lines = aadlContent.split("\n");
 
         Pattern typeDeclPattern = Pattern.compile(
-                "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+(\\w+)\\s*$"
+                "^\\s*(system|process|thread(?:\\s+group)?|processor|memory|device|bus|data|subprogram(?:\\s+group)?|abstract)\\s+(\\w+)\\s*$"
         );
         Pattern implDeclPattern = Pattern.compile(
-                "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+implementation\\s+(\\w+)\\.impl"
+                "^\\s*(system|process|thread(?:\\s+group)?|processor|memory|device|bus|data|subprogram(?:\\s+group)?|abstract)\\s+implementation\\s+(\\w+)\\.impl"
         );
         Pattern virtualTypePattern = Pattern.compile(
                 "^\\s*virtual\\s+processor\\s+(\\w+)\\s*$"
+        );
+        Pattern virtualBusTypePattern = Pattern.compile(
+                "^\\s*virtual\\s+bus\\s+(\\w+)\\s*$"
         );
 
         String currentTypeDecl = null;
@@ -1127,9 +1346,13 @@ public class AadlReferenceValidator {
         boolean inFeaturesBlock = false;
 
         for (int i = 0; i < lines.length; i++) {
-            String line = lines[i].trim();
-
-            if (line.startsWith("--")) {
+            // 跳过纯注释行
+            String rawTrimmed = lines[i].trim();
+            if (rawTrimmed.startsWith("--")) {
+                continue;
+            }
+            String line = stripComment(lines[i]);
+            if (line.isEmpty()) {
                 continue;
             }
 
@@ -1143,6 +1366,14 @@ public class AadlReferenceValidator {
             Matcher virtualTypeMatcher = virtualTypePattern.matcher(line);
             if (virtualTypeMatcher.find()) {
                 currentTypeDecl = virtualTypeMatcher.group(1);
+                inImplementation = false;
+                inFeaturesBlock = false;
+                continue;
+            }
+
+            Matcher virtualBusTypeMatcher = virtualBusTypePattern.matcher(line);
+            if (virtualBusTypeMatcher.find()) {
+                currentTypeDecl = virtualBusTypeMatcher.group(1);
                 inImplementation = false;
                 inFeaturesBlock = false;
                 continue;
@@ -1229,13 +1460,16 @@ public class AadlReferenceValidator {
         String[] lines = aadlContent.split("\n");
 
         Pattern typeDeclPattern = Pattern.compile(
-                "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+(\\w+)\\s*$"
+                "^\\s*(system|process|thread(?:\\s+group)?|processor|memory|device|bus|data|subprogram(?:\\s+group)?|abstract)\\s+(\\w+)\\s*$"
         );
         Pattern implDeclPattern = Pattern.compile(
-                "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+implementation\\s+(\\w+)\\.impl"
+                "^\\s*(system|process|thread(?:\\s+group)?|processor|memory|device|bus|data|subprogram(?:\\s+group)?|abstract)\\s+implementation\\s+(\\w+)\\.impl"
         );
         Pattern virtualTypePattern = Pattern.compile(
                 "^\\s*virtual\\s+processor\\s+(\\w+)\\s*$"
+        );
+        Pattern virtualBusTypePattern = Pattern.compile(
+                "^\\s*virtual\\s+bus\\s+(\\w+)\\s*$"
         );
 
         String currentTypeDecl = null;
@@ -1243,9 +1477,13 @@ public class AadlReferenceValidator {
         boolean inFeaturesBlock = false;
 
         for (int i = 0; i < lines.length; i++) {
-            String line = lines[i].trim();
-
-            if (line.startsWith("--")) {
+            // 跳过纯注释行
+            String rawTrimmed = lines[i].trim();
+            if (rawTrimmed.startsWith("--")) {
+                continue;
+            }
+            String line = stripComment(lines[i]);
+            if (line.isEmpty()) {
                 continue;
             }
 
@@ -1259,6 +1497,14 @@ public class AadlReferenceValidator {
             Matcher virtualTypeMatcher = virtualTypePattern.matcher(line);
             if (virtualTypeMatcher.find()) {
                 currentTypeDecl = virtualTypeMatcher.group(1);
+                inImplementation = false;
+                inFeaturesBlock = false;
+                continue;
+            }
+
+            Matcher virtualBusTypeMatcher = virtualBusTypePattern.matcher(line);
+            if (virtualBusTypeMatcher.find()) {
+                currentTypeDecl = virtualBusTypeMatcher.group(1);
                 inImplementation = false;
                 inFeaturesBlock = false;
                 continue;
@@ -1527,13 +1773,17 @@ public class AadlReferenceValidator {
         // 当前所在的 implementation 上下文
         String currentImpl = null;
         Pattern implContextPattern = Pattern.compile(
-                "^\\s*(?:system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+implementation\\s+(\\w+)\\.impl"
+                "^\\s*(?:system|process|thread(?:\\s+group)?|processor|memory|device|bus|data|subprogram(?:\\s+group)?|abstract|virtual\\s+processor|virtual\\s+bus)\\s+implementation\\s+(\\w+)\\.impl"
         );
 
         for (int i = 0; i < lines.length; i++) {
-            String line = lines[i].trim();
-
-            if (line.startsWith("--")) {
+            // 跳过纯注释行
+            String rawTrimmed = lines[i].trim();
+            if (rawTrimmed.startsWith("--")) {
+                continue;
+            }
+            String line = stripComment(lines[i]);
+            if (line.isEmpty()) {
                 continue;
             }
 
@@ -1544,7 +1794,7 @@ public class AadlReferenceValidator {
                 continue;
             }
 
-            // 退出 implementation 上下文
+            // 退出 implementation 上下文（stripComment 后匹配，支持尾注释）
             if (line.matches("end\\s+\\w+\\.impl\\s*;")) {
                 currentImpl = null;
                 continue;
@@ -2147,9 +2397,9 @@ public class AadlReferenceValidator {
                                            ValidationResult result) {
         String[] lines = aadlContent.split("\n");
 
-        // 匹配：... applies to InstanceName;
+        // 匹配：... applies to Target1, Target2, Target3;（支持逗号分隔的多个目标）
         Pattern appliesToPattern = Pattern.compile(
-                "applies\\s+to\\s+(\\w+)\\s*;", Pattern.CASE_INSENSITIVE
+                "applies\\s+to\\s+([\\w\\s,]+)\\s*;", Pattern.CASE_INSENSITIVE
         );
 
         // 当前 implementation 上下文
@@ -2206,18 +2456,25 @@ public class AadlReferenceValidator {
 
             Matcher m = appliesToPattern.matcher(line);
             if (m.find() && currentImpl != null) {
-                String targetName = m.group(1);
+                String targetsStr = m.group(1);
+                // 按逗号分割多个目标，逐个校验
+                String[] targets = targetsStr.split(",");
                 Set<String> instances = implInstances.get(currentImpl);
                 Set<String> connections = implConnections.get(currentImpl);
 
-                boolean found = (instances != null && instances.contains(targetName))
-                             || (connections != null && connections.contains(targetName));
+                for (String target : targets) {
+                    String targetName = target.trim();
+                    if (targetName.isEmpty()) continue;
 
-                if (!found) {
-                    result.errors.add(String.format(
-                            "第%d行: 属性引用错误 - 'applies to %s' 引用的名称 '%s' 未在当前 implementation '%s.impl' 的 subcomponents 或 connections 中声明",
-                            i + 1, targetName, targetName, currentImpl
-                    ));
+                    boolean found = (instances != null && instances.contains(targetName))
+                                 || (connections != null && connections.contains(targetName));
+
+                    if (!found) {
+                        result.errors.add(String.format(
+                                "第%d行: 属性引用错误 - 'applies to %s' 引用的名称 '%s' 未在当前 implementation '%s.impl' 的 subcomponents 或 connections 中声明",
+                                i + 1, targetsStr.trim(), targetName, currentImpl
+                        ));
+                    }
                 }
             }
         }
@@ -2269,17 +2526,79 @@ public class AadlReferenceValidator {
                         i + 1, refTarget, refTarget
                 ));
 
-                // 自动修复：将 reference (xxx) 替换为 (reference (xxx))
-                String fixedLine = line.replaceAll(
-                        "(=>\\s*)reference\\s*\\(" + refTarget + "\\)",
-                        "$1(reference (" + refTarget + "))"
-                );
                 result.fixes.add(String.format(
                         "第%d行: 已修正 reference 属性格式 - 补充外层列表括号：reference (%s) → (reference (%s))",
                         i + 1, refTarget, refTarget
                 ));
             }
         }
+    }
+
+    /**
+     * 自动修正 0r：修复 reference 属性值括号格式错误。
+     *
+     * 将属性值中错误的 {@code reference (xxx)} 格式（缺少外层列表括号）
+     * 替换为正确的 {@code (reference (xxx))} 格式。
+     *
+     * 注意：只修复 => 后面未被外层括号包裹的 reference (xxx)，
+     * 不会误修改已经是 (reference (xxx)) 的正确格式。
+     */
+    private String fixReferenceParentheses(String content, ValidationResult result) {
+        String[] lines = content.split("\n");
+        int fixCount = 0;
+
+        // 匹配 => 后直接跟 reference (xxx) 的情况（前面不能是 (，否则已经是正确格式）
+        // 使用 (?>...) 原子组避免回溯导致误匹配
+        Pattern missingParenPattern = Pattern.compile(
+                "(=>\\s*)(reference\\s*\\(([^)]+)\\))",
+                Pattern.CASE_INSENSITIVE
+        );
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+            String trimmed = line.trim();
+
+            if (trimmed.startsWith("--")) {
+                continue;
+            }
+
+            // 检查是否已经是正确格式 (reference (xxx))：如果 => 后面紧跟 (reference，则跳过
+            // 通过检查 => 后面第一个非空白字符是否为 ( 来判断
+            Matcher alreadyCorrect = Pattern.compile(
+                    "=>\\s*\\(\\s*reference\\s*\\(", Pattern.CASE_INSENSITIVE
+            ).matcher(line);
+            if (alreadyCorrect.find()) {
+                continue;
+            }
+
+            Matcher m = missingParenPattern.matcher(line);
+            StringBuffer sb = new StringBuffer();
+            boolean found = false;
+            while (m.find()) {
+                found = true;
+                String arrow = m.group(1);  // => 加上空白
+                String refExpr = m.group(2); // reference (xxx)
+                String refTarget = m.group(3); // xxx
+                m.appendReplacement(sb, Matcher.quoteReplacement(
+                        arrow + "(" + refExpr + ")"
+                ));
+                fixCount++;
+                result.fixes.add(String.format(
+                        "已修正 reference 括号: reference (%s) → (reference (%s))",
+                        refTarget, refTarget
+                ));
+                log.info("自动修正：reference 括号补全 reference ({}) → (reference ({}))", refTarget, refTarget);
+            }
+            if (found) {
+                m.appendTail(sb);
+                lines[i] = sb.toString();
+            }
+        }
+
+        if (fixCount > 0) {
+            log.info("自动修正：共修复 {} 处 reference 括号格式错误", fixCount);
+        }
+        return String.join("\n", lines);
     }
 
     // ========================= 截断/不完整连接行检测 =========================
@@ -5495,11 +5814,19 @@ public class AadlReferenceValidator {
      *
      * port 连接必须用 ->（单向），bus access 连接必须用 <->（双向）。
      * 检测到操作符不匹配时直接替换：
-     * - port 连接使用了 <-> → 替换为 ->
+     * - port 连接使用了 <-> → 替换为 ->（但双向端口 in out 之间的连接保留 <->）
      * - bus access 连接使用了 -> → 替换为 <->
+     *
+     * 双向端口判断：从 features 声明中查找两端 feature 的方向，如果都是 "in out" 则保留 <->。
+     * 保守策略：如果无法确定任一端方向，则不改（保留 <->）。
      */
     private String fixConnectionOperator(String content, ValidationResult result) {
         String[] lines = content.split("\n");
+
+        // ===== 第一遍：预解析 feature 方向（含 in out 双向端口）和 subcomponent 实例映射 =====
+        Map<String, Map<String, String>> featureDirections = parseFeatureDirectionsWithInOut(content);
+        Map<String, Map<String, String>> implInstanceMap = parseImplInstanceMap(content);
+
         List<String> resultLines = new ArrayList<>();
         int fixCount = 0;
 
@@ -5508,10 +5835,11 @@ public class AadlReferenceValidator {
         );
 
         boolean inConnections = false;
-        boolean inImplementation = false;
+        String currentImpl = null;
         Pattern implContextPattern = Pattern.compile(
-                "^\\s*(?:system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+implementation\\s+(\\w+)\\.impl"
+                "^\\s*(?:system|process|thread|processor|memory|device|bus|data|subprogram|abstract|virtual\\s+processor|virtual\\s+bus)\\s+implementation\\s+(\\w+)\\.impl"
         );
+        Pattern endImplPattern = Pattern.compile("^\\s*end\\s+\\w+\\.impl\\s*;");
 
         for (String line : lines) {
             String trimmed = line.trim();
@@ -5521,15 +5849,16 @@ public class AadlReferenceValidator {
                 continue;
             }
 
-            if (implContextPattern.matcher(trimmed).find()) {
-                inImplementation = true;
+            Matcher implM = implContextPattern.matcher(trimmed);
+            if (implM.find()) {
+                currentImpl = implM.group(1);
                 inConnections = false;
                 resultLines.add(line);
                 continue;
             }
 
-            if (trimmed.matches("end\\s+\\w+\\.impl\\s*;")) {
-                inImplementation = false;
+            if (endImplPattern.matcher(trimmed).find()) {
+                currentImpl = null;
                 inConnections = false;
                 resultLines.add(line);
                 continue;
@@ -5543,7 +5872,7 @@ public class AadlReferenceValidator {
 
             if (inConnections && (trimmed.equals("properties") || trimmed.equals("subcomponents") ||
                     trimmed.equals("features") || trimmed.equals("flows") ||
-                    trimmed.matches("end\\s+\\w+\\.impl\\s*;"))) {
+                    trimmed.startsWith("annex") || endImplPattern.matcher(trimmed).find())) {
                 inConnections = false;
                 resultLines.add(line);
                 continue;
@@ -5555,16 +5884,14 @@ public class AadlReferenceValidator {
                     String indent = m.group(1);
                     String connName = m.group(2);
                     String connType = m.group(3).replaceAll("\\s+", " ");
+                    String srcInstance = m.group(4);
+                    String srcFeature = m.group(5);
                     String operator = m.group(6);
+                    String dstInstance = m.group(7);
+                    String dstFeature = m.group(8);
                     String rest = m.group(9);
                     String fixedOperator = operator;
                     String fixReason = null;
-
-                    // port 连接必须用 ->
-                    if ("port".equals(connType) && "<->".equals(operator)) {
-                        fixedOperator = "->";
-                        fixReason = "port 连接应使用单向 ->";
-                    }
 
                     // bus access 连接必须用 <->
                     if ("bus access".equals(connType) && "->".equals(operator)) {
@@ -5572,10 +5899,51 @@ public class AadlReferenceValidator {
                         fixReason = "bus access 连接应使用双向 <->";
                     }
 
+                    // port 连接使用了 <->：检查是否为双向端口（in out）连接
+                    if ("port".equals(connType) && "<->".equals(operator)) {
+                        boolean isBidirectional = false;
+                        boolean canDetermine = false;
+
+                        if (currentImpl != null) {
+                            Map<String, String> instanceMap = implInstanceMap.get(currentImpl);
+                            if (instanceMap != null) {
+                                String srcType = instanceMap.get(srcInstance);
+                                String dstType = instanceMap.get(dstInstance);
+                                if (srcType != null && dstType != null) {
+                                    Map<String, String> srcFeats = featureDirections.get(srcType);
+                                    Map<String, String> dstFeats = featureDirections.get(dstType);
+                                    if (srcFeats != null && dstFeats != null) {
+                                        String srcDir = srcFeats.get(srcFeature);
+                                        String dstDir = dstFeats.get(dstFeature);
+                                        if (srcDir != null && dstDir != null) {
+                                            canDetermine = true;
+                                            if ("in out".equals(srcDir) && "in out".equals(dstDir)) {
+                                                isBidirectional = true;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (canDetermine && isBidirectional) {
+                            // 两端都是 in out 双向端口，保留 <->
+                            fixReason = null;
+                        } else if (canDetermine && !isBidirectional) {
+                            // 能确定至少有一端不是 in out，改为 ->
+                            fixedOperator = "->";
+                            fixReason = "port 连接应使用单向 ->（非双向端口）";
+                        } else {
+                            // 保守策略：无法确定方向，不改
+                            fixReason = null;
+                            log.debug("无法确定连接 '{}' 两端端口方向，保守保留 <->", connName);
+                        }
+                    }
+
                     if (fixReason != null) {
                         String fixedLine = indent + connName + " : " + connType + " " +
-                                m.group(4) + "." + m.group(5) + " " + fixedOperator + " " +
-                                m.group(7) + "." + m.group(8) + rest;
+                                srcInstance + "." + srcFeature + " " + fixedOperator + " " +
+                                dstInstance + "." + dstFeature + rest;
                         resultLines.add(fixedLine);
                         fixCount++;
                         result.fixes.add(String.format(
@@ -5595,6 +5963,126 @@ public class AadlReferenceValidator {
             log.info("自动修正：共修复 {} 处连接操作符错误", fixCount);
         }
         return String.join("\n", resultLines);
+    }
+
+    /**
+     * 解析所有组件类型声明中 features 的端口方向（含 in out 双向端口）。
+     *
+     * @return 组件类型名 → (feature名 → 方向["in"|"out"|"in out"])
+     */
+    private Map<String, Map<String, String>> parseFeatureDirectionsWithInOut(String aadlContent) {
+        Map<String, Map<String, String>> result = new HashMap<>();
+        String[] lines = aadlContent.split("\n");
+
+        // 匹配组件类型声明（非 implementation，含 virtual processor/bus）
+        Pattern typeDeclPattern = Pattern.compile(
+                "^\\s*(?:virtual\\s+processor|virtual\\s+bus|system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+(\\w+)\\s*(?:--.*)?$"
+        );
+        // 匹配 feature 行：先匹配 in out（放在 in/out 前面避免被 in 抢先匹配）
+        Pattern featurePattern = Pattern.compile(
+                "^\\s*(\\w+)\\s*:\\s*(in\\s+out|in|out)\\s+(?:data\\s+port|event\\s+data\\s+port|event\\s+port|port)",
+                Pattern.CASE_INSENSITIVE
+        );
+
+        String currentType = null;
+        boolean inFeatures = false;
+
+        for (String line : lines) {
+            String trimmed = line.trim();
+            // 去除行尾注释后再匹配
+            String stripped = stripComment(trimmed);
+
+            if (stripped.startsWith("--") || stripped.isEmpty()) continue;
+
+            Matcher typeM = typeDeclPattern.matcher(stripped);
+            if (typeM.find()) {
+                currentType = typeM.group(1);
+                inFeatures = false;
+                continue;
+            }
+
+            if (currentType != null && stripped.matches("end\\s+" + Pattern.quote(currentType) + "\\s*;")) {
+                currentType = null;
+                inFeatures = false;
+                continue;
+            }
+
+            if (currentType != null && stripped.toLowerCase().contains("implementation")) {
+                currentType = null;
+                inFeatures = false;
+                continue;
+            }
+
+            if (currentType != null && stripped.equals("features")) {
+                inFeatures = true;
+                continue;
+            }
+
+            if (inFeatures && (stripped.equals("properties") || stripped.equals("flows") ||
+                    stripped.equals("connections") || stripped.equals("subcomponents") ||
+                    stripped.startsWith("annex") || stripped.startsWith("end "))) {
+                inFeatures = false;
+                continue;
+            }
+
+            if (inFeatures) {
+                Matcher fM = featurePattern.matcher(stripped);
+                if (fM.find()) {
+                    String dir = fM.group(2).toLowerCase().replaceAll("\\s+", " ");
+                    result.computeIfAbsent(currentType, k -> new HashMap<>())
+                            .put(fM.group(1), dir);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * 解析所有 implementation 中 subcomponents 的实例名 → 类型名映射。
+     *
+     * @return impl名称 → (实例名 → 类型名)
+     */
+    private Map<String, Map<String, String>> parseImplInstanceMap(String aadlContent) {
+        Map<String, Map<String, String>> implInstanceMap = new HashMap<>();
+        String[] lines = aadlContent.split("\n");
+
+        Pattern implContextPattern = Pattern.compile(
+                "^\\s*(?:system|process|thread|processor|memory|device|bus|data|subprogram|abstract|virtual\\s+processor|virtual\\s+bus)\\s+implementation\\s+(\\w+)\\.impl"
+        );
+        Pattern endImplPattern = Pattern.compile("^\\s*end\\s+\\w+\\.impl\\s*;");
+        Pattern subcompPattern = Pattern.compile(
+                "^\\s*(\\w+)\\s*:\\s*(?:system|process|thread(?:\\s+group)?|processor|memory|device|bus|data|subprogram(?:\\s+group)?|abstract|virtual\\s+processor|virtual\\s+bus)\\s+(\\w+)\\.impl\\s*;"
+        );
+
+        String currentImpl = null;
+
+        for (String line : lines) {
+            String trimmed = line.trim();
+            if (trimmed.startsWith("--")) continue;
+
+            Matcher implM = implContextPattern.matcher(trimmed);
+            if (implM.find()) {
+                currentImpl = implM.group(1);
+                continue;
+            }
+
+            if (currentImpl != null && endImplPattern.matcher(trimmed).find()) {
+                currentImpl = null;
+                continue;
+            }
+
+            // 在当前 implementation 内查找 subcomponent 声明（不依赖块顺序，更鲁棒）
+            if (currentImpl != null) {
+                Matcher subM = subcompPattern.matcher(trimmed);
+                if (subM.find()) {
+                    implInstanceMap.computeIfAbsent(currentImpl, k -> new HashMap<>())
+                            .put(subM.group(1), subM.group(2));
+                }
+            }
+        }
+
+        return implInstanceMap;
     }
 
     /**
@@ -5906,8 +6394,12 @@ public class AadlReferenceValidator {
             }
 
             // 非块头行
-            if (currentSection == null) {
-                otherLines.add(line); // 声明行、end 行等
+            // end 语句总是归到 otherLines（避免被错误归类到某个 section 中）
+            if (trimmed.matches("end\\s+\\w+\\.impl\\s*;")) {
+                otherLines.add(line);
+                currentSection = null; // 重置，end之后不再属于任何section
+            } else if (currentSection == null) {
+                otherLines.add(line); // 声明行、注释等
             } else if ("subcomp".equals(currentSection)) {
                 subcompLines.add(line);
             } else if ("conn".equals(currentSection)) {
@@ -6097,12 +6589,12 @@ public class AadlReferenceValidator {
         String[] lines = content.split("\n");
 
         // 匹配类型声明：system TypeName / process TypeName / thread TypeName 等（不含 implementation）
-        // 也匹配 virtual processor TypeName
+        // 也匹配 virtual processor TypeName，支持行尾注释
         Pattern typeDeclPattern = Pattern.compile(
-                "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+" + Pattern.quote(typeName) + "\\s*$"
+                "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+" + Pattern.quote(typeName) + "\\s*(?:--.*)?$"
         );
         Pattern virtualTypePattern = Pattern.compile(
-                "^\\s*virtual\\s+processor\\s+" + Pattern.quote(typeName) + "\\s*$"
+                "^\\s*virtual\\s+processor\\s+" + Pattern.quote(typeName) + "\\s*(?:--.*)?$"
         );
         // 匹配类型声明中的块关键字（用于确定 features 块的结束位置）
         Pattern blockEndPattern = Pattern.compile(
@@ -6115,7 +6607,7 @@ public class AadlReferenceValidator {
 
         // 第一遍：找到类型声明行和现有 features 块的位置
         for (int i = 0; i < lines.length; i++) {
-            String trimmed = lines[i].trim();
+            String trimmed = stripComment(lines[i].trim());
 
             Matcher typeMatcher = typeDeclPattern.matcher(trimmed);
             Matcher virtualMatcher = virtualTypePattern.matcher(trimmed);
@@ -6123,12 +6615,12 @@ public class AadlReferenceValidator {
                 typeDeclLineIdx = i;
                 // 向下搜索是否已有 features 块
                 for (int j = i + 1; j < lines.length; j++) {
-                    String t = lines[j].trim();
+                    String t = stripComment(lines[j].trim());
                     if (t.equals("features")) {
                         featuresLineIdx = j;
                         // 找 features 块的结束位置
                         for (int k = j + 1; k < lines.length; k++) {
-                            String tk = lines[k].trim();
+                            String tk = stripComment(lines[k].trim());
                             if (blockEndPattern.matcher(tk).find() || tk.matches("end\\s+\\w+\\s*;")) {
                                 featuresEndIdx = k;
                                 break;
@@ -6137,7 +6629,7 @@ public class AadlReferenceValidator {
                         break;
                     }
                     // 遇到 end TypeName; 说明类型声明中无 features 块
-                    if (trimmed.matches("end\\s+" + Pattern.quote(typeName) + "\\s*;")) {
+                    if (t.matches("end\\s+" + Pattern.quote(typeName) + "\\s*;")) {
                         break;
                     }
                 }
@@ -6167,7 +6659,7 @@ public class AadlReferenceValidator {
 
             // 情况2：类型声明无 features 块 → 在类型声明行后插入新 features 块
             if (featuresLineIdx == -1 && i == typeDeclLineIdx) {
-                sb.append("\nfeatures");
+                sb.append("\n    features");
                 for (String f : features) {
                     sb.append("\n    ").append(f);
                 }
@@ -6187,153 +6679,214 @@ public class AadlReferenceValidator {
         String[] lines = content.split("\n");
 
         Pattern implContextPattern = Pattern.compile(
-                "^\\s*(?:system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+implementation\\s+(\\w+)\\.impl"
+                "^\\s*(?:system|process|thread(?:\\s+group)?|processor|memory|device|bus|data|subprogram(?:\\s+group)?|abstract)\\s+implementation\\s+(\\w+)\\.impl"
         );
         Pattern virtualImplPattern = Pattern.compile(
-                "^\\s*virtual\\s+processor\\s+implementation\\s+(\\w+)\\.impl"
+                "^\\s*virtual\\s+(?:processor|bus)\\s+implementation\\s+(\\w+)\\.impl"
         );
+        // 匹配单个 applies to 目标（支持多个目标用逗号分隔的情况，这里只取第一个来判断）
         Pattern appliesToPattern = Pattern.compile(
-                "applies\\s+to\\s+(\\w+)\\s*;", Pattern.CASE_INSENSITIVE
+                "applies\\s+to\\s+(.+?)\\s*;", Pattern.CASE_INSENSITIVE
         );
         // 匹配 subcomponent 声明行：instanceName : keyword TypeName.impl;
         Pattern subcompPattern = Pattern.compile(
-                "^\\s*(\\w+)\\s*:\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|abstract|virtual\\s+processor)\\s+(\\w+)\\.impl\\s*;"
+                "^\\s*(\\w+)\\s*:\\s*(system|process|thread(?:\\s+group)?|processor|memory|device|bus|data|subprogram(?:\\s+group)?|abstract|virtual\\s+(?:processor|bus))\\s+(\\w+)\\.impl\\s*;"
+        );
+        // 匹配 connection 声明行：connectionName : port/access ...
+        Pattern connectionPattern = Pattern.compile(
+                "^\\s*(\\w+)\\s*:\\s*(?:port|access|bus\\s+access|data\\s+port|event\\s+port|event\\s+data\\s+port)\\s+"
         );
 
+        // implName -> (instanceName -> typeName)  按implementation分组记录需要补充的实例
+        Map<String, Map<String, String>> toAddByImpl = new LinkedHashMap<>();
+        // implName -> 最后一个subcomponent行号
+        Map<String, Integer> lastSubcompLineByImpl = new LinkedHashMap<>();
+        // implName -> 是否有subcomponents块
+        Map<String, Boolean> hasSubcompBlockByImpl = new LinkedHashMap<>();
+
         String currentImpl = null;
-        int subcompEndIdx = -1;  // subcomponents 块的最后一行索引
-        Set<String> currentImplInstances = new LinkedHashSet<>();
-        // 需要补充的子组件：key = 实例名, value = 组件类型名
-        Map<String, String> toAdd = new LinkedHashMap<>();
-        // 记录每个 implementation 的 subcomponents 块范围
-        Map<String, int[]> implSubcompRange = new HashMap<>();
+        Set<String> currentInstances = new LinkedHashSet<>();
+        Set<String> currentConnections = new LinkedHashSet<>();
+        int lastSubcompLine = -1;
+        boolean hasSubcompBlock = false;
 
-        // 第一遍：收集每个 implementation 的 subcomponents 实例名和范围
+        // 第一遍：收集每个implementation的现有实例、连接，以及需要补充的实例
         for (int i = 0; i < lines.length; i++) {
-            String trimmed = lines[i].trim();
+            String rawLine = lines[i];
+            String trimmed = stripComment(rawLine).trim();
 
-            if (trimmed.startsWith("--")) continue;
+            if (trimmed.isEmpty() || trimmed.startsWith("--")) {
+                continue;
+            }
 
+            // 进入 implementation
             Matcher implMatcher = implContextPattern.matcher(trimmed);
-            if (implMatcher.find()) {
-                currentImpl = implMatcher.group(1);
-                currentImplInstances.clear();
-                subcompEndIdx = -1;
-                continue;
-            }
-
             Matcher virtualImplMatcher = virtualImplPattern.matcher(trimmed);
-            if (virtualImplMatcher.find()) {
-                currentImpl = virtualImplMatcher.group(1);
-                currentImplInstances.clear();
-                subcompEndIdx = -1;
+            boolean isRegularImpl = implMatcher.find();
+            boolean isVirtualImpl = virtualImplMatcher.find();
+            if (isRegularImpl || isVirtualImpl) {
+                // 保存前一个implementation的信息
+                if (currentImpl != null) {
+                    lastSubcompLineByImpl.put(currentImpl, lastSubcompLine);
+                    hasSubcompBlockByImpl.put(currentImpl, hasSubcompBlock);
+                }
+                currentImpl = isRegularImpl ? implMatcher.group(1) : virtualImplMatcher.group(1);
+                currentInstances.clear();
+                currentConnections.clear();
+                lastSubcompLine = -1;
+                hasSubcompBlock = false;
                 continue;
             }
 
-            if (trimmed.matches("end\\s+\\w+\\.impl\\s*;")) {
-                if (currentImpl != null) {
-                    implSubcompRange.put(currentImpl, new int[]{-1, subcompEndIdx});
-                }
+            // 结束 implementation
+            if (currentImpl != null && trimmed.matches("end\\s+[\\w.]+\\.impl\\s*;")) {
+                lastSubcompLineByImpl.put(currentImpl, lastSubcompLine);
+                hasSubcompBlockByImpl.put(currentImpl, hasSubcompBlock);
                 currentImpl = null;
                 continue;
             }
 
-            if (currentImpl != null) {
-                Matcher subcompMatcher = subcompPattern.matcher(trimmed);
-                if (subcompMatcher.find()) {
-                    currentImplInstances.add(subcompMatcher.group(1));
-                    subcompEndIdx = i;
-                }
+            if (currentImpl == null) {
+                continue;
+            }
 
-                // 检查 applies to 引用
-                Matcher appliesMatcher = appliesToPattern.matcher(trimmed);
-                if (appliesMatcher.find()) {
-                    String targetInstance = appliesMatcher.group(1);
-                    if (!currentImplInstances.contains(targetInstance)) {
-                        // 需要补充的子组件
-                        AadlDeclaration decl = declarations.get(targetInstance);
-                        String typeName = decl != null ? decl.name : targetInstance;
-                        toAdd.put(targetInstance, typeName);
-                        result.fixes.add(String.format(
-                                "已为 implementation '%s.impl' 补充缺失的子组件声明: %s (applies to 目标)",
-                                currentImpl, targetInstance));
+            // 检测 subcomponents 块开始
+            if (trimmed.equalsIgnoreCase("subcomponents")) {
+                hasSubcompBlock = true;
+                continue;
+            }
+            // connections/properties 块开始后停止记录 subcomponent
+            if (trimmed.equalsIgnoreCase("connections") || trimmed.equalsIgnoreCase("properties")) {
+                continue;
+            }
+
+            // 记录 subcomponent 实例
+            Matcher subcompMatcher = subcompPattern.matcher(trimmed);
+            if (subcompMatcher.find()) {
+                currentInstances.add(subcompMatcher.group(1));
+                lastSubcompLine = i;
+                continue;
+            }
+
+            // 记录 connection 名
+            Matcher connMatcher = connectionPattern.matcher(trimmed);
+            if (connMatcher.find()) {
+                currentConnections.add(connMatcher.group(1));
+                continue;
+            }
+
+            // 检查 applies to 引用
+            Matcher appliesMatcher = appliesToPattern.matcher(trimmed);
+            if (appliesMatcher.find()) {
+                String targetsStr = appliesMatcher.group(1);
+                // 按逗号分割多个目标
+                String[] targets = targetsStr.split(",");
+                for (String target : targets) {
+                    String targetName = target.trim();
+                    // 跳过空值和关键字
+                    if (targetName.isEmpty() || targetName.equalsIgnoreCase("all")) {
+                        continue;
                     }
+                    // 检查是否是已存在的实例或连接
+                    if (currentInstances.contains(targetName) || currentConnections.contains(targetName)) {
+                        continue;
+                    }
+                    // 检查这个名字是否是已声明的类型名（如果是，需要添加一个该类型的实例）
+                    AadlDeclaration typeDecl = declarations.get(targetName);
+                    if (typeDecl != null && typeDecl.hasTypeDecl) {
+                        // 这个名字是一个类型名，可能LLM想引用该类型的实例但忘记声明实例了
+                        // 生成一个实例名（类型名首字母小写 + _inst 后缀）
+                        String instanceName = generateInstanceName(typeDecl.type, targetName, currentInstances);
+                        Map<String, String> implToAdd = toAddByImpl.computeIfAbsent(currentImpl, k -> new LinkedHashMap<>());
+                        implToAdd.put(instanceName, targetName);
+                        result.fixes.add(String.format(
+                                "已为 implementation '%s.impl' 补充缺失的子组件实例: %s (类型: %s, applies to 原始目标: %s)",
+                                currentImpl, instanceName, targetName, targetName));
+                        currentInstances.add(instanceName); // 避免重复添加
+                    }
+                    // 如果不是类型名，我们无法安全推断，保留警告不自动修复
                 }
             }
         }
 
-        if (toAdd.isEmpty()) {
+        if (toAddByImpl.isEmpty()) {
             return content;
         }
 
-        // 第二遍：在对应 implementation 的 subcomponents 末尾补充缺失的子组件
-        // 重新扫描以找到每个需要修改的 implementation 的 subcomponents 最后一行
+        // 第二遍：在对应implementation的subcomponents块中插入缺失的实例
         currentImpl = null;
-        int lastSubcompLine = -1;
-        int insertAfterLine = -1;
+        List<String> outputLines = new ArrayList<>();
+        int fixCount = 0;
 
         for (int i = 0; i < lines.length; i++) {
-            String trimmed = lines[i].trim();
+            String rawLine = lines[i];
+            String trimmed = stripComment(rawLine).trim();
 
-            if (trimmed.startsWith("--")) continue;
-
+            // 进入 implementation
             Matcher implMatcher = implContextPattern.matcher(trimmed);
-            if (implMatcher.find()) {
-                // 处理前一个 implementation 的待补充
-                if (currentImpl != null && insertAfterLine >= 0 && toAdd.containsKey(currentImpl)) {
-                    // 不会执行到这里，在遇到 end 时处理
-                }
-                currentImpl = implMatcher.group(1);
-                lastSubcompLine = -1;
-                continue;
-            }
-
             Matcher virtualImplMatcher = virtualImplPattern.matcher(trimmed);
-            if (virtualImplMatcher.find()) {
-                currentImpl = virtualImplMatcher.group(1);
-                lastSubcompLine = -1;
+            boolean isRegularImpl2 = implMatcher.find();
+            boolean isVirtualImpl2 = virtualImplMatcher.find();
+            if (isRegularImpl2 || isVirtualImpl2) {
+                currentImpl = isRegularImpl2 ? implMatcher.group(1) : virtualImplMatcher.group(1);
+                outputLines.add(rawLine);
                 continue;
             }
 
-            if (currentImpl != null) {
-                Matcher subcompMatcher = subcompPattern.matcher(trimmed);
-                if (subcompMatcher.find()) {
-                    lastSubcompLine = i;
-                }
-
-                if (trimmed.matches("end\\s+\\w+\\.impl\\s*;") && toAdd.containsKey(currentImpl)) {
-                    // 在最后一个 subcomponent 行之后插入，或在 properties 之前插入
-                    String typeName = toAdd.get(currentImpl);
-                    AadlDeclaration decl = declarations.get(typeName);
-                    String componentKeyword = decl != null ? decl.type : "process";
-                    String newSubcomp = String.format(
-                            "    %s : %s %s.impl;",
-                            currentImpl.substring(0, 1).toLowerCase() + currentImpl.substring(1) + "_inst",
-                            componentKeyword, typeName);
-                    // 在补充声明前添加注释说明
-                    String comment = String.format(
-                            "    -- [自动修正] 补充 applies to 目标的子组件声明: %s (类型: %s)",
-                            toAdd.keySet().iterator().next(), componentKeyword);
-
-                    // 如果有 subcomponents 行，在最后一行后插入
-                    if (lastSubcompLine >= 0) {
-                        lines[lastSubcompLine] = lines[lastSubcompLine] + "\n" + comment + "\n" + newSubcomp;
-                    } else {
-                        // 没有 subcomponents，在 end 之前插入 subcomponents 块
-                        lines[i] = "  subcomponents\n" + comment + "\n" + newSubcomp + "\n" + lines[i];
+            // 检查是否需要在当前位置插入（在最后一个subcomponent行之后）
+            boolean inserted = false;
+            if (currentImpl != null && toAddByImpl.containsKey(currentImpl)) {
+                Integer lastLine = lastSubcompLineByImpl.get(currentImpl);
+                if (lastLine != null && i == lastLine + 1) {
+                    // 刚过完最后一个subcomponent，插入新实例
+                    Map<String, String> instancesToAdd = toAddByImpl.get(currentImpl);
+                    for (Map.Entry<String, String> entry : instancesToAdd.entrySet()) {
+                        String instanceName = entry.getKey();
+                        String typeName = entry.getValue();
+                        AadlDeclaration decl = declarations.get(typeName);
+                        String compType = (decl != null) ? decl.type : "process";
+                        outputLines.add(String.format("    -- [自动修正] 补充 applies to 目标的子组件实例: %s (类型: %s)", instanceName, typeName));
+                        outputLines.add(String.format("    %s : %s %s.impl;", instanceName, compType, typeName));
+                        fixCount++;
                     }
-                    toAdd.remove(currentImpl);
+                    toAddByImpl.remove(currentImpl);
+                    inserted = true;
                 }
 
-                if (trimmed.matches("end\\s+\\w+\\.impl\\s*;")) {
-                    currentImpl = null;
-                    lastSubcompLine = -1;
+                // 如果没有subcomponents块，在connections/properties之前或end之前插入
+                Boolean hasBlock = hasSubcompBlockByImpl.get(currentImpl);
+                if ((!hasBlock || lastLine == null || lastLine < 0)
+                        && (trimmed.equalsIgnoreCase("connections")
+                            || trimmed.equalsIgnoreCase("properties")
+                            || trimmed.matches("end\\s+[\\w.]+\\.impl\\s*;"))) {
+                    Map<String, String> instancesToAdd = toAddByImpl.get(currentImpl);
+                    if (instancesToAdd != null && !instancesToAdd.isEmpty()) {
+                        outputLines.add("  subcomponents");
+                        for (Map.Entry<String, String> entry : instancesToAdd.entrySet()) {
+                            String instanceName = entry.getKey();
+                            String typeName = entry.getValue();
+                            AadlDeclaration decl = declarations.get(typeName);
+                            String compType = (decl != null) ? decl.type : "process";
+                            outputLines.add(String.format("    -- [自动修正] 补充 applies to 目标的子组件实例: %s (类型: %s)", instanceName, typeName));
+                            outputLines.add(String.format("    %s : %s %s.impl;", instanceName, compType, typeName));
+                            fixCount++;
+                        }
+                        toAddByImpl.remove(currentImpl);
+                        inserted = true;
+                    }
                 }
+            }
+
+            outputLines.add(rawLine);
+
+            // 结束 implementation
+            if (currentImpl != null && trimmed.matches("end\\s+[\\w.]+\\.impl\\s*;")) {
+                currentImpl = null;
             }
         }
 
-        log.info("自动修正：共补充 {} 个 applies to 缺失的子组件声明", toAdd.size());
-        return String.join("\n", lines);
+        log.info("自动修正：共补充 {} 个 applies to 缺失的子组件实例", fixCount);
+        return String.join("\n", outputLines);
     }
 
     // ========================= 新增校验规则 =========================
@@ -6954,9 +7507,14 @@ public class AadlReferenceValidator {
         Pattern normalEndPattern = Pattern.compile(
                 "^(\\s*)end\\s+(.+?)\\s*;\\s*$", Pattern.CASE_INSENSITIVE
         );
-        // 疑似畸形 end 语句
+        // 疑似畸形 end 语句（扩大范围：尾逗号、缺分号、尾点号等都算）
+        // 以 end 开头，后面有内容，末尾不是正常分号（或有非分号字符）都视为可疑
         Pattern suspiciousEndPattern = Pattern.compile(
-                "^(\\s*)end\\s+.*;\\s*$", Pattern.CASE_INSENSITIVE
+                "^(\\s*)end\\s+\\S.*$", Pattern.CASE_INSENSITIVE
+        );
+        // 正常 end 语句的末尾分号模式（用于排除正常情况）
+        Pattern properEndSemicolonPattern = Pattern.compile(
+                "^end\\s+.+\\s*;\\s*$", Pattern.CASE_INSENSITIVE
         );
         // package 声明（去掉末尾分号）
         Pattern packageStartPattern = Pattern.compile(
@@ -7100,7 +7658,9 @@ public class AadlReferenceValidator {
      * - 类型引用特征：TypeName.impl
      * - 注释行、类型声明行、implementation声明行、end语句行不进行替换
      */
-    private String fixNamingCollision(String content, ValidationResult result) {
+    private String fixNamingCollision(String content, ValidationResult result,
+                                       List<SubcomponentRef> subcomponentRefs,
+                                       List<ConnectionRef> connectionRefs) {
         String[] lines = content.split("\n");
         List<String> resultLines = new ArrayList<>();
         int fixCount = 0;
@@ -7109,6 +7669,10 @@ public class AadlReferenceValidator {
         // 结构：implName → (oldName → newName)，分别记录实例重命名和连接重命名
         Map<String, Map<String, String>> instRenamesByImpl = new LinkedHashMap<>();
         Map<String, Map<String, String>> connRenamesByImpl = new LinkedHashMap<>();
+        // 记录每个 impl 作用域内已使用的新名（避免重命名冲突）
+        Map<String, Set<String>> usedNamesByImpl = new LinkedHashMap<>();
+        // 记录重命名原因：oldName → reason ("impl_collision" 或 "type_collision")
+        Map<String, Map<String, String>> instRenameReasons = new LinkedHashMap<>();
 
         Pattern implStartPattern = Pattern.compile(
                 "^\\s*(?:virtual\\s+processor|system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+implementation\\s+(\\w+)\\.impl\\b"
@@ -7117,8 +7681,9 @@ public class AadlReferenceValidator {
                 "^\\s*virtual\\s+processor\\s+implementation\\s+(\\w+)\\.impl\\b"
         );
         Pattern endImplPattern = Pattern.compile("^\\s*end\\s+\\w+\\.impl\\s*;");
+        // 注意：virtual processor 必须在 processor 之前，避免短模式先匹配
         Pattern subcompPattern = Pattern.compile(
-                "^\\s*(\\w+)\\s*:\\s*(?:virtual\\s+processor|system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+(\\w+)\\.impl\\s*;"
+                "^\\s*(\\w+)\\s*:\\s*(virtual\\s+processor|system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+(\\w+)\\.impl\\s*;"
         );
         Pattern connDeclPattern = Pattern.compile(
                 "^\\s*(\\w+)\\s*:\\s*(?:port|bus\\s+access|event\\s+port|event\\s+data\\s+port|data\\s+port)\\s+"
@@ -7138,6 +7703,8 @@ public class AadlReferenceValidator {
                 currentImplName = implMatcher.group(1);
                 instRenamesByImpl.putIfAbsent(currentImplName, new LinkedHashMap<>());
                 connRenamesByImpl.putIfAbsent(currentImplName, new LinkedHashMap<>());
+                usedNamesByImpl.putIfAbsent(currentImplName, new HashSet<>());
+                instRenameReasons.putIfAbsent(currentImplName, new LinkedHashMap<>());
                 continue;
             }
             Matcher vImplMatcher = virtualImplStartPattern.matcher(trimmed);
@@ -7145,6 +7712,8 @@ public class AadlReferenceValidator {
                 currentImplName = vImplMatcher.group(1);
                 instRenamesByImpl.putIfAbsent(currentImplName, new LinkedHashMap<>());
                 connRenamesByImpl.putIfAbsent(currentImplName, new LinkedHashMap<>());
+                usedNamesByImpl.putIfAbsent(currentImplName, new HashSet<>());
+                instRenameReasons.putIfAbsent(currentImplName, new LinkedHashMap<>());
                 continue;
             }
             if (endImplPattern.matcher(trimmed).find()) {
@@ -7156,20 +7725,34 @@ public class AadlReferenceValidator {
 
             Map<String, String> instRenames = instRenamesByImpl.get(currentImplName);
             Map<String, String> connRenames = connRenamesByImpl.get(currentImplName);
-            Set<String> usedNewNames = new HashSet<>();
-            usedNewNames.addAll(instRenames.values());
-            usedNewNames.addAll(connRenames.values());
+            Set<String> usedNewNames = usedNamesByImpl.get(currentImplName);
 
             Matcher sm = subcompPattern.matcher(codePart);
             if (sm.find()) {
                 String instName = sm.group(1);
-                // 规则：实例名等于当前 impl 名称时需要重命名
+                String compKeyword = sm.group(2);
+                String typeName = sm.group(3);
+
+                // 规则1：实例名等于当前 impl 名称时需要重命名
                 if (instName.equals(currentImplName) && !instRenames.containsKey(instName)) {
                     String newName = instName + "_inst";
                     while (usedNewNames.contains(newName)) {
                         newName = newName + "_x";
                     }
                     instRenames.put(instName, newName);
+                    instRenameReasons.get(currentImplName).put(instName, "impl_collision");
+                    usedNewNames.add(newName);
+                }
+
+                // 规则2：实例名等于其引用的类型名时需要重命名（如 CPU : processor CPU.impl;）
+                if (instName.equals(typeName) && !instRenames.containsKey(instName)) {
+                    // 收集当前 impl 内已有的所有实例名作为避免冲突的参考
+                    Set<String> existingNames = new HashSet<>(usedNewNames);
+                    existingNames.addAll(instRenames.values());
+                    existingNames.addAll(connRenames.values());
+                    String newName = generateInstanceName(compKeyword, typeName, existingNames);
+                    instRenames.put(instName, newName);
+                    instRenameReasons.get(currentImplName).put(instName, "type_collision");
                     usedNewNames.add(newName);
                 }
             }
@@ -7306,6 +7889,21 @@ public class AadlReferenceValidator {
                     );
                     if (!modified.equals(before)) changed = true;
                 }
+
+                // 替换独立出现的实例名（如 reference (OldName)、属性值中的引用等）
+                // 使用自定义边界：前后不能是字母/数字，排除 TypeName.impl 模式
+                for (Map.Entry<String, String> entry : instRenames.entrySet()) {
+                    String oldName = entry.getKey();
+                    String newName = entry.getValue();
+                    String before = modified;
+                    // 匹配独立标识符：前面不是字母/数字/点，后面不是字母/数字，且不是 .impl 模式
+                    // 注意：前面不能是点（避免 foo.OldName 中的 OldName 被误替换，那是特性名）
+                    modified = modified.replaceAll(
+                            "(?<![a-zA-Z0-9_.])" + Pattern.quote(oldName) + "(?![a-zA-Z0-9_])(?!\\.impl\\b)",
+                            Matcher.quoteReplacement(newName)
+                    );
+                    if (!modified.equals(before)) changed = true;
+                }
             }
 
             String resultLine = modified + commentPart;
@@ -7315,12 +7913,47 @@ public class AadlReferenceValidator {
             resultLines.add(resultLine);
         }
 
+        // ==================== 第三阶段：更新 subcomponentRefs 和 connectionRefs 中的引用 ====================
+        for (Map.Entry<String, Map<String, String>> implEntry : instRenamesByImpl.entrySet()) {
+            String implName = implEntry.getKey();
+            Map<String, String> renames = implEntry.getValue();
+            if (renames.isEmpty()) continue;
+
+            // 更新 subcomponentRefs
+            for (SubcomponentRef ref : subcomponentRefs) {
+                if (implName.equals(ref.parentImpl) && renames.containsKey(ref.instanceName)) {
+                    ref.instanceName = renames.get(ref.instanceName);
+                }
+            }
+
+            // 更新 connectionRefs 中的 sourceInstance 和 destInstance
+            for (ConnectionRef conn : connectionRefs) {
+                if (implName.equals(conn.parentImpl)) {
+                    if (conn.sourceInstance != null && renames.containsKey(conn.sourceInstance)) {
+                        conn.sourceInstance = renames.get(conn.sourceInstance);
+                    }
+                    if (conn.destInstance != null && renames.containsKey(conn.destInstance)) {
+                        conn.destInstance = renames.get(conn.destInstance);
+                    }
+                }
+            }
+        }
+
         // 记录修复日志
         for (Map.Entry<String, Map<String, String>> implEntry : instRenamesByImpl.entrySet()) {
+            Map<String, String> reasons = instRenameReasons.get(implEntry.getKey());
             for (Map.Entry<String, String> e : implEntry.getValue().entrySet()) {
-                String msg = String.format(
-                        "已重命名 %s.impl 中实例 '%s' → '%s'（实例名不能与包含它的组件类型同名）",
-                        implEntry.getKey(), e.getKey(), e.getValue());
+                String reason = reasons != null ? reasons.get(e.getKey()) : null;
+                String msg;
+                if ("type_collision".equals(reason)) {
+                    msg = String.format(
+                            "已重命名 %s.impl 中实例 '%s' → '%s'（实例名不能与其引用的类型名同名）",
+                            implEntry.getKey(), e.getKey(), e.getValue());
+                } else {
+                    msg = String.format(
+                            "已重命名 %s.impl 中实例 '%s' → '%s'（实例名不能与包含它的组件类型同名）",
+                            implEntry.getKey(), e.getKey(), e.getValue());
+                }
                 result.fixes.add(msg);
                 allFixes.add(msg);
             }
@@ -7422,39 +8055,53 @@ public class AadlReferenceValidator {
     }
 
     /**
-     * 剥离行尾注释，返回纯代码部分。
-     * 注意：不处理字符串中的 "--"（AADL中字符串极少出现此模式）。
-     */
-    private String stripComment(String line) {
-        int idx = line.indexOf("--");
-        return idx >= 0 ? line.substring(0, idx) : line;
-    }
-
-    /**
-     * 自动修正（按顺序执行）：
-     * 0r. 修复畸形 end 语句（必须最先执行，否则后续解析会出错）
-     * 0a. 修正非法 'requires data port' 语法 → 'in data port'
-     * 0b. 修复截断/不完整的连接行（动态推断端口名 + 补充分号）
-     * 0c. 删除线程 implementation 中非法的 connections 块
-     * 0e. 将 implementation 中非法的 features 块移到对应的类型声明中
-     * 0h. 重排 implementation 中的块顺序为 subcomponents → connections → properties
-     * 0n. 修复连接操作符错误（port 用 <-> 改 ->，access 用 -> 改 <->）
-     * 0q. 修复命名空间冲突（实例名/连接名与类型名重名时追加后缀）
-     * 1.  补全缺失的组件声明（类型声明 + 实现声明）
-     * 2.  补全不完整的声明（只有类型声明补实现声明，或反之）
-     * 3.  补全 connections 引用中缺失的 feature 声明
+     * 自动修正（按顺序执行，共6个阶段）：
      *
-     * 注意：0d/0i/0j/0k/0l/0m/0p 已移除，这些问题改为在原文对应位置标注 [ERROR]/[WARNING] 注释。
+     * 第一阶段：语法结构修复（必须最先执行，否则后续解析会出错）
+     *   0r. 修复畸形 end 语句
+     *   0a. 修正非法 'requires data port' 语法 → 'in data port'
+     *   0b. 修复截断/不完整的连接行（动态推断端口名 + 补充分号）
+     *
+     * 第二阶段：删除非法内容（先删除，避免后续处理无效行）
+     *   0c. 删除线程 implementation 中非法的 connections 块
+     *   0d. 删除 data 组件中非法的 features 块
+     *   0g. 删除连接类型与实体类型不匹配的连接（软件组件用bus access、硬件组件用port连接）
+     *   0g2. 删除引用data组件端口的port连接
+     *   （thread的bus access问题只检测不自动修复，重构太复杂风险高）
+     *
+     * 第三阶段：移动/重排内容
+     *   0e. 将 implementation 中非法的 features 块移到对应的类型声明中
+     *   0h. 重排 implementation 中的块顺序为 subcomponents → connections → properties
+     *
+     * 第四阶段：简单语法替换（不改变结构，只修改内容）
+     *   0n. 修复连接操作符错误（port 用 <-> 改 ->，access 用 -> 改 <->）
+     *   0p. 自动修正端口方向错误（交换方向反了的连接端点）
+     *   0s. 修复 reference 属性值括号格式（reference (xxx) → (reference (xxx))）
+     *
+     * 第五阶段：命名统一（必须在所有名称匹配的重构之前执行）
+     *   0q. 修复命名空间冲突（实例名/连接名与类型名重名时追加后缀，回写refs列表）
+     *
+     * 第六阶段：复杂结构重构（依赖统一后的名称）
+     *   0t. 修复非法 subcomponent 嵌套（如 process 直接放在 processor 下）
+     *   0u. 修复 applies to 引用未声明实例的问题
+     *
+     * 第七阶段：补全缺失内容（最后执行，基于最终代码状态补全）
+     *   1. 补全架构树中存在但AADL中缺失的组件声明
+     *   1b.补全subcomponents中引用但未声明的组件类型
+     *   3. 补全connections引用中缺失的feature声明
      */
     private String applyFixes(String aadlContent,
                               Map<String, AadlDeclaration> declarations,
                               Map<String, AadlInputParser.ArchNode> archComponents,
                               Map<String, Map<String, String>> componentFeatures,
+                              List<SubcomponentRef> subcomponentRefs,
+                              List<ConnectionRef> connectionRefs,
                               ValidationResult result) {
         // 0. 在原始内容对应行尾标注所有错误和警告（行内注释，不新增行）
         String content = annotateErrorsAndWarningsInline(aadlContent, result);
 
-        // 0r. 修复畸形 end 语句（必须最先执行，否则后续解析会出错）
+        // ===== 第一阶段：语法结构修复（必须最先执行，否则后续解析会出错）=====
+        // 0r. 修复畸形 end 语句
         content = fixMalformedEndStatements(content, result);
 
         // 0a. 修正非法 requires data port 语法
@@ -7463,20 +8110,48 @@ public class AadlReferenceValidator {
         // 0b. 修复截断/不完整的连接行（硬编码补充缺失端口名 + 分号）
         content = fixIncompleteConnectionLines(content, result);
 
+        // ===== 第二阶段：删除非法内容（先删除，避免后续处理无效行）=====
         // 0c. 删除线程 implementation 中非法的 connections 块
         content = fixThreadConnectionsBlocks(content, result);
 
+        // 0d. 删除 data 组件中非法的 features 块
+        content = fixDataComponentFeatures(content, result);
+
+        // 0g. 删除连接类型与实体类型不匹配的连接（如软件组件用bus access连接）
+        content = fixConnectionEntityTypeMismatch(content, declarations, result);
+        // 0g2. 删除引用data组件端口的port连接（data组件不能有port）
+        content = fixPortConnectionToDataComponent(content, declarations, result);
+
+        // 注：thread的bus access问题只检测不自动修复（重构太复杂，自动修复风险高）
+        //     由 checkThreadBusAccessFeature 检测并报错，人工修复
+
+        // ===== 第三阶段：移动/重排内容 =====
         // 0e. 将 implementation 中非法的 features 块移到对应的类型声明中
         content = fixFeaturesPlacement(content, result);
 
         // 0h. 重排 implementation 中的块顺序为 subcomponents → connections → properties
         content = fixImplementationOrder(content, result);
 
+        // ===== 第四阶段：简单语法替换（不改变结构，只修改内容）=====
         // 0n. 修复连接操作符错误（port 用 <-> 改 ->，access 用 -> 改 <->）
         content = fixConnectionOperator(content, result);
 
-        // 0q. 修复命名空间冲突（实例名/连接名与类型名重名时追加后缀）
-        content = fixNamingCollision(content, result);
+        // 0p. 自动修正端口方向错误（交换方向反了的连接端点）
+        content = fixPortDirectionAuto(content, result);
+
+        // 0s. 修复 reference 属性值括号格式（reference (xxx) → (reference (xxx))）
+        content = fixReferenceParentheses(content, result);
+
+        // ===== 第五阶段：命名统一（必须在所有名称匹配的重构之前执行）=====
+        // 0q. 修复命名空间冲突（实例名/连接名与类型名重名时追加后缀，回写subcomponentRefs/connectionRefs）
+        content = fixNamingCollision(content, result, subcomponentRefs, connectionRefs);
+
+        // ===== 第六阶段：复杂结构重构（依赖统一后的名称）=====
+        // 0t. 修复非法 subcomponent 嵌套（如 process 直接放在 processor 下，自动包装 process）
+        content = fixIllegalSubcomponentNesting(content, declarations, result);
+
+        // 0u. 修复 applies to 引用未声明实例的问题
+        content = fixAppliesToUndeclared(content, declarations, result);
 
         StringBuilder fixBlock = new StringBuilder();
         int fixCount = 0;
@@ -7506,6 +8181,10 @@ public class AadlReferenceValidator {
                     fixCount++;
                     result.fixes.add(String.format(
                             "已补全缺失组件声明: %s (%s)", archComp.name, archComp.type
+                    ));
+                    result.warnings.add(String.format(
+                            "遗漏组件: '%s' (%s) 在架构树中存在但 AADL 中缺失声明，已自动补全",
+                            archComp.name, archComp.type
                     ));
                 } else {
                     // 部分缺失
@@ -7546,6 +8225,53 @@ public class AadlReferenceValidator {
                             "已补全实现声明: %s (%s)", decl.name, decl.type
                     ));
                 }
+            }
+        }
+
+        // 1b. 补全"subcomponents 中引用了但 AADL 中完全未声明"的类型
+        //     （架构树里可能没有同名组件，但代码里引用了，也必须补空壳声明否则语法不通过）
+        if (subcomponentRefs != null && !subcomponentRefs.isEmpty()) {
+            // 用 set 去重（同一个类型可能被多个 subcomponent 引用）
+            Map<String, String> undeclaredRefs = new LinkedHashMap<>(); // typeName -> componentKeyword
+            for (SubcomponentRef ref : subcomponentRefs) {
+                if (declarations.get(ref.typeName) == null
+                        && ref.componentKeyword != null
+                        && isValidAadlComponentType(ref.componentKeyword)) {
+                    undeclaredRefs.putIfAbsent(ref.typeName, ref.componentKeyword);
+                }
+            }
+            // 排除架构树已经处理过的（第 1 步已补全的）
+            for (String archName : archComponents.keySet()) {
+                undeclaredRefs.remove(archName);
+            }
+            for (Map.Entry<String, String> entry : undeclaredRefs.entrySet()) {
+                String typeName = entry.getKey();
+                String compType = entry.getValue();
+                if (isReservedWord(typeName)) {
+                    log.debug("跳过保留字未声明类型补全: {}", typeName);
+                    continue;
+                }
+                fixBlock.append(generateFullDeclaration(typeName, compType));
+                fixCount++;
+                result.fixes.add(String.format(
+                        "已补全引用中未声明的组件: %s (%s)", typeName, compType
+                ));
+                // 架构树中不存在 → 标记为疑似幻觉组件（但仍然补全以保证语法通过）
+                if (!archComponents.containsKey(typeName)) {
+                    result.warnings.add(String.format(
+                            "疑似幻觉组件: '%s' (%s) 在架构树中不存在，但 AADL 中被引用，已补全空壳声明。" +
+                                    "建议检查该组件是否为 LLM 额外生成的不必要组件",
+                            typeName, compType
+                    ));
+                    log.warn("疑似幻觉组件，已补全空壳声明: {} ({})", typeName, compType);
+                }
+                // 更新 declarations，避免后续步骤重复处理
+                AadlDeclaration newDecl = new AadlDeclaration();
+                newDecl.name = typeName;
+                newDecl.type = compType;
+                newDecl.hasTypeDecl = true;
+                newDecl.hasImplDecl = true;
+                declarations.put(typeName, newDecl);
             }
         }
 
@@ -7703,17 +8429,18 @@ public class AadlReferenceValidator {
         }
 
         // 查找类型声明行：如 "processor MainProcessor" 或 "device PowerSupply"
+        // 支持行尾注释（-- comment）
         Pattern typeDeclPattern = Pattern.compile(
                 "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|abstract)\\s+" +
-                Pattern.quote(typeName) + "\\s*$"
+                Pattern.quote(typeName) + "\\s*(?:--.*)?$"
         );
         // virtual processor 特殊处理
         Pattern virtualTypePattern = Pattern.compile(
-                "^\\s*virtual\\s+processor\\s+" + Pattern.quote(typeName) + "\\s*$"
+                "^\\s*virtual\\s+processor\\s+" + Pattern.quote(typeName) + "\\s*(?:--.*)?$"
         );
 
         for (int i = 0; i < lines.length; i++) {
-            String line = lines[i].trim();
+            String line = stripComment(lines[i].trim());
 
             // 匹配类型声明
             boolean isTypeDecl = typeDeclPattern.matcher(line).find() ||
@@ -7726,7 +8453,7 @@ public class AadlReferenceValidator {
             int featuresLineIdx = -1;
             int endFeaturesIdx = -1;
             for (int j = i + 1; j < lines.length; j++) {
-                String nextLine = lines[j].trim();
+                String nextLine = stripComment(lines[j].trim());
                 if (nextLine.equals("features")) {
                     featuresLineIdx = j;
                     continue;
@@ -7758,13 +8485,18 @@ public class AadlReferenceValidator {
                 lines[endFeaturesIdx] = sb.toString() + lines[endFeaturesIdx];
                 return String.join("\n", lines);
             } else {
-                // 没有 features 块，在类型声明行之后新建
+                // 没有 features 块，在类型声明行之后新建（4空格缩进，与 generateTypeDeclaration 风格一致）
                 StringBuilder sb = new StringBuilder();
-                sb.append("  features\n");
+                sb.append("    features\n");
                 sb.append("    -- [自动修正] 补全 connections 引用中缺失的 feature 声明: ")
                   .append(String.join(", ", featNames)).append("\n");
                 sb.append(featureLines);
-                lines[i] = lines[i] + "\n" + sb.toString().trim();
+                // 去掉 featureLines 末尾多余的换行符，避免空行
+                String injectBlock = sb.toString();
+                if (injectBlock.endsWith("\n")) {
+                    injectBlock = injectBlock.substring(0, injectBlock.length() - 1);
+                }
+                lines[i] = lines[i] + "\n" + injectBlock;
                 return String.join("\n", lines);
             }
         }
@@ -7783,9 +8515,18 @@ public class AadlReferenceValidator {
             return "in";
         }
         String lower = featureName.toLowerCase();
-        if (lower.contains("out") || lower.contains("output") || lower.contains("send") || lower.contains("src")) {
+        // 输出方向指示词（精确单词边界匹配，避免 route/outer/without 等子串误判）
+        // 边界定义：前后不能是字母/数字（下划线、箭头、括号、起止位置均视为边界）
+        Pattern outPattern = Pattern.compile("(?<![a-zA-Z0-9])(out|output|send|src)(?![a-zA-Z0-9])");
+        if (outPattern.matcher(lower).find()) {
             return "out";
         }
+        // 输入方向指示词
+        Pattern inPattern = Pattern.compile("(?<![a-zA-Z0-9])(in|input|recv|dst|dest)(?![a-zA-Z0-9])");
+        if (inPattern.matcher(lower).find()) {
+            return "in";
+        }
+        // 默认 in（保守策略）
         return "in";
     }
 
@@ -7815,8 +8556,8 @@ public class AadlReferenceValidator {
      * 这样可以避免误匹配 EMV2 块内的 "end behavior;" 或组件的 "end Foo;"。
      */
     private int findEndPackagePosition(String content) {
-        // 1. 提取 package 名称
-        Pattern pkgPattern = Pattern.compile("package\\s+(\\w+)");
+        // 1. 提取 package 名称（支持层次包名如 MyProject.AadlCode）
+        Pattern pkgPattern = Pattern.compile("package\\s+(\\w+(?:\\.\\w+)*)");
         Matcher pkgMatcher = pkgPattern.matcher(content);
         if (!pkgMatcher.find()) {
             log.warn("未找到 package 声明，无法定位 end package 位置");
