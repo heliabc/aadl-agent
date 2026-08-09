@@ -8,6 +8,8 @@ import com.example.aadlagent.client.ModelService;
 import com.example.aadlagent.client.ModelType;
 import com.example.aadlagent.model.AadlArchitectureModel;
 import com.example.aadlagent.util.JsonRepairUtil;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -38,7 +40,10 @@ public class AadlArchitectureAgent implements Agent<AgentInput, AgentOutput> {
         this.modelService = modelService;
         this.objectMapper = JsonMapper.builder()
                 .disable(SerializationFeature.WRITE_NULL_MAP_VALUES)
-                .disable(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .enable(JsonParser.Feature.ALLOW_COMMENTS)
+                .enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES)
+                .enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES)
                 .build();
         this.prompt = new AadlArchitecturePrompt();
     }

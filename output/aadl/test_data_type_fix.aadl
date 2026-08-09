@@ -1,0 +1,32 @@
+package TestDataType_Arch
+public
+
+-- 测试：未声明的 data 类型应被自动补全
+
+system Top_TestDataType
+end Top_TestDataType;
+
+thread WorkerThread
+  features
+    in_data  : in data port InputData;     -- InputData 未声明
+    out_data : out data port OutputData;   -- OutputData 未声明
+    status   : out data port StatusType;   -- StatusType 未声明
+end WorkerThread;
+
+thread implementation WorkerThread.impl
+end WorkerThread.impl;
+
+-- 已声明的 data 类型（不应被重复补全）
+data SensorData
+end SensorData;
+
+system implementation Top_TestDataType.impl
+  subcomponents
+    worker : thread WorkerThread.impl;
+  connections
+    C1 : port worker.in_data -> worker.out_data;
+  properties
+    Actual_Processor_Binding => (reference (main_cpu)) applies to worker;
+end Top_TestDataType.impl;
+
+end TestDataType_Arch;

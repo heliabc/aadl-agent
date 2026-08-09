@@ -7,6 +7,8 @@ import com.example.aadlagent.client.LlmClient;
 import com.example.aadlagent.client.ModelService;
 import com.example.aadlagent.client.ModelType;
 import com.example.aadlagent.util.JsonRepairUtil;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,7 +40,10 @@ public class AadlErrorParserAgent implements Agent<AgentInput, AgentOutput> {
         this.modelService = modelService;
         this.prompt = new AadlErrorParserPrompt();
         this.objectMapper = new ObjectMapper()
-                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .configure(JsonParser.Feature.ALLOW_COMMENTS, true)
+                .configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true)
+                .configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
     }
 
     @Override

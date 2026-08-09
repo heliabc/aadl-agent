@@ -8,6 +8,8 @@ import com.example.aadlagent.client.ModelService;
 import com.example.aadlagent.client.ModelType;
 import com.example.aadlagent.model.ModuleAnalysisResult;
 import com.example.aadlagent.util.JsonRepairUtil;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,7 +38,13 @@ public class ModuleAnalysisAgent implements Agent<AgentInput, AgentOutput> {
         this.modelService = modelService;
         this.objectMapper = new ObjectMapper();
         // 容错：LLM 输出可能包含未知字段，忽略而非报错
-        this.objectMapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        // 容错：LLM 有时会在 JSON 中加 // 注释，允许解析带注释的 JSON
+        this.objectMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+        // 容错：允许 JSON 中的单引号（LLM偶尔输出）
+        this.objectMapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
+        // 容错：允许未加引号的字段名
+        this.objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
         this.prompt = new ModuleAnalysisPrompt();
     }
 

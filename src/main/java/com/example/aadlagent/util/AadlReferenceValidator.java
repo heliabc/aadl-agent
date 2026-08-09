@@ -8064,6 +8064,7 @@ public class AadlReferenceValidator {
      *   0s. 修复 reference 属性括号格式（reference (xxx) → (reference (xxx))）
      *   0q. 修复命名空间冲突（实例名/连接名与类型名重名）
      *   1/1b. 补全缺失的组件声明（类型 + 实现，空壳）
+     *   2. 补全被引用但未声明的 data 类型
      *   3. 补全缺失的 feature 声明
      *
      * 【仅检测不自动修复 - 高风险】
@@ -8262,6 +8263,90 @@ public class AadlReferenceValidator {
                 newDecl.hasImplDecl = true;
                 declarations.put(typeName, newDecl);
             }
+        }
+
+        // 2. 补全所有被引用但未声明的 data 类型
+        //    收集所有 feature（已有+缺失）引用的数据类型，未声明的自动补 data 组件
+        Set<String> referencedDataTypes = new LinkedHashSet<>();
+        // 从已有 features 中收集
+        if (componentFeatures != null) {
+            for (Map<String, String> feats : componentFeatures.values()) {
+                for (String dt : feats.values()) {
+                    if (dt != null && !dt.isEmpty() && !isReservedWord(dt)) {
+                        referencedDataTypes.add(dt);
+                    }
+                }
+            }
+        }
+        // 从缺失 features 中收集
+        if (result.missingFeatures != null) {
+            for (Map<String, String> feats : result.missingFeatures.values()) {
+                for (String dt : feats.values()) {
+                    if (dt != null && !dt.isEmpty() && !isReservedWord(dt)) {
+                        referencedDataTypes.add(dt);
+                    }
+                }
+            }
+        }
+        // 从 featureDetails 中收集（包含 data port / event data port / data access 类型）
+        if (featureDetails != null) {
+            for (Map<String, FeatureDetail> feats : featureDetails.values()) {
+                for (FeatureDetail fd : feats.values()) {
+                    if (fd.dataType != null && !fd.dataType.isEmpty()
+                            && !isReservedWord(fd.dataType)
+                            && ("data port".equals(fd.featureType) || "event data port".equals(fd.featureType)
+                                || "data access".equals(fd.featureType))) {
+                        referencedDataTypes.add(fd.dataType);
+                    }
+                }
+            }
+        }
+        // 过滤掉已声明的类型（只补全未声明的）
+        int dataTypeFixCount = 0;
+        StringBuilder dataTypeFixBlock = new StringBuilder();
+        for (String dtName : referencedDataTypes) {
+            AadlDeclaration dtDecl = declarations.get(dtName);
+            if (dtDecl == null) {
+                // 完全未声明 → 补 data 类型声明 + 实现声明
+                dataTypeFixBlock.append(generateTypeDeclaration(dtName, "data"));
+                dataTypeFixBlock.append('\n');
+                dataTypeFixBlock.append(generateImplDeclaration(dtName, "data"));
+                dataTypeFixBlock.append('\n');
+                dataTypeFixCount++;
+                // 更新 declarations，避免重复
+                AadlDeclaration newDecl = new AadlDeclaration();
+                newDecl.name = dtName;
+                newDecl.type = "data";
+                newDecl.hasTypeDecl = true;
+                newDecl.hasImplDecl = true;
+                declarations.put(dtName, newDecl);
+                result.fixes.add(String.format(
+                        "已补全引用中未声明的 data 类型: %s (data)", dtName
+                ));
+                // 架构树中不存在 → 加警告提示
+                if (!archComponents.containsKey(dtName)) {
+                    result.warnings.add(String.format(
+                            "未声明 data 类型: '%s' 被端口引用但未声明，已自动补全空 data 组件。" +
+                                    "如该类型应有具体属性或字段，请手动完善",
+                            dtName
+                    ));
+                }
+            } else if (!dtDecl.hasImplDecl) {
+                // 有类型声明但缺实现 → 补实现声明
+                dataTypeFixBlock.append(generateImplDeclaration(dtName, "data"));
+                dataTypeFixBlock.append('\n');
+                dataTypeFixCount++;
+                dtDecl.hasImplDecl = true;
+                result.fixes.add(String.format(
+                        "已补全 data 类型的实现声明: %s (data)", dtName
+                ));
+            }
+        }
+        if (dataTypeFixCount > 0) {
+            fixBlock.append("-- [自动修正] 补全引用中未声明的 data 类型\n");
+            fixBlock.append(dataTypeFixBlock);
+            fixCount += dataTypeFixCount;
+            log.info("自动修正：共补全 {} 个未声明的 data 类型", dataTypeFixCount);
         }
 
         // 3. 补全 connections 引用中缺失的 feature 声明
