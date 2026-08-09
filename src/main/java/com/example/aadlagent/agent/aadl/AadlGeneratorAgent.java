@@ -116,6 +116,7 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
             String aadlContent = extractAadlContent(llmResponse);
 
             // 引用完整性验证与自动修正（不依赖大模型）
+            String rawAadlContent = aadlContent; // 保存修复前的原始版本
             AadlReferenceValidator.ValidationResult validationResult =
                     validateAndFixReferences(aadlContent, parseResult);
             aadlContent = validationResult.fixedContent;
@@ -136,7 +137,9 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
 
             printAadlSummary(aadlContent);
 
-            return AgentOutput.success(input.getSessionId(), aadlContent, executionTime);
+            AgentOutput output = AgentOutput.success(input.getSessionId(), aadlContent, executionTime);
+            output.setOriginalContent(rawAadlContent); // 设置修复前的原始版本
+            return output;
 
         } catch (Exception e) {
             long executionTime = System.currentTimeMillis() - startTime;

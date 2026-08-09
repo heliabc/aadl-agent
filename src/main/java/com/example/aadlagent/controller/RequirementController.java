@@ -633,8 +633,17 @@ public class RequirementController {
                 String outputFilePath = Paths.get(fileConfig.getAadlPath(), outputFileName).toString();
                 docFileReader.writeFile(output.getContent(), outputFilePath);
 
+                // 同时保存一份修复前的原始版本（用于对比）
+                if (output.getOriginalContent() != null && !output.getOriginalContent().isEmpty()) {
+                    String rawFileName = outputFileName.replaceAll("\\.aadl$", "_raw.aadl");
+                    String rawFilePath = Paths.get(fileConfig.getAadlPath(), rawFileName).toString();
+                    docFileReader.writeFile(output.getOriginalContent(), rawFilePath);
+                    log.info("原始版本（修复前）已保存: {}", rawFileName);
+                }
+
                 response.put("data", output.getContent());
                 response.put("outputFile", outputFileName);
+                response.put("rawFile", outputFileName.replaceAll("\\.aadl$", "_raw.aadl"));
                 traceabilityService.addAadlTraceability(sessionId, output.getContent());
                 log.info("Successfully generated AADL: {} + {} -> {}", architectureFileName, modulesFileName, outputFileName);
             } else {
@@ -760,8 +769,17 @@ public class RequirementController {
                 String outputFilePath = Paths.get(fileConfig.getAadlPath(), outputFileName).toString();
                 docFileReader.writeFile(output.getContent(), outputFilePath);
 
+                // 同时保存一份修复前的原始版本（用于对比）
+                if (output.getOriginalContent() != null && !output.getOriginalContent().isEmpty()) {
+                    String rawFileName = outputFileName.replaceAll("\\.aadl$", "_raw.aadl");
+                    String rawFilePath = Paths.get(fileConfig.getAadlPath(), rawFileName).toString();
+                    docFileReader.writeFile(output.getOriginalContent(), rawFilePath);
+                    log.info("原始版本（修复前）已保存: {}", rawFileName);
+                }
+
                 response.put("data", output.getContent());
                 response.put("outputFile", outputFileName);
+                response.put("rawFile", outputFileName.replaceAll("\\.aadl$", "_raw.aadl"));
                 log.info("Successfully regenerated AADL: {} + {} -> {}", architectureFileName, modulesFileName, outputFileName);
             } else {
                 response.put("message", output.getErrorMessage());

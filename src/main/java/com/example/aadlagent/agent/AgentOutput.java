@@ -16,6 +16,9 @@ public class AgentOutput {
 
     private String content;
 
+    /** 原始内容（自动修复前的版本，用于对比） */
+    private String originalContent;
+
     private boolean success;
 
     private String errorMessage;

@@ -8055,40 +8055,29 @@ public class AadlReferenceValidator {
     }
 
     /**
-     * 自动修正（按顺序执行，共6个阶段）：
+     * 自动修正（保守策略：只做简单、低风险的修复，结构性问题只报错不自动修）
      *
-     * 第一阶段：语法结构修复（必须最先执行，否则后续解析会出错）
-     *   0r. 修复畸形 end 语句
-     *   0a. 修正非法 'requires data port' 语法 → 'in data port'
-     *   0b. 修复截断/不完整的连接行（动态推断端口名 + 补充分号）
+     * 【保留的自动修复 - 低风险】
+     *   0r. 修复畸形 end 语句（尾逗号、名称错误等）
+     *   0a. 修正非法 'requires data port' → 'in data port' / 'provides' → 'out'
+     *   0n. 修复连接操作符错误（port <-> → ->，access -> → <->）
+     *   0s. 修复 reference 属性括号格式（reference (xxx) → (reference (xxx))）
+     *   0q. 修复命名空间冲突（实例名/连接名与类型名重名）
+     *   1/1b. 补全缺失的组件声明（类型 + 实现，空壳）
+     *   3. 补全缺失的 feature 声明
      *
-     * 第二阶段：删除非法内容（先删除，避免后续处理无效行）
-     *   0c. 删除线程 implementation 中非法的 connections 块
-     *   0d. 删除 data 组件中非法的 features 块
-     *   0g. 删除连接类型与实体类型不匹配的连接（软件组件用bus access、硬件组件用port连接）
-     *   0g2. 删除引用data组件端口的port连接
-     *   （thread的bus access问题只检测不自动修复，重构太复杂风险高）
-     *
-     * 第三阶段：移动/重排内容
-     *   0e. 将 implementation 中非法的 features 块移到对应的类型声明中
-     *   0h. 重排 implementation 中的块顺序为 subcomponents → connections → properties
-     *
-     * 第四阶段：简单语法替换（不改变结构，只修改内容）
-     *   0n. 修复连接操作符错误（port 用 <-> 改 ->，access 用 -> 改 <->）
-     *   0p. 自动修正端口方向错误（交换方向反了的连接端点）
-     *   0s. 修复 reference 属性值括号格式（reference (xxx) → (reference (xxx))）
-     *
-     * 第五阶段：命名统一（必须在所有名称匹配的重构之前执行）
-     *   0q. 修复命名空间冲突（实例名/连接名与类型名重名时追加后缀，回写refs列表）
-     *
-     * 第六阶段：复杂结构重构（依赖统一后的名称）
-     *   0t. 修复非法 subcomponent 嵌套（如 process 直接放在 processor 下）
-     *   0u. 修复 applies to 引用未声明实例的问题
-     *
-     * 第七阶段：补全缺失内容（最后执行，基于最终代码状态补全）
-     *   1. 补全架构树中存在但AADL中缺失的组件声明
-     *   1b.补全subcomponents中引用但未声明的组件类型
-     *   3. 补全connections引用中缺失的feature声明
+     * 【仅检测不自动修复 - 高风险】
+     *   0b. 截断/不完整的连接行（猜测成分多）
+     *   0c. 线程 implementation 中非法的 connections 块（结构删除）
+     *   0d. data 组件中非法的 features 块（结构删除）
+     *   0e. features 块放错位置（跨块移动）
+     *   0h. implementation 块顺序错误（重排结构）
+     *   0f. thread 的 bus access（重构太复杂）
+     *   0g. 连接类型与实体类型不匹配（删除连接风险高）
+     *   0g2. 引用 data 组件端口的 port 连接（删除连接/实例风险高）
+     *   0p. 端口方向错误（交换两端容易改错）
+     *   0t. 非法 subcomponent 嵌套（结构重构风险高）
+     *   0u. applies to 引用未声明实例
      */
     private String applyFixes(String aadlContent,
                               Map<String, AadlDeclaration> declarations,
@@ -8117,10 +8106,10 @@ public class AadlReferenceValidator {
         // 0d. 删除 data 组件中非法的 features 块
         content = fixDataComponentFeatures(content, result);
 
-        // 0g. 删除连接类型与实体类型不匹配的连接（如软件组件用bus access连接）
-        content = fixConnectionEntityTypeMismatch(content, declarations, result);
-        // 0g2. 删除引用data组件端口的port连接（data组件不能有port）
-        content = fixPortConnectionToDataComponent(content, declarations, result);
+        // 0g. 连接类型与实体类型不匹配（仅检测，不自动修复）
+        //     由 checkConnectionEntityTypeMismatch 检测并报错，删除连接风险太高
+        // 0g2. 引用data组件端口的port连接（仅检测，不自动修复）
+        //     由 checkPortConnectionToDataComponent 检测并报错，删除连接/实例风险太高
 
         // 注：thread的bus access问题只检测不自动修复（重构太复杂，自动修复风险高）
         //     由 checkThreadBusAccessFeature 检测并报错，人工修复
@@ -8136,8 +8125,8 @@ public class AadlReferenceValidator {
         // 0n. 修复连接操作符错误（port 用 <-> 改 ->，access 用 -> 改 <->）
         content = fixConnectionOperator(content, result);
 
-        // 0p. 自动修正端口方向错误（交换方向反了的连接端点）
-        content = fixPortDirectionAuto(content, result);
+        // 0p. 端口方向错误（仅检测，不自动修复）
+        //     由 checkPortDirection 检测并报错，交换两端风险太高容易改错
 
         // 0s. 修复 reference 属性值括号格式（reference (xxx) → (reference (xxx))）
         content = fixReferenceParentheses(content, result);
@@ -8147,8 +8136,8 @@ public class AadlReferenceValidator {
         content = fixNamingCollision(content, result, subcomponentRefs, connectionRefs);
 
         // ===== 第六阶段：复杂结构重构（依赖统一后的名称）=====
-        // 0t. 修复非法 subcomponent 嵌套（如 process 直接放在 processor 下，自动包装 process）
-        content = fixIllegalSubcomponentNesting(content, declarations, result);
+        // 0t. 非法 subcomponent 嵌套（仅检测，不自动修复）
+        //     由 checkSubcomponentNesting 检测并报错，结构重构风险太高
 
         // 0u. 修复 applies to 引用未声明实例的问题
         content = fixAppliesToUndeclared(content, declarations, result);
