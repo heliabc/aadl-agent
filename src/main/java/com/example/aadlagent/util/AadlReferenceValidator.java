@@ -672,7 +672,7 @@ public class AadlReferenceValidator {
         if (!result.errors.isEmpty() || hasAutoFixableIssues(aadlDeclarations, archComponents)
                 || !result.missingFeatures.isEmpty()) {
             String fixedProtected = applyFixes(protectedContent, aadlDeclarations, archComponents,
-                    componentFeatures, subcomponentRefs, connectionRefs, result);
+                    componentFeatures, featureDetails, subcomponentRefs, connectionRefs, result);
             result.fixedContent = restoreAnnexBlocks(fixedProtected);
         } else {
             // 没有修复，直接恢复原始内容（或保留原始内容）
@@ -8084,6 +8084,7 @@ public class AadlReferenceValidator {
                               Map<String, AadlDeclaration> declarations,
                               Map<String, AadlInputParser.ArchNode> archComponents,
                               Map<String, Map<String, String>> componentFeatures,
+                              Map<String, Map<String, FeatureDetail>> featureDetails,
                               List<SubcomponentRef> subcomponentRefs,
                               List<ConnectionRef> connectionRefs,
                               ValidationResult result) {
@@ -8294,8 +8295,8 @@ public class AadlReferenceValidator {
                 for (FeatureDetail fd : feats.values()) {
                     if (fd.dataType != null && !fd.dataType.isEmpty()
                             && !isReservedWord(fd.dataType)
-                            && ("data port".equals(fd.featureType) || "event data port".equals(fd.featureType)
-                                || "data access".equals(fd.featureType))) {
+                            && ("data port".equals(fd.category) || "event data port".equals(fd.category)
+                                || "data access".equals(fd.category))) {
                         referencedDataTypes.add(fd.dataType);
                     }
                 }
