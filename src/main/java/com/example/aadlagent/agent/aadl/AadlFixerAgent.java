@@ -58,7 +58,7 @@ public class AadlFixerAgent implements Agent<AgentInput, AgentOutput> {
         log.info("Model: {} ({})", modelType.name(), llmClient.getModelName());
         log.info("========================================");
 
-        // 第1步：清理输入的AADL代码，移除静态分析注入的各种注释标记，避免干扰LLM
+        // 第1步：清理输入的AADL代码，先移除静态分析标记，再彻底删除所有注释，避免干扰LLM
         String rawAadl = input.getContent();
         String errors = input.getMetadata();
 
@@ -67,8 +67,8 @@ public class AadlFixerAgent implements Agent<AgentInput, AgentOutput> {
             return AgentOutput.failure(input.getSessionId(), "AADL内容不能为空");
         }
 
-        String currentAadl = sanitizeAadlContent(rawAadl);
-        log.info("输入AADL清理完成: {} → {} 字符", rawAadl.length(), currentAadl.length());
+        String currentAadl = stripAllComments(sanitizeAadlContent(rawAadl));
+        log.info("输入AADL清理完成（已删除所有注释）: {} → {} 字符", rawAadl.length(), currentAadl.length());
 
         if (errors == null || errors.trim().isEmpty()) {
             // 如果没有传入错误，先运行一次静态语法检查获取错误
@@ -87,13 +87,14 @@ public class AadlFixerAgent implements Agent<AgentInput, AgentOutput> {
         }
 
         log.info("AADL内容长度: {} 字符", currentAadl.length());
-        log.info("错误列表长度: {} 字符", errors.length());
+        log.info("错误/修复建议长度: {} 字符", errors.length());
         log.info("配置参数: temperature={}, maxTokens={}", temperature, maxTokens);
 
         String structuredErrors = normalizeErrors(errors);
-        log.info("错误格式: {}", isJsonFormat(errors) ? "结构化JSON" : "原始文本/静态分析报告");
+        log.info("输入格式: {}", isJsonFormat(errors) ? "结构化JSON" : "文本格式（错误或修复建议）");
 
         // 第2步：构建Prompt并调用LLM（单次调用，不自动迭代）
+        // 注意：传给 LLM 的 AADL 代码必须是无注释的纯净版本
         log.info("正在构建Prompt...");
         String systemPrompt = prompt.buildPrompt(currentAadl, structuredErrors, input.getRagContext());
         log.info("Prompt构建完成，长度: {} 字符", systemPrompt.length());
@@ -241,6 +242,89 @@ public class AadlFixerAgent implements Agent<AgentInput, AgentOutput> {
         }
 
         return String.join("\n", cleanedLines);
+    }
+
+    /**
+     * 彻底删除 AADL 代码中的所有注释（整行 -- 注释 + 行尾 -- 注释）。
+     * 用于迭代修复时，确保每次传入 LLM 的都是纯净的代码，避免注释干扰。
+     *
+     * 注意：
+     * - 保留 annex 块（{** ... **}）内部的内容
+     * - 保留字符串字面量中的 "--"
+     * - 仅删除真正的 AADL 注释
+     */
+    private String stripAllComments(String aadlContent) {
+        if (aadlContent == null || aadlContent.isEmpty()) {
+            return aadlContent;
+        }
+
+        // 先保护 annex 块（EMV2 等 {** ... **}）
+        List<String> annexBlocks = new ArrayList<>();
+        String protectedContent = aadlContent;
+        Pattern annexPattern = Pattern.compile("\\{\\*\\*[\\s\\S]*?\\*\\*\\}");
+        Matcher annexMatcher = annexPattern.matcher(aadlContent);
+        while (annexMatcher.find()) {
+            annexBlocks.add(annexMatcher.group());
+        }
+        // 用占位符替换
+        for (int i = 0; i < annexBlocks.size(); i++) {
+            protectedContent = protectedContent.replace(annexBlocks.get(i), "@@ANNEX_" + i + "@@");
+        }
+
+        // 逐行处理
+        String[] lines = protectedContent.split("\n", -1);
+        List<String> cleanedLines = new ArrayList<>();
+
+        for (String line : lines) {
+            // 查找行中第一个真正的注释起始位置 "--"
+            // 注意：字符串字面量中的 "--" 不应该被当作注释
+            // 简单处理：找第一个 "--"，且前面不是引号内的
+            int commentPos = findCommentPosition(line);
+            if (commentPos >= 0) {
+                String beforeComment = line.substring(0, commentPos).trim();
+                if (beforeComment.isEmpty()) {
+                    // 整行都是注释，跳过
+                    continue;
+                } else {
+                    // 保留代码部分，去掉注释
+                    cleanedLines.add(beforeComment);
+                }
+            } else {
+                // 没有注释，整行保留
+                cleanedLines.add(line);
+            }
+        }
+
+        String result = String.join("\n", cleanedLines);
+
+        // 恢复 annex 块
+        for (int i = 0; i < annexBlocks.size(); i++) {
+            result = result.replace("@@ANNEX_" + i + "@@", annexBlocks.get(i));
+        }
+
+        // 移除顶部连续空行
+        while (!cleanedLines.isEmpty() && cleanedLines.get(0).trim().isEmpty()) {
+            cleanedLines.remove(0);
+        }
+
+        return result;
+    }
+
+    /**
+     * 查找一行中 AADL 注释 "--" 的起始位置。
+     * 会跳过字符串字面量中的 "--"。
+     */
+    private int findCommentPosition(String line) {
+        boolean inString = false;
+        for (int i = 0; i < line.length() - 1; i++) {
+            char c = line.charAt(i);
+            if (c == '"') {
+                inString = !inString;
+            } else if (!inString && c == '-' && line.charAt(i + 1) == '-') {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /**

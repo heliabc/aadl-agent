@@ -892,7 +892,7 @@ public class RequirementController {
         if (errors == null || errors.trim().isEmpty()) {
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
-            error.put("message", "错误列表不能为空");
+            error.put("message", "错误信息或修复建议不能为空");
             return ResponseEntity.badRequest().body(error);
         }
 

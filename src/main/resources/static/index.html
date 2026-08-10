@@ -326,6 +326,25 @@
             font-size: 0.85rem;
         }
 
+        .single-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-family: 'Courier New', Consolas, monospace;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .single-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+        }
+
         .timeline {
             position: relative;
             padding-left: 24px;
@@ -803,7 +822,7 @@
             </div>
 
             <div class="dependency-info">
-                [提示] 输入：AADL 代码 + OSATE 原始错误信息（一步完成错误分析与修复）
+                [提示] 输入：AADL 代码 + 错误信息或修复建议（一步完成错误分析与修复）
             </div>
 
             <div class="module-input-section">
@@ -816,14 +835,8 @@
                     <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">AADL 代码</div>
                     <textarea id="textFixAadl" placeholder="请输入需要修正的 AADL 代码..."></textarea>
                     
-                    <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; margin-top: 16px;">OSATE 错误信息</div>
-                    <textarea id="textFixErrors" placeholder="请粘贴 OSATE 的错误信息（支持原始格式，系统会自动解析）：
-
-示例：
-Description	Resource	Path	Location	Type
-Missing semicolon	example.aadl	/model	Line 15	Error
-Undefined component type 'Sensor'	example.aadl	/model	Line 23	Error
-Invalid connection syntax	example.aadl	/model	Line 38	Error"></textarea>
+                    <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; margin-top: 16px;">错误或修复建议</div>
+                    <input type="text" id="textFixErrors" class="single-input" placeholder="请输入错误信息或修复建议，例如：第5行缺少分号 / 将 data port 改为 in data port / 新增一个 sensor_data 数据类型">
                 </div>
 
                 <div id="inputPreviousFix" style="display: none;">
@@ -833,8 +846,8 @@ Invalid connection syntax	example.aadl	/model	Line 38	Error"></textarea>
                     <div id="previousDataFix" style="font-size: 0.8rem; color: var(--text-secondary); background: #f8f9fa; padding: 8px; border-radius: 6px;">
                         请先生成 AADL 代码
                     </div>
-                    <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; margin-top: 16px;">OSATE 错误信息</div>
-                    <textarea id="textFixErrorsFromPrevious" placeholder="请粘贴 OSATE 的错误信息..."></textarea>
+                    <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; margin-top: 16px;">错误或修复建议</div>
+                    <input type="text" id="textFixErrorsFromPrevious" class="single-input" placeholder="请输入错误信息或修复建议...">
                 </div>
             </div>
 
@@ -1374,7 +1387,7 @@ Invalid connection syntax	example.aadl	/model	Line 38	Error"></textarea>
                 return;
             }
             if (!rawErrors) {
-                alert('请输入错误信息');
+                alert('请输入错误信息或修复建议');
                 return;
             }
 
@@ -1387,7 +1400,7 @@ Invalid connection syntax	example.aadl	/model	Line 38	Error"></textarea>
             btn.disabled = true;
 
             try {
-                addTimeline('开始分析错误并修复 AADL...');
+                addTimeline('开始处理并修复 AADL...');
 
                 const fixResponse = await fetch(`${API_BASE}/requirement/fix-aadl`, {
                     method: 'POST',
