@@ -345,6 +345,109 @@
             box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
         }
 
+        /* ===== 标签式分点输入组件 ===== */
+        .tag-input-container {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px;
+            background: var(--bg-color);
+            transition: border-color 0.2s;
+        }
+
+        .tag-input-container:focus-within {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+        }
+
+        .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 6px;
+            min-height: 0;
+        }
+
+        .tag-list:empty {
+            margin-bottom: 0;
+        }
+
+        .tag-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary-color);
+            border-radius: 16px;
+            font-size: 0.82rem;
+            max-width: 100%;
+            animation: tagFadeIn 0.2s ease-out;
+        }
+
+        @keyframes tagFadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .tag-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 280px;
+        }
+
+        .tag-remove {
+            cursor: pointer;
+            color: var(--primary-color);
+            opacity: 0.6;
+            font-size: 0.9rem;
+            line-height: 1;
+            padding: 0 2px;
+            transition: opacity 0.15s;
+            flex-shrink: 0;
+        }
+
+        .tag-remove:hover {
+            opacity: 1;
+        }
+
+        .tag-input-row {
+            display: flex;
+            gap: 6px;
+        }
+
+        .tag-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 6px 4px;
+            font-size: 0.88rem;
+            background: transparent;
+            color: var(--text-primary);
+            font-family: inherit;
+            min-width: 100px;
+        }
+
+        .tag-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .tag-add-btn {
+            padding: 4px 12px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+
+        .tag-add-btn:hover {
+            background: #4f46e5;
+        }
+
         .timeline {
             position: relative;
             padding-left: 24px;
@@ -835,8 +938,14 @@
                     <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">AADL 代码</div>
                     <textarea id="textFixAadl" placeholder="请输入需要修正的 AADL 代码..."></textarea>
                     
-                    <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; margin-top: 16px;">错误或修复建议</div>
-                    <input type="text" id="textFixErrors" class="single-input" placeholder="请输入错误信息或修复建议，例如：第5行缺少分号 / 将 data port 改为 in data port / 新增一个 sensor_data 数据类型">
+                    <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; margin-top: 16px;">错误或修复建议（分点添加，回车确认）</div>
+                    <div class="tag-input-container" id="tagContainerFixText">
+                        <div class="tag-list" id="tagListFixText"></div>
+                        <div class="tag-input-row">
+                            <input type="text" class="tag-input" id="tagInputFixText" placeholder="输入后按回车添加，例如：第5行缺少分号">
+                            <button class="tag-add-btn" id="tagAddBtnFixText" type="button">添加</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="inputPreviousFix" style="display: none;">
@@ -846,8 +955,14 @@
                     <div id="previousDataFix" style="font-size: 0.8rem; color: var(--text-secondary); background: #f8f9fa; padding: 8px; border-radius: 6px;">
                         请先生成 AADL 代码
                     </div>
-                    <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; margin-top: 16px;">错误或修复建议</div>
-                    <input type="text" id="textFixErrorsFromPrevious" class="single-input" placeholder="请输入错误信息或修复建议...">
+                    <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; margin-top: 16px;">错误或修复建议（分点添加，回车确认）</div>
+                    <div class="tag-input-container" id="tagContainerFixPrev">
+                        <div class="tag-list" id="tagListFixPrev"></div>
+                        <div class="tag-input-row">
+                            <input type="text" class="tag-input" id="tagInputFixPrev" placeholder="输入后按回车添加">
+                            <button class="tag-add-btn" id="tagAddBtnFixPrev" type="button">添加</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1019,6 +1134,8 @@
         setupModuleButtons();
         setupClearButtons();
         setupCopyButtons();
+        initTagInput('FixText');
+        initTagInput('FixPrev');
 
         document.getElementById('btnFullFlow').addEventListener('click', async () => {
             if (isRunning) return;
@@ -1091,6 +1208,93 @@
             if (bytes < 1024) return bytes + ' B';
             if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
             return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        // ===== 标签式分点输入组件 =====
+        const tagInputs = {
+            FixText: { tags: [], listId: 'tagListFixText', inputId: 'tagInputFixText', addBtnId: 'tagAddBtnFixText' },
+            FixPrev: { tags: [], listId: 'tagListFixPrev', inputId: 'tagInputFixPrev', addBtnId: 'tagAddBtnFixPrev' }
+        };
+
+        function initTagInput(key) {
+            const config = tagInputs[key];
+            const input = document.getElementById(config.inputId);
+            const addBtn = document.getElementById(config.addBtnId);
+
+            if (!input || !addBtn) return;
+
+            // 添加按钮点击
+            addBtn.addEventListener('click', () => addTag(key));
+
+            // 回车添加
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addTag(key);
+                } else if (e.key === 'Backspace' && input.value === '' && config.tags.length > 0) {
+                    // backspace 删除最后一个标签
+                    removeTag(key, config.tags.length - 1);
+                }
+            });
+        }
+
+        function addTag(key) {
+            const config = tagInputs[key];
+            const input = document.getElementById(config.inputId);
+            const value = input.value.trim();
+
+            if (!value) return;
+
+            // 避免重复
+            if (config.tags.includes(value)) {
+                input.value = '';
+                return;
+            }
+
+            config.tags.push(value);
+            input.value = '';
+            renderTags(key);
+        }
+
+        function removeTag(key, index) {
+            const config = tagInputs[key];
+            config.tags.splice(index, 1);
+            renderTags(key);
+        }
+
+        function renderTags(key) {
+            const config = tagInputs[key];
+            const list = document.getElementById(config.listId);
+            if (!list) return;
+
+            list.innerHTML = '';
+            config.tags.forEach((tag, index) => {
+                const tagEl = document.createElement('div');
+                tagEl.className = 'tag-item';
+                tagEl.innerHTML = `
+                    <span class="tag-text" title="${escapeHtml(tag)}">${escapeHtml(tag)}</span>
+                    <span class="tag-remove" data-index="${index}">×</span>
+                `;
+                tagEl.querySelector('.tag-remove').addEventListener('click', () => removeTag(key, index));
+                list.appendChild(tagEl);
+            });
+        }
+
+        function getTagsText(key) {
+            const config = tagInputs[key];
+            return config.tags.join('\n');
+        }
+
+        function clearTags(key) {
+            const config = tagInputs[key];
+            config.tags = [];
+            renderTags(key);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         function setupModuleButtons() {
@@ -1376,10 +1580,10 @@
 
             if (tabType === 'text') {
                 aadlContent = document.getElementById('textFixAadl').value.trim();
-                rawErrors = document.getElementById('textFixErrors').value.trim();
+                rawErrors = getTagsText('FixText');
             } else if (tabType === 'previous') {
                 aadlContent = results.Aadl;
-                rawErrors = document.getElementById('textFixErrorsFromPrevious').value.trim();
+                rawErrors = getTagsText('FixPrev');
             }
 
             if (!aadlContent) {
@@ -1387,7 +1591,7 @@
                 return;
             }
             if (!rawErrors) {
-                alert('请输入错误信息或修复建议');
+                alert('请添加至少一个错误或修复建议');
                 return;
             }
 
@@ -1771,6 +1975,12 @@
 
             document.querySelectorAll(`textarea[id^="text"][id$="${moduleId}"]`).forEach(el => el.value = '');
             document.querySelectorAll(`textarea[id^="text"][id*="${moduleId}"]`).forEach(el => el.value = '');
+
+            // 清空标签输入（Fix 模块）
+            if (moduleId === 'Fix') {
+                clearTags('FixText');
+                clearTags('FixPrev');
+            }
             
             document.querySelectorAll(`[id^="fileInfo"][id$="${moduleId}"]`).forEach(el => {
                 el.style.display = 'none';

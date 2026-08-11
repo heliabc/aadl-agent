@@ -85,15 +85,15 @@ public class AadlReferenceValidator {
         )));
 
         // ===== 复合与抽象构件 =====
-        // system：系统级集成看板，连接软硬件
+        // system：系统级集成看板，连接软硬件（注意：device 不能作为 subcomponent，只能是顶层组件）
         CONTAINMENT_RULES.put("system", new LinkedHashSet<>(Arrays.asList(
                 "system", "process", "processor", "virtual processor",
-                "memory", "bus", "virtual bus", "device", "data", "abstract"
+                "memory", "bus", "virtual bus", "data", "abstract"
         )));
-        // abstract：早期设计阶段占位，可包含任何组件类型
+        // abstract：早期设计阶段占位，可包含任何组件类型（注意：device 除外，device 只能是顶层组件）
         CONTAINMENT_RULES.put("abstract", new LinkedHashSet<>(Arrays.asList(
                 "system", "process", "processor", "virtual processor",
-                "memory", "bus", "virtual bus", "device",
+                "memory", "bus", "virtual bus",
                 "thread", "thread group", "data",
                 "subprogram", "subprogram group", "abstract"
         )));

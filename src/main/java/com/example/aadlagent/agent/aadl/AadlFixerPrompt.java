@@ -63,9 +63,9 @@ public class AadlFixerPrompt {
         prompt.append(aadlContent);
         prompt.append("\n```\n\n");
 
-        // 6. 错误信息 / 用户修正意图
+        // 6. 错误信息 / 用户修复指令
         if (errors != null && !errors.trim().isEmpty()) {
-            prompt.append("【检测到的错误信息】\n");
+            prompt.append("【用户输入（错误信息或修复指令）】\n");
             prompt.append(errors);
             prompt.append("\n\n");
         } else {
@@ -114,6 +114,31 @@ public class AadlFixerPrompt {
 
         // 10. 输出指令
         prompt.append(rulesConfig.get("output_instruction"));
+
+        return prompt.toString();
+    }
+
+    /**
+     * 构建极简 prompt（消融 prompt 模块时使用）
+     * 只包含最基本的角色定义、代码和修复指令，不包含任何规则/示例/指南等知识
+     */
+    public String buildMinimalPrompt(String aadlContent, String errors) {
+        StringBuilder prompt = new StringBuilder();
+
+        prompt.append("你是一个 AADL 代码修复助手。请修复下面的 AADL 代码中的问题。\n\n");
+
+        prompt.append("AADL 代码：\n");
+        prompt.append("```aadl\n");
+        prompt.append(aadlContent);
+        prompt.append("\n```\n\n");
+
+        if (errors != null && !errors.trim().isEmpty()) {
+            prompt.append("需要修复的问题：\n");
+            prompt.append(errors);
+            prompt.append("\n\n");
+        }
+
+        prompt.append("请直接输出修复后的完整 AADL 代码，用 ```aadl 和 ``` 包裹。");
 
         return prompt.toString();
     }

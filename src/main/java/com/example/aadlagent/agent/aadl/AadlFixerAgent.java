@@ -531,6 +531,174 @@ public class AadlFixerAgent implements Agent<AgentInput, AgentOutput> {
         }
     }
 
+    // ==================== 消融实验支持 ====================
+
+    /**
+     * 消融实验修复方法
+     *
+     * 修复流水线（模块按顺序执行，每个模块可独立消融 = 输入透传/传空）：
+     *
+     *  rawAadl + rawErrors
+     *       │
+     *       ▼
+     *  [模块1] 静态语法检测（staticAnalysis）
+     *    输入：原始代码 + 用户错误信息
+     *    输出：自动修复后代码 + 检测到的错误列表
+     *    消融：代码原样返回，错误列表用用户输入（可能为空）
+     *       │
+     *       ▼
+     *  [模块2] 错误解析 Agent（errorParser）
+     *    输入：原始错误文本
+     *    输出：结构化错误 JSON
+     *    消融：错误文本原样透传，不做解析
+     *       │
+     *       ▼
+     *  [模块3] RAG 检索（rag）
+     *    输入：错误 + 代码
+     *    输出：检索到的参考知识
+     *    消融：知识输出为空（null）
+     *       │
+     *       ▼
+     *  [模块4] Prompt 构建（prompt）
+     *    输入：代码 + 错误 + RAG 知识
+     *    输出：完整 prompt
+     *    消融：使用极简 prompt
+     *       │
+     *       ▼
+     *  [模块5] Fixer Agent / LLM（fixer）
+     *    输入：prompt
+     *    输出：修复后代码
+     *    消融：（一般不消融，保留接口）
+     *
+     * @param rawAadl 原始 AADL 代码
+     * @param rawErrors 用户提供的错误/建议（可为空）
+     * @param modelType 模型类型
+     * @param config 消融配置
+     * @return 修复后的代码
+     */
+    public String fixForAblation(String rawAadl, String rawErrors,
+                                  ModelType modelType,
+                                  com.example.aadlagent.ablation.AblationConfig config) {
+        long startTime = System.currentTimeMillis();
+        LlmClient llmClient = modelService.getClient(modelType);
+
+        // ===== 输入清理（始终做，不算消融模块） =====
+        String code = stripAllComments(sanitizeAadlContent(rawAadl));
+        String errors = rawErrors;
+
+        // ===== 模块5：静态语法分析（生成后/修复前都做） =====
+        // 作用：检测错误 + 自动修复低风险问题 + 生成错误列表
+        // 消融：不做检测和修复，代码原样返回，错误用用户输入（可能为空）
+        if (config.staticAnalysis) {
+            ValidationResult staticResult = validator.validateSyntax(code);
+            if (staticResult.fixedContent != null) {
+                code = staticResult.fixedContent;
+            }
+            // 如果用户没给错误信息，用静态检测的结果；如果用户给了，保留用户的
+            if (errors == null || errors.trim().isEmpty()) {
+                if (!staticResult.errors.isEmpty()) {
+                    errors = formatValidationErrors(staticResult);
+                }
+            }
+        }
+        // 消融 staticAnalysis：code 不变，errors 用用户原始输入（可能为 null/空）
+
+        // ===== 模块6：Fixer Agent =====
+        // Fixer 内部包含：错误解析 + RAG + Prompt + LLM 调用
+        // 消融 fixerAgent：直接返回代码，不做 LLM 修复
+        if (!config.fixerAgent) {
+            log.warn("[消融实验 {}] fixerAgent 被消融，直接返回静态分析后代码", config.getLabel());
+            return code;
+        }
+
+        // --- Fixer 内部：RAG（外部传入，这里只判断开关） ---
+        // 见重载方法
+
+        // --- Fixer 内部：Prompt 构建 ---
+        // 完整 Prompt 或极简 Prompt
+        String systemPrompt;
+        if (config.prompt) {
+            systemPrompt = prompt.buildPrompt(code, errors, null);
+        } else {
+            systemPrompt = prompt.buildMinimalPrompt(code, errors);
+        }
+
+        String llmResponse = llmClient.chat(systemPrompt, temperature, maxTokens);
+
+        // 解析结果
+        try {
+            String fixedAadl = extractAadlContent(llmResponse);
+            long time = System.currentTimeMillis() - startTime;
+            log.info("[消融实验 {}] 修复完成，耗时 {}ms", config.getLabel(), time);
+            return fixedAadl;
+        } catch (Exception e) {
+            log.error("[消融实验 {}] 解析失败: {}", config.getLabel(), e.getMessage());
+            return code;
+        }
+    }
+
+    /**
+     * 带 RAG 上下文的消融修复（RAG 在外部检索好后传入）
+     *
+     * 消融说明：
+     * - staticAnalysis=false: 跳过静态语法分析，代码原样，错误用原始输入
+     * - fixerAgent=false: 跳过 Fixer Agent，直接返回代码
+     * - rag=false: 不使用 RAG 知识（即使传入了也忽略）
+     * - prompt=false: 使用极简 prompt 而不是完整 prompt
+     */
+    public String fixForAblation(String rawAadl, String rawErrors, String ragContext,
+                                  ModelType modelType,
+                                  com.example.aadlagent.ablation.AblationConfig config) {
+        // 只有 rag 启用时，才使用传入的 ragContext；否则忽略
+        if (!config.rag) {
+            ragContext = null;
+        }
+
+        long startTime = System.currentTimeMillis();
+        LlmClient llmClient = modelService.getClient(modelType);
+
+        String code = stripAllComments(sanitizeAadlContent(rawAadl));
+        String errors = rawErrors;
+
+        // 模块5：静态语法分析
+        if (config.staticAnalysis) {
+            ValidationResult staticResult = validator.validateSyntax(code);
+            if (staticResult.fixedContent != null) {
+                code = staticResult.fixedContent;
+            }
+            if (errors == null || errors.trim().isEmpty()) {
+                if (!staticResult.errors.isEmpty()) {
+                    errors = formatValidationErrors(staticResult);
+                }
+            }
+        }
+
+        // 模块6：Fixer Agent
+        if (!config.fixerAgent) {
+            return code;
+        }
+
+        // Prompt（完整 or 极简）
+        String systemPrompt;
+        if (config.prompt) {
+            systemPrompt = prompt.buildPrompt(code, errors, ragContext);
+        } else {
+            systemPrompt = prompt.buildMinimalPrompt(code, errors);
+        }
+
+        String llmResponse = llmClient.chat(systemPrompt, temperature, maxTokens);
+
+        try {
+            String fixedAadl = extractAadlContent(llmResponse);
+            long time = System.currentTimeMillis() - startTime;
+            log.info("[消融实验 {}] 修复完成，耗时 {}ms", config.getLabel(), time);
+            return fixedAadl;
+        } catch (Exception e) {
+            log.error("[消融实验 {}] 解析失败: {}", config.getLabel(), e.getMessage());
+            return code;
+        }
+    }
+
     @Override
     public String getAgentName() {
         return AGENT_NAME;
