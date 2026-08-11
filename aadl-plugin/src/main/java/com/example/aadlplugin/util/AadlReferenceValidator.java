@@ -1553,11 +1553,18 @@ public class AadlReferenceValidator {
 
     /**
      * 解析单行 feature 声明，提取分类、方向和数据类型。
+     * 支持所有 AADL 标准 feature 类型：
+     * - data port / event port / event data port（支持 in/out/in out 方向）
+     * - bus access / virtual bus access / data access / subprogram access / subprogram group access（requires/provides）
+     * - feature group
+     * - abstract feature
+     * - port（通用，in/out/in out）
+     * - parameter（子程序参数，in/out）
      */
     private FeatureDetail parseSingleFeature(String line) {
         FeatureDetail fd = new FeatureDetail();
 
-        // in out data port TypeName（双向端口，必须放在 in/out 单独匹配之前，避免被 in 模式先命中）
+        // in out data port TypeName（双向端口，必须放在 in/out 单独匹配之前）
         if (line.matches("\\w+\\s*:\\s*in\\s+out\\s+data\\s+port.*")) {
             fd.category = "data port";
             fd.direction = "in out";
@@ -1570,6 +1577,10 @@ public class AadlReferenceValidator {
             fd.category = "event port";
             fd.direction = "in out";
             fd.dataType = null;
+        } else if (line.matches("\\w+\\s*:\\s*in\\s+out\\s+port.*")) {
+            fd.category = "data port";
+            fd.direction = "in out";
+            fd.dataType = extractDataType(line);
         } else if (line.matches("\\w+\\s*:\\s*in\\s+data\\s+port.*")) {
             fd.category = "data port";
             fd.direction = "in";
@@ -1602,6 +1613,14 @@ public class AadlReferenceValidator {
             fd.category = "bus access";
             fd.direction = "provides";
             fd.dataType = extractAccessTypeName(line, "bus");
+        } else if (line.matches("\\w+\\s*:\\s*requires\\s+virtual\\s+bus\\s+access.*")) {
+            fd.category = "virtual bus access";
+            fd.direction = "requires";
+            fd.dataType = extractAccessTypeName(line, "virtual bus");
+        } else if (line.matches("\\w+\\s*:\\s*provides\\s+virtual\\s+bus\\s+access.*")) {
+            fd.category = "virtual bus access";
+            fd.direction = "provides";
+            fd.dataType = extractAccessTypeName(line, "virtual bus");
         } else if (line.matches("\\w+\\s*:\\s*requires\\s+data\\s+access.*")) {
             fd.category = "data access";
             fd.direction = "requires";
@@ -1610,6 +1629,30 @@ public class AadlReferenceValidator {
             fd.category = "data access";
             fd.direction = "provides";
             fd.dataType = extractAccessTypeName(line, "data");
+        } else if (line.matches("\\w+\\s*:\\s*requires\\s+subprogram\\s+access.*")) {
+            fd.category = "subprogram access";
+            fd.direction = "requires";
+            fd.dataType = extractAccessTypeName(line, "subprogram");
+        } else if (line.matches("\\w+\\s*:\\s*provides\\s+subprogram\\s+access.*")) {
+            fd.category = "subprogram access";
+            fd.direction = "provides";
+            fd.dataType = extractAccessTypeName(line, "subprogram");
+        } else if (line.matches("\\w+\\s*:\\s*requires\\s+subprogram\\s+group\\s+access.*")) {
+            fd.category = "subprogram group access";
+            fd.direction = "requires";
+            fd.dataType = extractAccessTypeName(line, "subprogram group");
+        } else if (line.matches("\\w+\\s*:\\s*provides\\s+subprogram\\s+group\\s+access.*")) {
+            fd.category = "subprogram group access";
+            fd.direction = "provides";
+            fd.dataType = extractAccessTypeName(line, "subprogram group");
+        } else if (line.matches("\\w+\\s*:\\s*feature\\s+group.*")) {
+            fd.category = "feature group";
+            fd.direction = null; // feature group 没有方向
+            fd.dataType = extractFeatureGroupType(line);
+        } else if (line.matches("\\w+\\s*:\\s*abstract\\s+feature.*")) {
+            fd.category = "abstract feature";
+            fd.direction = null;
+            fd.dataType = extractAbstractFeatureType(line);
         } else if (line.matches("\\w+\\s*:\\s*in\\s+port.*")) {
             fd.category = "data port";
             fd.direction = "in";
@@ -1618,6 +1661,14 @@ public class AadlReferenceValidator {
             fd.category = "data port";
             fd.direction = "out";
             fd.dataType = extractDataType(line);
+        } else if (line.matches("\\w+\\s*:\\s*in\\s+parameter.*")) {
+            fd.category = "parameter";
+            fd.direction = "in";
+            fd.dataType = extractDataTypeFromParameter(line);
+        } else if (line.matches("\\w+\\s*:\\s*out\\s+parameter.*")) {
+            fd.category = "parameter";
+            fd.direction = "out";
+            fd.dataType = extractDataTypeFromParameter(line);
         } else {
             return null; // 无法识别的 feature 行
         }
@@ -1642,6 +1693,42 @@ public class AadlReferenceValidator {
     private String extractAccessTypeName(String line, String accessKind) {
         Matcher m = Pattern.compile(
                 accessKind + "\\s+access\\s+([A-Za-z_]\\w*)",
+                Pattern.CASE_INSENSITIVE
+        ).matcher(line);
+        if (m.find()) {
+            return m.group(1);
+        }
+        return null;
+    }
+
+    /** 从 feature group 声明行中提取类型名 */
+    private String extractFeatureGroupType(String line) {
+        Matcher m = Pattern.compile(
+                "feature\\s+group\\s+([A-Za-z_]\\w*)",
+                Pattern.CASE_INSENSITIVE
+        ).matcher(line);
+        if (m.find()) {
+            return m.group(1);
+        }
+        return null;
+    }
+
+    /** 从 abstract feature 声明行中提取可选类型名 */
+    private String extractAbstractFeatureType(String line) {
+        Matcher m = Pattern.compile(
+                "abstract\\s+feature\\s+([A-Za-z_]\\w*)",
+                Pattern.CASE_INSENSITIVE
+        ).matcher(line);
+        if (m.find()) {
+            return m.group(1);
+        }
+        return null;
+    }
+
+    /** 从 parameter 声明行中提取数据类型名 */
+    private String extractDataTypeFromParameter(String line) {
+        Matcher m = Pattern.compile(
+                "parameter\\s+([A-Za-z_]\\w*)",
                 Pattern.CASE_INSENSITIVE
         ).matcher(line);
         if (m.find()) {

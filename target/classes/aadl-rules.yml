@@ -33,6 +33,8 @@ global:
     R1【命名规范】标识符只用英文和下划线。package 用 {项目名}_Arch，顶层 system 用 Top_{项目名}。禁止用保留字（system/process/thread 等）作组件名。
     R2【声明完整性】每个组件必须成对生成：类型声明（`组件类型 组件名 ... end 组件名;`）+ 实现声明（`组件类型 implementation 组件名.impl ... end 组件名.impl;`），两者缺一不可，end 闭合不可省略。
     R3【features 归属】features 块只能出现在类型声明中，严禁出现在 implementation 中。data 组件严禁拥有 features 块。
+      features 块只能定义接口（port、bus/data/subprogram access、feature group、abstract feature），严禁定义子组件（subcomponents）。
+      子组件必须放在 implementation 的 subcomponents 块中，格式为 `实例名 : 组件类型 类型名.impl;`。
       可定义 port 构件：thread, process, subprogram, device, system
       可定义 bus access 构件：bus(provides), processor(requires), memory(requires), device(requires), system
       device 是唯一可同时拥有 port 和 bus access 的软硬件桥梁。

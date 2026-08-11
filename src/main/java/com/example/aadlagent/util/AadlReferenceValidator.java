@@ -603,6 +603,9 @@ public class AadlReferenceValidator {
         // 4g. 检测 features 放置错误（features 出现在 implementation 中）
         checkFeaturesPlacement(protectedContent, result);
 
+        // 4ab. 检测 features 块中是否错误地包含子组件声明（feature 只能定义接口）
+        checkFeaturesBlockContent(protectedContent, result);
+
         // 4h. 检测 connections 引用悬空 feature（引用了组件中不存在的端口）
         checkConnectionReferences(connectionRefs, componentFeatures, subcomponentRefs, aadlDeclarations, result);
 
@@ -745,6 +748,13 @@ public class AadlReferenceValidator {
         // data 组件有 features
         if (msg.contains("data") && msg.contains("features")) {
             return "data 组件是纯类型分类器，严禁拥有 features 块。删除 data 组件中的 features 块。";
+        }
+
+        // features 中定义子组件
+        if (msg.contains("features 中不能定义子组件") || msg.contains("features 中疑似子组件")) {
+            return "features 块只能定义接口（port、bus/data/subprogram access、feature group、abstract feature）。" +
+                   "将子组件声明（如 'child : process Child.impl;'）从 features 块中移除，" +
+                   "移到对应 component implementation 的 subcomponents 块中。";
         }
 
         // thread 内有 connections
@@ -1565,11 +1575,18 @@ public class AadlReferenceValidator {
 
     /**
      * 解析单行 feature 声明，提取分类、方向和数据类型。
+     * 支持所有 AADL 标准 feature 类型：
+     * - data port / event port / event data port（支持 in/out/in out 方向）
+     * - bus access / virtual bus access / data access / subprogram access / subprogram group access（requires/provides）
+     * - feature group
+     * - abstract feature
+     * - port（通用，in/out/in out）
+     * - parameter（子程序参数，in/out）
      */
     private FeatureDetail parseSingleFeature(String line) {
         FeatureDetail fd = new FeatureDetail();
 
-        // in out data port TypeName（双向端口，必须放在 in/out 单独匹配之前，避免被 in 模式先命中）
+        // in out data port TypeName（双向端口，必须放在 in/out 单独匹配之前）
         if (line.matches("\\w+\\s*:\\s*in\\s+out\\s+data\\s+port.*")) {
             fd.category = "data port";
             fd.direction = "in out";
@@ -1582,6 +1599,10 @@ public class AadlReferenceValidator {
             fd.category = "event port";
             fd.direction = "in out";
             fd.dataType = null;
+        } else if (line.matches("\\w+\\s*:\\s*in\\s+out\\s+port.*")) {
+            fd.category = "data port";
+            fd.direction = "in out";
+            fd.dataType = extractDataType(line);
         } else if (line.matches("\\w+\\s*:\\s*in\\s+data\\s+port.*")) {
             fd.category = "data port";
             fd.direction = "in";
@@ -1614,6 +1635,14 @@ public class AadlReferenceValidator {
             fd.category = "bus access";
             fd.direction = "provides";
             fd.dataType = extractAccessTypeName(line, "bus");
+        } else if (line.matches("\\w+\\s*:\\s*requires\\s+virtual\\s+bus\\s+access.*")) {
+            fd.category = "virtual bus access";
+            fd.direction = "requires";
+            fd.dataType = extractAccessTypeName(line, "virtual bus");
+        } else if (line.matches("\\w+\\s*:\\s*provides\\s+virtual\\s+bus\\s+access.*")) {
+            fd.category = "virtual bus access";
+            fd.direction = "provides";
+            fd.dataType = extractAccessTypeName(line, "virtual bus");
         } else if (line.matches("\\w+\\s*:\\s*requires\\s+data\\s+access.*")) {
             fd.category = "data access";
             fd.direction = "requires";
@@ -1622,6 +1651,30 @@ public class AadlReferenceValidator {
             fd.category = "data access";
             fd.direction = "provides";
             fd.dataType = extractAccessTypeName(line, "data");
+        } else if (line.matches("\\w+\\s*:\\s*requires\\s+subprogram\\s+access.*")) {
+            fd.category = "subprogram access";
+            fd.direction = "requires";
+            fd.dataType = extractAccessTypeName(line, "subprogram");
+        } else if (line.matches("\\w+\\s*:\\s*provides\\s+subprogram\\s+access.*")) {
+            fd.category = "subprogram access";
+            fd.direction = "provides";
+            fd.dataType = extractAccessTypeName(line, "subprogram");
+        } else if (line.matches("\\w+\\s*:\\s*requires\\s+subprogram\\s+group\\s+access.*")) {
+            fd.category = "subprogram group access";
+            fd.direction = "requires";
+            fd.dataType = extractAccessTypeName(line, "subprogram group");
+        } else if (line.matches("\\w+\\s*:\\s*provides\\s+subprogram\\s+group\\s+access.*")) {
+            fd.category = "subprogram group access";
+            fd.direction = "provides";
+            fd.dataType = extractAccessTypeName(line, "subprogram group");
+        } else if (line.matches("\\w+\\s*:\\s*feature\\s+group.*")) {
+            fd.category = "feature group";
+            fd.direction = null; // feature group 没有方向
+            fd.dataType = extractFeatureGroupType(line);
+        } else if (line.matches("\\w+\\s*:\\s*abstract\\s+feature.*")) {
+            fd.category = "abstract feature";
+            fd.direction = null;
+            fd.dataType = extractAbstractFeatureType(line);
         } else if (line.matches("\\w+\\s*:\\s*in\\s+port.*")) {
             fd.category = "data port";
             fd.direction = "in";
@@ -1630,11 +1683,55 @@ public class AadlReferenceValidator {
             fd.category = "data port";
             fd.direction = "out";
             fd.dataType = extractDataType(line);
+        } else if (line.matches("\\w+\\s*:\\s*in\\s+parameter.*")) {
+            fd.category = "parameter";
+            fd.direction = "in";
+            fd.dataType = extractDataTypeFromParameter(line);
+        } else if (line.matches("\\w+\\s*:\\s*out\\s+parameter.*")) {
+            fd.category = "parameter";
+            fd.direction = "out";
+            fd.dataType = extractDataTypeFromParameter(line);
         } else {
             return null; // 无法识别的 feature 行
         }
 
         return fd;
+    }
+
+    /** 从 feature group 声明行中提取类型名 */
+    private String extractFeatureGroupType(String line) {
+        Matcher m = Pattern.compile(
+                "feature\\s+group\\s+([A-Za-z_]\\w*)",
+                Pattern.CASE_INSENSITIVE
+        ).matcher(line);
+        if (m.find()) {
+            return m.group(1);
+        }
+        return null;
+    }
+
+    /** 从 abstract feature 声明行中提取可选类型名 */
+    private String extractAbstractFeatureType(String line) {
+        Matcher m = Pattern.compile(
+                "abstract\\s+feature\\s+([A-Za-z_]\\w*)",
+                Pattern.CASE_INSENSITIVE
+        ).matcher(line);
+        if (m.find()) {
+            return m.group(1);
+        }
+        return null;
+    }
+
+    /** 从 parameter 声明行中提取数据类型名 */
+    private String extractDataTypeFromParameter(String line) {
+        Matcher m = Pattern.compile(
+                "parameter\\s+([A-Za-z_]\\w*)",
+                Pattern.CASE_INSENSITIVE
+        ).matcher(line);
+        if (m.find()) {
+            return m.group(1);
+        }
+        return null;
     }
 
     /** 从端口声明行中提取数据类型名 */
@@ -1928,6 +2025,176 @@ public class AadlReferenceValidator {
                         "features 只能出现在组件类型声明中，不能出现在 implementation 中",
                         i + 1, currentImplName
                 ));
+            }
+        }
+    }
+
+    // ========================= features 块内容合法性检测 =========================
+
+    /**
+     * 4ab. 检测 features 块中是否错误地包含子组件声明。
+     *
+     * AADL 规则：features 块只能定义接口（port、bus/data/subprogram access、feature group、abstract feature、parameter），
+     * 不能定义子组件（subcomponents）。子组件必须放在 implementation 的 subcomponents 块中。
+     *
+     * 典型错误模式：
+     *   features
+     *     child : process Child.impl;   -- 错误！这是子组件，不是接口
+     *     sensor : device Sensor.impl; -- 错误！这是子组件
+     *   end ...;
+     */
+    private void checkFeaturesBlockContent(String aadlContent, ValidationResult result) {
+        String[] lines = aadlContent.split("\n");
+
+        // 所有组件类型关键字（含 virtual 变体、thread group、subprogram group）
+        String compTypesRegex = "system|process|thread(?:\\s+group)?|processor|memory|device|bus|data|" +
+                "subprogram(?:\\s+group)?|abstract|virtual\\s+(?:processor|bus)";
+
+        // 类型声明开始
+        Pattern typeDeclPattern = Pattern.compile(
+                "^\\s*(" + compTypesRegex + ")\\s+(\\w+)\\s*$",
+                Pattern.CASE_INSENSITIVE
+        );
+        // implementation 声明开始
+        Pattern implDeclPattern = Pattern.compile(
+                "^\\s*(" + compTypesRegex + ")\\s+implementation\\s+(\\w+)\\.impl",
+                Pattern.CASE_INSENSITIVE
+        );
+        // 子组件声明行模式：name : component_type TypeName.impl;
+        Pattern subcompInFeaturePattern = Pattern.compile(
+                "^\\s*(\\w+)\\s*:\\s*(" + compTypesRegex + ")\\s+(\\w+)\\.impl\\s*;.*$",
+                Pattern.CASE_INSENSITIVE
+        );
+        // 类子组件模式（缺少 .impl 但明显是子组件意图）：name : component_type TypeName;
+        // 注意：abstract feature 也可能是 "name : abstract feature TypeName;" 的形式，需要排除
+        Pattern subcompLikePattern = Pattern.compile(
+                "^\\s*(\\w+)\\s*:\\s*(" + compTypesRegex + ")\\s+(\\w+)\\s*;.*$",
+                Pattern.CASE_INSENSITIVE
+        );
+
+        String currentTypeDecl = null;
+        String currentTypeComp = null; // 当前类型声明的组件类型
+        boolean inImplementation = false;
+        boolean inFeaturesBlock = false;
+        int featuresBlockStart = -1;
+
+        for (int i = 0; i < lines.length; i++) {
+            String rawLine = lines[i];
+            String rawTrimmed = rawLine.trim();
+
+            // 跳过被保护的 annex 行
+            if (rawTrimmed.startsWith(ANNEX_PROTECT_PREFIX)) {
+                continue;
+            }
+            if (rawTrimmed.startsWith("--")) {
+                continue;
+            }
+
+            String line = stripComment(rawLine);
+            if (line.isEmpty()) {
+                continue;
+            }
+
+            // 进入 implementation
+            Matcher implMatcher = implDeclPattern.matcher(line);
+            if (implMatcher.find()) {
+                inImplementation = true;
+                inFeaturesBlock = false;
+                currentTypeDecl = null;
+                currentTypeComp = null;
+                continue;
+            }
+
+            // 进入类型声明
+            Matcher typeMatcher = typeDeclPattern.matcher(line);
+            if (typeMatcher.find() && !line.toLowerCase().contains("implementation")) {
+                currentTypeComp = typeMatcher.group(1).toLowerCase().replaceAll("\\s+", " ");
+                currentTypeDecl = typeMatcher.group(2);
+                inImplementation = false;
+                inFeaturesBlock = false;
+                continue;
+            }
+
+            // end 语句退出当前声明
+            if (line.matches("^\\s*end\\s+\\w+(\\.impl)?\\s*;.*$")) {
+                if (line.matches(".*\\.impl\\s*;.*$")) {
+                    inImplementation = false;
+                }
+                inFeaturesBlock = false;
+                currentTypeDecl = null;
+                currentTypeComp = null;
+                continue;
+            }
+
+            // 进入 features 块（仅在类型声明中，不在 implementation 中）
+            if (line.equals("features") && !inImplementation && currentTypeDecl != null) {
+                inFeaturesBlock = true;
+                featuresBlockStart = i + 1;
+                continue;
+            }
+
+            // 退出 features 块（遇到其他块关键字或 end）
+            if (inFeaturesBlock) {
+                if (line.equals("properties") || line.equals("flows") ||
+                    line.equals("connections") || line.equals("subcomponents") ||
+                    line.startsWith("annex") || line.startsWith("end ")) {
+                    inFeaturesBlock = false;
+                    continue;
+                }
+
+                // 检测 features 块中的子组件声明
+                // 先尝试匹配明确的子组件模式（带 .impl）
+                Matcher subcompMatcher = subcompInFeaturePattern.matcher(line);
+                if (subcompMatcher.find()) {
+                    String instName = subcompMatcher.group(1);
+                    String compType = subcompMatcher.group(2).toLowerCase().replaceAll("\\s+", " ");
+                    String typeName = subcompMatcher.group(3);
+                    result.errors.add(String.format(
+                            "第%d行: features 中不能定义子组件 - '%s' 被声明为 %s 类型的子组件(%s.impl); " +
+                            "features 块只能定义接口（port、access、feature group、abstract feature），" +
+                            "子组件必须移到 '%s.impl' 的 subcomponents 块中",
+                            i + 1, instName, compType, typeName, currentTypeDecl
+                    ));
+                    continue;
+                }
+
+                // 再尝试匹配类子组件模式（不带 .impl 但格式像子组件）
+                // 需要排除合法 feature：abstract feature、feature group
+                Matcher subcompLikeMatcher = subcompLikePattern.matcher(line);
+                if (subcompLikeMatcher.find()) {
+                    String afterColon = line.substring(line.indexOf(':') + 1).trim().toLowerCase();
+                    // 排除已知的 feature 关键字开头的行
+                    boolean isFeatureKeyword = afterColon.startsWith("in ") ||
+                            afterColon.startsWith("out ") ||
+                            afterColon.startsWith("requires ") ||
+                            afterColon.startsWith("provides ") ||
+                            afterColon.startsWith("feature ") ||
+                            afterColon.startsWith("abstract ") ||
+                            afterColon.startsWith("port");
+                    if (!isFeatureKeyword) {
+                        String instName = subcompLikeMatcher.group(1);
+                        String compType = subcompLikeMatcher.group(2).toLowerCase().replaceAll("\\s+", " ");
+                        String typeName = subcompLikeMatcher.group(3);
+                        result.warnings.add(String.format(
+                                "第%d行: features 中疑似子组件声明 - '%s : %s %s;' " +
+                                "看起来像子组件而非接口；features 块只能定义端口/访问点/特征组等接口，" +
+                                "子组件应放在 subcomponents 块中（引用需带 .impl 后缀）",
+                                i + 1, instName, compType, typeName
+                        ));
+                        continue;
+                    }
+                }
+
+                // 如果不是合法 feature 且不是子组件模式，报告未知内容
+                String trimmedLine = line.trim();
+                if (!trimmedLine.isEmpty() && trimmedLine.endsWith(";")) {
+                    FeatureDetail fd = parseSingleFeature(trimmedLine);
+                    if (fd == null) {
+                        // 既不是合法 feature，也不是子组件模式，可能是其他语法错误
+                        // 不在这里报告（由其他检查处理），只记录调试信息
+                        log.debug("features 块中第{}行无法识别为 feature 或子组件: '{}'", i + 1, trimmedLine);
+                    }
+                }
             }
         }
     }
@@ -5904,6 +6171,239 @@ public class AadlReferenceValidator {
         return sb.toString();
     }
 
+    /**
+     * 0f. 将 features 块中错误放置的子组件声明移到对应 implementation 的 subcomponents 块中。
+     *
+     * 修复策略：
+     * 1. 遍历所有类型声明中的 features 块
+     * 2. 识别并移除看起来像子组件声明的行（`name : component_type Type.impl;`）
+     * 3. 将移除的子组件声明注入到同名 implementation 的 subcomponents 块中
+     * 4. 如果 implementation 不存在 subcomponents 块，则创建
+     */
+    private String fixSubcomponentsInFeatures(String content, ValidationResult result) {
+        String[] lines = content.split("\n", -1);
+
+        String compTypesRegex = "system|process|thread(?:\\s+group)?|processor|memory|device|bus|data|" +
+                "subprogram(?:\\s+group)?|abstract|virtual\\s+(?:processor|bus)";
+
+        Pattern typeDeclPattern = Pattern.compile(
+                "^\\s*(" + compTypesRegex + ")\\s+(\\w+)\\s*(?:--.*)?$",
+                Pattern.CASE_INSENSITIVE
+        );
+        Pattern implDeclPattern = Pattern.compile(
+                "^\\s*(" + compTypesRegex + ")\\s+implementation\\s+(\\w+)\\.impl",
+                Pattern.CASE_INSENSITIVE
+        );
+        // 子组件声明行模式：name : component_type TypeName.impl;
+        Pattern subcompPattern = Pattern.compile(
+                "^(\\s*)(\\w+)\\s*:\\s*(" + compTypesRegex + ")\\s+(\\w+)\\.impl\\s*(;.*)$",
+                Pattern.CASE_INSENSITIVE
+        );
+
+        // 收集每个类型名 → 需要移动的子组件声明行（保持原始缩进）
+        Map<String, List<String>> subcompsToMove = new LinkedHashMap<>();
+        List<String> resultLines = new ArrayList<>();
+
+        String currentTypeDecl = null;
+        boolean inImplementation = false;
+        boolean inFeaturesBlock = false;
+        int moveCount = 0;
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+            String trimmed = line.trim();
+
+            // 去掉行尾注释用于判断
+            String trimmedNoComment = trimmed.replaceFirst("--.*$", "").trim();
+
+            // 跳过被保护的 annex 行
+            if (trimmed.startsWith(ANNEX_PROTECT_PREFIX)) {
+                resultLines.add(line);
+                continue;
+            }
+
+            // 进入 implementation
+            Matcher implMatcher = implDeclPattern.matcher(trimmedNoComment);
+            if (implMatcher.find()) {
+                inImplementation = true;
+                inFeaturesBlock = false;
+                currentTypeDecl = null;
+                resultLines.add(line);
+                continue;
+            }
+
+            // 进入类型声明
+            Matcher typeMatcher = typeDeclPattern.matcher(trimmedNoComment);
+            if (typeMatcher.find() && !trimmedNoComment.toLowerCase().contains("implementation")) {
+                currentTypeDecl = typeMatcher.group(2);
+                inImplementation = false;
+                inFeaturesBlock = false;
+                resultLines.add(line);
+                continue;
+            }
+
+            // end 语句
+            if (trimmedNoComment.matches("^end\\s+\\w+(\\.impl)?\\s*;$")) {
+                boolean isImpl = trimmedNoComment.contains(".impl");
+                if (isImpl) {
+                    inImplementation = false;
+                }
+                inFeaturesBlock = false;
+                currentTypeDecl = null;
+                resultLines.add(line);
+                continue;
+            }
+
+            // 进入 features 块（类型声明中）
+            if (!inImplementation && currentTypeDecl != null && trimmedNoComment.equals("features")) {
+                inFeaturesBlock = true;
+                resultLines.add(line);
+                continue;
+            }
+
+            // 退出 features 块
+            if (inFeaturesBlock) {
+                String lowerT = trimmedNoComment.toLowerCase();
+                if (lowerT.equals("properties") || lowerT.equals("flows") ||
+                    lowerT.equals("connections") || lowerT.equals("subcomponents") ||
+                    lowerT.startsWith("annex") || lowerT.startsWith("end ")) {
+                    inFeaturesBlock = false;
+                    resultLines.add(line);
+                    continue;
+                }
+
+                // 检测 features 块中的子组件声明
+                Matcher subcompMatcher = subcompPattern.matcher(line);
+                if (subcompMatcher.find() && currentTypeDecl != null) {
+                    String indent = subcompMatcher.group(1);
+                    String instName = subcompMatcher.group(2);
+                    String compType = subcompMatcher.group(3);
+                    String typeName = subcompMatcher.group(4);
+                    String rest = subcompMatcher.group(5); // 包含分号和后面的内容
+
+                    // 收集需要移动的子组件声明
+                    subcompsToMove.computeIfAbsent(currentTypeDecl, k -> new ArrayList<>())
+                            .add(String.format("    %s : %s %s.impl%s", instName, compType, typeName, rest));
+                    moveCount++;
+
+                    // 添加注释说明此行被移动
+                    resultLines.add(indent + "-- [自动修复] 子组件声明已移至 " + currentTypeDecl + ".impl 的 subcomponents 块: " +
+                            instName + " : " + compType + " " + typeName + ".impl;");
+                    continue;
+                }
+            }
+
+            resultLines.add(line);
+        }
+
+        if (subcompsToMove.isEmpty()) {
+            return content;
+        }
+
+        // 将收集的子组件注入到对应 implementation 的 subcomponents 块中
+        String movedContent = String.join("\n", resultLines);
+
+        for (Map.Entry<String, List<String>> entry : subcompsToMove.entrySet()) {
+            String typeName = entry.getKey();
+            List<String> subcompLines = entry.getValue();
+
+            result.fixes.add(String.format(
+                    "已将类型声明 '%s' 的 features 块中 %d 条子组件声明移至 '%s.impl' 的 subcomponents 块",
+                    typeName, subcompLines.size(), typeName));
+
+            movedContent = injectSubcomponentsIntoImpl(movedContent, typeName, subcompLines);
+        }
+
+        log.info("自动修正：将 {} 条 features 中的子组件声明移到 subcomponents 块", moveCount);
+        return movedContent;
+    }
+
+    /**
+     * 将子组件行注入到指定 implementation 的 subcomponents 块中。
+     * 如果已有 subcomponents 块，追加到末尾；否则在 implementation 开头创建。
+     */
+    private String injectSubcomponentsIntoImpl(String content, String implName, List<String> subcompLines) {
+        String[] lines = content.split("\n", -1);
+
+        String compTypesRegex = "system|process|thread(?:\\s+group)?|processor|memory|device|bus|data|" +
+                "subprogram(?:\\s+group)?|abstract|virtual\\s+(?:processor|bus)";
+
+        Pattern implDeclPattern = Pattern.compile(
+                "^\\s*(" + compTypesRegex + ")\\s+implementation\\s+" + Pattern.quote(implName) + "\\.impl",
+                Pattern.CASE_INSENSITIVE
+        );
+        // 匹配块开始关键字（用于确定 subcomponents 块的结束位置）
+        Pattern blockEndPattern = Pattern.compile(
+                "^\\s*(connections|flows|properties|modes|calls|annex|end\\s+)\\b"
+        );
+
+        int implDeclLineIdx = -1;
+        int subcompLineIdx = -1;
+        int subcompEndIdx = -1;
+
+        // 第一遍：找到 implementation 声明行和现有 subcomponents 块的位置
+        for (int i = 0; i < lines.length; i++) {
+            String trimmed = stripComment(lines[i].trim());
+
+            Matcher implMatcher = implDeclPattern.matcher(trimmed);
+            if (implMatcher.find()) {
+                implDeclLineIdx = i;
+                // 向下搜索是否已有 subcomponents 块
+                for (int j = i + 1; j < lines.length; j++) {
+                    String t = stripComment(lines[j].trim());
+                    if (t.equals("subcomponents")) {
+                        subcompLineIdx = j;
+                        // 找 subcomponents 块的结束位置
+                        for (int k = j + 1; k < lines.length; k++) {
+                            String tk = stripComment(lines[k].trim());
+                            if (blockEndPattern.matcher(tk).find() || tk.matches("end\\s+\\w+\\.impl\\s*;")) {
+                                subcompEndIdx = k;
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                    // 遇到 end Xxx.impl; 说明 implementation 中无 subcomponents 块
+                    if (t.matches("end\\s+" + Pattern.quote(implName) + "\\.impl\\s*;")) {
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+
+        if (implDeclLineIdx == -1) {
+            log.warn("未找到 implementation '{}.impl'，无法注入子组件", implName);
+            return content;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < lines.length; i++) {
+            sb.append(lines[i]);
+
+            // 情况1：已有 subcomponents 块 → 在块末尾追加
+            if (subcompLineIdx != -1 && subcompEndIdx > 0 && i == subcompEndIdx - 1) {
+                for (String sc : subcompLines) {
+                    sb.append("\n").append(sc);
+                }
+            }
+
+            // 情况2：无 subcomponents 块 → 在 implementation 声明行后插入新块
+            if (subcompLineIdx == -1 && i == implDeclLineIdx) {
+                sb.append("\n    subcomponents");
+                for (String sc : subcompLines) {
+                    sb.append("\n").append(sc);
+                }
+            }
+
+            if (i < lines.length - 1) {
+                sb.append("\n");
+            }
+        }
+
+        return sb.toString();
+    }
+
     private String fixAppliesToUndeclared(String content,
                                            Map<String, AadlDeclaration> declarations,
                                            ValidationResult result) {
@@ -7409,6 +7909,9 @@ public class AadlReferenceValidator {
         // ===== 第三阶段：移动/重排内容 =====
         // 0e. 将 implementation 中非法的 features 块移到对应的类型声明中
         content = fixFeaturesPlacement(content, result);
+
+        // 0f. 将 features 块中错误放置的子组件声明移到 subcomponents 块中
+        content = fixSubcomponentsInFeatures(content, result);
 
         // 0h. 重排 implementation 中的块顺序为 subcomponents → connections → properties
         content = fixImplementationOrder(content, result);
