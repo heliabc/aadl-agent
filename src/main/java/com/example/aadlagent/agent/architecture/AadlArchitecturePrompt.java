@@ -98,4 +98,13 @@ public class AadlArchitecturePrompt {
 
         return prompt.toString();
     }
+
+    /**
+     * 极简 Prompt（消融实验用）
+     */
+    public String buildMinimalPrompt(String requirementsJson) {
+        return "你是一个系统架构师。请根据以下需求分析结果，设计AADL架构模型并输出JSON。\n\n" +
+                "需求分析结果：\n" + requirementsJson + "\n\n" +
+                "请直接输出JSON，不要解释。";
+    }
 }

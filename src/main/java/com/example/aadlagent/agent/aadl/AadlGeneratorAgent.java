@@ -80,7 +80,9 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
                 parseResult.manifestText.length(), parseResult.archComponents.size());
 
         log.info("正在构建Prompt...");
-        String systemPrompt = prompt.buildPrompt(parseResult.manifestText, input.getRagContext());
+        String systemPrompt = input.isMinimalPrompt()
+                ? prompt.buildMinimalPrompt(parseResult.manifestText)
+                : prompt.buildPrompt(parseResult.manifestText, input.getRagContext());
         log.info("Prompt构建完成，长度: {} 字符", systemPrompt.length());
 
         if (input.isCancelled()) {

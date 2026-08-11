@@ -25,6 +25,8 @@ public class AgentInput {
 
     private ModelType modelType;
 
+    private boolean minimalPrompt;  // 消融实验用：是否使用极简 prompt
+
     private transient AtomicBoolean cancelled;
 
     public boolean isCancelled() {

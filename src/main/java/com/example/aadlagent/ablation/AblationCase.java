@@ -16,9 +16,11 @@ public class AblationCase {
     private String category;       // 错误分类
     private String difficulty;     // easy / medium / hard
 
-    private String buggyCode;      // 有错误的 AADL 代码
+    private String buggyCode;      // 有错误的 AADL 代码（修复实验用）
     private String expectedCode;   // 预期正确代码（参考用）
     private List<String> errors = new ArrayList<>(); // 错误信息或修复指令
+
+    private String requirementDoc; // 需求文档（端到端生成实验用）
 
     public AblationCase() {}
 

@@ -176,6 +176,15 @@ public class AadlGeneratorPrompt {
     }
 
     /**
+     * 极简 Prompt（消融实验用）
+     */
+    public String buildMinimalPrompt(String parsedManifest) {
+        return "你是一个AADL建模专家。请根据以下架构和模块分析信息，生成AADL代码。\n\n" +
+                "输入信息：\n" + parsedManifest + "\n\n" +
+                "请直接输出AADL代码，不要解释。";
+    }
+
+    /**
      * 决定单条规则是否注入 prompt。
      *
      * 判断优先级：

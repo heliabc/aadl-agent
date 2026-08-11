@@ -71,7 +71,9 @@ public class AadlArchitectureAgent implements Agent<AgentInput, AgentOutput> {
         log.info("配置参数: temperature={}, maxTokens={}, maxRetries={}", temperature, maxTokens, maxRetries);
 
         log.info("正在构建Prompt...");
-        String systemPrompt = prompt.buildPrompt(requirementsJson, input.getRagContext());
+        String systemPrompt = input.isMinimalPrompt()
+                ? prompt.buildMinimalPrompt(requirementsJson)
+                : prompt.buildPrompt(requirementsJson, input.getRagContext());
         log.info("Prompt构建完成，长度: {} 字符", systemPrompt.length());
 
         for (int attempt = 1; attempt <= maxRetries; attempt++) {

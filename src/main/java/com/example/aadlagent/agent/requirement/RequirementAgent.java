@@ -137,7 +137,9 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
                     return AgentOutput.cancelled(input.getSessionId());
                 }
 
-                String systemPrompt = prompt.buildPrompt(requirementDoc, input.getRagContext());
+                String systemPrompt = input.isMinimalPrompt()
+                        ? prompt.buildMinimalPrompt(requirementDoc)
+                        : prompt.buildPrompt(requirementDoc, input.getRagContext());
                 log.info("Prompt构建完成，长度: {} 字符", systemPrompt.length());
 
                 List<Requirement> requirements = null;

@@ -159,4 +159,14 @@ public class RequirementPrompt {
 
         return prompt.toString();
     }
+
+    /**
+     * 极简 Prompt（消融实验用）
+     * 去掉所有规则、示例、自检清单，只保留最基本的任务指令
+     */
+    public String buildMinimalPrompt(String requirementDoc) {
+        return "你是一个需求分析师。请从以下需求文档中提取需求条目，输出JSON数组格式。\n\n" +
+                "需求文档：\n" + requirementDoc + "\n\n" +
+                "请直接输出JSON，不要解释。";
+    }
 }

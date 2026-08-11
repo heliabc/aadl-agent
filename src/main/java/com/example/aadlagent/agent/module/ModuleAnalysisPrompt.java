@@ -100,4 +100,14 @@ public class ModuleAnalysisPrompt {
 
         return prompt.toString();
     }
+
+    /**
+     * 极简 Prompt（消融实验用）
+     */
+    public String buildMinimalPrompt(String requirementsJson, String architectureJson) {
+        return "你是一个模块分析专家。请根据需求和架构设计，分析系统模块划分，输出JSON格式。\n\n" +
+                "需求：\n" + requirementsJson + "\n\n" +
+                "架构：\n" + architectureJson + "\n\n" +
+                "请直接输出JSON，不要解释。";
+    }
 }
