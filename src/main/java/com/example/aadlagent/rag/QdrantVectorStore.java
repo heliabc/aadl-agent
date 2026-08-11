@@ -25,28 +25,43 @@ public class QdrantVectorStore {
 
     @PostConstruct
     public void init() {
-        testConnection();
-        printExistingCollections();
+        boolean connectionOk = testConnection();
         
-        for (String collection : qdrantConfig.getCollections()) {
-            ensureCollectionExists(collection);
+        if (!connectionOk) {
+            log.warn("Qdrant not available, running in degraded mode");
+            available = false;
+            return;
         }
         
-        available = true;
-        log.info("Qdrant vector store initialized successfully");
+        try {
+            printExistingCollections();
+            
+            for (String collection : qdrantConfig.getCollections()) {
+                ensureCollectionExists(collection);
+            }
+            
+            available = true;
+            log.info("Qdrant vector store initialized successfully");
+        } catch (Exception e) {
+            log.warn("Qdrant initialization failed: {}", e.getMessage());
+            available = false;
+        }
     }
 
-    private void testConnection() {
+    private boolean testConnection() {
         try {
             String url = getBaseUrl() + "/collections";
             ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
             if (response.getStatusCode().is2xxSuccessful()) {
                 log.info("Qdrant connection test successful");
+                return true;
             } else {
                 log.warn("Qdrant connection test failed: {}", response.getStatusCode());
+                return false;
             }
         } catch (Exception e) {
             log.warn("Qdrant connection test failed: {}", e.getMessage());
+            return false;
         }
     }
 

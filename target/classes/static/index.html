@@ -1033,6 +1033,12 @@
     <script>
         const API_BASE = '/api';
         
+        // ===== 标签式分点输入组件（提前初始化以避免暂时性死区问题）=====
+        const tagInputs = {
+            FixText: { tags: [], listId: 'tagListFixText', inputId: 'tagInputFixText', addBtnId: 'tagAddBtnFixText' },
+            FixPrev: { tags: [], listId: 'tagListFixPrev', inputId: 'tagInputFixPrev', addBtnId: 'tagAddBtnFixPrev' }
+        };
+        
         let currentModel = 'OLLAMA';
         let sessionId = null;
         let isRunning = false;
@@ -1219,11 +1225,7 @@
         }
 
         // ===== 标签式分点输入组件 =====
-        const tagInputs = {
-            FixText: { tags: [], listId: 'tagListFixText', inputId: 'tagInputFixText', addBtnId: 'tagAddBtnFixText' },
-            FixPrev: { tags: [], listId: 'tagListFixPrev', inputId: 'tagInputFixPrev', addBtnId: 'tagAddBtnFixPrev' }
-        };
-
+        
         function initTagInput(key) {
             console.log('[DEBUG initTagInput] 初始化:', key);
             const config = tagInputs[key];

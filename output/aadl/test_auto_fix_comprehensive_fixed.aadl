@@ -1,15 +1,6 @@
--- =======================================
--- [验证结果] 以下问题无法定位到具体行：
--- [ERROR] feature 类型违规 - thread 组件 'SensorThread' 的 feature 'can_bus' 类型为 'bus access'，该组件不允许拥有此类 feature; thread 组件允许的 feature 类型: data port, event port, event data port, subprogram access, data access, feature group, abstract feature
--- [WARNING] 组件 'SensorData' 有类型声明但缺少 implementation 声明（第38行）
--- [WARNING] 组件 'CommandData' 有类型声明但缺少 implementation 声明（第43行）
--- [WARNING] 属性绑定完整性: 'sensor_th' (thread) 在 'MainProcess' 中缺少 Actual_Processor_Binding 属性；代码生成强依赖于软硬件部署关系，请补充部署绑定属性
--- [WARNING] 属性绑定完整性: 'main_proc' (process) 在 'Top_TestFix' 中缺少 Actual_Processor_Binding 属性；代码生成强依赖于软硬件部署关系，请补充部署绑定属性
--- =======================================
 package TestFix_Arch
 public
 
--- ============================================================
 --  自动修复综合测试用例
 --  包含以下错误场景（共11类）：
 --    1. 畸形 end 语句（尾逗号）
@@ -23,7 +14,6 @@ public
 --    9. reference 属性括号格式错误
 --   10. implementation 块顺序错误
 --   11. 引用了未声明的组件类型（幻觉组件自动补全）
--- ============================================================
 
 annex EMV2 {**
   error behavior ThreeErrorStates
@@ -44,8 +34,6 @@ end Top_TestFix;
 
 -- ===== 错误2：data组件有非法features =====
 data SensorData
--- [ERROR] data 组件违规 - data 组件 'SensorData' 中出现了 features 块; data 是被动构件（类型分类器），不应直接拥有 features; 数据的流动应由主动构件（thread/process/device）的端口引用 data 类型来完成
--- [WARNING] 端口 'value' 引用的数据类型 'Integer' 未在 AADL 中声明（可能是外部数据类型）
 end SensorData;
 
 data CommandData
@@ -56,13 +44,11 @@ thread SensorThread
   features
     in_data  : in data port SensorData;
     out_data : out data port SensorData;
--- [ERROR] 分层架构违规 - thread 'SensorThread' 的 feature 'can_bus' 使用了 requires bus access; 线程不应直接访问物理总线，bus access 只能出现在 device 或 processor 中; 线程的 features 只能有 in/out data port 或 event port
     can_bus  : requires bus access CanBus;
 end SensorThread;
 
 thread implementation SensorThread.impl
   -- ===== 错误4：thread impl中有非法connections块 =====
--- [ERROR] 语法错误 - connections 块出现在线程 implementation 'SensorThread.impl' 中; 线程内部严禁包含 connections 块，连接只能写在 system 或 process 的 implementation 中
 end SensorThread.impl;
 
 -- ===== 错误5：features放错位置（在impl中而非type中） =====
@@ -70,26 +56,21 @@ process MainProcess
     features
     sensor_in  : in data port SensorData;
     cmd_out    : out data port CommandData;
-    -- [自动修正] 补全 connections 引用中缺失的 feature 声明: sensor_in
     sensor_in : in data port SensorData;
 end MainProcess;
 
 process implementation MainProcess.impl
--- [ERROR] features 放置错误 - features 块出现在 implementation 'MainProcess.impl' 中; features 只能出现在组件类型声明中，不能出现在 implementation 中
   subcomponents
     sensor_th : thread SensorThread.impl;
   connections
--- [ERROR] 连接 'C1' 的源端引用父组件端口 'sensor_in'（代理连接），但组件类型 'MainProcess' 没有 features 块或 features 为空
     C1 : port sensor_in -> sensor_th.in_data;
 end MainProcess.impl;
 
 -- ===== 错误6：requires/provides data port 非法语法 =====
 device SerialDevice
   features
--- [ERROR] 语法错误 - feature 'tx_data' 使用了非法语法 'requires data port'; requires 关键字只能用于 bus access / subprogram access; 数据端口必须使用 'in data port' 或 'out data port'
-    tx_data : in data port SensorData;  -- [自动修正] 'requires data port' → 'in data port'
+    tx_data : in data port SensorData;
     rx_data : provides data port CommandData;
-    -- [自动修正] 补全 connections 引用中缺失的 feature 声明: tx_data
     tx_data : in data port SensorData;
 end SerialDevice;
 
@@ -105,8 +86,6 @@ end MainProcessor;
 processor implementation MainProcessor.impl
   -- ===== 错误8：命名冲突（实例名=类型名） =====
   subcomponents
--- [ERROR] 命名空间冲突 - 实例名 'MainProcessor' 与其引用的组件类型名 'MainProcessor' 完全相同（违反R13强制规则）; 实例名必须与类型名区分，建议改为 'mainProcessor'（已自动修正）
--- [ERROR] 命名空间冲突 - 实例名 'MainProcessor' 与当前 implementation 所属的类型名 'MainProcessor' 相同（在 'MainProcessor.impl' 中）; 子组件实例名不能与包含它的组件类型同名，可能导致编译器 AST 解析错误
     MainProcessor_inst : processor MainProcessor.impl;
 end MainProcessor.impl;
 
@@ -118,14 +97,11 @@ end RAM;
 memory implementation RAM.impl
   -- ===== 错误9：reference括号格式错 =====
   properties
--- [ERROR] 属性引用错误 - 'applies to bus_if' 引用的名称 'bus_if' 未在当前 implementation 'RAM.impl' 的 subcomponents 或 connections 中声明
--- [ERROR] 属性语法错误 - reference 值缺少外层列表括号; 列表类型属性应使用 (reference (can_bus1)) 格式，而非 reference (can_bus1)
     Allowed_Connection_Binding => (reference (can_bus1)) applies to bus_if;
 end RAM.impl;
 
 bus CanBus
     features
-    -- [自动修正] 补全 connections 引用中缺失的 feature 声明: busOut
     busOut : in bus access;
 end CanBus;
 
@@ -135,7 +111,6 @@ bus implementation CanBus.impl
   connections
   properties
     Bus_Type => "CAN";
--- [ERROR] 三步规范违规 - implementation 'CanBus.impl' 中 'subcomponents' 出现在 'properties' 之后; 必须严格遵守顺序: subcomponents → connections → properties
 end CanBus.impl;
 
 system implementation Top_TestFix.impl
@@ -146,40 +121,39 @@ system implementation Top_TestFix.impl
     main_ram   : memory RAM.impl;
     can_bus1   : bus CanBus.impl;
     -- ===== 错误11：引用了未声明的组件 =====
--- [ERROR] subcomponents 引用 'display_dev' 的类型 'DisplayDevice' 未声明
     display_dev : device DisplayDevice.impl;
   connections
     -- port连接错误用了<->
--- [ERROR] 连接 'Conn1' 的源端引用 'main_proc.sensor_in'，但组件类型 'MainProcess' 没有 features 块或 features 为空
--- [ERROR] 连接 'Conn1' 的目标端引用 'serial_dev.tx_data'，但组件类型 'SerialDevice' 没有 features 块或 features 为空
--- [WARNING] 连接操作符建议 - port 连接 'Conn1' 使用了双向 <->（两端都不是 in out 双向端口）; 普通 port 连接应使用单向 -> 表示数据流方向；只有 in out data port（双向端口）之间才能使用 <->
     Conn1 : port main_proc.sensor_in -> serial_dev.tx_data;
     -- bus access连接错误用了->
--- [ERROR] 连接 'Bus1' 的目标端引用 'can_bus1.busOut'，但组件类型 'CanBus' 没有 features 块或 features 为空
--- [ERROR] 连接操作符错误 - bus access 连接 'Bus1' 使用了单向 ->; bus access 连接必须使用双向 <->
     Bus1 : bus access main_cpu.bus_if <-> can_bus1.busOut;
   properties
     Actual_Processor_Binding => (reference (main_cpu)) applies to main_proc;
 end Top_TestFix.impl;
 
--- [ERROR] end 语句名称错误 'end TestFix_Arch;' — 当前块期望结束为 'end Top_TestFix;'
 
-    -- =======================================
-    -- [自动修正] 以下为 AadlReferenceValidator 自动补全的组件声明
-    -- =======================================
-    -- [自动修正] 补全缺失的实现声明: SensorData (data)
     data implementation SensorData.impl
     end SensorData.impl;
 
-    -- [自动修正] 补全缺失的实现声明: CommandData (data)
     data implementation CommandData.impl
     end CommandData.impl;
 
-    -- [自动修正] 补全缺失的组件声明: DisplayDevice (device)
     device DisplayDevice
     end DisplayDevice;
 
     device implementation DisplayDevice.impl
     end DisplayDevice.impl;
+
+    data Integer
+    end Integer;
+
+
+    data implementation Integer.impl
+    end Integer.impl;
+
+
+    data implementation SensorData.impl
+    end SensorData.impl;
+
 
 end TestFix_Arch;

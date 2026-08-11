@@ -18,7 +18,7 @@ file:
 
 ollama:
   base-url: http://localhost:11434
-  chat-model: deepseek-coder-v2:16b
+  chat-model: qwen3:8b
   embedding-model: qwen3-embedding:latest
   timeout: 900000
 

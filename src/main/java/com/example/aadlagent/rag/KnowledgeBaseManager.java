@@ -47,7 +47,12 @@ public class KnowledgeBaseManager {
     private void performStartupSelfCheck() {
         log.info("=== Starting Qdrant startup self-check ===");
         
-        int maxRetries = 60;
+        if (!qdrantVectorStore.isAvailable()) {
+            log.warn("Qdrant not available, skipping startup self-check");
+            return;
+        }
+        
+        int maxRetries = 3;
         int delayMs = 1000;
         
         for (String collection : AGENT_TYPES) {
@@ -160,80 +165,82 @@ public class KnowledgeBaseManager {
             int generatedEmbeddings = 0;
             int skippedEmbeddings = 0;
             
-            for (BasicKnowledge basic : kb.getBasics()) {
-                if (basic.getEmbedding() == null || basic.getEmbedding().length == 0) {
-                    try {
-                        float[] embedding = embeddingService.embed(basic.getContent());
-                        if (embedding != null && embedding.length > 0) {
-                            basic.setEmbedding(embedding);
-                            generatedEmbeddings++;
-                        } else {
+            if (qdrantAvailable) {
+                for (BasicKnowledge basic : kb.getBasics()) {
+                    if (basic.getEmbedding() == null || basic.getEmbedding().length == 0) {
+                        try {
+                            float[] embedding = embeddingService.embed(basic.getContent());
+                            if (embedding != null && embedding.length > 0) {
+                                basic.setEmbedding(embedding);
+                                generatedEmbeddings++;
+                            } else {
+                                skippedEmbeddings++;
+                                log.warn("Embedding generation returned null or empty for basic: {}", basic.getId());
+                            }
+                        } catch (Exception e) {
                             skippedEmbeddings++;
-                            log.warn("Embedding generation returned null or empty for basic: {}", basic.getId());
+                            log.warn("Failed to generate embedding for basic {}: {}", basic.getId(), e.getMessage());
                         }
-                    } catch (Exception e) {
-                        skippedEmbeddings++;
-                        log.warn("Failed to generate embedding for basic {}: {}", basic.getId(), e.getMessage());
+                    }
+                    if (basic.getEmbedding() != null && basic.getEmbedding().length > 0) {
+                        docsToUpsert.add(toDocument(basic, agentType, "basic"));
+                    } else {
+                        log.warn("No valid embedding for basic, skipping upsert: {}", basic.getId());
                     }
                 }
-                if (qdrantAvailable && basic.getEmbedding() != null && basic.getEmbedding().length > 0) {
-                    docsToUpsert.add(toDocument(basic, agentType, "basic"));
-                } else if (!qdrantAvailable && basic.getEmbedding() != null) {
-                    log.debug("Qdrant not available, skipping upsert for basic: {}", basic.getId());
-                } else if (qdrantAvailable && (basic.getEmbedding() == null || basic.getEmbedding().length == 0)) {
-                    log.warn("No valid embedding for basic, skipping upsert: {}", basic.getId());
-                }
-            }
-            
-            for (ExampleKnowledge example : kb.getExamples()) {
-                String semanticContent = (example.getScenario() != null ? example.getScenario() : "") + "\n" + 
-                        (example.getInput() != null ? example.getInput() : "");
-                if (example.getEmbedding() == null || example.getEmbedding().length == 0) {
-                    try {
-                        float[] embedding = embeddingService.embed(semanticContent);
-                        if (embedding != null && embedding.length > 0) {
-                            example.setEmbedding(embedding);
-                            generatedEmbeddings++;
-                        } else {
+                
+                for (ExampleKnowledge example : kb.getExamples()) {
+                    String semanticContent = (example.getScenario() != null ? example.getScenario() : "") + "\n" + 
+                            (example.getInput() != null ? example.getInput() : "");
+                    if (example.getEmbedding() == null || example.getEmbedding().length == 0) {
+                        try {
+                            float[] embedding = embeddingService.embed(semanticContent);
+                            if (embedding != null && embedding.length > 0) {
+                                example.setEmbedding(embedding);
+                                generatedEmbeddings++;
+                            } else {
+                                skippedEmbeddings++;
+                                log.warn("Embedding generation returned null or empty for example: {}", example.getId());
+                            }
+                        } catch (Exception e) {
                             skippedEmbeddings++;
-                            log.warn("Embedding generation returned null or empty for example: {}", example.getId());
+                            log.warn("Failed to generate embedding for example {}: {}", example.getId(), e.getMessage());
                         }
-                    } catch (Exception e) {
-                        skippedEmbeddings++;
-                        log.warn("Failed to generate embedding for example {}: {}", example.getId(), e.getMessage());
+                    }
+                    if (example.getEmbedding() != null && example.getEmbedding().length > 0) {
+                        docsToUpsert.add(toDocument(example, agentType, "example"));
+                    } else {
+                        log.warn("No valid embedding for example, skipping upsert: {}", example.getId());
                     }
                 }
-                if (qdrantAvailable && example.getEmbedding() != null && example.getEmbedding().length > 0) {
-                    docsToUpsert.add(toDocument(example, agentType, "example"));
-                } else if (qdrantAvailable && (example.getEmbedding() == null || example.getEmbedding().length == 0)) {
-                    log.warn("No valid embedding for example, skipping upsert: {}", example.getId());
-                }
-            }
-            
-            for (ErrorCorrection ec : kb.getErrorCorrections()) {
-                String semanticContent = (ec.getErrorType() != null ? ec.getErrorType() : "") + "\n" + 
-                        (ec.getErrorDescription() != null ? ec.getErrorDescription() : "") + "\n" + 
-                        (ec.getCorrectionExplanation() != null ? ec.getCorrectionExplanation() : "");
-                if (ec.getEmbedding() == null || ec.getEmbedding().length == 0) {
-                    try {
-                        float[] embedding = embeddingService.embed(semanticContent);
-                        if (embedding != null && embedding.length > 0) {
-                            ec.setEmbedding(embedding);
-                            generatedEmbeddings++;
-                        } else {
+                
+                for (ErrorCorrection ec : kb.getErrorCorrections()) {
+                    String semanticContent = (ec.getErrorType() != null ? ec.getErrorType() : "") + "\n" + 
+                            (ec.getErrorDescription() != null ? ec.getErrorDescription() : "") + "\n" + 
+                            (ec.getCorrectionExplanation() != null ? ec.getCorrectionExplanation() : "");
+                    if (ec.getEmbedding() == null || ec.getEmbedding().length == 0) {
+                        try {
+                            float[] embedding = embeddingService.embed(semanticContent);
+                            if (embedding != null && embedding.length > 0) {
+                                ec.setEmbedding(embedding);
+                                generatedEmbeddings++;
+                            } else {
+                                skippedEmbeddings++;
+                                log.warn("Embedding generation returned null or empty for error correction: {}", ec.getId());
+                            }
+                        } catch (Exception e) {
                             skippedEmbeddings++;
-                            log.warn("Embedding generation returned null or empty for error correction: {}", ec.getId());
+                            log.warn("Failed to generate embedding for error correction {}: {}", ec.getId(), e.getMessage());
                         }
-                    } catch (Exception e) {
-                        skippedEmbeddings++;
-                        log.warn("Failed to generate embedding for error correction {}: {}", ec.getId(), e.getMessage());
+                    }
+                    if (ec.getEmbedding() != null && ec.getEmbedding().length > 0) {
+                        docsToUpsert.add(toDocument(ec, agentType, "error_correction"));
+                    } else {
+                        log.warn("No valid embedding for error correction, skipping upsert: {}", ec.getId());
                     }
                 }
-                if (qdrantAvailable && ec.getEmbedding() != null && ec.getEmbedding().length > 0) {
-                    docsToUpsert.add(toDocument(ec, agentType, "error_correction"));
-                } else if (qdrantAvailable && (ec.getEmbedding() == null || ec.getEmbedding().length == 0)) {
-                    log.warn("No valid embedding for error correction, skipping upsert: {}", ec.getId());
-                }
+            } else {
+                log.info("Qdrant not available, skipping embedding generation for {}", agentType);
             }
 
             knowledgeBases.put(agentType, kb);
