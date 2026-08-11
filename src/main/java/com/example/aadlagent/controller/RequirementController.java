@@ -665,7 +665,7 @@ public class RequirementController {
         String architectureFileName = (String) request.get("architectureFile");
         String modulesFileName = (String) request.get("modulesFile");
         String previousAadlContent = (String) request.get("previousAadl");
-        List<String> errors = (List<String>) request.get("errors");
+        List<String> errors = parseErrorsListParam(request.get("errors"));
         String modelTypeStr = (String) request.get("model");
         String sessionId = (String) request.get("sessionId");
 
@@ -798,7 +798,7 @@ public class RequirementController {
     @PostMapping("/parse-errors")
     public ResponseEntity<Map<String, Object>> parseErrors(@RequestBody Map<String, Object> request) {
         String aadlContent = (String) request.get("aadlContent");
-        String rawErrors = (String) request.get("errors");
+        String rawErrors = parseErrorsParam(request.get("errors"));
         String modelTypeStr = (String) request.get("model");
         String sessionId = (String) request.get("sessionId");
 
@@ -878,7 +878,7 @@ public class RequirementController {
         log.info("[DEBUG fix-aadl] 收到修复请求，请求参数: {}", request.keySet());
         String aadlFileName = (String) request.get("aadlFile");
         String aadlContent = (String) request.get("aadlContent");
-        String errors = (String) request.get("errors");
+        String errors = parseErrorsParam(request.get("errors"));
         String modelTypeStr = (String) request.get("model");
         String sessionId = (String) request.get("sessionId");
         log.info("[DEBUG fix-aadl] aadlContent长度: {}, errors长度: {}, model: {}, sessionId: {}",
@@ -1151,6 +1151,49 @@ public class RequirementController {
             }
         }
         return ModelType.OLLAMA;
+    }
+
+    /**
+     * 解析 errors 参数，支持 String 或 List<String> 两种格式。
+     * 如果是 List，则用换行符拼接成 String。
+     */
+    @SuppressWarnings("unchecked")
+    private String parseErrorsParam(Object errorsObj) {
+        if (errorsObj == null) {
+            return null;
+        }
+        if (errorsObj instanceof String) {
+            return (String) errorsObj;
+        }
+        if (errorsObj instanceof List) {
+            List<String> errorList = (List<String>) errorsObj;
+            return String.join("\n", errorList);
+        }
+        // 其他类型转为 String
+        return errorsObj.toString();
+    }
+
+    /**
+     * 解析 errors 参数为 List<String>，支持 String 或 List<String> 两种格式。
+     * 如果是 String，则按换行符分割成 List。
+     */
+    @SuppressWarnings("unchecked")
+    private List<String> parseErrorsListParam(Object errorsObj) {
+        if (errorsObj == null) {
+            return new ArrayList<>();
+        }
+        if (errorsObj instanceof List) {
+            return new ArrayList<>((List<String>) errorsObj);
+        }
+        if (errorsObj instanceof String) {
+            String str = (String) errorsObj;
+            if (str.trim().isEmpty()) {
+                return new ArrayList<>();
+            }
+            return new ArrayList<>(Arrays.asList(str.split("\\r?\\n")));
+        }
+        // 其他类型转为 String 后分割
+        return new ArrayList<>(Arrays.asList(errorsObj.toString().split("\\r?\\n")));
     }
 
     /**

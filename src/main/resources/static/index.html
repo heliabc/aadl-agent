@@ -1131,11 +1131,17 @@
         });
 
         setupFileUploads();
+        console.log('[DEBUG 初始化] setupFileUploads 完成');
         setupModuleButtons();
+        console.log('[DEBUG 初始化] setupModuleButtons 完成');
         setupClearButtons();
+        console.log('[DEBUG 初始化] setupClearButtons 完成');
         setupCopyButtons();
+        console.log('[DEBUG 初始化] setupCopyButtons 完成');
         initTagInput('FixText');
+        console.log('[DEBUG 初始化] initTagInput(FixText) 完成');
         initTagInput('FixPrev');
+        console.log('[DEBUG 初始化] initTagInput(FixPrev) 完成');
 
         document.getElementById('btnFullFlow').addEventListener('click', async () => {
             if (isRunning) return;
@@ -1217,11 +1223,17 @@
         };
 
         function initTagInput(key) {
+            console.log('[DEBUG initTagInput] 初始化:', key);
             const config = tagInputs[key];
+            console.log('[DEBUG initTagInput] config:', config);
             const input = document.getElementById(config.inputId);
             const addBtn = document.getElementById(config.addBtnId);
+            console.log('[DEBUG initTagInput] input:', input, ', addBtn:', addBtn);
 
-            if (!input || !addBtn) return;
+            if (!input || !addBtn) {
+                console.log('[DEBUG initTagInput] input 或 addBtn 不存在，跳过');
+                return;
+            }
 
             // 添加按钮点击
             addBtn.addEventListener('click', () => addTag(key));
@@ -1574,6 +1586,8 @@
 
         async function runFix() {
             console.log('[DEBUG] runFix 开始执行');
+            if (isRunning) return;
+
             const tabType = getActiveTab('Fix');
             console.log('[DEBUG] 当前tab:', tabType);
             
@@ -1600,9 +1614,8 @@
                 return;
             }
 
-            console.log('[DEBUG] 检查通过，isRunning=', isRunning, '，准备发送请求');
+            console.log('[DEBUG] 检查通过，准备发送请求');
 
-            if (isRunning) return;
             isRunning = true;
 
             const btn = document.getElementById('btnFix');
@@ -1611,6 +1624,8 @@
             btn.disabled = true;
 
             try {
+                setModuleStatus('Fix', 'running');
+                showResult('Fix');
                 addTimeline('开始处理并修复 AADL...');
 
                 const fixResponse = await fetch(`${API_BASE}/requirement/fix-aadl`, {
@@ -1623,12 +1638,16 @@
                         sessionId: sessionId
                     })
                 });
+
+                if (!fixResponse.ok) {
+                    throw new Error(`HTTP ${fixResponse.status}: ${fixResponse.statusText}`);
+                }
+
                 const fixData = await fixResponse.json();
 
                 sessionId = fixData.sessionId || sessionId;
                 document.getElementById('sessionIdDisplay').textContent = sessionId;
 
-                showResult('Fix');
                 setModuleStatus('Fix', fixData.success ? 'completed' : 'failed');
 
                 if (fixData.success) {
@@ -1639,14 +1658,24 @@
 
                     document.getElementById('timeFix').textContent = `修复时间: ${fixData.executionTime}ms`;
                     
+                    if (fixData.outputFile) {
+                        fileNames['Fix'] = fixData.outputFile;
+                    }
+                    if (document.getElementById('outputFileFix')) {
+                        document.getElementById('outputFileFix').textContent = fixData.outputFile ? `输出文件: ${fixData.outputFile}` : '';
+                    }
+
                     addTimeline('AADL修复完成', 'success');
                 } else {
                     const fixContentEl = document.getElementById('contentFix');
-                    fixContentEl.innerHTML = `<div class="error-message">${fixData.message}</div>`;
-                    addTimeline('AADL修复失败: ' + fixData.message, 'error');
+                    fixContentEl.innerHTML = `<div class="error-message">${fixData.message || '未知错误'}</div>`;
+                    addTimeline('AADL修复失败: ' + (fixData.message || '未知错误'), 'error');
                 }
             } catch (error) {
-                console.error(error);
+                console.error('[DEBUG runFix] 错误:', error);
+                setModuleStatus('Fix', 'failed');
+                const fixContentEl = document.getElementById('contentFix');
+                fixContentEl.innerHTML = `<div class="error-message">请求失败: ${error.message}</div>`;
                 addTimeline('处理失败: ' + error.message, 'error');
             } finally {
                 isRunning = false;

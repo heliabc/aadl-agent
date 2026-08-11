@@ -540,7 +540,7 @@ if ($actionIdx -eq 1) {
 
     $bodyObj = @{
         aadlFile = $selectedAadlFile
-        errors = $errors
+        errors = $errors -join "`n"
         model = $model
     }
     $body = $bodyObj | ConvertTo-Json -Depth 10
