@@ -48,6 +48,7 @@ public class AadlFixerAgent implements Agent<AgentInput, AgentOutput> {
     @Override
     public AgentOutput execute(AgentInput input) {
         long startTime = System.currentTimeMillis();
+        log.info("[DEBUG AadlFixerAgent.execute] 开始执行，sessionId: {}", input.getSessionId());
 
         ModelType modelType = input.getModelType() != null ? input.getModelType() : ModelType.OLLAMA;
         LlmClient llmClient = modelService.getClient(modelType);

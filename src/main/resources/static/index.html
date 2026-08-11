@@ -1573,7 +1573,9 @@
         }
 
         async function runFix() {
+            console.log('[DEBUG] runFix 开始执行');
             const tabType = getActiveTab('Fix');
+            console.log('[DEBUG] 当前tab:', tabType);
             
             let aadlContent = null;
             let rawErrors = null;
@@ -1581,19 +1583,24 @@
             if (tabType === 'text') {
                 aadlContent = document.getElementById('textFixAadl').value.trim();
                 rawErrors = getTagsText('FixText');
+                console.log('[DEBUG] text模式 - aadl长度:', aadlContent?.length, ', 错误:', rawErrors);
             } else if (tabType === 'previous') {
                 aadlContent = results.Aadl;
                 rawErrors = getTagsText('FixPrev');
             }
 
             if (!aadlContent) {
+                console.log('[DEBUG] aadlContent为空，alert');
                 alert('请输入 AADL 代码');
                 return;
             }
             if (!rawErrors) {
+                console.log('[DEBUG] rawErrors为空，alert');
                 alert('请添加至少一个错误或修复建议');
                 return;
             }
+
+            console.log('[DEBUG] 检查通过，isRunning=', isRunning, '，准备发送请求');
 
             if (isRunning) return;
             isRunning = true;

@@ -875,11 +875,16 @@ public class RequirementController {
 
     @PostMapping("/fix-aadl")
     public ResponseEntity<Map<String, Object>> fixAadl(@RequestBody Map<String, Object> request) {
+        log.info("[DEBUG fix-aadl] 收到修复请求，请求参数: {}", request.keySet());
         String aadlFileName = (String) request.get("aadlFile");
         String aadlContent = (String) request.get("aadlContent");
         String errors = (String) request.get("errors");
         String modelTypeStr = (String) request.get("model");
         String sessionId = (String) request.get("sessionId");
+        log.info("[DEBUG fix-aadl] aadlContent长度: {}, errors长度: {}, model: {}, sessionId: {}",
+                aadlContent != null ? aadlContent.length() : 0,
+                errors != null ? errors.length() : 0,
+                modelTypeStr, sessionId);
 
         if ((aadlFileName == null || aadlFileName.trim().isEmpty()) && 
             (aadlContent == null || aadlContent.trim().isEmpty())) {
