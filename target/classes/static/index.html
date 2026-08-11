@@ -1051,7 +1051,9 @@
         let fileNames = {
             Requirement: null,
             Architecture: null,
-            Module: null
+            Module: null,
+            Aadl: null,
+            Fix: null
         };
 
         let uploadedFiles = {
@@ -1585,11 +1587,7 @@
         }
 
         async function runFix() {
-            console.log('[DEBUG] runFix 开始执行');
-            if (isRunning) return;
-
             const tabType = getActiveTab('Fix');
-            console.log('[DEBUG] 当前tab:', tabType);
             
             let aadlContent = null;
             let rawErrors = null;
@@ -1597,38 +1595,26 @@
             if (tabType === 'text') {
                 aadlContent = document.getElementById('textFixAadl').value.trim();
                 rawErrors = getTagsText('FixText');
-                console.log('[DEBUG] text模式 - aadl长度:', aadlContent?.length, ', 错误:', rawErrors);
             } else if (tabType === 'previous') {
                 aadlContent = results.Aadl;
                 rawErrors = getTagsText('FixPrev');
+                if (!aadlContent) {
+                    alert('请先生成 AADL 代码');
+                    return;
+                }
             }
 
             if (!aadlContent) {
-                console.log('[DEBUG] aadlContent为空，alert');
                 alert('请输入 AADL 代码');
                 return;
             }
-            if (!rawErrors) {
-                console.log('[DEBUG] rawErrors为空，alert');
+            if (!rawErrors || !rawErrors.trim()) {
                 alert('请添加至少一个错误或修复建议');
                 return;
             }
 
-            console.log('[DEBUG] 检查通过，准备发送请求');
-
-            isRunning = true;
-
-            const btn = document.getElementById('btnFix');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<span class="running-indicator"></span> 修复中...';
-            btn.disabled = true;
-
-            try {
-                setModuleStatus('Fix', 'running');
-                showResult('Fix');
-                addTimeline('开始处理并修复 AADL...');
-
-                const fixResponse = await fetch(`${API_BASE}/requirement/fix-aadl`, {
+            await executeModule('Fix', async () => {
+                const response = await fetch(`${API_BASE}/requirement/fix-aadl`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1638,50 +1624,8 @@
                         sessionId: sessionId
                     })
                 });
-
-                if (!fixResponse.ok) {
-                    throw new Error(`HTTP ${fixResponse.status}: ${fixResponse.statusText}`);
-                }
-
-                const fixData = await fixResponse.json();
-
-                sessionId = fixData.sessionId || sessionId;
-                document.getElementById('sessionIdDisplay').textContent = sessionId;
-
-                setModuleStatus('Fix', fixData.success ? 'completed' : 'failed');
-
-                if (fixData.success) {
-                    results['Fix'] = fixData.data;
-                    
-                    const fixContentEl = document.getElementById('contentFix');
-                    fixContentEl.textContent = fixData.data;
-
-                    document.getElementById('timeFix').textContent = `修复时间: ${fixData.executionTime}ms`;
-                    
-                    if (fixData.outputFile) {
-                        fileNames['Fix'] = fixData.outputFile;
-                    }
-                    if (document.getElementById('outputFileFix')) {
-                        document.getElementById('outputFileFix').textContent = fixData.outputFile ? `输出文件: ${fixData.outputFile}` : '';
-                    }
-
-                    addTimeline('AADL修复完成', 'success');
-                } else {
-                    const fixContentEl = document.getElementById('contentFix');
-                    fixContentEl.innerHTML = `<div class="error-message">${fixData.message || '未知错误'}</div>`;
-                    addTimeline('AADL修复失败: ' + (fixData.message || '未知错误'), 'error');
-                }
-            } catch (error) {
-                console.error('[DEBUG runFix] 错误:', error);
-                setModuleStatus('Fix', 'failed');
-                const fixContentEl = document.getElementById('contentFix');
-                fixContentEl.innerHTML = `<div class="error-message">请求失败: ${error.message}</div>`;
-                addTimeline('处理失败: ' + error.message, 'error');
-            } finally {
-                isRunning = false;
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
+                return await response.json();
+            }, { runningText: '修复中...', timePrefix: '修复时间' });
         }
 
         async function executeModule(moduleId, apiCall, params = {}) {
@@ -1693,7 +1637,8 @@
 
             const btn = document.getElementById(`btn${moduleId}`);
             const originalText = btn.innerHTML;
-            btn.innerHTML = '<span class="running-indicator"></span> 运行中...';
+            const runningText = params.runningText || '运行中...';
+            btn.innerHTML = `<span class="running-indicator"></span> ${runningText}`;
             btn.disabled = true;
 
             addTimeline(`开始${getModuleName(moduleId)}...`);
@@ -1726,7 +1671,8 @@
                         const contentEl = document.getElementById(`content${moduleId}`);
                         contentEl.textContent = data.data;
 
-                        document.getElementById(`time${moduleId}`).textContent = `执行时间: ${data.executionTime}ms`;
+                        const timePrefix = params.timePrefix || '执行时间';
+                        document.getElementById(`time${moduleId}`).textContent = `${timePrefix}: ${data.executionTime}ms`;
                         
                         if (document.getElementById(`outputFile${moduleId}`)) {
                             document.getElementById(`outputFile${moduleId}`).textContent = data.outputFile ? `输出文件: ${data.outputFile}` : '';
@@ -1739,15 +1685,20 @@
                     updatePreviousData();
                 } else {
                     const contentEl = document.getElementById(`content${moduleId}`);
-                    contentEl.innerHTML = `<div class="error-message">${data.message}</div>`;
+                    contentEl.innerHTML = `<div class="error-message">${data.message || '未知错误'}</div>`;
                     
                     setModuleStatus(moduleId, 'failed');
-                    addTimeline(`${getModuleName(moduleId)}失败: ${data.message}`, 'error');
+                    addTimeline(`${getModuleName(moduleId)}失败: ${data.message || '未知错误'}`, 'error');
                     
-                    throw new Error(data.message);
+                    throw new Error(data.message || '未知错误');
                 }
             } catch (error) {
-                console.error(error);
+                console.error('[executeModule] 错误:', error);
+                const contentEl = document.getElementById(`content${moduleId}`);
+                if (contentEl && !contentEl.innerHTML.includes('error-message')) {
+                    contentEl.innerHTML = `<div class="error-message">请求失败: ${error.message}</div>`;
+                }
+                setModuleStatus(moduleId, 'failed');
             } finally {
                 isRunning = false;
                 btn.innerHTML = originalText;
