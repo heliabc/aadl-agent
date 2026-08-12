@@ -1,4 +1,4 @@
-package com.example.aadlagent.util;
+﻿package com.example.aadlagent.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -306,6 +306,257 @@ public class AadlReferenceValidator {
     }
 
     /**
+     * 规范化组件名，用于智能匹配（架构树名 ↔ AADL 名）。
+     *
+     * 处理规则：
+     * 1. 去除常见前缀：Top_、top_
+     * 2. 去除常见后缀：_System、_system、_Module、_module、_Impl、_impl
+     * 3. 转小写
+     * 4. 驼峰转下划线（仅在对比时作为辅助方式）
+     * 5. 移除所有下划线（最后兜底比较）
+     */
+    private String normalizeComponentName(String name) {
+        if (name == null || name.isEmpty()) {
+            return name;
+        }
+        String normalized = name;
+
+        // 去除前缀：Top_ / top_
+        if (normalized.toLowerCase().startsWith("top_")) {
+            normalized = normalized.substring(4);
+        }
+
+        // 去除后缀：_System / _system / _Module / _module / _Impl / _impl
+        String[] suffixes = {"_System", "_system", "_Module", "_module", "_Impl", "_impl"};
+        for (String suffix : suffixes) {
+            if (normalized.endsWith(suffix)) {
+                normalized = normalized.substring(0, normalized.length() - suffix.length());
+                break;
+            }
+        }
+
+        // 转小写
+        normalized = normalized.toLowerCase();
+
+        // 移除所有下划线（兜底比较）
+        normalized = normalized.replace("_", "");
+
+        return normalized;
+    }
+
+    /**
+     * 尝试在 Map 中按规范化名称查找组件。
+     * 先精确匹配，失败后用规范化名称模糊匹配。
+     *
+     * @return 匹配到的 key（原始名称），未找到返回 null
+     * @deprecated 请使用 {@link #matchComponentsByTypeAndSimilarity} 替代
+     */
+    @Deprecated
+    private <T> String findComponentByName(String name, Map<String, T> map) {
+        if (name == null || map == null || map.isEmpty()) {
+            return null;
+        }
+        // 精确匹配
+        if (map.containsKey(name)) {
+            return name;
+        }
+        // 规范化后模糊匹配
+        String normalized = normalizeComponentName(name);
+        for (String key : map.keySet()) {
+            if (normalized.equals(normalizeComponentName(key))) {
+                return key;
+            }
+        }
+        return null;
+    }
+
+    // ========================= 名称相似度 + 类型一致性匹配 =========================
+
+    /** 名称相似度阈值（0.0 ~ 1.0），低于此阈值认为不是同一组件 */
+    private static final double NAME_SIMILARITY_THRESHOLD = 0.6;
+
+    /**
+     * 计算两个字符串的 Levenshtein 编辑距离。
+     */
+    private int levenshteinDistance(String s1, String s2) {
+        if (s1 == null || s2 == null) {
+            return Integer.MAX_VALUE;
+        }
+        int len1 = s1.length();
+        int len2 = s2.length();
+        int[][] dp = new int[len1 + 1][len2 + 1];
+
+        for (int i = 0; i <= len1; i++) {
+            dp[i][0] = i;
+        }
+        for (int j = 0; j <= len2; j++) {
+            dp[0][j] = j;
+        }
+
+        for (int i = 1; i <= len1; i++) {
+            for (int j = 1; j <= len2; j++) {
+                int cost = (s1.charAt(i - 1) == s2.charAt(j - 1)) ? 0 : 1;
+                dp[i][j] = Math.min(Math.min(
+                                dp[i - 1][j] + 1,      // 删除
+                                dp[i][j - 1] + 1),     // 插入
+                        dp[i - 1][j - 1] + cost);  // 替换
+            }
+        }
+        return dp[len1][len2];
+    }
+
+    /**
+     * 计算两个名称的相似度（0.0 ~ 1.0）。
+     * 基于规范化名称后的 Levenshtein 距离计算。
+     */
+    private double calculateNameSimilarity(String name1, String name2) {
+        if (name1 == null || name2 == null) {
+            return 0.0;
+        }
+        // 先做规范化（去前缀后缀、大小写、下划线）
+        String norm1 = normalizeComponentName(name1);
+        String norm2 = normalizeComponentName(name2);
+
+        if (norm1.equals(norm2)) {
+            return 1.0;
+        }
+        if (norm1.isEmpty() || norm2.isEmpty()) {
+            return 0.0;
+        }
+
+        int maxLen = Math.max(norm1.length(), norm2.length());
+        int distance = levenshteinDistance(norm1, norm2);
+        return 1.0 - ((double) distance / maxLen);
+    }
+
+    /**
+     * 规范化组件类型（用于类型一致性比较）。
+     * 转小写、下划线转空格，与 isValidAadlComponentType 保持一致。
+     */
+    private String normalizeComponentType(String type) {
+        if (type == null) {
+            return "";
+        }
+        return type.trim().toLowerCase().replace('_', ' ');
+    }
+
+    /**
+     * 组件匹配结果：AADL 组件名 → 架构树组件名 的映射。
+     * 仅包含匹配成功的对（类型一致 + 名称相似度 ≥ 阈值）。
+     */
+    public static class ComponentMatchResult {
+        /** key: AADL 组件名, value: 架构树组件名 */
+        public Map<String, String> aadlToArch = new HashMap<>();
+        /** key: 架构树组件名, value: AADL 组件名 */
+        public Map<String, String> archToAadl = new HashMap<>();
+        /** 未匹配到架构树的 AADL 组件名（可能是幻觉） */
+        public Set<String> unmatchedAadl = new HashSet<>();
+        /** 未匹配到 AADL 的架构树组件名（可能是遗漏） */
+        public Set<String> unmatchedArch = new HashSet<>();
+    }
+
+    /**
+     * 基于"类型一致性 + 名称相似度"的组件匹配。
+     *
+     * 算法：
+     * 1. 按组件类型分组，只在同类型内匹配（保证类型一致性）
+     * 2. 在每类内，计算所有 AADL 组件与架构树组件的名称相似度
+     * 3. 按相似度从高到低贪心匹配，每个组件只能匹配一次
+     * 4. 相似度低于阈值的不匹配
+     *
+     * @return 匹配结果（含匹配对和未匹配集合）
+     */
+    private ComponentMatchResult matchComponentsByTypeAndSimilarity(
+            Map<String, AadlDeclaration> declarations,
+            Map<String, AadlInputParser.ArchNode> archComponents) {
+
+        ComponentMatchResult result = new ComponentMatchResult();
+
+        if (declarations == null || declarations.isEmpty()
+                || archComponents == null || archComponents.isEmpty()) {
+            if (declarations != null) {
+                result.unmatchedAadl.addAll(declarations.keySet());
+            }
+            if (archComponents != null) {
+                result.unmatchedArch.addAll(archComponents.keySet());
+            }
+            return result;
+        }
+
+        // 1. 按类型分组
+        Map<String, Map<String, AadlDeclaration>> aadlByType = new HashMap<>();
+        for (Map.Entry<String, AadlDeclaration> e : declarations.entrySet()) {
+            String type = normalizeComponentType(e.getValue().type);
+            aadlByType.computeIfAbsent(type, k -> new LinkedHashMap<>()).put(e.getKey(), e.getValue());
+        }
+
+        Map<String, Map<String, AadlInputParser.ArchNode>> archByType = new HashMap<>();
+        for (Map.Entry<String, AadlInputParser.ArchNode> e : archComponents.entrySet()) {
+            String type = normalizeComponentType(e.getValue().type);
+            archByType.computeIfAbsent(type, k -> new LinkedHashMap<>()).put(e.getKey(), e.getValue());
+        }
+
+        // 收集所有类型
+        Set<String> allTypes = new HashSet<>();
+        allTypes.addAll(aadlByType.keySet());
+        allTypes.addAll(archByType.keySet());
+
+        // 2. 对每种类型执行贪心匹配
+        for (String type : allTypes) {
+            Map<String, AadlDeclaration> aadlGroup = aadlByType.getOrDefault(type, Collections.emptyMap());
+            Map<String, AadlInputParser.ArchNode> archGroup = archByType.getOrDefault(type, Collections.emptyMap());
+
+            // 计算所有候选对的相似度
+            List<double[]> candidates = new ArrayList<>();
+            // [similarity, aadlIndex, archIndex]
+            List<String> aadlNames = new ArrayList<>(aadlGroup.keySet());
+            List<String> archNames = new ArrayList<>(archGroup.keySet());
+
+            for (int i = 0; i < aadlNames.size(); i++) {
+                for (int j = 0; j < archNames.size(); j++) {
+                    double sim = calculateNameSimilarity(aadlNames.get(i), archNames.get(j));
+                    if (sim >= NAME_SIMILARITY_THRESHOLD) {
+                        candidates.add(new double[]{sim, i, j});
+                    }
+                }
+            }
+
+            // 按相似度从高到低排序
+            candidates.sort((a, b) -> Double.compare(b[0], a[0]));
+
+            // 贪心匹配
+            Set<Integer> usedAadl = new HashSet<>();
+            Set<Integer> usedArch = new HashSet<>();
+            for (double[] cand : candidates) {
+                int ai = (int) cand[1];
+                int bi = (int) cand[2];
+                if (!usedAadl.contains(ai) && !usedArch.contains(bi)) {
+                    String aadlName = aadlNames.get(ai);
+                    String archName = archNames.get(bi);
+                    result.aadlToArch.put(aadlName, archName);
+                    result.archToAadl.put(archName, aadlName);
+                    usedAadl.add(ai);
+                    usedArch.add(bi);
+                }
+            }
+
+            // 记录未匹配的
+            for (int i = 0; i < aadlNames.size(); i++) {
+                if (!usedAadl.contains(i)) {
+                    result.unmatchedAadl.add(aadlNames.get(i));
+                }
+            }
+            for (int j = 0; j < archNames.size(); j++) {
+                if (!usedArch.contains(j)) {
+                    result.unmatchedArch.add(archNames.get(j));
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /**
      * 去除行尾注释并 trim。
      * AADL 注释以 "--" 开头到行尾，但在 annex {** ... **} 块内不应处理。
      * 注意：所有parse/check/fix方法应使用 protectAnnexBlocks 预处理内容，
@@ -588,14 +839,21 @@ public class AadlReferenceValidator {
         // 4b. 检测缺失声明：有类型声明但缺实现声明，或反之
         checkIncompleteDeclarations(aadlDeclarations, archComponents, result);
 
+        // 4c~4e. 基于"类型一致性 + 名称相似度"的组件匹配（只计算一次，复用于三项检测）
+        ComponentMatchResult componentMatch = matchComponentsByTypeAndSimilarity(aadlDeclarations, archComponents);
+        log.info("组件匹配完成：匹配成功 {} 对，AADL 侧未匹配 {} 个，架构树侧未匹配 {} 个",
+                componentMatch.aadlToArch.size(),
+                componentMatch.unmatchedAadl.size(),
+                componentMatch.unmatchedArch.size());
+
         // 4c. 检测幻觉组件：AADL 中声明了但架构树中不存在的组件
-        checkHallucinatedComponents(aadlDeclarations, archComponents, result);
+        checkHallucinatedComponents(aadlDeclarations, archComponents, componentMatch, result);
 
         // 4d. 检测遗漏组件：架构树中存在但 AADL 中缺失的组件
-        checkMissingComponents(aadlDeclarations, archComponents, result);
+        checkMissingComponents(aadlDeclarations, archComponents, componentMatch, result);
 
         // 4e. 检测类型不匹配
-        checkTypeMismatches(aadlDeclarations, archComponents, result);
+        checkTypeMismatches(aadlDeclarations, archComponents, componentMatch, result);
 
         // 4f. 检测 subcomponents 层级违规（如 process 直接放在 processor 下）
         checkContainmentCompliance(subcomponentRefs, aadlDeclarations, result);
@@ -675,11 +933,14 @@ public class AadlReferenceValidator {
         // 4aa. 检测畸形 end 语句（逗号、多余空格、多个标识符等）
         checkMalformedEndStatements(protectedContent, result);
 
+        // 4ad. 检测空块（features/subcomponents/connections/properties 等块中没有任何有效内容）
+        checkEmptyBlocks(protectedContent, result);
+
         // 5. 自动修正（使用受保护的内容，修复完成后恢复annex块）
-        if (!result.errors.isEmpty() || hasAutoFixableIssues(aadlDeclarations, archComponents)
+        if (!result.errors.isEmpty() || hasAutoFixableIssues(aadlDeclarations, archComponents, componentMatch)
                 || !result.missingFeatures.isEmpty()) {
             String fixedProtected = applyFixes(protectedContent, aadlDeclarations, archComponents,
-                    componentFeatures, featureDetails, subcomponentRefs, connectionRefs, result);
+                    componentMatch, componentFeatures, featureDetails, subcomponentRefs, connectionRefs, result);
             String restored = restoreAnnexBlocks(fixedProtected);
             // annotatedContent: 带注释标记的版本（用于展示给用户看）
             result.annotatedContent = restored;
@@ -755,6 +1016,11 @@ public class AadlReferenceValidator {
             return "features 块只能定义接口（port、bus/data/subprogram access、feature group、abstract feature）。" +
                    "将子组件声明（如 'child : process Child.impl;'）从 features 块中移除，" +
                    "移到对应 component implementation 的 subcomponents 块中。";
+        }
+
+        // 空块
+        if (msg.contains("空") && msg.contains("块") && msg.contains("没有任何有效内容")) {
+            return "空的块关键字没有实际意义，会增加代码冗余。删除该块关键字行即可。";
         }
 
         // thread 内有 connections
@@ -1088,16 +1354,39 @@ public class AadlReferenceValidator {
 
     /**
      * 4c. 检测幻觉组件：AADL 中声明了但架构树中不存在的组件。
+     * 基于"类型一致性 + 名称相似度"匹配结果，未匹配到的 AADL 组件视为可能的幻觉。
      */
     private void checkHallucinatedComponents(Map<String, AadlDeclaration> declarations,
                                              Map<String, AadlInputParser.ArchNode> archComponents,
+                                             ComponentMatchResult matchResult,
                                              ValidationResult result) {
         if (archComponents.isEmpty()) {
             return; // 没有架构树数据，跳过此检查
         }
 
-        for (AadlDeclaration decl : declarations.values()) {
-            if (!archComponents.containsKey(decl.name)) {
+        for (String aadlName : matchResult.unmatchedAadl) {
+            AadlDeclaration decl = declarations.get(aadlName);
+            if (decl == null) {
+                continue;
+            }
+            // 计算该组件与所有架构树组件的最高相似度（用于提示信息）
+            double maxSim = 0.0;
+            String closestArch = null;
+            for (AadlInputParser.ArchNode archComp : archComponents.values()) {
+                double sim = calculateNameSimilarity(decl.name, archComp.name);
+                if (sim > maxSim) {
+                    maxSim = sim;
+                    closestArch = archComp.name;
+                }
+            }
+
+            if (closestArch != null && maxSim >= 0.4) {
+                result.warnings.add(String.format(
+                        "幻觉组件: '%s' (%s) 在架构树中不存在，可能是 LLM 生成的不必要组件" +
+                                "（与架构树 '%s' 名称相似度 %.0f%%，但类型不同或相似度不足）",
+                        decl.name, decl.type, closestArch, maxSim * 100
+                ));
+            } else {
                 result.warnings.add(String.format(
                         "幻觉组件: '%s' (%s) 在架构树中不存在，可能是 LLM 生成的不必要组件",
                         decl.name, decl.type
@@ -1108,15 +1397,21 @@ public class AadlReferenceValidator {
 
     /**
      * 4d. 检测遗漏组件：架构树中存在但 AADL 中缺失的组件。
+     * 基于"类型一致性 + 名称相似度"匹配结果，未匹配到的架构树组件视为遗漏。
      */
     private void checkMissingComponents(Map<String, AadlDeclaration> declarations,
                                         Map<String, AadlInputParser.ArchNode> archComponents,
+                                        ComponentMatchResult matchResult,
                                         ValidationResult result) {
         if (archComponents.isEmpty()) {
             return;
         }
 
-        for (AadlInputParser.ArchNode archComp : archComponents.values()) {
+        for (String archName : matchResult.unmatchedArch) {
+            AadlInputParser.ArchNode archComp = archComponents.get(archName);
+            if (archComp == null) {
+                continue;
+            }
             // 架构树中存在非法组件类型：不报"遗漏组件"错误，报架构树本身的问题
             if (!isValidAadlComponentType(archComp.type)) {
                 result.errors.add(String.format(
@@ -1127,13 +1422,30 @@ public class AadlReferenceValidator {
                 ));
                 continue;
             }
-            if (!declarations.containsKey(archComp.name)) {
-                // 保留字命名的组件降级为警告：LLM 通常已按命名规则重命名（如 System → Top_BSCU）
-                if (isReservedWord(archComp.name)) {
-                    result.warnings.add(String.format(
-                            "架构树组件 '%s' (%s) 使用了 AADL 保留关键字作为名称，" +
-                            "AADL 中可能已用合规名称替代（非硬性错误）",
-                            archComp.name, archComp.type
+            // 计算与所有 AADL 组件的最高相似度（用于提示信息）
+            double maxSim = 0.0;
+            String closestAadl = null;
+            for (AadlDeclaration decl : declarations.values()) {
+                double sim = calculateNameSimilarity(archComp.name, decl.name);
+                if (sim > maxSim) {
+                    maxSim = sim;
+                    closestAadl = decl.name;
+                }
+            }
+
+            // 保留字命名的组件降级为警告：LLM 通常已按命名规则重命名（如 System → Top_BSCU）
+            if (isReservedWord(archComp.name)) {
+                result.warnings.add(String.format(
+                        "架构树组件 '%s' (%s) 使用了 AADL 保留关键字作为名称，" +
+                                "AADL 中可能已用合规名称替代（非硬性错误）",
+                        archComp.name, archComp.type
+                ));
+            } else {
+                if (closestAadl != null && maxSim >= 0.4) {
+                    result.errors.add(String.format(
+                            "遗漏组件: '%s' (%s) 在架构树中存在但 AADL 中缺失声明" +
+                                    "（与 AADL '%s' 名称相似度 %.0f%%，但类型不同或相似度不足）",
+                            archComp.name, archComp.type, closestAadl, maxSim * 100
                     ));
                 } else {
                     result.errors.add(String.format(
@@ -1146,22 +1458,53 @@ public class AadlReferenceValidator {
     }
 
     /**
-     * 4e. 检测类型不匹配：AADL 中的组件类型与架构树中的不一致。
+     * 4e. 检测类型不匹配：名称高度相似但类型不同的组件对。
+     * 由于匹配时已保证类型一致，匹配成功的对不会有类型问题。
+     * 此处检测"名称很像但类型不同"的潜在错误（名称完全一致时报错误，名称相似时报警告）。
      */
     private void checkTypeMismatches(Map<String, AadlDeclaration> declarations,
                                      Map<String, AadlInputParser.ArchNode> archComponents,
+                                     ComponentMatchResult matchResult,
                                      ValidationResult result) {
         if (archComponents.isEmpty()) {
             return;
         }
 
-        for (AadlDeclaration decl : declarations.values()) {
-            AadlInputParser.ArchNode archComp = archComponents.get(decl.name);
-            if (archComp != null && !decl.type.equals(archComp.type)) {
-                result.errors.add(String.format(
-                        "类型不匹配: 组件 '%s' 在架构树中类型为 '%s'，但在 AADL 中声明为 '%s'",
-                        decl.name, archComp.type, decl.type
-                ));
+        // 遍历所有未匹配的 AADL 组件，找名称相似但类型不同的架构树组件
+        for (String aadlName : matchResult.unmatchedAadl) {
+            AadlDeclaration decl = declarations.get(aadlName);
+            if (decl == null) {
+                continue;
+            }
+            double maxSim = 0.0;
+            AadlInputParser.ArchNode closestArch = null;
+            for (AadlInputParser.ArchNode archComp : archComponents.values()) {
+                // 跳过类型相同的（同类型未匹配说明是名称相似度不够，不是类型问题）
+                if (normalizeComponentType(decl.type).equals(normalizeComponentType(archComp.type))) {
+                    continue;
+                }
+                double sim = calculateNameSimilarity(decl.name, archComp.name);
+                if (sim > maxSim) {
+                    maxSim = sim;
+                    closestArch = archComp;
+                }
+            }
+
+            if (closestArch != null && maxSim >= 0.7) {
+                // 名称完全相同但类型不同 → 错误
+                if (normalizeComponentName(decl.name).equals(normalizeComponentName(closestArch.name))) {
+                    result.errors.add(String.format(
+                            "类型不匹配: 组件 '%s' 在架构树中类型为 '%s'，但在 AADL 中声明为 '%s'",
+                            decl.name, closestArch.type, decl.type
+                    ));
+                } else {
+                    // 名称相似但类型不同 → 警告（可能是不同组件，也可能是命名不一致）
+                    result.warnings.add(String.format(
+                            "类型可能不匹配: AADL 组件 '%s' (%s) 与架构树组件 '%s' (%s) " +
+                                    "名称相似度 %.0f%% 但类型不同，请确认是否为同一组件的不同命名",
+                            decl.name, decl.type, closestArch.name, closestArch.type, maxSim * 100
+                    ));
+                }
             }
         }
     }
@@ -3986,22 +4329,31 @@ public class AadlReferenceValidator {
     // ========================= 自动修正 =========================
 
     private boolean hasAutoFixableIssues(Map<String, AadlDeclaration> declarations,
-                                         Map<String, AadlInputParser.ArchNode> archComponents) {
+                                         Map<String, AadlInputParser.ArchNode> archComponents,
+                                         ComponentMatchResult matchResult) {
         // 如果有架构树中存在但 AADL 中缺失的组件，可以自动补全（跳过保留字命名的组件）
         if (!archComponents.isEmpty()) {
-            for (AadlInputParser.ArchNode archComp : archComponents.values()) {
-                if (isReservedWord(archComp.name)) {
-                    continue;
-                }
-                if (!declarations.containsKey(archComp.name)) {
+            for (String archName : matchResult.unmatchedArch) {
+                AadlInputParser.ArchNode archComp = archComponents.get(archName);
+                if (archComp == null) continue;
+                if (isReservedWord(archComp.name)) continue;
+                if (!isValidAadlComponentType(archComp.type)) continue;
+                return true;
+            }
+            // 已匹配的组件中如果有声明不完整的，也可以自动补全
+            for (Map.Entry<String, String> e : matchResult.archToAadl.entrySet()) {
+                AadlDeclaration decl = declarations.get(e.getValue());
+                if (decl != null && decl.hasTypeDecl != decl.hasImplDecl) {
                     return true;
                 }
             }
         }
-        // 如果有声明不完整的组件，可以自动补全
-        for (AadlDeclaration decl : declarations.values()) {
-            if (decl.hasTypeDecl != decl.hasImplDecl) {
-                return true;
+        // 如果有声明不完整的组件，可以自动补全（无架构树数据时的兜底）
+        if (archComponents.isEmpty()) {
+            for (AadlDeclaration decl : declarations.values()) {
+                if (decl.hasTypeDecl != decl.hasImplDecl) {
+                    return true;
+                }
             }
         }
         // 以下类型的错误也可以自动修正（但需要在 validate 中已检测到 errors）
@@ -7060,6 +7412,200 @@ public class AadlReferenceValidator {
         return sb.toString();
     }
 
+    // ========================= 空块检测与修复 =========================
+
+    /**
+     * 4ad. 检测空块：features/subcomponents/connections/properties 等块中没有任何有效内容。
+     * 空块只有关键字行，后面直接跟着另一个块关键字或 end 语句，中间没有有效声明。
+     * 注意：纯注释行和空行不算有效内容。
+     */
+    private void checkEmptyBlocks(String aadlContent, ValidationResult result) {
+        String[] lines = aadlContent.split("\n");
+
+        // AADL 块关键字列表（用于识别块的开始和结束）
+        Set<String> blockKeywords = new LinkedHashSet<>(Arrays.asList(
+                "features", "subcomponents", "connections", "properties",
+                "flows", "modes", "calls",
+                "internal features", "processor features"
+        ));
+
+        String currentBlockName = null;
+        int currentBlockLine = -1;
+        boolean hasContent = false;
+
+        for (int i = 0; i < lines.length; i++) {
+            String rawTrimmed = lines[i].trim();
+
+            // 跳过被保护的 annex 行
+            if (rawTrimmed.startsWith(ANNEX_PROTECT_PREFIX)) {
+                continue;
+            }
+
+            String line = stripComment(lines[i]);
+
+            if (line.isEmpty()) {
+                continue;
+            }
+
+            // annex 行：视为块结束（退出当前块）
+            if (line.toLowerCase().startsWith("annex ")) {
+                if (currentBlockName != null && !hasContent) {
+                    result.warnings.add(String.format(
+                            "第%d行: 空 '%s' 块 - 块中没有任何有效内容，建议删除",
+                            currentBlockLine + 1, currentBlockName
+                    ));
+                }
+                currentBlockName = null;
+                continue;
+            }
+
+            // end 语句：视为块结束
+            if (line.matches("^end\\s+.*;$")) {
+                if (currentBlockName != null && !hasContent) {
+                    result.warnings.add(String.format(
+                            "第%d行: 空 '%s' 块 - 块中没有任何有效内容，建议删除",
+                            currentBlockLine + 1, currentBlockName
+                    ));
+                }
+                currentBlockName = null;
+                continue;
+            }
+
+            // 检查是否为块关键字行（进入新块）
+            String lowerLine = line.toLowerCase();
+            boolean isBlockKeyword = false;
+            for (String kw : blockKeywords) {
+                if (lowerLine.equals(kw)) {
+                    // 结束上一个块
+                    if (currentBlockName != null && !hasContent) {
+                        result.warnings.add(String.format(
+                                "第%d行: 空 '%s' 块 - 块中没有任何有效内容，建议删除",
+                                currentBlockLine + 1, currentBlockName
+                        ));
+                    }
+                    currentBlockName = kw;
+                    currentBlockLine = i;
+                    hasContent = false;
+                    isBlockKeyword = true;
+                    break;
+                }
+            }
+
+            if (!isBlockKeyword && currentBlockName != null && !line.isEmpty()) {
+                // 当前在块中，且有非空有效内容
+                hasContent = true;
+            }
+        }
+
+        // 文件结束时检查最后一个块
+        if (currentBlockName != null && !hasContent) {
+            result.warnings.add(String.format(
+                    "第%d行: 空 '%s' 块 - 块中没有任何有效内容，建议删除",
+                    currentBlockLine + 1, currentBlockName
+            ));
+        }
+    }
+
+    /**
+     * 自动修复 0v：删除空的块关键字行。
+     * 仅删除块中没有任何有效内容（只有注释/空行）的块关键字行。
+     */
+    private String fixEmptyBlocks(String content, ValidationResult result) {
+        String[] lines = content.split("\n", -1);
+        List<Integer> linesToRemove = new ArrayList<>();
+
+        Set<String> blockKeywords = new LinkedHashSet<>(Arrays.asList(
+                "features", "subcomponents", "connections", "properties",
+                "flows", "modes", "calls",
+                "internal features", "processor features"
+        ));
+
+        String currentBlockName = null;
+        int currentBlockLineIdx = -1;
+        boolean hasContent = false;
+        int lastContentLine = -1;
+
+        for (int i = 0; i < lines.length; i++) {
+            String rawTrimmed = lines[i].trim();
+
+            // 跳过被保护的 annex 行
+            if (rawTrimmed.startsWith(ANNEX_PROTECT_PREFIX)) {
+                if (currentBlockName != null) {
+                    hasContent = true; // 保守起见，annex 保护行视为有内容
+                }
+                continue;
+            }
+
+            String line = stripComment(lines[i]);
+
+            // annex 行：退出当前块
+            if (line.toLowerCase().startsWith("annex ")) {
+                if (currentBlockName != null && !hasContent) {
+                    linesToRemove.add(currentBlockLineIdx);
+                }
+                currentBlockName = null;
+                continue;
+            }
+
+            // end 语句：退出当前块
+            if (line.matches("^end\\s+.*;$")) {
+                if (currentBlockName != null && !hasContent) {
+                    linesToRemove.add(currentBlockLineIdx);
+                }
+                currentBlockName = null;
+                continue;
+            }
+
+            // 检查是否为块关键字行
+            String lowerLine = line.toLowerCase();
+            boolean isBlockKeyword = false;
+            for (String kw : blockKeywords) {
+                if (lowerLine.equals(kw)) {
+                    // 结束上一个块
+                    if (currentBlockName != null && !hasContent) {
+                        linesToRemove.add(currentBlockLineIdx);
+                    }
+                    currentBlockName = kw;
+                    currentBlockLineIdx = i;
+                    hasContent = false;
+                    isBlockKeyword = true;
+                    break;
+                }
+            }
+
+            if (!isBlockKeyword && currentBlockName != null && !line.isEmpty()) {
+                hasContent = true;
+                lastContentLine = i;
+            }
+        }
+
+        // 文件结束时检查最后一个块
+        if (currentBlockName != null && !hasContent) {
+            linesToRemove.add(currentBlockLineIdx);
+        }
+
+        if (linesToRemove.isEmpty()) {
+            return content;
+        }
+
+        // 构建结果（跳过要删除的行）
+        List<String> resultLines = new ArrayList<>();
+        Set<Integer> removeSet = new HashSet<>(linesToRemove);
+        for (int i = 0; i < lines.length; i++) {
+            if (!removeSet.contains(i)) {
+                resultLines.add(lines[i]);
+            } else {
+                result.fixes.add(String.format(
+                        "第%d行: 已删除空 '%s' 块",
+                        i + 1, lines[i].trim()
+                ));
+            }
+        }
+
+        log.info("自动修正：删除 {} 个空块", linesToRemove.size());
+        return String.join("\n", resultLines);
+    }
+
     /**
      * 4aa. 检测畸形 end 语句。
      * 通过追踪组件声明栈来识别畸形 end：凡是以 "end " 开头但不符合正常格式的，都算畸形。
@@ -7873,6 +8419,7 @@ public class AadlReferenceValidator {
     private String applyFixes(String aadlContent,
                               Map<String, AadlDeclaration> declarations,
                               Map<String, AadlInputParser.ArchNode> archComponents,
+                              ComponentMatchResult matchResult,
                               Map<String, Map<String, String>> componentFeatures,
                               Map<String, Map<String, FeatureDetail>> featureDetails,
                               List<SubcomponentRef> subcomponentRefs,
@@ -7884,6 +8431,9 @@ public class AadlReferenceValidator {
         // ===== 第一阶段：语法结构修复（必须最先执行，否则后续解析会出错）=====
         // 0r. 修复畸形 end 语句
         content = fixMalformedEndStatements(content, result);
+
+        // 0v. 删除空的块关键字行（空 features / subcomponents / connections 等）
+        content = fixEmptyBlocks(content, result);
 
         // 0a. 修正非法 requires data port 语法
         content = fixRequiresDataPort(content, result);
@@ -7940,9 +8490,13 @@ public class AadlReferenceValidator {
         StringBuilder fixBlock = new StringBuilder();
         int fixCount = 0;
 
-        // 1. 补全架构树中存在但 AADL 中缺失的组件
+        // 1. 补全架构树中存在但 AADL 中缺失的组件（基于类型一致性 + 名称相似度匹配结果）
         if (!archComponents.isEmpty()) {
-            for (AadlInputParser.ArchNode archComp : archComponents.values()) {
+            for (String archName : matchResult.unmatchedArch) {
+                AadlInputParser.ArchNode archComp = archComponents.get(archName);
+                if (archComp == null) {
+                    continue;
+                }
                 // 跳过 AADL 保留字命名的组件（LLM 通常已按命名规则重命名，如 System → Top_BSCU）
                 if (isReservedWord(archComp.name)) {
                     result.warnings.add(String.format(
@@ -7958,36 +8512,41 @@ public class AadlReferenceValidator {
                     log.debug("跳过非AADL组件类型的架构树节点: {} (type={})", archComp.name, archComp.type);
                     continue;
                 }
-                AadlDeclaration decl = declarations.get(archComp.name);
-                if (decl == null) {
-                    // 完全缺失，生成类型声明 + 实现声明
-                    fixBlock.append(generateFullDeclaration(archComp.name, archComp.type));
+                // 未匹配到的组件 → 完全缺失，生成类型声明 + 实现声明
+                fixBlock.append(generateFullDeclaration(archComp.name, archComp.type));
+                fixCount++;
+                result.fixes.add(String.format(
+                        "已补全缺失组件声明: %s (%s)", archComp.name, archComp.type
+                ));
+                result.warnings.add(String.format(
+                        "遗漏组件: '%s' (%s) 在架构树中存在但 AADL 中缺失声明，已自动补全",
+                        archComp.name, archComp.type
+                ));
+            }
+            // 同时检查已匹配的组件中是否有声明不完整的（缺少 type 或 impl 声明）
+            for (Map.Entry<String, String> e : matchResult.archToAadl.entrySet()) {
+                String archName = e.getKey();
+                String aadlName = e.getValue();
+                AadlInputParser.ArchNode archComp = archComponents.get(archName);
+                AadlDeclaration decl = declarations.get(aadlName);
+                if (archComp == null || decl == null) {
+                    continue;
+                }
+                if (!decl.hasTypeDecl) {
+                    fixBlock.append(String.format("    -- [自动修正] 补全缺失的类型声明: %s (%s)\n", aadlName, decl.type));
+                    fixBlock.append(generateTypeDeclaration(aadlName, decl.type));
                     fixCount++;
                     result.fixes.add(String.format(
-                            "已补全缺失组件声明: %s (%s)", archComp.name, archComp.type
+                            "已补全类型声明: %s (%s)", aadlName, decl.type
                     ));
-                    result.warnings.add(String.format(
-                            "遗漏组件: '%s' (%s) 在架构树中存在但 AADL 中缺失声明，已自动补全",
-                            archComp.name, archComp.type
+                }
+                if (!decl.hasImplDecl) {
+                    fixBlock.append(String.format("    -- [自动修正] 补全缺失的实现声明: %s (%s)\n", aadlName, decl.type));
+                    fixBlock.append(generateImplDeclaration(aadlName, decl.type));
+                    fixCount++;
+                    result.fixes.add(String.format(
+                            "已补全实现声明: %s (%s)", aadlName, decl.type
                     ));
-                } else {
-                    // 部分缺失
-                    if (!decl.hasTypeDecl) {
-                        fixBlock.append(String.format("    -- [自动修正] 补全缺失的类型声明: %s (%s)\n", archComp.name, archComp.type));
-                        fixBlock.append(generateTypeDeclaration(archComp.name, archComp.type));
-                        fixCount++;
-                        result.fixes.add(String.format(
-                                "已补全类型声明: %s (%s)", archComp.name, archComp.type
-                        ));
-                    }
-                    if (!decl.hasImplDecl) {
-                        fixBlock.append(String.format("    -- [自动修正] 补全缺失的实现声明: %s (%s)\n", archComp.name, archComp.type));
-                        fixBlock.append(generateImplDeclaration(archComp.name, archComp.type));
-                        fixCount++;
-                        result.fixes.add(String.format(
-                                "已补全实现声明: %s (%s)", archComp.name, archComp.type
-                        ));
-                    }
                 }
             }
         } else {
