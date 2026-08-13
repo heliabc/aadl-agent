@@ -1,12 +1,15 @@
 package com.example.aadlagent.agent.aadl;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 public class AadlFixerPrompt {
 
     private Map<String, Object> rulesConfig;
@@ -79,29 +82,33 @@ public class AadlFixerPrompt {
         prompt.append(fixGuidelines.get("content"));
         prompt.append("\n\n");
 
-        // 8. 常见错误修复示例
-        List<Map<String, Object>> commonFixes = (List<Map<String, Object>>) rulesConfig.get("common_fixes");
-        prompt.append("【常见错误修复示例】\n");
-        for (Map<String, Object> fix : commonFixes) {
-            prompt.append("--- ").append(fix.get("title")).append(" ---\n");
-            prompt.append("错误类型: ").append(fix.get("error_type")).append("\n");
-            prompt.append("错误示例: ").append(fix.get("error_example")).append("\n");
-            prompt.append("修复方案: ").append(fix.get("fix_solution")).append("\n\n");
-        }
-
-        // 8b. 静态语法分析修复规则（内置分析器检测的无法自动修复的错误）
+        // 8. 修复规则（按错误关键词动态注入，减少小模型的 prompt 负担）
         Object staticFixesObj = rulesConfig.get("static_analysis_fixes");
         if (staticFixesObj instanceof List) {
             List<Map<String, Object>> staticFixes = (List<Map<String, Object>>) staticFixesObj;
-            prompt.append("【静态语法分析修复规则】\n");
-            prompt.append("以下错误由内置静态语法分析器检测，无法自动修复，需要根据上下文修复：\n\n");
+            String errorsForMatching = errors != null ? errors : "";
+
+            List<Map<String, Object>> injectedRules = new ArrayList<>();
             for (Map<String, Object> rule : staticFixes) {
+                if (shouldInjectFixRule(rule, errorsForMatching)) {
+                    injectedRules.add(rule);
+                }
+            }
+
+            // 回退策略：如果没有匹配到任何规则，注入全部
+            if (injectedRules.isEmpty() && !staticFixes.isEmpty()) {
+                injectedRules = staticFixes;
+                log.info("修复规则动态过滤：无关键词匹配，回退注入全部 {} 条", staticFixes.size());
+            } else {
+                log.info("修复规则动态过滤：注入 {} 条，跳过 {} 条（共 {} 条）",
+                        injectedRules.size(), staticFixes.size() - injectedRules.size(), staticFixes.size());
+            }
+
+            prompt.append("【修复规则】\n");
+            for (Map<String, Object> rule : injectedRules) {
                 prompt.append("--- ").append(rule.get("id")).append(": ").append(rule.get("title")).append(" ---\n");
-                prompt.append("严重级别: ").append(rule.get("severity")).append("\n");
                 prompt.append("错误特征: ").append(rule.get("error_pattern")).append("\n");
-                prompt.append("修复策略:\n").append(rule.get("fix_strategy")).append("\n");
-                prompt.append("修复前:\n").append(rule.get("before")).append("\n");
-                prompt.append("修复后:\n").append(rule.get("after")).append("\n\n");
+                prompt.append("修复策略: ").append(rule.get("fix_strategy")).append("\n\n");
             }
         }
 
@@ -116,6 +123,39 @@ public class AadlFixerPrompt {
         prompt.append(rulesConfig.get("output_instruction"));
 
         return prompt.toString();
+    }
+
+    /**
+     * 决定单条修复规则是否注入 prompt。
+     *
+     * 判断逻辑：
+     * 1. 没有 trigger 配置 → 默认注入
+     * 2. trigger.anyKeywords：错误文本中包含任一关键词 → 注入
+     * 3. 有 trigger 但关键词都不匹配 → 跳过
+     *
+     * @param rule           规则配置
+     * @param errorsText     错误信息文本
+     * @return true=注入, false=跳过
+     */
+    @SuppressWarnings("unchecked")
+    private boolean shouldInjectFixRule(Map<String, Object> rule, String errorsText) {
+        Object trigger = rule.get("trigger");
+        if (!(trigger instanceof Map)) {
+            return true; // 没有 trigger 配置，默认注入
+        }
+        Map<String, Object> triggerMap = (Map<String, Object>) trigger;
+        Object anyKeywords = triggerMap.get("anyKeywords");
+        if (!(anyKeywords instanceof List)) {
+            return true; // 没有 anyKeywords 配置，默认注入
+        }
+        List<String> keywords = (List<String>) anyKeywords;
+        String errorsLower = errorsText.toLowerCase();
+        for (String keyword : keywords) {
+            if (errorsLower.contains(keyword.toLowerCase())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
