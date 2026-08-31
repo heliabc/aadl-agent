@@ -54,6 +54,9 @@ rag:
   top-k: 5
   rerank-top-k: 3
   rrf-k: 60
+  # Cross-encoder 重排序服务地址
+  # 配置后优先使用 cross-encoder，未配置则降级为 LLM 提示词重排序
+  reranker-endpoint: "http://localhost:8081"
 
 qdrant:
   host: localhost

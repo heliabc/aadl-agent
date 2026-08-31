@@ -11,13 +11,22 @@ import java.util.regex.Pattern;
  * AADL 引用完整性验证器（不依赖大模型）。
  *
  * 核心思路：复用 {@link AadlInputParser} 解析出的组件真值表作为"真值源"，
- * 解析生成的 AADL 代码中的所有声明和引用，交叉比对后：
- * 1. 检测并自动补全缺失的组件声明（类型声明 + 实现声明）
- * 2. 检测悬空引用（subcomponents 引用了未声明的组件）
+ * 解析生成的 AADL 代码中的所有声明和引用，采用"两遍扫描 + 中间修复"策略：
+ *
+ * 第一遍扫描（组件级/架构级检查）：检测高层次结构性错误
+ * 1. 检测悬空引用（subcomponents 引用了未声明的组件）
+ * 2. 检测缺失声明（有类型声明但缺实现声明，或反之）
  * 3. 检测幻觉组件（AADL 中声明了但架构树中不存在的组件）
  * 4. 检测架构树中存在但 AADL 中遗漏的组件
  * 5. 检测组件类型不匹配
  * 6. 检测 subcomponents 层级违规（如 process 直接放在 processor 下）
+ *
+ * 第一遍修复：自动修复可修复的组件级错误（补全缺失声明），重新解析后重跑第一遍扫描，
+ * 仅保留不可自动修复的错误（幻觉组件、类型不匹配、层级违规）。
+ *
+ * 第二遍扫描（细致语法检查）：在修复后的内容上执行
+ * 7. 检测 features 放置、连接引用、端口方向、操作符、空块等细节语法错误
+ * 8. 若修复后剩余组件级错误超过阈值，跳过第二遍以避免级联误报
  */
 @Slf4j
 @Component
@@ -230,6 +239,12 @@ public class AadlReferenceValidator {
             "exception", "generic", "pragma", "aliased", "at", "do", "reverse",
             "component", "module", "subsystem"
     ));
+
+    /**
+     * 第一遍扫描（组件级检查）错误数阈值。
+     * 超过此值时跳过第二遍细致语法检查，避免级联误报。
+     */
+    private static final int FIRST_PASS_ERROR_THRESHOLD = 5;
 
     // ========================= 统一正则表达式常量（避免各处不一致）=========================
 
@@ -792,7 +807,15 @@ public class AadlReferenceValidator {
     }
 
     /**
-     * 验证并修正 AADL 代码。
+     * 验证并修正 AADL 代码（两遍扫描 + 中间修复）。
+     *
+     * 流程：
+     * 1. 第一遍扫描：组件级/架构级检查（悬空引用、缺失声明、幻觉组件、遗漏组件、类型不匹配、层级违规）
+     * 2. 第一遍修复：自动修复可修复的组件级错误（补全声明），重新解析后重跑第一遍扫描捕获不可修复的错误
+     * 3. 第二遍扫描：在修复后的内容上执行细致语法检查（features 放置、连接引用、端口方向、操作符等）
+     * 4. 最终修复：修复第二遍扫描发现的错误
+     *
+     * 若修复后剩余组件级错误超过 {@link #FIRST_PASS_ERROR_THRESHOLD}，跳过第二遍以避免级联误报。
      *
      * @param aadlContent  生成的 AADL 代码
      * @param parseResult  AadlInputParser 解析结果（组件真值表 + 模块约束）
@@ -832,7 +855,10 @@ public class AadlReferenceValidator {
         List<ConnectionRef> connectionRefs = parseConnections(protectedContent);
         log.info("connections 引用解析完成：{} 条", connectionRefs.size());
 
-        // 4. 交叉验证
+        // ==================== 第一遍扫描：组件级/架构级检查 ====================
+        // 检测未定义组件、幻觉组件、遗漏组件、类型不匹配、层级违规等高层次错误
+        log.info("===== 第一遍扫描开始：组件级/架构级检查 =====");
+
         // 4a. 检测悬空引用：subcomponents 引用了未声明的组件
         checkDanglingReferences(subcomponentRefs, aadlDeclarations, archComponents, result);
 
@@ -858,85 +884,137 @@ public class AadlReferenceValidator {
         // 4f. 检测 subcomponents 层级违规（如 process 直接放在 processor 下）
         checkContainmentCompliance(subcomponentRefs, aadlDeclarations, result);
 
-        // 4g. 检测 features 放置错误（features 出现在 implementation 中）
-        checkFeaturesPlacement(protectedContent, result);
+        int firstPassErrors = result.errors.size();
+        log.info("===== 第一遍扫描完成：发现 {} 个组件级错误 =====", firstPassErrors);
 
-        // 4ab. 检测 features 块中是否错误地包含子组件声明（feature 只能定义接口）
-        checkFeaturesBlockContent(protectedContent, result);
-
-        // 4h. 检测 connections 引用悬空 feature（引用了组件中不存在的端口）
-        checkConnectionReferences(connectionRefs, componentFeatures, subcomponentRefs, aadlDeclarations, result);
-
-        // 4i. 检测线程 implementation 中非法包含 connections 块
-        checkThreadConnectionsBlock(protectedContent, aadlDeclarations, result);
-
-        // 4j. 检测非法语法 requires data port（应为 in/out data port）
-        checkIllegalRequiresDataPort(protectedContent, result);
-
-        // 4k. 检测 properties 中 applies to 引用了未声明的子组件实例或连接名
-        checkAppliesToReferences(protectedContent, subcomponentRefs, connectionRefs, result);
-
-        // 4ka. 检测 reference 属性值的括号格式（列表型属性应为 (reference (...)) 双括号）
-        checkReferenceParentheses(protectedContent, result);
-
-        // 4l. 检测截断/不完整的连接行（缺少分号或端口名）
-        checkIncompleteConnections(protectedContent, result);
-
-        // 4m. 检测设备端口类型与数据组件混淆
-        checkDevicePortTypeMismatch(protectedContent, aadlDeclarations, result);
-
-        // 4o. 检测 implementation 中 subcomponents → connections → properties 顺序违规
-        checkImplementationOrder(protectedContent, result);
-
-        // 4q. 检测 thread 类型声明中的 requires/provides bus access feature
-        checkThreadBusAccessFeature(protectedContent, result);
-
-        // 预解析 feature 详情（供后续方向检测、操作符检测、feature 合规检测使用）
+        // 预解析 feature 详情和类型（供自动修正和第二遍扫描使用）
         Map<String, Map<String, FeatureDetail>> featureDetails = parseFeatureDetails(protectedContent);
         log.info("featureDetails 解析完成：{} 个组件有 feature 详情", featureDetails.size());
-
-        // 4qa. 检测 feature 类型与组件类型是否匹配（每种组件允许的 feature 类别不同）
-        checkFeatureTypeCompliance(aadlDeclarations, featureDetails, result);
-
-        // 4r. 检测连接类型与端点 feature 类型是否匹配（port 连 port，access 连 access）
         Map<String, Map<String, String>> featureTypes = parseFeatureTypes(protectedContent);
         log.info("featureTypes 解析完成：{} 个组件有 feature 类型分类", featureTypes.size());
-        checkConnectionTypeMatch(connectionRefs, featureTypes, subcomponentRefs, result);
 
-        // 4t. 检测 data 组件中非法的 features 块（subprogram 可以有 features）
-        checkDataComponentFeatures(protectedContent, result);
+        // ==================== 第一遍修复：自动修复组件级错误 ====================
+        // 可自动修复：悬空引用（补全声明）、缺失声明（补全类型/实现）、遗漏组件（补全声明）
+        // 不可自动修复：类型不匹配、层级违规（均为 errors，计入阈值判断）
+        // 幻觉组件仅为 warnings，不参与 firstPassErrors 阈值判断，不阻塞第二遍扫描
+        if (firstPassErrors > 0) {
+            log.info("===== 第一遍修复开始：自动修复组件级错误 =====");
+            String fixedProtected = applyFixes(protectedContent, aadlDeclarations, archComponents,
+                    componentMatch, componentFeatures, featureDetails, subcomponentRefs, connectionRefs, result);
+            // 去除自动修正注入的注释标记，重新保护annex块
+            String restored = restoreAnnexBlocks(fixedProtected);
+            String cleanFixed = stripStaticAnalysisAnnotations(restored);
+            protectedContent = protectAnnexBlocks(cleanFixed);
+            // 重新解析修复后的内容
+            aadlDeclarations = parseAadlDeclarations(protectedContent);
+            subcomponentRefs = parseSubcomponentRefs(protectedContent);
+            componentFeatures = parseFeatures(protectedContent);
+            connectionRefs = parseConnections(protectedContent);
+            featureDetails = parseFeatureDetails(protectedContent);
+            featureTypes = parseFeatureTypes(protectedContent);
+            componentMatch = matchComponentsByTypeAndSimilarity(aadlDeclarations, archComponents);
+            // 清空结果，重新检查修复后的内容（只保留不可自动修复的错误）
+            result.errors.clear();
+            result.warnings.clear();
+            result.fixes.clear();
+            result.missingFeatures.clear();
+            log.info("===== 重新执行第一遍扫描（修复后）=====");
+            checkDanglingReferences(subcomponentRefs, aadlDeclarations, archComponents, result);
+            checkIncompleteDeclarations(aadlDeclarations, archComponents, result);
+            checkHallucinatedComponents(aadlDeclarations, archComponents, componentMatch, result);
+            checkMissingComponents(aadlDeclarations, archComponents, componentMatch, result);
+            checkTypeMismatches(aadlDeclarations, archComponents, componentMatch, result);
+            checkContainmentCompliance(subcomponentRefs, aadlDeclarations, result);
+            firstPassErrors = result.errors.size();
+            log.info("===== 修复后第一遍扫描完成：剩余 {} 个不可修复的组件级错误 =====", firstPassErrors);
+        }
 
-        // 4u. 检测 port 连接的端口方向（源端必须 out，目标端必须 in；代理连接两端方向相同）
-        checkPortDirection(connectionRefs, featureDetails, subcomponentRefs, result);
+        // ==================== 第二遍扫描：细致语法检查 ====================
+        // 在修复后的内容上执行，仅当组件级错误未超过阈值时进行
+        if (firstPassErrors <= FIRST_PASS_ERROR_THRESHOLD) {
+            log.info("===== 第二遍扫描开始：细致语法检查 =====");
 
-        // 4u2. 检测 bus access 连接的方向规则
-        checkBusAccessDirection(connectionRefs, featureDetails, subcomponentRefs, result);
+            // 4g. 检测 features 放置错误（features 出现在 implementation 中）
+            checkFeaturesPlacement(protectedContent, result);
 
-        // 4s. 检测连接操作符是否正确（port 用 ->，bus access 用 <->；in out 双向端口允许 <->）
-        checkConnectionOperator(connectionRefs, featureDetails, subcomponentRefs, result);
+            // 4ab. 检测 features 块中是否错误地包含子组件声明（feature 只能定义接口）
+            checkFeaturesBlockContent(protectedContent, result);
 
-        // 4v. 检测 port 连接两端的数据类型一致性
-        checkPortDataTypeConsistency(connectionRefs, featureDetails, subcomponentRefs, result);
+            // 4h. 检测 connections 引用悬空 feature（引用了组件中不存在的端口）
+            checkConnectionReferences(connectionRefs, componentFeatures, subcomponentRefs, aadlDeclarations, result);
 
-        // 4w. 检测连接与实体类型的匹配（软件实体只能 port 连接，硬件实体只能 bus access 连接）
-        checkConnectionEntityTypeMatch(connectionRefs, aadlDeclarations, result);
+            // 4i. 检测线程 implementation 中非法包含 connections 块
+            checkThreadConnectionsBlock(protectedContent, aadlDeclarations, result);
 
-        // 4x. 检测属性绑定完整性（process/thread 缺少 Actual_Processor_Binding）
-        checkPropertyBindingCompleteness(protectedContent, subcomponentRefs, result);
+            // 4j. 检测非法语法 requires data port（应为 in/out data port）
+            checkIllegalRequiresDataPort(protectedContent, result);
 
-        // 4y. 检测数据类型一致性深度校验（连接两端 Data_Size 不匹配）
-        checkDataSizeConsistency(protectedContent, connectionRefs, featureDetails, subcomponentRefs, result);
+            // 4k. 检测 properties 中 applies to 引用了未声明的子组件实例或连接名
+            checkAppliesToReferences(protectedContent, subcomponentRefs, connectionRefs, result);
 
-        // 4z. 检测命名空间冲突（实例名/连接名/类型名重名）
-        checkNamingCollision(protectedContent, subcomponentRefs, connectionRefs, aadlDeclarations, result);
+            // 4ka. 检测 reference 属性值的括号格式（列表型属性应为 (reference (...)) 双括号）
+            checkReferenceParentheses(protectedContent, result);
 
-        // 4aa. 检测畸形 end 语句（逗号、多余空格、多个标识符等）
-        checkMalformedEndStatements(protectedContent, result);
+            // 4l. 检测截断/不完整的连接行（缺少分号或端口名）
+            checkIncompleteConnections(protectedContent, result);
 
-        // 4ad. 检测空块（features/subcomponents/connections/properties 等块中没有任何有效内容）
-        checkEmptyBlocks(protectedContent, result);
+            // 4m. 检测设备端口类型与数据组件混淆
+            checkDevicePortTypeMismatch(protectedContent, aadlDeclarations, result);
 
-        // 5. 自动修正（使用受保护的内容，修复完成后恢复annex块）
+            // 4o. 检测 implementation 中 subcomponents → connections → properties 顺序违规
+            checkImplementationOrder(protectedContent, result);
+
+            // 4q. 检测 thread 类型声明中的 requires/provides bus access feature
+            checkThreadBusAccessFeature(protectedContent, result);
+
+            // 4qa. 检测 feature 类型与组件类型是否匹配（每种组件允许的 feature 类别不同）
+            checkFeatureTypeCompliance(aadlDeclarations, featureDetails, result);
+
+            // 4r. 检测连接类型与端点 feature 类型是否匹配（port 连 port，access 连 access）
+            checkConnectionTypeMatch(connectionRefs, featureTypes, subcomponentRefs, result);
+
+            // 4t. 检测 data 组件中非法的 features 块（subprogram 可以有 features）
+            checkDataComponentFeatures(protectedContent, result);
+
+            // 4u. 检测 port 连接的端口方向（源端必须 out，目标端必须 in；代理连接两端方向相同）
+            checkPortDirection(connectionRefs, featureDetails, subcomponentRefs, result);
+
+            // 4u2. 检测 bus access 连接的方向规则
+            checkBusAccessDirection(connectionRefs, featureDetails, subcomponentRefs, result);
+
+            // 4s. 检测连接操作符是否正确（port 用 ->，bus access 用 <->；in out 双向端口允许 <->）
+            checkConnectionOperator(connectionRefs, featureDetails, subcomponentRefs, result);
+
+            // 4v. 检测 port 连接两端的数据类型一致性
+            checkPortDataTypeConsistency(connectionRefs, featureDetails, subcomponentRefs, result);
+
+            // 4w. 检测连接与实体类型的匹配（软件实体只能 port 连接，硬件实体只能 bus access 连接）
+            checkConnectionEntityTypeMatch(connectionRefs, aadlDeclarations, result);
+
+            // 4x. 检测属性绑定完整性（process/thread 缺少 Actual_Processor_Binding）
+            checkPropertyBindingCompleteness(protectedContent, subcomponentRefs, result);
+
+            // 4y. 检测数据类型一致性深度校验（连接两端 Data_Size 不匹配）
+            checkDataSizeConsistency(protectedContent, connectionRefs, featureDetails, subcomponentRefs, result);
+
+            // 4z. 检测命名空间冲突（实例名/连接名/类型名重名）
+            checkNamingCollision(protectedContent, subcomponentRefs, connectionRefs, aadlDeclarations, result);
+
+            // 4aa. 检测畸形 end 语句（逗号、多余空格、多个标识符等）
+            checkMalformedEndStatements(protectedContent, result);
+
+            // 4ad. 检测空块（features/subcomponents/connections/properties 等块中没有任何有效内容）
+            checkEmptyBlocks(protectedContent, result);
+
+            log.info("===== 第二遍扫描完成：累计 {} 个错误 =====", result.errors.size());
+        } else {
+            log.info("第一遍扫描发现 {} 个组件级错误（超过阈值 {}），跳过第二遍细致语法检查",
+                    firstPassErrors, FIRST_PASS_ERROR_THRESHOLD);
+            result.warnings.add("组件级错误过多（" + firstPassErrors + " 个），已跳过细致语法检查，"
+                    + "请先修复组件级错误后重新验证");
+        }
+
+        // 5. 最终自动修正（修复第二遍扫描发现的错误，使用当前受保护的内容）
         if (!result.errors.isEmpty() || hasAutoFixableIssues(aadlDeclarations, archComponents, componentMatch)
                 || !result.missingFeatures.isEmpty()) {
             String fixedProtected = applyFixes(protectedContent, aadlDeclarations, archComponents,
@@ -947,10 +1025,10 @@ public class AadlReferenceValidator {
             // fixedContent: 纯净版本（可直接传入修复 agent 或保存）
             result.fixedContent = stripStaticAnalysisAnnotations(restored);
         } else {
-            // 没有修复，直接恢复原始内容
-            result.fixedContent = aadlContent;
-            // 生成带注释标注的版本用于展示
-            result.annotatedContent = annotateErrorsAndWarningsInline(aadlContent, result);
+            // 没有需要修复的错误，恢复annex块后返回当前内容（可能已含第一遍修复）
+            String restored = restoreAnnexBlocks(protectedContent);
+            result.fixedContent = restored;
+            result.annotatedContent = annotateErrorsAndWarningsInline(restored, result);
         }
 
         // 6. 为每个错误生成修复建议
