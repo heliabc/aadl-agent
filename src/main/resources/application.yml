@@ -90,6 +90,6 @@ agent:
     max-tokens: 32768
   rewrite:
     model-type: OLLAMA
-    ollama-model-name: "qwen3:8b"
+    ollama-model-name: "qwen3:14b"
     temperature: 0.3
     max-tokens: 2048
