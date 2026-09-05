@@ -1,7 +1,6 @@
 """
-Cross-Encoder 重排序服务
+Cross-Encoder 重排序服务（纯 transformers 实现，轻量版）
 基于 bge-reranker-v2-m3 模型，提供 HTTP 接口
-兼容 Python 3.8+
 """
 
 import os
@@ -13,6 +12,8 @@ from typing import List, Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import uvicorn
+import torch
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 # 配置日志
 logging.basicConfig(
@@ -24,7 +25,9 @@ logger = logging.getLogger("reranker")
 app = FastAPI(title="BGE Reranker Service", version="1.0.0")
 
 # 全局模型对象，启动时加载
-_reranker_model = None
+_model = None
+_tokenizer = None
+_device = None
 
 
 # ========== 请求/响应模型 ==========
@@ -32,7 +35,7 @@ _reranker_model = None
 class RerankRequest(BaseModel):
     query: str
     documents: List[str]
-    top_k: Optional[int] = None  # 不传则返回全部排序结果
+    top_k: Optional[int] = None
     return_documents: Optional[bool] = True
 
 
@@ -51,70 +54,53 @@ class RerankResponse(BaseModel):
 # ========== 模型加载 ==========
 
 def load_model(model_name: str = "BAAI/bge-reranker-v2-m3", device: str = None):
-    """加载重排序模型，支持从本地或HuggingFace下载"""
-    global _reranker_model
+    """加载重排序模型"""
+    global _model, _tokenizer, _device
 
-    if _reranker_model is not None:
-        return _reranker_model
+    if _model is not None:
+        return
 
     logger.info("正在加载重排序模型: %s", model_name)
     start_time = time.time()
 
     try:
-        from FlagEmbedding import FlagReranker
-
         # 自动判断设备
         if device is None:
-            try:
-                import torch
-                device = "cuda" if torch.cuda.is_available() else "cpu"
-            except ImportError:
-                device = "cpu"
-
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+        _device = device
         logger.info("使用设备: %s", device)
 
-        # use_fp16 在 CPU 下不适用，仅 CUDA 开启
-        use_fp16 = (device == "cuda")
-
-        _reranker_model = FlagReranker(
-            model_name,
-            use_fp16=use_fp16,
-            device=device,
-        )
+        _tokenizer = AutoTokenizer.from_pretrained(model_name)
+        _model = AutoModelForSequenceClassification.from_pretrained(model_name)
+        _model.to(device)
+        _model.eval()
 
         elapsed = time.time() - start_time
         logger.info("模型加载完成，耗时 %.2f 秒", elapsed)
-        return _reranker_model
 
     except Exception as e:
         logger.error("模型加载失败: %s", str(e))
         raise
 
 
-def get_reranker():
-    """获取已加载的模型实例"""
-    if _reranker_model is None:
-        raise RuntimeError("模型尚未加载，请先调用 load_model()")
-    return _reranker_model
+def get_model():
+    if _model is None:
+        raise RuntimeError("模型尚未加载")
+    return _model, _tokenizer, _device
 
 
 # ========== API 接口 ==========
 
 @app.get("/health")
 def health_check():
-    """健康检查接口"""
     return {
-        "status": "ok" if _reranker_model is not None else "loading",
-        "model_loaded": _reranker_model is not None,
+        "status": "ok" if _model is not None else "loading",
+        "model_loaded": _model is not None,
     }
 
 
 @app.post("/rerank", response_model=RerankResponse)
 def rerank(request: RerankRequest):
-    """
-    重排序接口
-    输入查询和文档列表，返回按相关性从高到低排序的结果
-    """
     start_time = time.time()
 
     if not request.query:
@@ -123,17 +109,25 @@ def rerank(request: RerankRequest):
         return RerankResponse(results=[], total=0, took_ms=0.0)
 
     try:
-        reranker = get_reranker()
+        model, tokenizer, device = get_model()
 
         # 构建 (query, doc) 对
         pairs = [[request.query, doc] for doc in request.documents]
 
-        # 调用模型计算分数（返回 list of float）
-        scores = reranker.compute_score(pairs, normalize=True)
+        # tokenize
+        inputs = tokenizer(
+            pairs,
+            padding=True,
+            truncation=True,
+            max_length=512,
+            return_tensors="pt",
+        ).to(device)
 
-        # 确保 scores 是列表（单条时可能返回标量）
-        if not isinstance(scores, list):
-            scores = [float(scores)]
+        # 推理
+        with torch.no_grad():
+            logits = model(**inputs).logits.squeeze(-1)
+            # sigmoid 归一化到 0-1
+            scores = torch.sigmoid(logits).cpu().numpy().tolist()
 
         # 按分数降序排序，记录原始索引
         indexed_scores = [
@@ -152,7 +146,7 @@ def rerank(request: RerankRequest):
         for item in top_results:
             result = RerankItem(
                 index=item["index"],
-                relevance_score=item["score"],
+                relevance_score=round(item["score"], 6),
             )
             if request.return_documents:
                 result.document = request.documents[item["index"]]
@@ -179,13 +173,11 @@ def rerank(request: RerankRequest):
 # ========== 启动入口 ==========
 
 if __name__ == "__main__":
-    # 从环境变量读取配置
     model_name = os.environ.get("RERANKER_MODEL", "BAAI/bge-reranker-v2-m3")
     host = os.environ.get("RERANKER_HOST", "0.0.0.0")
     port = int(os.environ.get("RERANKER_PORT", "8081"))
-    device = os.environ.get("RERANKER_DEVICE", None)  # auto
+    device = os.environ.get("RERANKER_DEVICE", None)
 
-    # 启动前预加载模型
     try:
         load_model(model_name, device)
     except Exception as e:

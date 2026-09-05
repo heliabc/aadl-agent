@@ -1,0 +1,20 @@
+[Unit]
+Description=BGE Reranker Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/autodl-tmp/aadl-agent/reranker
+Environment=HF_HOME=/root/autodl-tmp/hf_cache
+Environment=HF_ENDPOINT=https://hf-mirror.com
+Environment=RERANKER_MODEL=BAAI/bge-reranker-v2-m3
+Environment=RERANKER_PORT=8081
+ExecStart=/root/autodl-tmp/aadl-agent/reranker/venv/bin/python /root/autodl-tmp/aadl-agent/reranker/reranker_service.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
