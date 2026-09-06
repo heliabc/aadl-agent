@@ -6,6 +6,7 @@ import com.example.aadlagent.agent.AgentOutput;
 import com.example.aadlagent.client.LlmClient;
 import com.example.aadlagent.client.ModelService;
 import com.example.aadlagent.client.ModelType;
+import com.example.aadlagent.memory.ErrorMemoryService;
 import com.example.aadlagent.util.AadlReferenceValidator;
 import com.example.aadlagent.util.AadlReferenceValidator.ValidationResult;
 import com.fasterxml.jackson.core.JsonParser;
@@ -32,6 +33,7 @@ public class AadlFixerAgent implements Agent<AgentInput, AgentOutput> {
     private final ModelService modelService;
     private final AadlReferenceValidator validator;
     private final AadlFixerPrompt prompt;
+    private final ErrorMemoryService errorMemoryService;
 
     @Value("${agent.aadl-fixer.temperature:0.1}")
     private double temperature;
@@ -39,10 +41,16 @@ public class AadlFixerAgent implements Agent<AgentInput, AgentOutput> {
     @Value("${agent.aadl-fixer.max-tokens:16384}")
     private int maxTokens;
 
-    public AadlFixerAgent(ModelService modelService, AadlReferenceValidator validator) {
+    /** 是否启用错误记忆自动归档 */
+    @Value("${agent.aadl-fixer.auto-archive-errors:true}")
+    private boolean autoArchiveErrors;
+
+    public AadlFixerAgent(ModelService modelService, AadlReferenceValidator validator,
+                          ErrorMemoryService errorMemoryService) {
         this.modelService = modelService;
         this.validator = validator;
         this.prompt = new AadlFixerPrompt();
+        this.errorMemoryService = errorMemoryService;
     }
 
     @Override
@@ -94,10 +102,40 @@ public class AadlFixerAgent implements Agent<AgentInput, AgentOutput> {
         String structuredErrors = normalizeErrors(errors);
         log.info("输入格式: {}", isJsonFormat(errors) ? "结构化JSON" : "文本格式（错误或修复建议）");
 
+        // 修复前的验证结果（用于错误记忆归档对比）
+        ValidationResult beforeFixResult = validator.validateSyntax(currentAadl);
+        log.info("修复前错误数: {} 个", beforeFixResult.errors.size());
+
         // 第2步：构建Prompt并调用LLM（单次调用，不自动迭代）
         // 注意：传给 LLM 的 AADL 代码必须是无注释的纯净版本
         log.info("正在构建Prompt...");
-        String systemPrompt = prompt.buildPrompt(currentAadl, structuredErrors, input.getRagContext());
+
+        // 从错误记忆库中检索相似错误的历史修复经验
+        String errorMemoryContext = "";
+        if (errorMemoryService != null && autoArchiveErrors) {
+            try {
+                List<com.example.aadlagent.rag.model.ErrorCorrection> similarFixes =
+                        errorMemoryService.retrieveSimilarFixes(structuredErrors, 3);
+                if (!similarFixes.isEmpty()) {
+                    errorMemoryContext = errorMemoryService.formatForPrompt(similarFixes);
+                    log.info("从错误记忆库召回 {} 条相似错误修复经验", similarFixes.size());
+                }
+            } catch (Exception e) {
+                log.warn("错误记忆检索失败: {}", e.getMessage());
+            }
+        }
+
+        // 合并 RAG 上下文和错误记忆上下文
+        String combinedRagContext = input.getRagContext();
+        if (errorMemoryContext != null && !errorMemoryContext.isEmpty()) {
+            if (combinedRagContext != null && !combinedRagContext.isEmpty()) {
+                combinedRagContext = combinedRagContext + "\n\n" + errorMemoryContext;
+            } else {
+                combinedRagContext = errorMemoryContext;
+            }
+        }
+
+        String systemPrompt = prompt.buildPrompt(currentAadl, structuredErrors, combinedRagContext);
         log.info("Prompt构建完成，长度: {} 字符", systemPrompt.length());
 
         if (input.isCancelled()) {
@@ -159,6 +197,20 @@ public class AadlFixerAgent implements Agent<AgentInput, AgentOutput> {
             log.info("========================================");
 
             printAadlSummary(fixedAadl);
+
+            // 自动归档被修复的错误到长期记忆库
+            if (autoArchiveErrors && errorMemoryService != null) {
+                try {
+                    int archived = errorMemoryService.archiveErrorFixes(
+                            currentAadl, cleanFixedAadl, beforeFixResult, validationAfter);
+                    if (archived > 0) {
+                        log.info("已归档 {} 条新的错误修正记录到长期记忆", archived);
+                    }
+                } catch (Exception e) {
+                    log.warn("错误记忆归档失败: {}", e.getMessage());
+                    // 归档失败不影响主流程
+                }
+            }
 
             // 返回修复后的代码（保留LLM添加的 -- [修复] 标记）
             // 用户看到结果后如果还有错误，会再次点击修复按钮，届时前端传入本次结果作为新的输入

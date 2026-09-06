@@ -1,6 +1,7 @@
 
 package com.example.aadlagent.agent;
 
+import com.example.aadlagent.memory.AgentContext;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -26,6 +27,12 @@ public class AgentOutput {
     private long executionTime;
 
     private boolean cancelled;
+
+    /**
+     * 更新后的工作记忆上下文
+     * Agent 执行完成后，可以将自己产出的结构化数据写回 context
+     */
+    private AgentContext context;
 
     public static AgentOutput success(String sessionId, String content, long executionTime) {
         return AgentOutput.builder()

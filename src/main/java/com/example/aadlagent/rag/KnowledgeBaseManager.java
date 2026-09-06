@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 public class KnowledgeBaseManager {
 
     private static final String KNOWLEDGE_ROOT = "./knowledge";
-    private static final String[] AGENT_TYPES = {"requirement", "architecture", "module", "aadl"};
+    private static final String[] AGENT_TYPES = {"requirement", "architecture", "module", "aadl", "error_memory"};
 
     private final EmbeddingService embeddingService;
     private final QdrantVectorStore qdrantVectorStore;
