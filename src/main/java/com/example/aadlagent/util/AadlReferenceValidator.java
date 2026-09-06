@@ -94,15 +94,15 @@ public class AadlReferenceValidator {
         )));
 
         // ===== 复合与抽象构件 =====
-        // system：系统级集成看板，连接软硬件（注意：device 不能作为 subcomponent，只能是顶层组件）
+        // system：系统级集成单元，可包含软硬件各类组件（包括 device）
         CONTAINMENT_RULES.put("system", new LinkedHashSet<>(Arrays.asList(
                 "system", "process", "processor", "virtual processor",
-                "memory", "bus", "virtual bus", "data", "abstract"
+                "memory", "bus", "virtual bus", "device", "data", "abstract"
         )));
-        // abstract：早期设计阶段占位，可包含任何组件类型（注意：device 除外，device 只能是顶层组件）
+        // abstract：早期设计阶段占位，可包含任何组件类型
         CONTAINMENT_RULES.put("abstract", new LinkedHashSet<>(Arrays.asList(
                 "system", "process", "processor", "virtual processor",
-                "memory", "bus", "virtual bus",
+                "memory", "bus", "virtual bus", "device",
                 "thread", "thread group", "data",
                 "subprogram", "subprogram group", "abstract"
         )));
@@ -272,31 +272,34 @@ public class AadlReferenceValidator {
      * group(1)=类型关键字, group(2)=组件名
      */
     private static final Pattern TYPE_DECL_PATTERN = Pattern.compile(
-            "^\\s*(" + COMPONENT_TYPES_REGEX + ")\\s+(\\w+)(?:\\s+extends\\s+\\w+)?\\s*$"
+            "^\\s*(" + COMPONENT_TYPES_REGEX + ")\\s+(\\w+(?:\\.\\w+)*)(?:\\s+extends\\s+\\w+(?:\\.\\w+)*)?\\s*$"
     );
 
     /**
      * virtual类型声明正则（支持extends）：匹配 "virtual processor Foo"。
      * group(1)=virtual类型(virtual processor/virtual bus), group(2)=组件名
+     * 组件名支持点号分隔的层级名称（如 Parent.Child）
      */
     private static final Pattern VIRTUAL_TYPE_DECL_PATTERN = Pattern.compile(
-            "^\\s*(" + VIRTUAL_TYPES_REGEX + ")\\s+(\\w+)(?:\\s+extends\\s+\\w+)?\\s*$"
+            "^\\s*(" + VIRTUAL_TYPES_REGEX + ")\\s+(\\w+(?:\\.\\w+)*)(?:\\s+extends\\s+\\w+(?:\\.\\w+)*)?\\s*$"
     );
 
     /**
      * 实现声明正则：匹配 "system implementation Foo.impl"。
      * group(1)=类型关键字, group(2)=组件名(不含.impl)
+     * 组件名支持点号分隔的层级名称（如 Parent.Child）
      */
     private static final Pattern IMPL_DECL_PATTERN = Pattern.compile(
-            "^\\s*(" + COMPONENT_TYPES_REGEX + ")\\s+implementation\\s+(\\w+)\\.impl(?:\\s+extends\\s+\\w+\\.impl)?\\s*$"
+            "^\\s*(" + COMPONENT_TYPES_REGEX + ")\\s+implementation\\s+(\\w+(?:\\.\\w+)*)\\.impl(?:\\s+extends\\s+\\w+(?:\\.\\w+)*\\.impl)?\\s*$"
     );
 
     /**
      * virtual实现声明正则：匹配 "virtual processor implementation Foo.impl"。
      * group(1)=virtual类型, group(2)=组件名
+     * 组件名支持点号分隔的层级名称（如 Parent.Child）
      */
     private static final Pattern VIRTUAL_IMPL_DECL_PATTERN = Pattern.compile(
-            "^\\s*(" + VIRTUAL_TYPES_REGEX + ")\\s+implementation\\s+(\\w+)\\.impl(?:\\s+extends\\s+\\w+\\.impl)?\\s*$"
+            "^\\s*(" + VIRTUAL_TYPES_REGEX + ")\\s+implementation\\s+(\\w+(?:\\.\\w+)*)\\.impl(?:\\s+extends\\s+\\w+(?:\\.\\w+)*\\.impl)?\\s*$"
     );
 
     /**
@@ -7692,16 +7695,17 @@ public class AadlReferenceValidator {
     private void checkMalformedEndStatements(String aadlContent, ValidationResult result) {
         String[] lines = aadlContent.split("\n");
         // 组件声明开头：类型关键字 + 组件名（可选 .impl）
+        // 组件名支持点号分隔的层级名称（如 isoletteDataModel.current_temperature）
         Pattern implStartPattern = Pattern.compile(
                 "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|" +
                 "virtual\\s+processor|virtual\\s+bus|thread\\s+group|abstract)\\s+" +
-                "implementation\\s+([A-Za-z_]\\w*)\\.impl\\b",
+                "implementation\\s+([A-Za-z_]\\w*(?:\\.[A-Za-z_]\\w*)*)\\.impl\\b",
                 Pattern.CASE_INSENSITIVE
         );
         Pattern typeStartPattern = Pattern.compile(
                 "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|" +
                 "virtual\\s+processor|virtual\\s+bus|thread\\s+group|abstract)\\s+" +
-                "([A-Za-z_]\\w*)\\s*\\{?\\s*$",
+                "([A-Za-z_]\\w*(?:\\.[A-Za-z_]\\w*)*)\\s*\\{?\\s*$",
                 Pattern.CASE_INSENSITIVE
         );
         // EMV2 块开始模式 -> 期望的 end 名称
@@ -7757,10 +7761,15 @@ public class AadlReferenceValidator {
                 continue;
             }
             // 普通 AADL 类型声明开头
+            // 注意：不能简单用 contains("implementation") 判断，因为组件名本身可能包含 "Implementation"
             Matcher typeMatcher = typeStartPattern.matcher(trimmed);
-            if (typeMatcher.find() && !trimmed.toLowerCase().contains("implementation")) {
-                blockStack.push(typeMatcher.group(2));
-                continue;
+            if (typeMatcher.find()) {
+                String lowerTrimmed = trimmed.toLowerCase();
+                boolean isImplFormat = lowerTrimmed.contains(" implementation ") && lowerTrimmed.contains(".impl");
+                if (!isImplFormat) {
+                    blockStack.push(typeMatcher.group(2));
+                    continue;
+                }
             }
 
             // EMV2 块开始
@@ -7829,17 +7838,19 @@ public class AadlReferenceValidator {
         int fixCount = 0;
 
         // 组件声明开头（implementation）
+        // 注意：组件名支持点号分隔的层级名称（如 isoletteDataModel.current_temperature）
         Pattern implStartPattern = Pattern.compile(
                 "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|" +
                 "virtual\\s+processor|virtual\\s+bus|thread\\s+group|abstract)\\s+" +
-                "implementation\\s+([A-Za-z_]\\w*)\\.impl\\b",
+                "implementation\\s+([A-Za-z_]\\w*(?:\\.[A-Za-z_]\\w*)*)\\.impl\\b",
                 Pattern.CASE_INSENSITIVE
         );
         // 类型声明开头
+        // 注意：组件名支持点号分隔的层级名称（如 isoletteDataModel.current_temperature）
         Pattern typeStartPattern = Pattern.compile(
                 "^\\s*(system|process|thread|processor|memory|device|bus|data|subprogram|" +
                 "virtual\\s+processor|virtual\\s+bus|thread\\s+group|abstract)\\s+" +
-                "([A-Za-z_]\\w*)\\s*\\{?\\s*$",
+                "([A-Za-z_]\\w*(?:\\.[A-Za-z_]\\w*)*)\\s*\\{?\\s*$",
                 Pattern.CASE_INSENSITIVE
         );
         // EMV2 块开始模式 -> 期望的 end 名称（长模式在前）
@@ -7906,11 +7917,18 @@ public class AadlReferenceValidator {
             }
 
             // 类型声明开头（必须在 implementation 之后判断，避免把 "system implementation" 误判成类型声明）
+            // 注意：不能简单用 contains("implementation") 判断，因为组件名本身可能包含 "Implementation"（如 TemperatureSensorImplementation）
             Matcher typeMatcher = typeStartPattern.matcher(line);
-            if (typeMatcher.find() && !trimmed.toLowerCase().contains("implementation")) {
-                componentStack.push(typeMatcher.group(2));
-                resultLines.add(line);
-                continue;
+            if (typeMatcher.find()) {
+                // 额外保险：如果这行是 "xxx implementation yyy.impl" 格式（impl 声明），则跳过
+                // 正常情况下 implStartPattern 已在上文匹配并 continue，这里是双重保险
+                String lowerTrimmed = trimmed.toLowerCase();
+                boolean isImplFormat = lowerTrimmed.contains(" implementation ") && lowerTrimmed.contains(".impl");
+                if (!isImplFormat) {
+                    componentStack.push(typeMatcher.group(2));
+                    resultLines.add(line);
+                    continue;
+                }
             }
 
             // EMV2 块开头（error behavior / error type / propagation 等）

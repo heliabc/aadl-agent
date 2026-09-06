@@ -1,0 +1,79 @@
+
+-- =========================================================
+-- AADL 模型验证报告
+-- =========================================================
+-- [错误] (2 项):
+--   1. 第19行: 层级违规 - 组件 'tempSensorDevice' (类型: device) 不能直接放在 'Top_TemperatureSensorSystem' (类型: system) 的 subcomponents 中; system implementation 只能包含: system, process, processor, virtual processor, memory, bus, virtual bus, data, abstract
+--      修复建议: 请对照 AADL 核心红线规则 R1-R13 检查并修复此问题。
+--   2. 第20行: 层级违规 - 组件 'tempSensorImpl' (类型: device) 不能直接放在 'Top_TemperatureSensorSystem' (类型: system) 的 subcomponents 中; system implementation 只能包含: system, process, processor, virtual processor, memory, bus, virtual bus, data, abstract
+--      修复建议: 请对照 AADL 核心红线规则 R1-R13 检查并修复此问题。
+-- [警告] (2 项):
+--   1. 幻觉组件: 'isoletteDataModel' (data) 在架构树中不存在，可能是 LLM 生成的不必要组件
+--   2. 未声明 data 类型: 'isoletteDataModel.current_temperature' 被端口引用但未声明，已自动补全空 data 组件。如该类型应有具体属性或字段，请手动完善
+-- [其他自动修复] (1 项):
+--   1. 已补全引用中未声明的 data 类型: isoletteDataModel.current_temperature (data)
+-- 汇总: 2 错误 (其中 0 项已自动修复), 2 警告, 共 1 项自动修复
+-- =========================================================
+
+package temperature_sensor_Arch
+public
+  -- 1. 数据模型依赖声明
+  annex ISOletteDataModel {**
+    data current_temperature
+    end current_temperature;
+  **};
+
+  -- 2. 顶层系统容器
+  system Top_TemperatureSensorSystem
+  end Top_TemperatureSensorSystem;
+
+  system implementation Top_TemperatureSensorSystem.impl
+    subcomponents
+      tempSensorDevice : device TemperatureSensorDevice.impl;
+      tempSensorImpl   : device TemperatureSensorImplementation.impl;
+    end Top_TemperatureSensorSystem.impl;
+
+  -- 3. 温度传感器设备类型定义
+  device TemperatureSensorDevice
+    features
+      currentTemperature : out data port isoletteDataModel.current_temperature;
+    flows
+      current_temperature_flow : flow source currentTemperature;
+    end TemperatureSensorDevice;
+
+  device implementation TemperatureSensorDevice.impl
+    end TemperatureSensorDevice.impl;
+
+  -- 4. 温度传感器实体实现类型定义
+  device TemperatureSensorImplementation
+    end temperature_sensor_Arch;
+
+  device implementation TemperatureSensorImplementation.impl
+    end TemperatureSensorImplementation.impl;
+
+    data isoletteDataModel.current_temperature
+    end isoletteDataModel.current_temperature;
+
+
+    data implementation isoletteDataModel.current_temperature.impl
+    end isoletteDataModel.current_temperature.impl;
+
+
+    data isoletteDataModel
+    end isoletteDataModel;
+
+
+    data implementation isoletteDataModel.impl
+    end isoletteDataModel.impl;
+
+
+
+    data isoletteDataModel.current_temperature
+    end isoletteDataModel.current_temperature;
+
+
+    data implementation isoletteDataModel.current_temperature.impl
+    end isoletteDataModel.current_temperature.impl;
+
+
+end temperature_sensor_Arch;
