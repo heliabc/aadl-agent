@@ -121,6 +121,17 @@ public class QdrantVectorStore {
         return listCollections().contains(collectionName);
     }
 
+    /**
+     * 确保 collection 存在，不存在则创建
+     * 供外部调用（如启动自检）
+     */
+    public void ensureCollection(String collectionName) {
+        if (!available) {
+            return;
+        }
+        ensureCollectionExists(collectionName);
+    }
+
     private void ensureCollectionExists(String collectionName) {
         if (!collectionExists(collectionName)) {
             createCollection(collectionName);

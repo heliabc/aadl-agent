@@ -66,8 +66,15 @@ public class KnowledgeBaseManager {
                         break;
                     }
                     
-                    log.warn("Collection '{}' not found, attempting creation... (attempt {}/{})", collection, attempt, maxRetries);
-                    qdrantVectorStore.search(collection, new float[384], 1);
+                    log.warn("Collection '{}' not found, creating... (attempt {}/{})", collection, attempt, maxRetries);
+                    qdrantVectorStore.ensureCollection(collection);
+                    
+                    // 验证创建成功
+                    List<String> afterCreate = qdrantVectorStore.listCollections();
+                    if (afterCreate.contains(collection)) {
+                        log.info("Collection '{}' created successfully - OK", collection);
+                        break;
+                    }
                     
                 } catch (Exception e) {
                     log.warn("Failed to check/create collection '{}': {} (attempt {}/{})", collection, e.getMessage(), attempt, maxRetries);
