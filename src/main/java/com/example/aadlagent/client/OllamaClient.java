@@ -4,16 +4,15 @@ import com.example.aadlagent.client.dto.ChatResponse;
 import com.example.aadlagent.client.dto.ChatMessage;
 import com.example.aadlagent.client.dto.EmbeddingResponse;
 import com.example.aadlagent.config.OllamaConfig;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.*;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @Component
@@ -21,10 +20,12 @@ public class OllamaClient implements LlmClient {
 
     private final OllamaConfig config;
     private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
 
     public OllamaClient(OllamaConfig config) {
         this.config = config;
         this.restTemplate = createRestTemplate();
+        this.objectMapper = new ObjectMapper();
     }
 
     private RestTemplate createRestTemplate() {
@@ -120,6 +121,73 @@ public class OllamaClient implements LlmClient {
             return null;
         } catch (RestClientException e) {
             log.error("Ollama chat request exception: {}", e.getMessage(), e);
+            return null;
+        }
+    }
+
+    @Override
+    public ChatResponse chatWithTools(List<ChatMessage> messages, List<Map<String, Object>> tools,
+                                      Double temperature, Integer maxTokens, String modelName) {
+        String url = buildUrl("/api/chat");
+
+        Map<String, Object> requestBody = new HashMap<>();
+        String model = (modelName != null && !modelName.isEmpty()) ? modelName : config.getChatModel();
+        requestBody.put("model", model);
+        requestBody.put("messages", messages);
+        requestBody.put("stream", false);
+
+        if (tools != null && !tools.isEmpty()) {
+            requestBody.put("tools", tools);
+        }
+
+        if (temperature != null) {
+            requestBody.put("temperature", temperature);
+        }
+        if (maxTokens != null) {
+            requestBody.put("max_tokens", maxTokens);
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
+
+        try {
+            // 先用 String 接收，再手动解析（处理工具调用响应的复杂结构）
+            ResponseEntity<String> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    request,
+                    String.class
+            );
+
+            log.debug("Ollama chatWithTools response status: {}", response.getStatusCode());
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                String responseBody = response.getBody();
+                log.debug("Ollama chatWithTools raw response length: {}",
+                        responseBody != null ? responseBody.length() : 0);
+
+                if (responseBody != null && !responseBody.trim().isEmpty()) {
+                    ChatResponse chatResponse = objectMapper.readValue(responseBody, ChatResponse.class);
+
+                    // 清理思考标签（如果有 content）
+                    if (chatResponse.getMessage() != null && chatResponse.getMessage().getContent() != null) {
+                        String cleaned = cleanThinkingContent(chatResponse.getMessage().getContent());
+                        chatResponse.getMessage().setContent(cleaned);
+                    }
+
+                    return chatResponse;
+                }
+            } else {
+                log.error("Ollama chatWithTools request failed with status: {}", response.getStatusCode());
+            }
+            return null;
+        } catch (RestClientException e) {
+            log.error("Ollama chatWithTools request exception: {}", e.getMessage(), e);
+            return null;
+        } catch (Exception e) {
+            log.error("Ollama chatWithTools parse exception: {}", e.getMessage(), e);
             return null;
         }
     }

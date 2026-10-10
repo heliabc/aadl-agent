@@ -1,5 +1,8 @@
 package com.example.aadlagent.client;
 
+import com.example.aadlagent.client.dto.ChatMessage;
+import com.example.aadlagent.client.dto.ChatResponse;
+import com.example.aadlagent.client.dto.ToolCall;
 import com.example.aadlagent.config.BaseOpenAiConfig;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,10 +11,7 @@ import org.springframework.http.*;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.*;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * OpenAI 兼容 API 的通用客户端基类。
@@ -173,6 +173,114 @@ public abstract class AbstractOpenAiCompatibleClient implements LlmClient {
             return null;
         } catch (Exception e) {
             log.error("{} chat response parsing exception: {}", getClientName(), e.getMessage(), e);
+            return null;
+        }
+    }
+
+    @Override
+    public ChatResponse chatWithTools(List<ChatMessage> messages, List<Map<String, Object>> tools,
+                                      Double temperature, Integer maxTokens, String modelName) {
+        if (config.getApiKey() == null || config.getApiKey().isEmpty()) {
+            log.warn("{} API key is not configured", getClientName());
+            return null;
+        }
+
+        String url = config.getBaseUrl();
+        if (!url.endsWith("/")) {
+            url += "/";
+        }
+        url += "chat/completions";
+        String model = (modelName != null && !modelName.isEmpty()) ? modelName : config.getChatModel();
+
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", model);
+        requestBody.put("messages", messages);
+        requestBody.put("stream", false);
+
+        if (tools != null && !tools.isEmpty()) {
+            requestBody.put("tools", tools);
+        }
+
+        if (temperature != null) {
+            requestBody.put("temperature", temperature);
+        }
+        if (maxTokens != null) {
+            requestBody.put("max_tokens", maxTokens);
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", "Bearer " + config.getApiKey());
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
+
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(
+                    url, HttpMethod.POST, request, String.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                String responseBody = response.getBody();
+                if (responseBody == null || responseBody.trim().isEmpty()) {
+                    return null;
+                }
+
+                JsonNode root = objectMapper.readTree(responseBody);
+                JsonNode choices = root.get("choices");
+                if (choices == null || !choices.isArray() || choices.size() == 0) {
+                    return null;
+                }
+
+                JsonNode messageNode = choices.get(0).get("message");
+                if (messageNode == null) {
+                    return null;
+                }
+
+                String role = messageNode.has("role") ? messageNode.get("role").asText() : "assistant";
+                String content = messageNode.has("content") && !messageNode.get("content").isNull()
+                        ? messageNode.get("content").asText() : null;
+
+                // 解析 tool_calls
+                List<ToolCall> toolCalls = null;
+                if (messageNode.has("tool_calls") && messageNode.get("tool_calls").isArray()) {
+                    toolCalls = new ArrayList<>();
+                    for (JsonNode tcNode : messageNode.get("tool_calls")) {
+                        String tcId = tcNode.has("id") ? tcNode.get("id").asText() : null;
+                        String tcType = tcNode.has("type") ? tcNode.get("type").asText() : "function";
+                        JsonNode funcNode = tcNode.get("function");
+                        String funcName = funcNode != null && funcNode.has("name")
+                                ? funcNode.get("name").asText() : null;
+                        String funcArgs = funcNode != null && funcNode.has("arguments")
+                                ? funcNode.get("arguments").toString() : "{}";
+
+                        toolCalls.add(ToolCall.builder()
+                                .id(tcId)
+                                .type(tcType)
+                                .function(ToolCall.FunctionCall.builder()
+                                        .name(funcName)
+                                        .arguments(funcArgs)
+                                        .build())
+                                .build());
+                    }
+                }
+
+                ChatMessage chatMessage = ChatMessage.builder()
+                        .role(role)
+                        .content(content != null ? cleanThinkingContent(content) : null)
+                        .toolCalls(toolCalls)
+                        .build();
+
+                return ChatResponse.builder()
+                        .model(model)
+                        .message(chatMessage)
+                        .done(true)
+                        .build();
+            } else {
+                log.error("{} chatWithTools failed with status: {}", getClientName(), response.getStatusCode());
+                return null;
+            }
+        } catch (Exception e) {
+            log.error("{} chatWithTools exception: {}", getClientName(), e.getMessage(), e);
             return null;
         }
     }

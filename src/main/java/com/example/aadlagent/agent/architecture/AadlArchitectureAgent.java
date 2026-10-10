@@ -1,11 +1,11 @@
 package com.example.aadlagent.agent.architecture;
 
-import com.example.aadlagent.agent.Agent;
 import com.example.aadlagent.agent.AgentInput;
 import com.example.aadlagent.agent.AgentOutput;
-import com.example.aadlagent.client.LlmClient;
+import com.example.aadlagent.agent.ReActAgent;
+import com.example.aadlagent.agent.tool.SearchKnowledgeTool;
+import com.example.aadlagent.agent.tool.Tool;
 import com.example.aadlagent.client.ModelService;
-import com.example.aadlagent.client.ModelType;
 import com.example.aadlagent.model.AadlArchitectureModel;
 import com.example.aadlagent.util.JsonRepairUtil;
 import com.fasterxml.jackson.core.JsonParser;
@@ -17,18 +17,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
+import java.util.List;
+
 @Slf4j
 @Component
-public class AadlArchitectureAgent implements Agent<AgentInput, AgentOutput> {
+public class AadlArchitectureAgent extends ReActAgent {
 
     private static final String AGENT_NAME = "AadlArchitectureAgent";
 
-    private final ModelService modelService;
-    private final ObjectMapper objectMapper;
     private final AadlArchitecturePrompt prompt;
-
-    @Value("${agent.architecture.max-retries:3}")
-    private int maxRetries;
+    private final SearchKnowledgeTool searchKnowledgeTool;
 
     @Value("${agent.architecture.temperature:0.1}")
     private double temperature;
@@ -36,113 +35,124 @@ public class AadlArchitectureAgent implements Agent<AgentInput, AgentOutput> {
     @Value("${agent.architecture.max-tokens:8192}")
     private int maxTokens;
 
-    public AadlArchitectureAgent(ModelService modelService) {
-        this.modelService = modelService;
+    public AadlArchitectureAgent(ModelService modelService,
+                                 SearchKnowledgeTool searchKnowledgeTool) {
+        super(modelService);
         this.objectMapper = JsonMapper.builder()
                 .disable(SerializationFeature.WRITE_NULL_MAP_VALUES)
                 .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
                 .enable(JsonParser.Feature.ALLOW_COMMENTS)
-                .enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES)
+                .enable(JsonParser.Feature.ALLOW_SINGLE_QUOTE)
                 .enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES)
                 .build();
         this.prompt = new AadlArchitecturePrompt();
+        this.searchKnowledgeTool = searchKnowledgeTool;
     }
 
     @Override
-    public AgentOutput execute(AgentInput input) {
-        long startTime = System.currentTimeMillis();
+    protected String getSystemPrompt() {
+        return """
+你是一位精通 AADL（Architecture Analysis & Design Language）的系统架构设计师。
+你的任务是根据需求列表，设计出合理的 AADL 架构模型（树状层级结构）。
 
-        ModelType modelType = input.getModelType() != null ? input.getModelType() : ModelType.OLLAMA;
-        LlmClient llmClient = modelService.getClient(modelType);
+## 工作方式（ReAct 模式）
 
-        log.info("========================================");
-        log.info("AadlArchitectureAgent starting execution");
-        log.info("Session ID: {}", input.getSessionId());
-        log.info("Model: {} ({})", modelType.name(), llmClient.getModelName());
-        log.info("========================================");
+1. **Thought（思考）**：分析需求，确定系统的组件组成和层级关系
+2. **Action（行动）**：如果不确定 AADL 组件规则或需要参考示例，调用 search_knowledge 工具查询
+3. **Observation（观察）**：查看工具返回的知识
+4. 重复以上步骤，直到你有足够信息完成架构设计
+5. **Final Answer**：输出完整的架构模型 JSON
 
-        String requirementsJson = input.getContent();
-        if (requirementsJson == null || requirementsJson.trim().isEmpty()) {
-            log.error("需求列表内容为空，无法继续处理");
-            return AgentOutput.failure(input.getSessionId(), "需求列表内容不能为空");
-        }
+## 可用工具
 
-        log.info("需求列表长度: {} 字符", requirementsJson.length());
-        log.info("配置参数: temperature={}, maxTokens={}, maxRetries={}", temperature, maxTokens, maxRetries);
+- **search_knowledge**: 检索 AADL 领域知识，包括组件类型、层级规则、设计示例等。不确定 AADL 架构规则时调用。
 
-        log.info("正在构建Prompt...");
-        String systemPrompt = input.isMinimalPrompt()
-                ? prompt.buildMinimalPrompt(requirementsJson)
-                : prompt.buildPrompt(requirementsJson, input.getRagContext());
-        log.info("Prompt构建完成，长度: {} 字符", systemPrompt.length());
+## 输出要求
 
-        for (int attempt = 1; attempt <= maxRetries; attempt++) {
-            if (input.isCancelled()) {
-                log.info("任务已取消，AadlArchitectureAgent停止执行");
-                return AgentOutput.cancelled(input.getSessionId());
-            }
+输出必须是一个合法的 JSON 对象，表示架构树，格式如下：
+```json
+{
+  "name": "SystemName",
+  "type": "system",
+  "subcomponents": [
+    {
+      "name": "DeviceName",
+      "type": "device",
+      "features": [...]
+    },
+    ...
+  ]
+}
+```
 
-            log.info("----------------------------------------");
-            log.info("第 {}/{} 次尝试", attempt, maxRetries);
-            log.info("正在调用大模型... (类型: {}, 模型: {})", modelType.name(), llmClient.getModelName());
+AADL 组件类型包括：system, process, thread, processor, device, memory, bus, data, subprogram。
+层级规则：system 可包含 process/processor/device/memory/bus；process 可包含 thread/subprogram 等。
 
-            long llmStartTime = System.currentTimeMillis();
-            String llmResponse = llmClient.chat(systemPrompt, temperature, maxTokens);
-            long llmTime = System.currentTimeMillis() - llmStartTime;
-
-            log.info("LLM调用完成，耗时: {}ms", llmTime);
-
-            if (input.isCancelled()) {
-                log.info("任务已取消，AadlArchitectureAgent停止执行");
-                return AgentOutput.cancelled(input.getSessionId());
-            }
-
-            if (llmResponse == null || llmResponse.trim().isEmpty()) {
-                log.warn("LLM返回空响应，准备重试");
-                continue;
-            }
-
-            log.info("LLM响应长度: {} 字符", llmResponse.length());
-            log.info("LLM响应前200字符: {}", llmResponse.length() > 200 ? llmResponse.substring(0, 200) + "..." : llmResponse);
-
-            try {
-                log.info("正在解析LLM响应...");
-                AadlArchitectureModel architecture = parseArchitecture(llmResponse);
-
-                if (architecture != null && architecture.getName() != null) {
-                    String outputJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(architecture);
-                    long executionTime = System.currentTimeMillis() - startTime;
-
-                    log.info("========================================");
-                    log.info("AadlArchitectureAgent执行成功!");
-                    log.info("根节点名称: {}", architecture.getName());
-                    log.info("子组件数量: {}", architecture.getSubcomponents() != null ? architecture.getSubcomponents().size() : 0);
-                    log.info("总耗时: {}ms", executionTime);
-                    log.info("========================================");
-
-                    printArchitectureTree(architecture, 0);
-
-                    return AgentOutput.success(input.getSessionId(), outputJson, executionTime);
-                }
-
-                log.warn("解析出的架构模型为空，准备重试");
-
-            } catch (Exception e) {
-                log.warn("第{}次尝试解析LLM响应失败: {}", attempt, e.getMessage());
-                log.debug("详细错误:", e);
-            }
-        }
-
-        long executionTime = System.currentTimeMillis() - startTime;
-        log.error("========================================");
-        log.error("AadlArchitectureAgent执行失败!");
-        log.error("重试次数: {} 次", maxRetries);
-        log.error("总耗时: {}ms", executionTime);
-        log.error("========================================");
-
-        return AgentOutput.failure(input.getSessionId(),
-                "AADL架构生成失败，已重试" + maxRetries + "次");
+最终答案请用 ```json 代码块包裹完整的架构模型 JSON。
+""";
     }
+
+    @Override
+    protected String buildUserMessage(AgentInput input) {
+        String requirementsJson = input.getContent();
+        StringBuilder sb = new StringBuilder();
+        sb.append("请根据以下需求列表，设计 AADL 架构模型：\n\n");
+        sb.append("需求列表：\n").append(requirementsJson).append("\n\n");
+        sb.append("如果需要查询 AADL 组件类型、层级规则或设计示例，请调用 search_knowledge 工具。\n");
+        sb.append("完成设计后，输出完整的架构模型 JSON（用 ```json 代码块包裹）。");
+        return sb.toString();
+    }
+
+    @Override
+    protected List<Tool> getTools() {
+        return Collections.singletonList(searchKnowledgeTool);
+    }
+
+    @Override
+    protected AgentOutput buildFinalOutput(AgentInput input, String finalContent, long totalTimeMs) {
+        try {
+            AadlArchitectureModel architecture = parseArchitecture(finalContent);
+
+            if (architecture != null && architecture.getName() != null) {
+                String outputJson = objectMapper.writerWithDefaultPrettyPrinter()
+                        .writeValueAsString(architecture);
+
+                log.info("========================================");
+                log.info("AadlArchitectureAgent 执行成功!");
+                log.info("根节点名称: {}", architecture.getName());
+                log.info("子组件数量: {}", architecture.getSubcomponents() != null
+                        ? architecture.getSubcomponents().size() : 0);
+                log.info("总耗时: {}ms", totalTimeMs);
+                log.info("========================================");
+
+                return AgentOutput.success(input.getSessionId(), outputJson, totalTimeMs);
+            }
+
+            log.error("解析出的架构模型为空或名称缺失");
+            return AgentOutput.failure(input.getSessionId(), "架构模型解析失败：名称为空");
+
+        } catch (Exception e) {
+            log.error("架构模型解析失败: {}", e.getMessage(), e);
+            return AgentOutput.failure(input.getSessionId(), "架构模型解析失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    protected double getTemperature() {
+        return temperature;
+    }
+
+    @Override
+    protected int getMaxTokens() {
+        return maxTokens;
+    }
+
+    @Override
+    public String getAgentName() {
+        return AGENT_NAME;
+    }
+
+    // ==================== 原有辅助方法（保留） ====================
 
     private AadlArchitectureModel parseArchitecture(String response) throws Exception {
         String jsonContent = JsonRepairUtil.extractAndFixJson(response);
@@ -151,14 +161,9 @@ public class AadlArchitectureAgent implements Agent<AgentInput, AgentOutput> {
             throw new IllegalArgumentException("无法从响应中提取JSON内容");
         }
 
-        // 兼容两种格式：
-        //   1. 扁平结构：{"name": "xxx", "type": "system", ...}
-        //   2. 带 root 包装：{"root": {"name": "xxx", ...}}
-        // 先尝试扁平结构（直接解析），如果 name 为空再尝试提取 root
         AadlArchitectureModel architecture = objectMapper.readValue(jsonContent, AadlArchitectureModel.class);
 
         if (architecture != null && architecture.getName() == null) {
-            // 可能是带 root 包装的格式，尝试提取 root 节点
             com.fasterxml.jackson.databind.JsonNode rootNode = objectMapper.readTree(jsonContent);
             if (rootNode.has("root")) {
                 com.fasterxml.jackson.databind.JsonNode inner = rootNode.get("root");
@@ -167,24 +172,5 @@ public class AadlArchitectureAgent implements Agent<AgentInput, AgentOutput> {
         }
 
         return architecture;
-    }
-
-    private void printArchitectureTree(AadlArchitectureModel model, int indent) {
-        if (model == null) {
-            return;
-        }
-        String prefix = "  ".repeat(indent);
-        log.info("{}+ {} ({})", prefix, model.getName(), model.getType());
-
-        if (model.getSubcomponents() != null && !model.getSubcomponents().isEmpty()) {
-            for (AadlArchitectureModel child : model.getSubcomponents()) {
-                printArchitectureTree(child, indent + 1);
-            }
-        }
-    }
-
-    @Override
-    public String getAgentName() {
-        return AGENT_NAME;
     }
 }

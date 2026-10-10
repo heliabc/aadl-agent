@@ -1,5 +1,7 @@
 package com.example.aadlagent.client;
 
+import com.example.aadlagent.client.dto.ChatMessage;
+import com.example.aadlagent.client.dto.ChatResponse;
 import com.example.aadlagent.config.GeminiConfig;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -212,6 +214,18 @@ public class GeminiClient implements LlmClient {
             result = result.substring(0, thinkStart);
         }
         return result.trim();
+    }
+
+    @Override
+    public ChatResponse chatWithTools(List<ChatMessage> messages, List<Map<String, Object>> tools,
+                                      Double temperature, Integer maxTokens, String modelName) {
+        log.warn("Gemini client does not support tool calling yet");
+        return null;
+    }
+
+    @Override
+    public boolean supportsToolCalling() {
+        return false;
     }
 
     @Override
