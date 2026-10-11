@@ -254,7 +254,8 @@ public class LocalVectorStore {
             String json = Files.readString(path);
             Map<String, List<Document>> data = objectMapper.readValue(json,
                     objectMapper.getTypeFactory().constructMapType(
-                            HashMap.class, String.class,
+                            HashMap.class,
+                            objectMapper.getTypeFactory().constructType(String.class),
                             objectMapper.getTypeFactory().constructCollectionType(List.class, Document.class)
                     ));
 
