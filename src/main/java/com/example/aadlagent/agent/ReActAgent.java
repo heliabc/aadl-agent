@@ -161,7 +161,7 @@ public abstract class ReActAgent implements Agent<AgentInput, AgentOutput> {
                     String toolName = toolCall.getFunction() != null
                             ? toolCall.getFunction().getName() : null;
                     String argsStr = toolCall.getFunction() != null
-                            ? toolCall.getFunction().getArguments() : "{}";
+                            ? toolCall.getFunction().getArgumentsAsString() : "{}";
 
                     if (toolName == null || toolName.isEmpty()) {
                         log.warn("工具调用名称为空，跳过");

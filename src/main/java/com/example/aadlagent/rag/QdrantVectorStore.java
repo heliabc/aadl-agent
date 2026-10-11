@@ -442,6 +442,7 @@ public class QdrantVectorStore {
             ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
             
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                log.debug("Count response for {}: {}", collectionName, response.getBody());
                 Map<String, Object> result = (Map<String, Object>) response.getBody().get("result");
                 if (result != null && result.get("points_count") != null) {
                     return ((Number) result.get("points_count")).longValue();
@@ -450,6 +451,7 @@ public class QdrantVectorStore {
                 if (response.getBody().get("count") != null) {
                     return ((Number) response.getBody().get("count")).longValue();
                 }
+                log.warn("Count response has unexpected format: {}", response.getBody().keySet());
             }
         } catch (Exception e) {
             log.error("Failed to count points in {}: {}", collectionName, e.getMessage());

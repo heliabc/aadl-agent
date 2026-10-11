@@ -153,6 +153,18 @@ public class OllamaClient implements LlmClient {
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
 
         try {
+            // 打印请求体（调试用）
+            if (log.isDebugEnabled()) {
+                try {
+                    String reqBodyStr = objectMapper.writeValueAsString(requestBody);
+                    log.debug("Ollama chatWithTools request body (length: {}): {}", 
+                            reqBodyStr.length(),
+                            reqBodyStr.length() > 2000 ? reqBodyStr.substring(0, 2000) + "..." : reqBodyStr);
+                } catch (Exception e) {
+                    log.debug("Failed to serialize request body for logging");
+                }
+            }
+            
             // 先用 String 接收，再手动解析（处理工具调用响应的复杂结构）
             ResponseEntity<String> response = restTemplate.exchange(
                     url,
@@ -180,7 +192,9 @@ public class OllamaClient implements LlmClient {
                     return chatResponse;
                 }
             } else {
-                log.error("Ollama chatWithTools request failed with status: {}", response.getStatusCode());
+                String errorBody = response.getBody();
+                log.error("Ollama chatWithTools request failed with status: {}, response body: {}", 
+                        response.getStatusCode(), errorBody);
             }
             return null;
         } catch (RestClientException e) {

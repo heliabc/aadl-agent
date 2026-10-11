@@ -13,6 +13,10 @@ import lombok.Builder;
 /**
  * 工具调用 DTO
  * 对应 Ollama / OpenAI 格式中的 tool_calls 项
+ * 
+ * arguments 字段使用 Object 类型，兼容两种格式：
+ * - 反序列化（解析响应）：String 或对象都能接收
+ * - 序列化（发送请求）：按原始格式输出，保证和模型返回格式一致
  */
 @Data
 @NoArgsConstructor
@@ -40,33 +44,33 @@ public class ToolCall {
         private String name;
 
         /**
-         * 函数参数（JSON 字符串）
-         * 兼容两种格式：
-         * - OpenAI 标准格式：arguments 是 JSON 字符串
-         * - 部分模型/Ollama 返回格式：arguments 是 JSON 对象
+         * 函数参数，Object 类型以兼容多种格式：
+         * - String：OpenAI 标准格式（JSON 字符串）
+         * - Map / JsonNode：对象格式（Ollama/qwen3 等部分模型返回）
+         * 
+         * 序列化时保持原始格式输出，确保回传给模型时格式一致
          */
-        private String arguments;
+        private Object arguments;
 
         /**
-         * 自定义 setter：同时兼容 String 和 Object（Map/JsonNode）两种格式
+         * 获取 arguments 的 JSON 字符串形式（用于业务代码解析参数）
          */
-        @JsonProperty("arguments")
-        public void setArguments(Object argumentsObj) {
-            if (argumentsObj == null) {
-                this.arguments = "{}";
-            } else if (argumentsObj instanceof String) {
-                this.arguments = (String) argumentsObj;
-            } else {
-                try {
-                    this.arguments = MAPPER.writeValueAsString(argumentsObj);
-                } catch (JsonProcessingException e) {
-                    this.arguments = "{}";
-                }
+        public String getArgumentsAsString() {
+            if (arguments == null) {
+                return "{}";
+            }
+            if (arguments instanceof String) {
+                return (String) arguments;
+            }
+            try {
+                return MAPPER.writeValueAsString(arguments);
+            } catch (JsonProcessingException e) {
+                return "{}";
             }
         }
 
         @Builder
-        public FunctionCall(String name, String arguments) {
+        public FunctionCall(String name, Object arguments) {
             this.name = name;
             this.arguments = arguments;
         }
