@@ -8,7 +8,9 @@ import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,7 +29,7 @@ public class KnowledgeBaseManager {
     private final QdrantVectorStore qdrantVectorStore;
     private final ObjectMapper objectMapper;
     private final ConcurrentHashMap<String, KnowledgeBase> knowledgeBases = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Long> lastModifiedTimes = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, String> contentHashes = new ConcurrentHashMap<>();
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     public KnowledgeBaseManager(EmbeddingService embeddingService, QdrantVectorStore qdrantVectorStore) {
@@ -124,24 +126,23 @@ public class KnowledgeBaseManager {
                     .lastModified(LocalDateTime.now())
                     .build();
             knowledgeBases.put(agentType, kb);
-            lastModifiedTimes.put(agentType, 0L);
+            contentHashes.put(agentType, "");
             log.info("Knowledge base not found, creating empty: {}", agentType);
             saveKnowledgeBase(agentType);
             return;
         }
 
         try {
-            long modifiedTime = Files.getLastModifiedTime(kbPath).toMillis();
-            boolean fileChanged = modifiedTime != lastModifiedTimes.getOrDefault(agentType, 0L);
+            String json = Files.readString(kbPath);
+            String currentHash = computeHash(json);
+            boolean contentChanged = !currentHash.equals(contentHashes.getOrDefault(agentType, ""));
             
-            if (!fileChanged && knowledgeBases.containsKey(agentType)) {
-                // 文件未变且内存已有数据，跳过重新加载
-                log.info("Knowledge base {} unchanged, skipping reload", agentType);
+            if (!contentChanged && knowledgeBases.containsKey(agentType)) {
+                // 内容未变且内存已有数据，跳过重新加载
+                log.info("Knowledge base {} unchanged (content hash match), skipping reload", agentType);
                 return;
             }
 
-            String json = Files.readString(kbPath);
-            
             KnowledgeBase kb = convertLegacyFormat(json, agentType);
             log.info("Loaded KB for {} via legacy format: {} basics, {} examples, {} corrections", 
                     agentType,
@@ -171,79 +172,128 @@ public class KnowledgeBaseManager {
             List<Document> docsToUpsert = new ArrayList<>();
             int generatedEmbeddings = 0;
             int skippedEmbeddings = 0;
+            int cachedEmbeddings = 0;
             
             if (qdrantAvailable) {
-                for (BasicKnowledge basic : kb.getBasics()) {
-                    if (basic.getEmbedding() == null || basic.getEmbedding().length == 0) {
-                        try {
-                            float[] embedding = embeddingService.embed(basic.getContent());
-                            if (embedding != null && embedding.length > 0) {
-                                basic.setEmbedding(embedding);
-                                generatedEmbeddings++;
-                            } else {
-                                skippedEmbeddings++;
-                                log.warn("Embedding generation returned null or empty for basic: {}", basic.getId());
-                            }
-                        } catch (Exception e) {
-                            skippedEmbeddings++;
-                            log.warn("Failed to generate embedding for basic {}: {}", basic.getId(), e.getMessage());
-                        }
-                    }
-                    if (basic.getEmbedding() != null && basic.getEmbedding().length > 0) {
-                        docsToUpsert.add(toDocument(basic, agentType, "basic"));
-                    } else {
-                        log.warn("No valid embedding for basic, skipping upsert: {}", basic.getId());
-                    }
-                }
+                long existingCount = qdrantVectorStore.count(agentType);
                 
-                for (ExampleKnowledge example : kb.getExamples()) {
-                    String semanticContent = (example.getScenario() != null ? example.getScenario() : "") + "\n" + 
-                            (example.getInput() != null ? example.getInput() : "");
-                    if (example.getEmbedding() == null || example.getEmbedding().length == 0) {
-                        try {
-                            float[] embedding = embeddingService.embed(semanticContent);
-                            if (embedding != null && embedding.length > 0) {
-                                example.setEmbedding(embedding);
-                                generatedEmbeddings++;
-                            } else {
+                if (existingCount > 0) {
+                    // Qdrant 已有数据，跳过 embedding 生成和 upsert
+                    // 只把 JSON 里的知识加载到内存供业务使用，Qdrant 侧不需要动
+                    log.info("Collection '{}' already has {} points, skipping embedding generation and upsert", 
+                            agentType, existingCount);
+                    
+                    // 统计一下 JSON 里缓存了多少 embedding（信息展示用）
+                    for (BasicKnowledge basic : kb.getBasics()) {
+                        if (basic.getEmbedding() != null && basic.getEmbedding().length > 0) cachedEmbeddings++;
+                    }
+                    for (ExampleKnowledge example : kb.getExamples()) {
+                        if (example.getEmbedding() != null && example.getEmbedding().length > 0) cachedEmbeddings++;
+                    }
+                    for (ErrorCorrection ec : kb.getErrorCorrections()) {
+                        if (ec.getEmbedding() != null && ec.getEmbedding().length > 0) cachedEmbeddings++;
+                    }
+                    
+                    log.info("Knowledge base {}: {} cached embeddings in JSON, Qdrant has {} points (skipped full sync)", 
+                            agentType, cachedEmbeddings, existingCount);
+                } else {
+                    // collection 为空，需要全量生成并写入
+                    log.info("Collection '{}' is empty, generating embeddings for initial bulk upsert", agentType);
+                    
+                    for (BasicKnowledge basic : kb.getBasics()) {
+                        if (basic.getEmbedding() == null || basic.getEmbedding().length == 0) {
+                            try {
+                                float[] embedding = embeddingService.embed(basic.getContent());
+                                if (embedding != null && embedding.length > 0) {
+                                    basic.setEmbedding(embedding);
+                                    generatedEmbeddings++;
+                                } else {
+                                    skippedEmbeddings++;
+                                    log.warn("Embedding generation returned null or empty for basic: {}", basic.getId());
+                                }
+                            } catch (Exception e) {
                                 skippedEmbeddings++;
-                                log.warn("Embedding generation returned null or empty for example: {}", example.getId());
+                                log.warn("Failed to generate embedding for basic {}: {}", basic.getId(), e.getMessage());
                             }
-                        } catch (Exception e) {
-                            skippedEmbeddings++;
-                            log.warn("Failed to generate embedding for example {}: {}", example.getId(), e.getMessage());
+                        } else {
+                            cachedEmbeddings++;
+                        }
+                        if (basic.getEmbedding() != null && basic.getEmbedding().length > 0) {
+                            docsToUpsert.add(toDocument(basic, agentType, "basic"));
+                        } else {
+                            log.warn("No valid embedding for basic, skipping upsert: {}", basic.getId());
                         }
                     }
-                    if (example.getEmbedding() != null && example.getEmbedding().length > 0) {
-                        docsToUpsert.add(toDocument(example, agentType, "example"));
-                    } else {
-                        log.warn("No valid embedding for example, skipping upsert: {}", example.getId());
-                    }
-                }
-                
-                for (ErrorCorrection ec : kb.getErrorCorrections()) {
-                    String semanticContent = (ec.getErrorType() != null ? ec.getErrorType() : "") + "\n" + 
-                            (ec.getErrorDescription() != null ? ec.getErrorDescription() : "") + "\n" + 
-                            (ec.getCorrectionExplanation() != null ? ec.getCorrectionExplanation() : "");
-                    if (ec.getEmbedding() == null || ec.getEmbedding().length == 0) {
-                        try {
-                            float[] embedding = embeddingService.embed(semanticContent);
-                            if (embedding != null && embedding.length > 0) {
-                                ec.setEmbedding(embedding);
-                                generatedEmbeddings++;
-                            } else {
+                    
+                    for (ExampleKnowledge example : kb.getExamples()) {
+                        String semanticContent = (example.getScenario() != null ? example.getScenario() : "") + "\n" + 
+                                (example.getInput() != null ? example.getInput() : "");
+                        if (example.getEmbedding() == null || example.getEmbedding().length == 0) {
+                            try {
+                                float[] embedding = embeddingService.embed(semanticContent);
+                                if (embedding != null && embedding.length > 0) {
+                                    example.setEmbedding(embedding);
+                                    generatedEmbeddings++;
+                                } else {
+                                    skippedEmbeddings++;
+                                    log.warn("Embedding generation returned null or empty for example: {}", example.getId());
+                                }
+                            } catch (Exception e) {
                                 skippedEmbeddings++;
-                                log.warn("Embedding generation returned null or empty for error correction: {}", ec.getId());
+                                log.warn("Failed to generate embedding for example {}: {}", example.getId(), e.getMessage());
                             }
-                        } catch (Exception e) {
-                            skippedEmbeddings++;
-                            log.warn("Failed to generate embedding for error correction {}: {}", ec.getId(), e.getMessage());
+                        } else {
+                            cachedEmbeddings++;
+                        }
+                        if (example.getEmbedding() != null && example.getEmbedding().length > 0) {
+                            docsToUpsert.add(toDocument(example, agentType, "example"));
+                        } else {
+                            log.warn("No valid embedding for example, skipping upsert: {}", example.getId());
                         }
                     }
-                    if (ec.getEmbedding() != null && ec.getEmbedding().length > 0) {
-                        docsToUpsert.add(toDocument(ec, agentType, "error_correction"));
+                    
+                    for (ErrorCorrection ec : kb.getErrorCorrections()) {
+                        String semanticContent = (ec.getErrorType() != null ? ec.getErrorType() : "") + "\n" + 
+                                (ec.getErrorDescription() != null ? ec.getErrorDescription() : "") + "\n" + 
+                                (ec.getCorrectionExplanation() != null ? ec.getCorrectionExplanation() : "");
+                        if (ec.getEmbedding() == null || ec.getEmbedding().length == 0) {
+                            try {
+                                float[] embedding = embeddingService.embed(semanticContent);
+                                if (embedding != null && embedding.length > 0) {
+                                    ec.setEmbedding(embedding);
+                                    generatedEmbeddings++;
+                                } else {
+                                    skippedEmbeddings++;
+                                    log.warn("Embedding generation returned null or empty for error correction: {}", ec.getId());
+                                }
+                            } catch (Exception e) {
+                                skippedEmbeddings++;
+                                log.warn("Failed to generate embedding for error correction {}: {}", ec.getId(), e.getMessage());
+                            }
+                        } else {
+                            cachedEmbeddings++;
+                        }
+                        if (ec.getEmbedding() != null && ec.getEmbedding().length > 0) {
+                            docsToUpsert.add(toDocument(ec, agentType, "error_correction"));
+                        } else {
+                            log.warn("No valid embedding for error correction, skipping upsert: {}", ec.getId());
+                        }
+                    }
+                    
+                    if (!docsToUpsert.isEmpty()) {
+                        log.info("Performing initial bulk upsert of {} documents (generated: {}, cached: {}, skipped: {})", 
+                                docsToUpsert.size(), generatedEmbeddings, cachedEmbeddings, skippedEmbeddings);
+                        qdrantVectorStore.upsertBatch(agentType, docsToUpsert);
+                        log.info("Initial bulk upsert completed for {}", agentType);
                     } else {
-                        log.warn("No valid embedding for error correction, skipping upsert: {}", ec.getId());
+                        log.warn("No documents to upsert for {} - check if embeddings are being generated", agentType);
+                    }
+                    
+                    // 生成了新 embedding，持久化回 JSON，下次直接读
+                    if (generatedEmbeddings > 0) {
+                        log.info("Persisting {} new embeddings back to JSON for {}", generatedEmbeddings, agentType);
+                        knowledgeBases.put(agentType, kb);
+                        saveKnowledgeBase(agentType);
                     }
                 }
             } else {
@@ -251,31 +301,11 @@ public class KnowledgeBaseManager {
             }
 
             knowledgeBases.put(agentType, kb);
-            lastModifiedTimes.put(agentType, modifiedTime);
+            contentHashes.put(agentType, currentHash);
             
-            log.info("Knowledge base {}: {} docs to upsert, {} embeddings generated, {} skipped", 
-                    agentType, docsToUpsert.size(), generatedEmbeddings, skippedEmbeddings);
-            
-            if (qdrantAvailable && !docsToUpsert.isEmpty()) {
-                // 只在 collection 为空时才全量 upsert；已有数据则跳过（靠 watcher 和 API 操作做增量同步）
-                long existingCount = qdrantVectorStore.count(agentType);
-                if (existingCount == 0) {
-                    log.info("Collection '{}' is empty, performing initial bulk upsert of {} documents", agentType, docsToUpsert.size());
-                    qdrantVectorStore.upsertBatch(agentType, docsToUpsert);
-                    log.info("Initial bulk upsert completed for {}", agentType);
-                } else {
-                    log.info("Collection '{}' already has {} points, skipping full upsert (watcher handles changes)", agentType, existingCount);
-                }
-            } else if (qdrantAvailable) {
-                log.warn("No documents to upsert for {} - check if embeddings are being generated", agentType);
-            } else {
-                log.warn("Qdrant not available, skipping upsert for {}", agentType);
-            }
-            
-            log.info("Loaded knowledge base {}: {} basics, {} examples, {} corrections (qdrant: {}, upserted: {})", 
+            log.info("Loaded knowledge base {}: {} basics, {} examples, {} corrections (qdrant: {})", 
                     agentType, kb.getBasics().size(), kb.getExamples().size(), 
-                    kb.getErrorCorrections().size(), qdrantAvailable, 
-                    qdrantAvailable && qdrantVectorStore.count(agentType) > 0 ? qdrantVectorStore.count(agentType) : 0);
+                    kb.getErrorCorrections().size(), qdrantAvailable);
         } catch (IOException e) {
             log.error("Failed to load knowledge base {}: {}", agentType, e.getMessage());
             knowledgeBases.put(agentType, createEmptyKnowledgeBase(agentType));
@@ -394,10 +424,27 @@ public class KnowledgeBaseManager {
             kb.setLastModified(LocalDateTime.now());
             String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(kb);
             Files.writeString(kbPath, json);
-            lastModifiedTimes.put(agentType, System.currentTimeMillis());
+            contentHashes.put(agentType, computeHash(json));
             log.debug("Saved knowledge base: {} ({} entries)", agentType, kb.getTotalEntries());
         } catch (IOException e) {
             log.error("Failed to save knowledge base {}: {}", agentType, e.getMessage());
+        }
+    }
+
+    private String computeHash(String content) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashBytes = digest.digest(content.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hashBytes) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            log.warn("Failed to compute content hash: {}", e.getMessage());
+            return String.valueOf(content.hashCode());
         }
     }
 
