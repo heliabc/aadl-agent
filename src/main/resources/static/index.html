@@ -2179,6 +2179,17 @@
 
         // ===== Initialization =====
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('【前端调试】页面加载完成，API_BASE:', API_BASE);
+            console.log('【前端调试】当前页面地址:', window.location.href);
+            
+            // 全局错误捕获
+            window.addEventListener('error', (event) => {
+                console.error('【前端调试】全局错误:', event.message, 'at', event.filename + ':' + event.lineno);
+            });
+            window.addEventListener('unhandledrejection', (event) => {
+                console.error('【前端调试】未捕获的 Promise 错误:', event.reason);
+            });
+            
             initModelSelector();
             initModeToggle();
             initStepNavigation();
@@ -2633,34 +2644,46 @@
 
         // ===== Module Execution =====
         async function runRequirement() {
+            console.log('【前端调试】点击了需求分析按钮');
             const tabType = getActiveTab('Requirement');
+            console.log('【前端调试】当前标签页:', tabType);
             
             let content = null;
             let fileName = null;
 
             if (tabType === 'text') {
                 content = document.getElementById('textRequirement').value.trim();
+                console.log('【前端调试】文本模式，内容长度:', content ? content.length : 0);
                 if (!content) {
                     alert('请输入需求描述');
                     return;
                 }
             } else if (tabType === 'file') {
                 const file = uploadedFiles.Requirement;
+                console.log('【前端调试】文件模式，已上传文件:', file ? file.name : '无');
                 if (!file) {
                     alert('请上传文件');
                     return;
                 }
                 content = await readFileContent(file);
                 fileName = file.name;
+                console.log('【前端调试】文件读取完成，内容长度:', content ? content.length : 0);
             }
 
+            console.log('【前端调试】即将发送请求到:', `${API_BASE}/requirement/analyze`);
+            console.log('【前端调试】请求参数:', { model: currentModel, sessionId: sessionId, fileName: fileName, contentLength: content ? content.length : 0 });
+
             await executeModule('Requirement', async () => {
+                console.log('【前端调试】发送 fetch 请求...');
                 const response = await fetch(`${API_BASE}/requirement/analyze`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ content: content, model: currentModel, sessionId: sessionId, fileName: fileName })
                 });
-                return await response.json();
+                console.log('【前端调试】收到响应，状态码:', response.status);
+                const result = await response.json();
+                console.log('【前端调试】响应数据:', result);
+                return result;
             }, { fileName });
         }
 
@@ -2851,7 +2874,11 @@
 
         // ===== Core Execution =====
         async function executeModule(moduleId, apiCall, params = {}) {
-            if (isRunning) return;
+            console.log('【前端调试】executeModule 被调用, moduleId:', moduleId, ', isRunning:', isRunning);
+            if (isRunning) {
+                console.log('【前端调试】已有任务在运行，直接返回');
+                return;
+            }
             isRunning = true;
 
             const stepKey = moduleId.toLowerCase();
@@ -2937,7 +2964,8 @@
                     throw new Error(data.message || '未知错误');
                 }
             } catch (error) {
-                console.error('[executeModule] 错误:', error);
+                console.error('【前端调试】executeModule 捕获错误:', error);
+                console.error('【前端调试】错误堆栈:', error.stack);
                 const contentEl = document.getElementById(`content${moduleId}`);
                 if (contentEl && !contentEl.querySelector('.error-message')) {
                     contentEl.innerHTML = `<div class="error-message">执行失败: ${error.message}</div>`;

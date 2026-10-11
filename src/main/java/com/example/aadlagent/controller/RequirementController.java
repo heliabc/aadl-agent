@@ -80,12 +80,19 @@ public class RequirementController {
 
     @PostMapping("/analyze")
     public ResponseEntity<Map<String, Object>> analyzeRequirements(@RequestBody Map<String, Object> request) {
+        log.info("========== [需求分析] 收到请求 ==========");
+        log.info("请求参数 keys: {}", request.keySet());
+        
         String requirementDoc = (String) request.get("content");
         String modelTypeStr = (String) request.get("model");
         String sessionId = (String) request.get("sessionId");
         String fileName = (String) request.get("fileName");
+        
+        log.info("fileName: {}, model: {}, sessionId: {}", fileName, modelTypeStr, sessionId);
+        log.info("content 长度: {} 字符", requirementDoc != null ? requirementDoc.length() : 0);
 
         if (requirementDoc == null || requirementDoc.trim().isEmpty()) {
+            log.warn("需求文档内容为空，返回错误");
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
             error.put("message", "需求文档内容不能为空");

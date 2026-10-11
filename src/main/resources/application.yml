@@ -12,6 +12,16 @@ spring:
       enabled: true
       force: true
 
+logging:
+  level:
+    root: INFO
+    com.example.aadlagent: DEBUG
+    com.example.aadlagent.agent: DEBUG
+    com.example.aadlagent.controller: DEBUG
+    com.example.aadlagent.rag: INFO
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
 file:
   input-path: ./input
   output-path: ./output
