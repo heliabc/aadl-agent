@@ -72,6 +72,8 @@ public class RequirementAgent extends ReActAgent {
         this.detectDomainTool = detectDomainTool;
         // 容错：LLM 输出可能包含未知字段，忽略而非报错
         this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        // 容错：单值自动转为数组（LLM可能把 List 字段输出为单个字符串）
+        this.objectMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
         // 容错：LLM 有时会在 JSON 中加 // 注释，允许解析带注释的 JSON
         this.objectMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
         // 容错：允许 JSON 中的单引号（LLM偶尔输出）

@@ -7,7 +7,9 @@ import com.example.aadlagent.client.ModelType;
 import com.example.aadlagent.client.dto.ChatMessage;
 import com.example.aadlagent.client.dto.ChatResponse;
 import com.example.aadlagent.client.dto.ToolCall;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,6 +41,12 @@ public abstract class ReActAgent implements Agent<AgentInput, AgentOutput> {
     protected ReActAgent(ModelService modelService) {
         this.modelService = modelService;
         this.objectMapper = new ObjectMapper();
+        // 统一的 LLM 输出容错配置，所有子类共享
+        this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        this.objectMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
+        this.objectMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+        this.objectMapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
+        this.objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
     }
 
     // ==================== 子类需实现的方法 ====================
