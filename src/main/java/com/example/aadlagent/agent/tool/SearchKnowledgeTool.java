@@ -48,11 +48,6 @@ public class SearchKnowledgeTool implements Tool {
         queryParam.put("description", "检索查询，描述你想了解的 AADL 知识点或问题");
         props.put("query", queryParam);
 
-        Map<String, Object> agentTypeParam = new LinkedHashMap<>();
-        agentTypeParam.put("type", "string");
-        agentTypeParam.put("description", "调用场景类型，如 'generator'（生成）或 'fixer'（修复）");
-        props.put("agent_type", agentTypeParam);
-
         return Map.of(
                 "type", "object",
                 "properties", props,
@@ -67,14 +62,15 @@ public class SearchKnowledgeTool implements Tool {
             return "错误：query 参数不能为空";
         }
 
-        String agentType = "fixer";
-        Object agentTypeObj = arguments.get("agent_type");
-        if (agentTypeObj instanceof String && !((String) agentTypeObj).trim().isEmpty()) {
-            agentType = (String) agentTypeObj;
+        // knowledge_domain 由 Agent 基类自动注入，LLM 无需感知
+        String domain = "aadl";
+        Object domainObj = arguments.get("_knowledge_domain");
+        if (domainObj instanceof String && !((String) domainObj).trim().isEmpty()) {
+            domain = (String) domainObj;
         }
 
         try {
-            SearchResult result = ragService.search(query, agentType);
+            SearchResult result = ragService.search(query, domain);
 
             if (result == null || result.getDocuments() == null || result.getDocuments().isEmpty()) {
                 return "未检索到相关的领域知识。";

@@ -5,18 +5,18 @@ import com.example.aadlagent.agent.AgentOutput;
 import com.example.aadlagent.agent.ReActAgent;
 import com.example.aadlagent.agent.tool.SearchKnowledgeTool;
 import com.example.aadlagent.agent.tool.Tool;
+import com.example.aadlagent.agent.tool.ValidateArchitectureTool;
 import com.example.aadlagent.client.ModelService;
 import com.example.aadlagent.model.ModuleAnalysisResult;
 import com.example.aadlagent.util.JsonRepairUtil;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -28,6 +28,7 @@ public class ModuleAnalysisAgent extends ReActAgent {
 
     private final ModuleAnalysisPrompt prompt;
     private final SearchKnowledgeTool searchKnowledgeTool;
+    private final ValidateArchitectureTool validateArchitectureTool;
 
     @Value("${agent.module.temperature:0.1}")
     private double temperature;
@@ -36,17 +37,16 @@ public class ModuleAnalysisAgent extends ReActAgent {
     private int maxTokens;
 
     public ModuleAnalysisAgent(ModelService modelService,
-                               SearchKnowledgeTool searchKnowledgeTool) {
+                               SearchKnowledgeTool searchKnowledgeTool,
+                               ValidateArchitectureTool validateArchitectureTool) {
         super(modelService);
-        this.objectMapper = JsonMapper.builder()
-                .disable(SerializationFeature.WRITE_NULL_MAP_VALUES)
-                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-                .enable(JsonParser.Feature.ALLOW_COMMENTS)
-                .enable(JsonParser.Feature.ALLOW_SINGLE_QUOTE)
-                .enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES)
-                .build();
+        this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        this.objectMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+        this.objectMapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
+        this.objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
         this.prompt = new ModuleAnalysisPrompt();
         this.searchKnowledgeTool = searchKnowledgeTool;
+        this.validateArchitectureTool = validateArchitectureTool;
     }
 
     @Override
@@ -66,6 +66,7 @@ public class ModuleAnalysisAgent extends ReActAgent {
 ## 可用工具
 
 - **search_knowledge**: 检索 AADL 领域知识，包括模块设计规则、组件类型定义、端口声明规范、连接关系示例等。不确定 AADL 模块分析规则时调用。
+- **validate_architecture**: 验证架构树的层级包含关系是否正确。当你对架构树中组件的父子包含关系有疑问时，可以调用此工具进行验证。
 
 ## AADL 组件类型要点
 
@@ -110,7 +111,7 @@ device 是软硬件交汇点，不是软件功能模块，但是 thread 模块�
 
     @Override
     protected List<Tool> getTools() {
-        return Collections.singletonList(searchKnowledgeTool);
+        return Arrays.asList(searchKnowledgeTool, validateArchitectureTool);
     }
 
     @Override
@@ -154,6 +155,11 @@ device 是软硬件交汇点，不是软件功能模块，但是 thread 模块�
     @Override
     protected int getMaxTokens() {
         return maxTokens;
+    }
+
+    @Override
+    protected String getKnowledgeDomain() {
+        return "module";
     }
 
     @Override

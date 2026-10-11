@@ -1,8 +1,11 @@
 package com.example.aadlagent.agent.requirement;
 
-import com.example.aadlagent.agent.Agent;
 import com.example.aadlagent.agent.AgentInput;
 import com.example.aadlagent.agent.AgentOutput;
+import com.example.aadlagent.agent.ReActAgent;
+import com.example.aadlagent.agent.tool.DetectDomainTool;
+import com.example.aadlagent.agent.tool.SearchKnowledgeTool;
+import com.example.aadlagent.agent.tool.Tool;
 import com.example.aadlagent.client.LlmClient;
 import com.example.aadlagent.client.ModelService;
 import com.example.aadlagent.client.ModelType;
@@ -30,13 +33,13 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Component
-public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
+public class RequirementAgent extends ReActAgent {
 
     private static final String AGENT_NAME = "RequirementAgent";
 
-    private final ModelService modelService;
-    private final ObjectMapper objectMapper;
     private final RequirementPrompt prompt;
+    private final SearchKnowledgeTool searchKnowledgeTool;
+    private final DetectDomainTool detectDomainTool;
 
     @Value("${agent.requirement.max-retries:3}")
     private int maxRetries;
@@ -61,9 +64,12 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
 
     private ExecutorService chunkExecutor;
 
-    public RequirementAgent(ModelService modelService) {
-        this.modelService = modelService;
-        this.objectMapper = new ObjectMapper();
+    public RequirementAgent(ModelService modelService,
+                            SearchKnowledgeTool searchKnowledgeTool,
+                            DetectDomainTool detectDomainTool) {
+        super(modelService);
+        this.searchKnowledgeTool = searchKnowledgeTool;
+        this.detectDomainTool = detectDomainTool;
         // 容错：LLM 输出可能包含未知字段，忽略而非报错
         this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         // 容错：LLM 有时会在 JSON 中加 // 注释，允许解析带注释的 JSON
@@ -101,22 +107,41 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
     public AgentOutput execute(AgentInput input) {
         long startTime = System.currentTimeMillis();
 
-        ModelType modelType = input.getModelType() != null ? input.getModelType() : ModelType.OLLAMA;
-        LlmClient llmClient = modelService.getClient(modelType);
-
-        log.info("========================================");
-        log.info("RequirementAgent starting execution");
-        log.info("Session ID: {}", input.getSessionId());
-        log.info("Model: {} ({})", modelType.name(), llmClient.getModelName());
-        log.info("========================================");
-
         String requirementDoc = input.getContent();
         if (requirementDoc == null || requirementDoc.trim().isEmpty()) {
             log.error("需求文档内容为空，无法继续处理");
             return AgentOutput.failure(input.getSessionId(), "需求文档内容不能为空");
         }
 
+        log.info("========================================");
+        log.info("{} starting execution", AGENT_NAME);
+        log.info("Session ID: {}", input.getSessionId());
         log.info("需求文档长度: {} 字符", requirementDoc.length());
+        log.info("直接处理阈值: {} 字符", directProcessThreshold);
+        log.info("========================================");
+
+        boolean isDirectProcess = requirementDoc.length() <= directProcessThreshold;
+
+        if (isDirectProcess) {
+            // 短文本：走 ReAct 模式（通过基类执行，支持工具调用）
+            log.info("短文本模式，使用 ReAct 模式处理（支持 search_knowledge 工具）");
+            return super.execute(input);
+        }
+
+        // 长文本：保留原有的多阶段流水线处理逻辑
+        log.info("长文本模式，使用多阶段流水线处理");
+        return executeLongDocument(input, startTime);
+    }
+
+    /**
+     * 长文档多阶段流水线处理（保留原有完整逻辑）
+     */
+    private AgentOutput executeLongDocument(AgentInput input, long startTime) {
+        ModelType modelType = input.getModelType() != null ? input.getModelType() : ModelType.OLLAMA;
+        LlmClient llmClient = modelService.getClient(modelType);
+
+        String requirementDoc = input.getContent();
+
         log.info("配置参数: temperature={}, maxTokens={}, maxRetries={}", temperature, maxTokens, maxRetries);
 
         RequirementAnalysisResult analysisResult = RequirementAnalysisResult.builder()
@@ -124,63 +149,9 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
                 .build();
 
         try {
-            boolean isDirectProcess = requirementDoc.length() <= directProcessThreshold;
             Stage3Result stage3 = null;
 
-            if (isDirectProcess) {
-                // 短文本直接处理：不做任何预处理，直接交给LLM分析
-                log.info("\n\n========== 短文本直接处理模式 ==========");
-                log.info("文档长度 {} 字符，小于直接处理阈值 {}，直接调用LLM分析", requirementDoc.length(), directProcessThreshold);
-
-                if (input.isCancelled()) {
-                    log.info("任务已取消，RequirementAgent停止执行");
-                    return AgentOutput.cancelled(input.getSessionId());
-                }
-
-                String systemPrompt = input.isMinimalPrompt()
-                        ? prompt.buildMinimalPrompt(requirementDoc)
-                        : prompt.buildPrompt(requirementDoc, input.getRagContext());
-                log.info("Prompt构建完成，长度: {} 字符", systemPrompt.length());
-
-                List<Requirement> requirements = null;
-                for (int attempt = 1; attempt <= maxRetries; attempt++) {
-                    if (input.isCancelled()) {
-                        log.info("任务已取消，RequirementAgent停止执行");
-                        return AgentOutput.cancelled(input.getSessionId());
-                    }
-
-                    log.info("第 {}/{} 次尝试调用LLM...", attempt, maxRetries);
-                    String llmResponse = llmClient.chat(systemPrompt, temperature, maxTokens);
-
-                    if (llmResponse == null || llmResponse.trim().isEmpty()) {
-                        log.warn("第{}次尝试：LLM返回空响应", attempt);
-                        continue;
-                    }
-
-                    log.info("LLM响应长度: {} 字符", llmResponse.length());
-
-                    try {
-                        requirements = parseRequirements(llmResponse);
-                        if (requirements != null && !requirements.isEmpty()) {
-                            break;
-                        }
-                        log.warn("第{}次尝试：解析出的需求列表为空", attempt);
-                    } catch (Exception e) {
-                        log.warn("第{}次尝试解析LLM响应失败: {}", attempt, e.getMessage());
-                    }
-                }
-
-                // 直接构建结果，不执行合并与冲突检测
-                stage3 = Stage3Result.builder()
-                        .mergedRequirements(requirements != null ? requirements : Collections.emptyList())
-                        .conflicts(Collections.emptyList())
-                        .executionTime(0)
-                        .build();
-                analysisResult.setStage3(stage3);
-                log.info("短文本直接处理完成，提取需求: {} 条",
-                        requirements != null ? requirements.size() : 0);
-            } else {
-                // 长文本处理：执行完整流程
+            // 长文本处理：执行完整流程
                 // 文本清洗：删除页眉页脚/水印、修订记录、分隔线、引导词、压缩空白、删除零宽字符
                 String cleanedDoc = TextCleaner.clean(requirementDoc);
                 log.info("文本清洗完成，清洗后长度: {} 字符", cleanedDoc.length());
@@ -199,7 +170,7 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
 
                 // 阶段1：分层分块——注入全局视野
                 log.info("\n\n========== 阶段1：分层分块——注入全局视野 ==========");
-                Stage1Result stage1 = executeStage1(cleanedDoc, stage0.getContextCard(), isDirectProcess);
+                Stage1Result stage1 = executeStage1(cleanedDoc, stage0.getContextCard(), false);
                 analysisResult.setStage1(stage1);
                 log.info("阶段1完成，耗时: {}ms，分块数量: {} 个", stage1.getExecutionTime(), 
                         stage1.getChunks() != null ? stage1.getChunks().size() : 0);
@@ -227,11 +198,10 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
                 log.info("\n\n========== 阶段3：合并与校验——机械拼接 ==========");
                 stage3 = executeStage3(stage2.getChunkResults(), stage0.getContextCard());
                 analysisResult.setStage3(stage3);
-                log.info("阶段3完成，耗时: {}ms，合并后需求: {} 条，冲突: {} 个", 
+                log.info("阶段3完成，耗时: {}ms，合并后需求: {} 条，冲突: {} 个",
                         stage3.getExecutionTime(),
                         stage3.getMergedRequirements() != null ? stage3.getMergedRequirements().size() : 0,
                         stage3.getConflicts() != null ? stage3.getConflicts().size() : 0);
-            }
 
             if (stage3.getConflicts() != null && !stage3.getConflicts().isEmpty()) {
                 log.warn("检测到冲突:");
@@ -258,6 +228,119 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
             log.error("RequirementAgent执行失败!", e);
             return AgentOutput.failure(input.getSessionId(), "需求分析失败: " + e.getMessage());
         }
+    }
+
+    // ==================== ReAct 模式实现（短文本路径） ====================
+
+    @Override
+    protected String getSystemPrompt() {
+        return """
+你是一位专业的需求分析工程师，擅长从非结构化的需求文档中提取结构化需求。
+你的任务是阅读用户提供的需求文档，提取出结构化的需求列表。
+
+## 工作方式（ReAct 模式）
+
+1. **Thought（思考）**：分析文档内容，识别需求条目
+2. **Action（行动）**：如果需要了解某个领域的术语或标准需求格式，调用 search_knowledge 工具查询
+3. **Observation（观察）**：查看工具返回的知识
+4. **Final Answer**：输出完整的结构化需求列表 JSON
+
+## 可用工具
+
+- **search_knowledge**: 检索领域知识，帮助理解专业术语和需求规范。
+
+## 输出要求
+
+输出必须是一个 JSON 数组，每个需求对象包含以下字段：
+- id: 需求编号（如 R001）
+- title: 需求标题
+- description: 需求描述
+- priority: 优先级（高/中/低）
+- category: 需求分类（功能需求/性能需求/接口需求/安全需求/可靠性需求/其他）
+- acceptanceCriteria: 验收标准（可选）
+- dependencies: 依赖的其他需求ID列表（可选）
+
+```json
+[
+  {
+    "id": "R001",
+    "title": "制动信号采集",
+    "description": "制动传感器采集制动踏板信号，输出制动强度数据",
+    "priority": "高",
+    "category": "功能需求",
+    "acceptanceCriteria": "输出端口存在且数据类型正确",
+    "dependencies": []
+  }
+]
+```
+
+最终答案请用 ```json 代码块包裹完整的需求列表 JSON 数组。
+""";
+    }
+
+    @Override
+    protected String buildUserMessage(AgentInput input) {
+        String requirementDoc = input.getContent();
+        StringBuilder sb = new StringBuilder();
+        sb.append("请分析以下需求文档，提取结构化需求列表：\n\n");
+        sb.append("需求文档：\n").append(requirementDoc).append("\n\n");
+        sb.append("如果文档中涉及你不熟悉的专业术语或行业标准，请调用 search_knowledge 工具查询。\n");
+        sb.append("完成分析后，输出结构化需求列表 JSON（用 ```json 代码块包裹）。");
+        return sb.toString();
+    }
+
+    @Override
+    protected List<Tool> getTools() {
+        return Arrays.asList(searchKnowledgeTool, detectDomainTool);
+    }
+
+    @Override
+    protected AgentOutput buildFinalOutput(AgentInput input, String finalContent, long totalTimeMs) {
+        try {
+            List<Requirement> requirements = parseRequirements(finalContent);
+            if (requirements == null || requirements.isEmpty()) {
+                return AgentOutput.failure(input.getSessionId(), "未解析出有效需求");
+            }
+
+            // 构建与长文本路径一致的结果格式
+            RequirementAnalysisResult analysisResult = RequirementAnalysisResult.builder()
+                    .rawInput(input.getContent())
+                    .totalExecutionTime(totalTimeMs)
+                    .build();
+
+            Stage3Result stage3 = Stage3Result.builder()
+                    .mergedRequirements(requirements)
+                    .conflicts(Collections.emptyList())
+                    .executionTime(totalTimeMs)
+                    .build();
+            analysisResult.setStage3(stage3);
+
+            String outputJson = objectMapper.writerWithDefaultPrettyPrinter()
+                    .writeValueAsString(analysisResult);
+
+            log.info("========================================");
+            log.info("RequirementAgent (ReAct模式) 执行成功!");
+            log.info("提取需求数量: {} 条", requirements.size());
+            log.info("总耗时: {}ms", totalTimeMs);
+            log.info("========================================");
+
+            return AgentOutput.success(input.getSessionId(), outputJson, totalTimeMs);
+
+        } catch (Exception e) {
+            log.error("ReAct 模式需求解析失败: {}", e.getMessage(), e);
+            return AgentOutput.failure(input.getSessionId(),
+                    "需求分析失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    protected double getTemperature() {
+        return temperature;
+    }
+
+    @Override
+    protected int getMaxTokens() {
+        return maxTokens;
     }
 
     private static class PatternConfig {
@@ -1139,6 +1222,11 @@ public class RequirementAgent implements Agent<AgentInput, AgentOutput> {
         }
 
         return null;
+    }
+
+    @Override
+    protected String getKnowledgeDomain() {
+        return "requirement";
     }
 
     @Override

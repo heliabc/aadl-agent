@@ -1,35 +1,33 @@
 package com.example.aadlagent.agent.aadl;
 
-import com.example.aadlagent.agent.Agent;
 import com.example.aadlagent.agent.AgentInput;
 import com.example.aadlagent.agent.AgentOutput;
-import com.example.aadlagent.client.LlmClient;
+import com.example.aadlagent.agent.ReActAgent;
+import com.example.aadlagent.agent.tool.CountAadlElementsTool;
+import com.example.aadlagent.agent.tool.FormatAadlTool;
+import com.example.aadlagent.agent.tool.SearchKnowledgeTool;
+import com.example.aadlagent.agent.tool.Tool;
+import com.example.aadlagent.agent.tool.ValidateAadlTool;
 import com.example.aadlagent.client.ModelService;
-import com.example.aadlagent.client.ModelType;
-import com.example.aadlagent.util.AadlInputParser;
-import com.example.aadlagent.util.AadlReferenceValidator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Slf4j
 @Component
-public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
+public class AadlGeneratorAgent extends ReActAgent {
 
     private static final String AGENT_NAME = "AadlGeneratorAgent";
 
-    private final ModelService modelService;
-    private final AadlGeneratorPrompt prompt;
-
-    @Value("${agent.aadl.max-retries:3}")
-    private int maxRetries;
+    private final SearchKnowledgeTool searchKnowledgeTool;
+    private final ValidateAadlTool validateAadlTool;
+    private final FormatAadlTool formatAadlTool;
+    private final CountAadlElementsTool countAadlElementsTool;
 
     @Value("${agent.aadl.temperature:0.1}")
     private double temperature;
@@ -37,184 +35,205 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
     @Value("${agent.aadl.max-tokens:16384}")
     private int maxTokens;
 
-    public AadlGeneratorAgent(ModelService modelService) {
-        this.modelService = modelService;
-        this.prompt = new AadlGeneratorPrompt();
+    public AadlGeneratorAgent(ModelService modelService,
+                              SearchKnowledgeTool searchKnowledgeTool,
+                              ValidateAadlTool validateAadlTool,
+                              FormatAadlTool formatAadlTool,
+                              CountAadlElementsTool countAadlElementsTool) {
+        super(modelService);
+        this.searchKnowledgeTool = searchKnowledgeTool;
+        this.validateAadlTool = validateAadlTool;
+        this.formatAadlTool = formatAadlTool;
+        this.countAadlElementsTool = countAadlElementsTool;
+    }
+
+    // ==================== ReActAgent 抽象方法实现 ====================
+
+    @Override
+    protected String getSystemPrompt() {
+        return """
+你是一位精通 AADL（Architecture Analysis & Design Language）的代码生成专家。
+你的任务是根据架构模型和模块分析结果，生成完整、正确的 AADL 代码。
+
+## 工作方式（ReAct 模式）
+
+1. **Thought（思考）**：分析架构模型和模块分析，规划 AADL 代码结构
+2. **Action（行动）**：
+   - 不确定 AADL 语法或组件用法时，调用 `search_knowledge` 查询领域知识
+   - 生成或修改 AADL 代码后，必须调用 `validate_aadl` 验证代码正确性
+3. **Observation（观察）**：查看工具返回的知识或验证结果
+4. 重复以上步骤，直到验证通过、代码无错误
+5. **Final Answer**：输出最终的 AADL 代码
+
+## 可用工具
+
+- **search_knowledge**: 检索 AADL 领域知识，包括语法规则、组件类型、代码示例和最佳实践。不确定 AADL 语法时调用。
+- **validate_aadl**: 验证 AADL 代码的语法正确性和引用完整性，返回错误、警告和自动修复结果。每次生成或修改代码后必须调用此工具验证。
+- **format_aadl**: 格式化 AADL 代码，调整缩进和空行，使代码更规范
+- **count_aadl_elements**: 统计 AADL 代码中组件、端口、连接等元素数量，检查生成结果是否完整
+
+## 输出要求
+
+- 最终答案请用 ```aadl 代码块包裹完整的 AADL 代码
+- 代码必须包含完整的 package 声明和所有组件定义
+- 确保所有引用的组件都已声明
+- 确保所有 connections 中的端口引用都存在
+- 代码格式规范，缩进一致
+""";
     }
 
     @Override
-    public AgentOutput execute(AgentInput input) {
-        long startTime = System.currentTimeMillis();
-
-        ModelType modelType = input.getModelType() != null ? input.getModelType() : ModelType.OLLAMA;
-        LlmClient llmClient = modelService.getClient(modelType);
-
-        log.info("========================================");
-        log.info("AadlGeneratorAgent starting execution");
-        log.info("Session ID: {}", input.getSessionId());
-        log.info("Model: {} ({})", modelType.name(), llmClient.getModelName());
-        log.info("========================================");
-
+    protected String buildUserMessage(AgentInput input) {
         String architectureJson = input.getContent();
         String modulesJson = input.getMetadata();
+        String ragContext = input.getRagContext();
 
-        if (architectureJson == null || architectureJson.trim().isEmpty()) {
-            log.error("架构树内容为空，无法继续处理");
-            return AgentOutput.failure(input.getSessionId(), "架构树内容不能为空");
+        StringBuilder sb = new StringBuilder();
+        sb.append("请根据以下架构模型和模块分析，生成完整的 AADL 代码：\n\n");
+
+        sb.append("## 架构模型\n");
+        sb.append("```json\n").append(architectureJson != null ? architectureJson : "").append("\n```\n\n");
+
+        sb.append("## 模块分析\n");
+        sb.append("```json\n").append(modulesJson != null ? modulesJson : "").append("\n```\n\n");
+
+        if (ragContext != null && !ragContext.trim().isEmpty()) {
+            sb.append("## 参考知识（RAG 检索结果）\n");
+            sb.append(ragContext).append("\n\n");
         }
 
-        if (modulesJson == null || modulesJson.trim().isEmpty()) {
-            log.error("模块分析内容为空，无法继续处理");
-            return AgentOutput.failure(input.getSessionId(), "模块分析内容不能为空");
-        }
+        sb.append("## 生成要求\n");
+        sb.append("1. 根据架构模型设计 AADL 组件层级和结构\n");
+        sb.append("2. 根据模块分析补充组件的 features、properties 等细节\n");
+        sb.append("3. 生成完整的 AADL package 代码\n");
+        sb.append("4. 生成后请立即调用 validate_aadl 工具验证代码正确性\n");
+        sb.append("5. 如果验证发现错误，根据错误信息修正代码，然后再次验证\n");
+        sb.append("6. 重复修正-验证循环，直到代码验证通过\n");
+        sb.append("7. 最终输出用 ```aadl 代码块包裹\n");
 
-        log.info("架构树长度: {} 字符", architectureJson.length());
-        log.info("模块分析长度: {} 字符", modulesJson.length());
-        log.info("配置参数: temperature={}, maxTokens={}", temperature, maxTokens);
+        return sb.toString();
+    }
 
-        // 硬编码解析架构树和模块分析，生成结构化清单（替代原始 JSON 注入提示词）
-        log.info("正在解析架构树和模块分析...");
-        AadlInputParser inputParser = new AadlInputParser();
-        AadlInputParser.ParseResult parseResult = inputParser.parse(architectureJson, modulesJson);
-        log.info("解析完成，清单长度: {} 字符，组件真值表: {} 个",
-                parseResult.manifestText.length(), parseResult.archComponents.size());
+    @Override
+    protected List<Tool> getTools() {
+        return Arrays.asList(searchKnowledgeTool, validateAadlTool, formatAadlTool, countAadlElementsTool);
+    }
 
-        log.info("正在构建Prompt...");
-        String systemPrompt = input.isMinimalPrompt()
-                ? prompt.buildMinimalPrompt(parseResult.manifestText)
-                : prompt.buildPrompt(parseResult.manifestText, input.getRagContext());
-        log.info("Prompt构建完成，长度: {} 字符", systemPrompt.length());
-
-        if (input.isCancelled()) {
-            log.info("任务已取消，AadlGeneratorAgent停止执行");
-            return AgentOutput.cancelled(input.getSessionId());
-        }
-
-        log.info("----------------------------------------");
-        log.info("正在调用大模型... (类型: {}, 模型: {})", modelType.name(), llmClient.getModelName());
-
-        long llmStartTime = System.currentTimeMillis();
-        String llmResponse = llmClient.chat(systemPrompt, temperature, maxTokens);
-        long llmTime = System.currentTimeMillis() - llmStartTime;
-
-        log.info("LLM调用完成，耗时: {}ms", llmTime);
-
-        if (input.isCancelled()) {
-            log.info("任务已取消，AadlGeneratorAgent停止执行");
-            return AgentOutput.cancelled(input.getSessionId());
-        }
-
-        if (llmResponse == null || llmResponse.trim().isEmpty()) {
-            long executionTime = System.currentTimeMillis() - startTime;
-            log.error("LLM返回空响应");
-            return AgentOutput.failure(input.getSessionId(), "LLM返回空响应");
-        }
-
-        log.info("LLM响应长度: {} 字符", llmResponse.length());
-        log.info("LLM响应前200字符: {}", llmResponse.length() > 200 ? llmResponse.substring(0, 200) + "..." : llmResponse);
-
+    @Override
+    protected AgentOutput buildFinalOutput(AgentInput input, String finalContent, long totalTimeMs) {
         try {
-            log.info("正在解析LLM响应...");
-            String aadlContent = extractAadlContent(llmResponse);
+            String aadlContent = extractAadlCode(finalContent);
 
-            // 引用完整性验证与自动修正（不依赖大模型）
-            String rawAadlContent = aadlContent; // 保存修复前的原始版本
-            AadlReferenceValidator.ValidationResult validationResult =
-                    validateAndFixReferences(aadlContent, parseResult);
-            aadlContent = validationResult.fixedContent;
+            if (aadlContent == null || aadlContent.trim().isEmpty()) {
+                log.error("无法从最终回答中提取 AADL 代码");
+                return AgentOutput.failure(input.getSessionId(), "无法提取 AADL 代码");
+            }
 
-            // 将验证结果以注释形式嵌入 AADL 代码顶部
-            aadlContent = embedValidationReport(aadlContent, validationResult);
-
-            long executionTime = System.currentTimeMillis() - startTime;
             int componentCount = countComponents(aadlContent);
             int connectionCount = countConnections(aadlContent);
 
             log.info("========================================");
-            log.info("AadlGeneratorAgent执行完成!");
+            log.info("{} 执行成功!", AGENT_NAME);
             log.info("组件数量: {} 个", componentCount);
             log.info("连接数量: {} 个", connectionCount);
-            log.info("总耗时: {}ms", executionTime);
+            log.info("AADL 代码长度: {} 字符", aadlContent.length());
+            log.info("总耗时: {}ms", totalTimeMs);
             log.info("========================================");
 
             printAadlSummary(aadlContent);
 
-            AgentOutput output = AgentOutput.success(input.getSessionId(), aadlContent, executionTime);
-            output.setOriginalContent(rawAadlContent); // 设置修复前的原始版本
-            return output;
+            return AgentOutput.success(input.getSessionId(), aadlContent, totalTimeMs);
 
         } catch (Exception e) {
-            long executionTime = System.currentTimeMillis() - startTime;
-            log.error("解析LLM响应失败: {}", e.getMessage());
-            log.debug("详细错误:", e);
-            return AgentOutput.failure(input.getSessionId(), "解析LLM响应失败: " + e.getMessage());
+            log.error("构建最终输出失败: {}", e.getMessage(), e);
+            return AgentOutput.failure(input.getSessionId(), "构建最终输出失败: " + e.getMessage());
         }
     }
 
-    private String extractAadlContent(String response) {
+    @Override
+    protected double getTemperature() {
+        return temperature;
+    }
+
+    @Override
+    protected int getMaxTokens() {
+        return maxTokens;
+    }
+
+    @Override
+    protected String getKnowledgeDomain() {
+        return "aadl";
+    }
+
+    @Override
+    public String getAgentName() {
+        return AGENT_NAME;
+    }
+
+    // ==================== 代码提取辅助方法 ====================
+
+    /**
+     * 从 LLM 响应中提取 AADL 代码块。
+     * 优先提取 ```aadl 代码块，其次是通用 ``` 代码块，
+     * 如果没有代码块则尝试找到 package 声明的起始位置。
+     */
+    private String extractAadlCode(String response) {
+        if (response == null || response.trim().isEmpty()) {
+            return null;
+        }
+
         String cleaned = response.trim();
 
         // 1. 优先尝试 aadl 代码块
-        if (cleaned.startsWith("```aadl")) {
-            int start = cleaned.indexOf("```aadl") + 7;
-            int end = cleaned.lastIndexOf("```");
-            if (end > start) {
-                cleaned = cleaned.substring(start, end).trim();
+        Pattern aadlPattern = Pattern.compile("```aadl\\s*\\n(.*?)\\n```", Pattern.DOTALL);
+        Matcher aadlMatcher = aadlPattern.matcher(cleaned);
+        if (aadlMatcher.find()) {
+            String code = aadlMatcher.group(1).trim();
+            if (code.startsWith("package")) {
+                return fixMissingEndStatements(code);
             }
-        }
-        // 2. 通用代码块
-        else if (cleaned.startsWith("```")) {
-            int start = cleaned.indexOf("```") + 3;
-            int end = cleaned.lastIndexOf("```");
-            if (end > start) {
-                cleaned = cleaned.substring(start, end).trim();
-            }
-        }
-        // 3. 没有代码块时：跳过前面的 JSON/解释文字，找到 AADL 代码的真正起点
-        else {
-            int packageIndex = findAadlStartIndex(cleaned);
-            if (packageIndex > 0) {
-                log.info("检测到 AADL 代码前有前置内容（长度: {} 字符），已剥离", packageIndex);
-                cleaned = cleaned.substring(packageIndex).trim();
-            }
+            return code;
         }
 
-        if (cleaned.startsWith("package")) {
-            cleaned = fixMissingEndStatements(cleaned);
-
-            java.util.regex.Matcher pkgMatcher = java.util.regex.Pattern.compile("^\\s*package\\s+(\\w+)\\s*").matcher(cleaned);
-            String packageName = "System";
-            if (pkgMatcher.find()) {
-                packageName = pkgMatcher.group(1);
-            }
-            
-            if (!cleaned.matches(".*end\\s+" + packageName + "\\s*;\\s*$")) {
-                cleaned = cleaned.replaceAll("\\s*end\\s+\\w*\\s*;\\s*$", "").trim();
-                cleaned = cleaned + "\nend " + packageName + ";\n";
+        // 2. 通用代码块（取最后一个以 package 开头的代码块）
+        Pattern codePattern = Pattern.compile("```\\w*\\s*\\n(.*?)\\n```", Pattern.DOTALL);
+        Matcher codeMatcher = codePattern.matcher(cleaned);
+        String lastMatch = null;
+        while (codeMatcher.find()) {
+            String candidate = codeMatcher.group(1).trim();
+            if (candidate.startsWith("package")) {
+                lastMatch = candidate;
             }
         }
+        if (lastMatch != null) {
+            return fixMissingEndStatements(lastMatch);
+        }
 
-        return cleaned;
+        // 3. 没有代码块时：找到第一个 package 声明的位置
+        int packageIndex = findAadlStartIndex(cleaned);
+        if (packageIndex >= 0) {
+            String code = cleaned.substring(packageIndex).trim();
+            return fixMissingEndStatements(code);
+        }
+
+        return null;
     }
 
     /**
      * 查找 AADL 代码的起始位置。
-     * 跳过前面的 JSON、解释文字等，找到第一个 package 声明的位置。
-     * 如果找不到，返回 -1 表示无需调整。
+     * 跳过前面的解释文字，找到第一个 package 声明的位置。
+     * 如果找不到，返回 -1。
      */
     private int findAadlStartIndex(String text) {
-        // 已经以 package 开头，不用找
         if (text.startsWith("package")) {
-            return -1;
+            return 0;
         }
 
-        // 找 "package " 或 "package\t" 或 "package\n" 的位置
         Pattern pkgPattern = Pattern.compile("(?m)^\\s*package\\s+\\w+");
         Matcher matcher = pkgPattern.matcher(text);
         if (matcher.find()) {
             int start = matcher.start();
-            // 确保前面不是 JSON 字符串里的 package（比如 "package": {）
-            // 检查前面字符：如果是引号，说明是 JSON 字段名，跳过
+            // 确保前面不是 JSON 字符串里的 package
             String before = text.substring(Math.max(0, start - 3), start);
             if (before.contains("\"")) {
                 // 可能是 JSON 字段，继续找下一个
@@ -225,7 +244,7 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
                         return start;
                     }
                 }
-                return -1; // 所有匹配都在 JSON 里
+                return -1;
             }
             return start;
         }
@@ -234,306 +253,60 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
     }
 
     /**
-     * 引用完整性验证与自动修正。
-     * 复用 AadlInputParser 解析出的组件真值表，检测并自动修正 AADL 代码中的：
-     * - 悬空引用（subcomponents 引用了未声明的组件）
-     * - 缺失声明（有类型声明但缺实现声明，或反之）
-     * - 遗漏组件（架构树中存在但 AADL 中缺失）
-     * - 幻觉组件（AADL 中声明了但架构树中不存在）
-     * - 类型不匹配
-     *
-     * @return ValidationResult 包含修正后的代码 + errors/warnings/fixes 列表
+     * 修复缺失的 end 语句。
+     * 对 thread、process、system、processor、memory、device、bus、data、subprogram
+     * 等组件声明，如果找不到对应的 end 语句，则自动补全。
      */
-    private AadlReferenceValidator.ValidationResult validateAndFixReferences(
-            String aadlContent, AadlInputParser.ParseResult parseResult) {
-        log.info("========================================");
-        log.info("开始引用完整性验证（基于解析器真值表）");
-
-        AadlReferenceValidator validator = new AadlReferenceValidator();
-        AadlReferenceValidator.ValidationResult validationResult =
-                validator.validate(aadlContent, parseResult);
-
-        // 记录验证结果到日志
-        if (!validationResult.errors.isEmpty()) {
-            log.warn("引用完整性验证发现 {} 个错误:", validationResult.errors.size());
-            for (int i = 0; i < validationResult.errors.size(); i++) {
-                log.warn("  [ERROR] {}", validationResult.errors.get(i));
-                if (i < validationResult.suggestions.size() && validationResult.suggestions.get(i) != null
-                        && !validationResult.suggestions.get(i).isEmpty()) {
-                    log.warn("  [SUGGEST] {}", validationResult.suggestions.get(i));
-                }
-            }
-        }
-        if (!validationResult.warnings.isEmpty()) {
-            log.info("引用完整性验证发现 {} 个警告:", validationResult.warnings.size());
-            for (String warning : validationResult.warnings) {
-                log.info("  [WARN] {}", warning);
-            }
-        }
-        if (!validationResult.fixes.isEmpty()) {
-            log.info("自动修正应用了 {} 项修复:", validationResult.fixes.size());
-            for (String fix : validationResult.fixes) {
-                log.info("  [FIX] {}", fix);
-            }
-        }
-
-        if (validationResult.hasIssues()) {
-            log.info("引用完整性验证完成: {} 错误, {} 警告, {} 修复",
-                    validationResult.errors.size(),
-                    validationResult.warnings.size(),
-                    validationResult.fixes.size());
-        } else {
-            log.info("引用完整性验证通过，无问题");
-        }
-        log.info("========================================");
-
-        return validationResult;
-    }
-
-    /**
-     * 将验证结果以 AADL 注释（--）形式嵌入代码顶部。
-     * 这样用户在查看生成的 AADL 文件时即可看到验证报告。
-     * 每个错误下方附带对应的修复建议；已自动修复的错误直接标注在错误行后。
-     */
-    private String embedValidationReport(String aadlContent,
-                                          AadlReferenceValidator.ValidationResult result) {
-        StringBuilder report = new StringBuilder();
-
-        report.append("-- =========================================================\n");
-        report.append("-- AADL 模型验证报告\n");
-        report.append("-- =========================================================\n");
-
-        if (result.errors.isEmpty() && result.warnings.isEmpty() && result.fixes.isEmpty()) {
-            report.append("-- 验证通过，无问题。\n");
-        } else {
-            // 用于跟踪哪些修复项已经被匹配到错误上
-            Set<String> matchedFixes = new HashSet<>();
-
-            // 错误 + 修复建议 + 自动修复标注
-            if (!result.errors.isEmpty()) {
-                report.append(String.format("-- [错误] (%d 项):%n", result.errors.size()));
-                for (int i = 0; i < result.errors.size(); i++) {
-                    String err = result.errors.get(i);
-                    report.append(String.format("--   %d. %s%n", i + 1, err));
-
-                    // 查找对应的自动修复
-                    List<String> relatedFixes = findRelatedFixes(err, result.fixes, matchedFixes);
-                    if (!relatedFixes.isEmpty()) {
-                        for (String fix : relatedFixes) {
-                            report.append(String.format("--      [已自动修复] %s%n", fix));
-                            matchedFixes.add(fix);
-                        }
-                    }
-
-                    // 附带修复建议（未自动修复的错误才显示修复建议）
-                    if (relatedFixes.isEmpty() && i < result.suggestions.size()
-                            && result.suggestions.get(i) != null
-                            && !result.suggestions.get(i).isEmpty()) {
-                        report.append(String.format("--      修复建议: %s%n", result.suggestions.get(i)));
-                    }
-                }
-            }
-
-            // 警告
-            if (!result.warnings.isEmpty()) {
-                report.append(String.format("-- [警告] (%d 项):%n", result.warnings.size()));
-                for (int i = 0; i < result.warnings.size(); i++) {
-                    report.append(String.format("--   %d. %s%n", i + 1, result.warnings.get(i)));
-                }
-            }
-
-            // 未匹配到错误的修复项（单独列出，作为补充说明）
-            int unmatchedFixCount = result.fixes.size() - matchedFixes.size();
-            if (unmatchedFixCount > 0) {
-                report.append(String.format("-- [其他自动修复] (%d 项):%n", unmatchedFixCount));
-                int idx = 1;
-                for (String fix : result.fixes) {
-                    if (!matchedFixes.contains(fix)) {
-                        report.append(String.format("--   %d. %s%n", idx++, fix));
-                    }
-                }
-            }
-
-            long autoFixedErrors = result.errors.stream()
-                    .filter(err -> !findRelatedFixes(err, result.fixes, new HashSet<>()).isEmpty())
-                    .count();
-            report.append(String.format("-- 汇总: %d 错误 (其中 %d 项已自动修复), %d 警告, 共 %d 项自动修复%n",
-                    result.errors.size(), autoFixedErrors, result.warnings.size(), result.fixes.size()));
-        }
-
-        report.append("-- =========================================================\n\n");
-
-        return report.toString() + aadlContent;
-    }
-
-    /**
-     * 从修复列表中找出与给定错误相关的修复项。
-     * 通过提取错误中的关键实体（组件名、连接名、行号等）进行启发式匹配。
-     *
-     * @param error       错误信息
-     * @param fixes       所有修复项
-     * @param skipFixes   已匹配过的修复项（跳过避免重复匹配）
-     * @return 相关的修复项列表
-     */
-    private List<String> findRelatedFixes(String error, List<String> fixes, Set<String> skipFixes) {
-        List<String> related = new ArrayList<>();
-        if (error == null || fixes == null || fixes.isEmpty()) {
-            return related;
-        }
-
-        // 提取关键实体：组件名（单引号中的名称）
-        List<String> keyNames = new ArrayList<>();
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("'([^']+)'").matcher(error);
-        while (m.find()) {
-            keyNames.add(m.group(1));
-        }
-
-        // 提取行号
-        String lineNum = null;
-        m = java.util.regex.Pattern.compile("第(\\d+)行").matcher(error);
-        if (m.find()) {
-            lineNum = m.group(1);
-        }
-
-        // 提取连接名
-        String connName = null;
-        m = java.util.regex.Pattern.compile("连接 '([^']+)'").matcher(error);
-        if (m.find()) {
-            connName = m.group(1);
-        }
-
-        // 对每个修复项进行匹配
-        for (String fix : fixes) {
-            if (skipFixes != null && skipFixes.contains(fix)) {
-                continue;
-            }
-
-            boolean matched = false;
-
-            // 1. 行号匹配（end 语句修正等行内修复）
-            if (lineNum != null && fix.startsWith("第" + lineNum + "行:")) {
-                matched = true;
-            }
-            // 2. 组件名匹配（遗漏组件 → 补全组件声明）
-            else if (error.contains("遗漏组件")) {
-                for (String name : keyNames) {
-                    if (fix.contains("已补全缺失组件声明: " + name)
-                            || fix.contains("已补全类型声明: " + name)
-                            || fix.contains("已补全实现声明: " + name)) {
-                        matched = true;
-                        break;
-                    }
-                }
-            }
-            // 3. 组件缺少类型/实现声明 → 补全类型/实现声明
-            else if (error.contains("缺少类型声明") || error.contains("缺少实现声明")) {
-                for (String name : keyNames) {
-                    if (fix.contains("已补全类型声明: " + name)
-                            || fix.contains("已补全实现声明: " + name)) {
-                        matched = true;
-                        break;
-                    }
-                }
-            }
-            // 4. subcomponents 引用类型未声明 → 补全对应组件声明
-            else if (error.contains("subcomponents 引用") && error.contains("未声明")) {
-                // 错误格式：第N行: subcomponents 引用 'xxx' 的类型 'YYY' 未声明
-                // 从错误中提取类型名（第二个单引号中的内容）
-                if (keyNames.size() >= 2) {
-                    String typeName = keyNames.get(1);
-                    if (fix.contains("已补全缺失组件声明: " + typeName)
-                            || fix.contains("已补全类型声明: " + typeName)
-                            || fix.contains("已补全实现声明: " + typeName)) {
-                        matched = true;
-                    }
-                }
-            }
-            // 5. 连接缺少 feature → 补全 feature 声明
-            else if (error.contains("没有 features 块") || error.contains("features 为空")) {
-                // 错误格式：连接 'xxx' 的源端引用 'yyy.zzz'，但组件类型 'YYY' 没有 features 块
-                // 提取组件类型名（最后一个单引号中的内容）和 feature 名
-                if (!keyNames.isEmpty()) {
-                    String lastTypeName = keyNames.get(keyNames.size() - 1);
-                    // 从 yyy.zzz 中提取 feature 名
-                    java.util.regex.Matcher fm = java.util.regex.Pattern
-                            .compile("'([^']+)\\.([^']+)'").matcher(error);
-                    if (fm.find()) {
-                        String featName = fm.group(2);
-                        if (fix.contains("已补全缺失 feature 声明: " + lastTypeName + "." + featName)) {
-                            matched = true;
-                        }
-                    }
-                    // 兜底：只要组件类型名匹配
-                    if (!matched && fix.contains("已补全缺失 feature 声明: " + lastTypeName + ".")) {
-                        matched = true;
-                    }
-                }
-            }
-            // 6. 连接缺少分号 → 补全连接分号
-            else if (connName != null && fix.contains("已补全连接 '" + connName + "' 缺失的末尾分号")) {
-                matched = true;
-            }
-
-            if (matched) {
-                related.add(fix);
-            }
-        }
-
-        return related;
-    }
-
     private String fixMissingEndStatements(String aadlContent) {
-        log.info("========================================");
-        log.info("开始修复缺失的 end 语句");
-        
         String[] lines = aadlContent.split("\n");
-        log.info("总行数: {}", lines.length);
-        
+
         int fixedCount = 0;
-        
+        StringBuilder result = new StringBuilder();
+
         for (int i = 0; i < lines.length; i++) {
             String trimmed = lines[i].trim();
-            
-            if (trimmed.startsWith("thread ") || trimmed.startsWith("process ") || 
+            result.append(lines[i]).append("\n");
+
+            if (trimmed.startsWith("thread ") || trimmed.startsWith("process ") ||
                 trimmed.startsWith("system ") || trimmed.startsWith("processor ") ||
                 trimmed.startsWith("memory ") || trimmed.startsWith("device ") ||
                 trimmed.startsWith("bus ") || trimmed.startsWith("data ") ||
                 trimmed.startsWith("subprogram ")) {
-                
+
                 if (trimmed.contains("implementation")) {
                     continue;
                 }
-                
+
                 String[] parts = trimmed.split("\\s+");
                 if (parts.length >= 2) {
                     String componentName = parts[1];
-                    
-                    log.info("检测到组件声明: {} {}", parts[0], componentName);
-                    
+
+                    // 检查后续是否有对应的 end 语句
                     boolean hasEnd = false;
                     for (int j = i + 1; j < lines.length; j++) {
                         String nextTrimmed = lines[j].trim();
                         if (nextTrimmed.equals("end " + componentName + ";")) {
                             hasEnd = true;
-                            log.info("  找到对应的 end 语句，无需修复");
                             break;
                         }
                     }
-                    
+
                     if (!hasEnd) {
-                        log.info("  未找到对应的 end 语句，添加: end {};", componentName);
-                        lines[i] = lines[i] + "\nend " + componentName + ";";
+                        result.append("end ").append(componentName).append(";\n");
                         fixedCount++;
                     }
                 }
             }
         }
-        
-        log.info("修复完成，共添加 {} 个 end 语句", fixedCount);
-        log.info("========================================");
-        
-        return String.join("\n", lines).trim();
+
+        if (fixedCount > 0) {
+            log.info("自动补全了 {} 个缺失的 end 语句", fixedCount);
+        }
+
+        return result.toString().trim();
     }
+
+    // ==================== 统计与日志辅助方法 ====================
 
     private int countComponents(String aadlContent) {
         Pattern pattern = Pattern.compile("\\b(thread|process|processor|device|memory|system|bus)\\b");
@@ -565,10 +338,5 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
         if (lines.length > 20) {
             log.info("  ... (共 {} 行)", lines.length);
         }
-    }
-
-    @Override
-    public String getAgentName() {
-        return AGENT_NAME;
     }
 }

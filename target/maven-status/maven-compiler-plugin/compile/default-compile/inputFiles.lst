@@ -5,7 +5,6 @@ C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlage
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\ablation\AblationResult.java
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\ablation\AblationRunner.java
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\ablation\EndToEndAblationRunner.java
-C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\agent\aadl\AadlErrorParserAgent.java
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\agent\aadl\AadlErrorParserPrompt.java
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\agent\aadl\AadlFixerAgent.java
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\agent\aadl\AadlFixerPrompt.java
@@ -19,14 +18,17 @@ C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlage
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\agent\architecture\AadlArchitecturePrompt.java
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\agent\module\ModuleAnalysisAgent.java
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\agent\module\ModuleAnalysisPrompt.java
-C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\agent\react\ReActAgent.java
-C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\agent\react\ReActFixerAgent.java
+C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\agent\ReActAgent.java
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\agent\requirement\RequirementAgent.java
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\agent\requirement\RequirementPrompt.java
+C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\agent\tool\CountAadlElementsTool.java
+C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\agent\tool\DetectDomainTool.java
+C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\agent\tool\FormatAadlTool.java
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\agent\tool\SearchErrorMemoryTool.java
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\agent\tool\SearchKnowledgeTool.java
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\agent\tool\Tool.java
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\agent\tool\ValidateAadlTool.java
+C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\agent\tool\ValidateArchitectureTool.java
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\client\AbstractOpenAiCompatibleClient.java
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\client\ChatGptClient.java
 C:\Users\heli0\Desktop\暑期实习\aadl生成\src\main\java\com\example\aadlagent\client\DeepSeekClient.java

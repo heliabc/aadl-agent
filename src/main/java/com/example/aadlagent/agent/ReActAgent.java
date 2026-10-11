@@ -65,6 +65,15 @@ public abstract class ReActAgent implements Agent<AgentInput, AgentOutput> {
         return 16384;
     }
 
+    /**
+     * 知识库 domain（Qdrant collection 名称），用于 search_knowledge 工具
+     * 如 "requirement", "architecture", "module", "aadl", "error_memory"
+     * 默认为 "aadl"，子类按需覆盖
+     */
+    protected String getKnowledgeDomain() {
+        return "aadl";
+    }
+
     // ==================== ReAct 主循环 ====================
 
     @Override
@@ -214,6 +223,10 @@ public abstract class ReActAgent implements Agent<AgentInput, AgentOutput> {
         for (Tool tool : tools) {
             if (tool.getName().equals(toolName)) {
                 try {
+                    // 自动注入知识库 domain（search_knowledge 工具专用，LLM 无需感知）
+                    if ("search_knowledge".equals(toolName)) {
+                        args.put("_knowledge_domain", getKnowledgeDomain());
+                    }
                     return tool.execute(args);
                 } catch (Exception e) {
                     log.error("工具 {} 执行异常: {}", toolName, e.getMessage(), e);

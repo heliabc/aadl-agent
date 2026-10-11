@@ -2,7 +2,6 @@ package com.example.aadlagent.controller;
 
 import com.example.aadlagent.agent.AgentInput;
 import com.example.aadlagent.agent.AgentOutput;
-import com.example.aadlagent.agent.aadl.AadlErrorParserAgent;
 import com.example.aadlagent.agent.aadl.AadlFixerAgent;
 import com.example.aadlagent.agent.aadl.AadlGeneratorAgent;
 import com.example.aadlagent.agent.architecture.AadlArchitectureAgent;
@@ -45,7 +44,6 @@ public class RequirementController {
     private final ModuleAnalysisAgent moduleAnalysisAgent;
     private final AadlGeneratorAgent aadlGeneratorAgent;
     private final AadlFixerAgent aadlFixerAgent;
-    private final AadlErrorParserAgent aadlErrorParserAgent;
     private final DocFileReader docFileReader;
     private final FileConfig fileConfig;
     private final ModelService modelService;
@@ -58,7 +56,7 @@ public class RequirementController {
 
     public RequirementController(RequirementAgent requirementAgent, AadlArchitectureAgent architectureAgent,
                                  ModuleAnalysisAgent moduleAnalysisAgent, AadlGeneratorAgent aadlGeneratorAgent,
-                                 AadlFixerAgent aadlFixerAgent, AadlErrorParserAgent aadlErrorParserAgent,
+                                 AadlFixerAgent aadlFixerAgent,
                                  DocFileReader docFileReader, FileConfig fileConfig, 
                                  ModelService modelService, DeepSeekConfig deepSeekConfig,
                                  RagService ragService, SessionManager sessionManager,
@@ -69,7 +67,6 @@ public class RequirementController {
         this.moduleAnalysisAgent = moduleAnalysisAgent;
         this.aadlGeneratorAgent = aadlGeneratorAgent;
         this.aadlFixerAgent = aadlFixerAgent;
-        this.aadlErrorParserAgent = aadlErrorParserAgent;
         this.docFileReader = docFileReader;
         this.fileConfig = fileConfig;
         this.modelService = modelService;
@@ -791,84 +788,6 @@ public class RequirementController {
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
             error.put("message", "读取文件失败: " + e.getMessage());
-            return ResponseEntity.badRequest().body(error);
-        }
-    }
-
-    @PostMapping("/parse-errors")
-    public ResponseEntity<Map<String, Object>> parseErrors(@RequestBody Map<String, Object> request) {
-        String aadlContent = (String) request.get("aadlContent");
-        String rawErrors = parseErrorsParam(request.get("errors"));
-        String modelTypeStr = (String) request.get("model");
-        String sessionId = (String) request.get("sessionId");
-
-        if (aadlContent == null || aadlContent.trim().isEmpty()) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("success", false);
-            error.put("message", "AADL内容不能为空");
-            return ResponseEntity.badRequest().body(error);
-        }
-
-        if (rawErrors == null || rawErrors.trim().isEmpty()) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("success", false);
-            error.put("message", "错误信息不能为空");
-            return ResponseEntity.badRequest().body(error);
-        }
-
-        ModelType modelType = parseModelType(modelTypeStr);
-
-        if (sessionId == null || sessionId.trim().isEmpty() || !sessionManager.exists(sessionId)) {
-            sessionId = sessionManager.createSession();
-        }
-
-        try {
-            String ragContext = ragService.getEnhancedContext(rawErrors, "aadl");
-            String sessionContext = sessionManager.buildContext(sessionId, 10);
-            if (sessionContext != null && !sessionContext.isEmpty()) {
-                ragContext = sessionContext + "\n\n" + ragContext;
-            }
-
-            sessionManager.addMessage(sessionId, ChatMessage.user("解析错误信息"));
-
-            java.util.concurrent.atomic.AtomicBoolean cancellationFlag = cancellationService.registerTask(sessionId);
-
-            AgentInput input = AgentInput.builder()
-                    .sessionId(sessionId)
-                    .content(aadlContent)
-                    .metadata(rawErrors)
-                    .ragContext(ragContext)
-                    .modelType(modelType)
-                    .cancelled(cancellationFlag)
-                    .build();
-
-            AgentOutput output = aadlErrorParserAgent.execute(input);
-
-            cancellationService.unregisterTask(sessionId);
-
-            if (output.isSuccess()) {
-                sessionManager.addMessage(sessionId, ChatMessage.assistant("错误解析完成", "AadlErrorParserAgent"));
-            }
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", output.isSuccess());
-            response.put("sessionId", output.getSessionId());
-            response.put("executionTime", output.getExecutionTime());
-            response.put("model", modelType.name());
-
-            if (output.isSuccess()) {
-                response.put("data", output.getContent());
-                log.info("Successfully parsed errors");
-            } else {
-                response.put("message", output.getErrorMessage());
-            }
-
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("success", false);
-            error.put("message", "解析错误失败: " + e.getMessage());
             return ResponseEntity.badRequest().body(error);
         }
     }

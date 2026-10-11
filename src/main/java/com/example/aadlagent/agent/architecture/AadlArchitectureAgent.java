@@ -5,6 +5,7 @@ import com.example.aadlagent.agent.AgentOutput;
 import com.example.aadlagent.agent.ReActAgent;
 import com.example.aadlagent.agent.tool.SearchKnowledgeTool;
 import com.example.aadlagent.agent.tool.Tool;
+import com.example.aadlagent.agent.tool.ValidateArchitectureTool;
 import com.example.aadlagent.client.ModelService;
 import com.example.aadlagent.model.AadlArchitectureModel;
 import com.example.aadlagent.util.JsonRepairUtil;
@@ -17,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -28,6 +30,7 @@ public class AadlArchitectureAgent extends ReActAgent {
 
     private final AadlArchitecturePrompt prompt;
     private final SearchKnowledgeTool searchKnowledgeTool;
+    private final ValidateArchitectureTool validateArchitectureTool;
 
     @Value("${agent.architecture.temperature:0.1}")
     private double temperature;
@@ -36,17 +39,17 @@ public class AadlArchitectureAgent extends ReActAgent {
     private int maxTokens;
 
     public AadlArchitectureAgent(ModelService modelService,
-                                 SearchKnowledgeTool searchKnowledgeTool) {
+                                 SearchKnowledgeTool searchKnowledgeTool,
+                                 ValidateArchitectureTool validateArchitectureTool) {
         super(modelService);
-        this.objectMapper = JsonMapper.builder()
-                .disable(SerializationFeature.WRITE_NULL_MAP_VALUES)
-                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-                .enable(JsonParser.Feature.ALLOW_COMMENTS)
-                .enable(JsonParser.Feature.ALLOW_SINGLE_QUOTE)
-                .enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES)
-                .build();
-        this.prompt = new AadlArchitecturePrompt();
         this.searchKnowledgeTool = searchKnowledgeTool;
+        this.validateArchitectureTool = validateArchitectureTool;
+        this.objectMapper.disable(SerializationFeature.WRITE_NULL_MAP_VALUES);
+        this.objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        this.objectMapper.enable(JsonParser.Feature.ALLOW_COMMENTS);
+        this.objectMapper.enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES);
+        this.objectMapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
+        this.prompt = new AadlArchitecturePrompt();
     }
 
     @Override
@@ -60,12 +63,14 @@ public class AadlArchitectureAgent extends ReActAgent {
 1. **Thought（思考）**：分析需求，确定系统的组件组成和层级关系
 2. **Action（行动）**：如果不确定 AADL 组件规则或需要参考示例，调用 search_knowledge 工具查询
 3. **Observation（观察）**：查看工具返回的知识
-4. 重复以上步骤，直到你有足够信息完成架构设计
-5. **Final Answer**：输出完整的架构模型 JSON
+4. 每次修改架构后，必须调用 validate_architecture 工具验证架构树的层级包含关系是否符合 AADL 规范
+5. 重复以上步骤，直到架构验证通过且你有足够信息完成架构设计
+6. **Final Answer**：输出完整的架构模型 JSON
 
 ## 可用工具
 
 - **search_knowledge**: 检索 AADL 领域知识，包括组件类型、层级规则、设计示例等。不确定 AADL 架构规则时调用。
+- **validate_architecture**: 验证架构树的层级包含关系是否符合 AADL 规范。每次修改架构后必须调用此工具进行验证，确保组件之间的包含关系合法。
 
 ## 输出要求
 
@@ -105,7 +110,7 @@ AADL 组件类型包括：system, process, thread, processor, device, memory, bu
 
     @Override
     protected List<Tool> getTools() {
-        return Collections.singletonList(searchKnowledgeTool);
+        return Arrays.asList(searchKnowledgeTool, validateArchitectureTool);
     }
 
     @Override
@@ -145,6 +150,11 @@ AADL 组件类型包括：system, process, thread, processor, device, memory, bu
     @Override
     protected int getMaxTokens() {
         return maxTokens;
+    }
+
+    @Override
+    protected String getKnowledgeDomain() {
+        return "architecture";
     }
 
     @Override
