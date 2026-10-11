@@ -2,6 +2,11 @@ server:
   port: 8080
   tomcat:
     uri-encoding: UTF-8
+    connection-timeout: 30m
+    keep-alive-timeout: 30m
+  servlet:
+    async:
+      request-timeout: 30m
 
 spring:
   application:

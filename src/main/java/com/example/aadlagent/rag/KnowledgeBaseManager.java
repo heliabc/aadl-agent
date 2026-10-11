@@ -30,6 +30,7 @@ public class KnowledgeBaseManager {
     private final ObjectMapper objectMapper;
     private final ConcurrentHashMap<String, KnowledgeBase> knowledgeBases = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, String> contentHashes = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap.KeySetView<String, Boolean> selfWrittenFiles = ConcurrentHashMap.newKeySet();
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     public KnowledgeBaseManager(EmbeddingService embeddingService, QdrantVectorStore qdrantVectorStore) {
@@ -284,7 +285,29 @@ public class KnowledgeBaseManager {
                         log.info("Performing initial bulk upsert of {} documents (generated: {}, cached: {}, skipped: {})", 
                                 docsToUpsert.size(), generatedEmbeddings, cachedEmbeddings, skippedEmbeddings);
                         qdrantVectorStore.upsertBatch(agentType, docsToUpsert);
-                        log.info("Initial bulk upsert completed for {}", agentType);
+                        
+                        // 验证写入成功，避免 Qdrant 写入延迟导致后续 count 为 0 又重复写入
+                        boolean writeVerified = false;
+                        for (int attempt = 1; attempt <= 5; attempt++) {
+                            long verifyCount = qdrantVectorStore.count(agentType);
+                            if (verifyCount >= docsToUpsert.size()) {
+                                writeVerified = true;
+                                log.info("Initial bulk upsert verified for {}: {} points confirmed (attempt {})", 
+                                        agentType, verifyCount, attempt);
+                                break;
+                            }
+                            log.warn("Upsert verification attempt {} failed: expected >= {}, got {}", 
+                                    attempt, docsToUpsert.size(), verifyCount);
+                            try {
+                                Thread.sleep(500 * attempt);
+                            } catch (InterruptedException ie) {
+                                Thread.currentThread().interrupt();
+                                break;
+                            }
+                        }
+                        if (!writeVerified) {
+                            log.error("Failed to verify upsert for {} - Qdrant count is still 0 after retries", agentType);
+                        }
                     } else {
                         log.warn("No documents to upsert for {} - check if embeddings are being generated", agentType);
                     }
@@ -423,9 +446,24 @@ public class KnowledgeBaseManager {
             KnowledgeBase kb = knowledgeBases.getOrDefault(agentType, createEmptyKnowledgeBase(agentType));
             kb.setLastModified(LocalDateTime.now());
             String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(kb);
-            Files.writeString(kbPath, json);
-            contentHashes.put(agentType, computeHash(json));
-            log.debug("Saved knowledge base: {} ({} entries)", agentType, kb.getTotalEntries());
+            // 标记为自写文件，避免 watcher 触发自循环
+            String fileName = agentType + ".json";
+            selfWrittenFiles.add(fileName);
+            try {
+                Files.writeString(kbPath, json);
+                contentHashes.put(agentType, computeHash(json));
+                log.debug("Saved knowledge base: {} ({} entries)", agentType, kb.getTotalEntries());
+            } finally {
+                // 延迟移除标记，给文件系统一点时间让事件先触发
+                executorService.submit(() -> {
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException ignored) {
+                        Thread.currentThread().interrupt();
+                    }
+                    selfWrittenFiles.remove(fileName);
+                });
+            }
         } catch (IOException e) {
             log.error("Failed to save knowledge base {}: {}", agentType, e.getMessage());
         }
@@ -472,6 +510,11 @@ public class KnowledgeBaseManager {
                         kind == StandardWatchEventKinds.ENTRY_CREATE) {
                         String name = fileName.toString();
                         if (name.endsWith(".json")) {
+                            // 跳过自己写的文件，避免自触发死循环
+                            if (selfWrittenFiles.contains(name)) {
+                                log.debug("Skipping self-written file change: {}", name);
+                                continue;
+                            }
                             String agentType = name.substring(0, name.lastIndexOf('.'));
                             log.info("Detected change in knowledge base: {}", agentType);
                             loadKnowledgeBase(agentType);
