@@ -26,16 +26,16 @@ public class KnowledgeBaseManager {
     private static final String[] AGENT_TYPES = {"requirement", "architecture", "module", "aadl", "error_memory"};
 
     private final EmbeddingService embeddingService;
-    private final QdrantVectorStore qdrantVectorStore;
+    private final LocalVectorStore localVectorStore;
     private final ObjectMapper objectMapper;
     private final ConcurrentHashMap<String, KnowledgeBase> knowledgeBases = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, String> contentHashes = new ConcurrentHashMap<>();
     private final ConcurrentHashMap.KeySetView<String, Boolean> selfWrittenFiles = ConcurrentHashMap.newKeySet();
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-    public KnowledgeBaseManager(EmbeddingService embeddingService, QdrantVectorStore qdrantVectorStore) {
+    public KnowledgeBaseManager(EmbeddingService embeddingService, LocalVectorStore localVectorStore) {
         this.embeddingService = embeddingService;
-        this.qdrantVectorStore = qdrantVectorStore;
+        this.localVectorStore = localVectorStore;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
     }
@@ -50,7 +50,7 @@ public class KnowledgeBaseManager {
     private void performStartupSelfCheck() {
         log.info("=== Starting Qdrant startup self-check ===");
         
-        if (!qdrantVectorStore.isAvailable()) {
+        if (!localVectorStore.isAvailable()) {
             log.warn("Qdrant not available, skipping startup self-check");
             return;
         }
@@ -63,17 +63,17 @@ public class KnowledgeBaseManager {
             
             for (int attempt = 1; attempt <= maxRetries; attempt++) {
                 try {
-                    List<String> existingCollections = qdrantVectorStore.listCollections();
+                    List<String> existingCollections = localVectorStore.listCollections();
                     if (existingCollections.contains(collection)) {
                         log.info("Collection '{}' exists - OK", collection);
                         break;
                     }
                     
                     log.warn("Collection '{}' not found, creating... (attempt {}/{})", collection, attempt, maxRetries);
-                    qdrantVectorStore.ensureCollection(collection);
+                    localVectorStore.ensureCollection(collection);
                     
                     // 验证创建成功
-                    List<String> afterCreate = qdrantVectorStore.listCollections();
+                    List<String> afterCreate = localVectorStore.listCollections();
                     if (afterCreate.contains(collection)) {
                         log.info("Collection '{}' created successfully - OK", collection);
                         break;
@@ -95,7 +95,7 @@ public class KnowledgeBaseManager {
         }
         
         log.info("=== Qdrant startup self-check completed ===");
-        List<String> finalCollections = qdrantVectorStore.listCollections();
+        List<String> finalCollections = localVectorStore.listCollections();
         log.info("All collections verified: {}", finalCollections);
     }
 
@@ -163,7 +163,7 @@ public class KnowledgeBaseManager {
             
             kb.setAgentType(agentType);
 
-            boolean qdrantAvailable = qdrantVectorStore.isAvailable();
+            boolean qdrantAvailable = localVectorStore.isAvailable();
             log.info("Loading knowledge base {}: qdrantAvailable={}, basics={}, examples={}, corrections={}", 
                     agentType, qdrantAvailable, 
                     kb.getBasics() != null ? kb.getBasics().size() : 0,
@@ -176,7 +176,7 @@ public class KnowledgeBaseManager {
             int cachedEmbeddings = 0;
             
             if (qdrantAvailable) {
-                long existingCount = qdrantVectorStore.count(agentType);
+                long existingCount = localVectorStore.count(agentType);
                 
                 if (existingCount > 0) {
                     // Qdrant 已有数据，跳过 embedding 生成和 upsert
@@ -284,12 +284,12 @@ public class KnowledgeBaseManager {
                     if (!docsToUpsert.isEmpty()) {
                         log.info("Performing initial bulk upsert of {} documents (generated: {}, cached: {}, skipped: {})", 
                                 docsToUpsert.size(), generatedEmbeddings, cachedEmbeddings, skippedEmbeddings);
-                        qdrantVectorStore.upsertBatch(agentType, docsToUpsert);
+                        localVectorStore.upsertBatch(agentType, docsToUpsert);
                         
                         // 验证写入成功，避免 Qdrant 写入延迟导致后续 count 为 0 又重复写入
                         boolean writeVerified = false;
                         for (int attempt = 1; attempt <= 5; attempt++) {
-                            long verifyCount = qdrantVectorStore.count(agentType);
+                            long verifyCount = localVectorStore.count(agentType);
                             if (verifyCount >= docsToUpsert.size()) {
                                 writeVerified = true;
                                 log.info("Initial bulk upsert verified for {}: {} points confirmed (attempt {})", 
@@ -589,8 +589,8 @@ public class KnowledgeBaseManager {
         knowledgeBases.put(agentType, kb);
         saveKnowledgeBase(agentType);
         
-        if (qdrantVectorStore.isAvailable() && basic.getEmbedding() != null) {
-            qdrantVectorStore.upsert(agentType, toDocument(basic, agentType, "basic"));
+        if (localVectorStore.isAvailable() && basic.getEmbedding() != null) {
+            localVectorStore.upsert(agentType, toDocument(basic, agentType, "basic"));
         }
         
         log.info("Added basic knowledge to {}: {}", agentType, basic.getId());
@@ -622,8 +622,8 @@ public class KnowledgeBaseManager {
         knowledgeBases.put(agentType, kb);
         saveKnowledgeBase(agentType);
         
-        if (qdrantVectorStore.isAvailable() && example.getEmbedding() != null) {
-            qdrantVectorStore.upsert(agentType, toDocument(example, agentType, "example"));
+        if (localVectorStore.isAvailable() && example.getEmbedding() != null) {
+            localVectorStore.upsert(agentType, toDocument(example, agentType, "example"));
         }
         
         log.info("Added example to {}: {}", agentType, example.getId());
@@ -656,8 +656,8 @@ public class KnowledgeBaseManager {
         knowledgeBases.put(agentType, kb);
         saveKnowledgeBase(agentType);
         
-        if (qdrantVectorStore.isAvailable() && ec.getEmbedding() != null) {
-            qdrantVectorStore.upsert(agentType, toDocument(ec, agentType, "error_correction"));
+        if (localVectorStore.isAvailable() && ec.getEmbedding() != null) {
+            localVectorStore.upsert(agentType, toDocument(ec, agentType, "error_correction"));
         }
         
         log.info("Added error correction to {}: {}", agentType, ec.getId());
@@ -684,8 +684,8 @@ public class KnowledgeBaseManager {
                 knowledgeBases.put(agentType, kb);
                 saveKnowledgeBase(agentType);
                 
-                if (qdrantVectorStore.isAvailable() && basic.getEmbedding() != null) {
-                    qdrantVectorStore.upsert(agentType, toDocument(basic, agentType, "basic"));
+                if (localVectorStore.isAvailable() && basic.getEmbedding() != null) {
+                    localVectorStore.upsert(agentType, toDocument(basic, agentType, "basic"));
                 }
                 
                 log.info("Updated basic knowledge in {}: {}", agentType, basicId);
@@ -718,8 +718,8 @@ public class KnowledgeBaseManager {
                 knowledgeBases.put(agentType, kb);
                 saveKnowledgeBase(agentType);
                 
-                if (qdrantVectorStore.isAvailable() && example.getEmbedding() != null) {
-                    qdrantVectorStore.upsert(agentType, toDocument(example, agentType, "example"));
+                if (localVectorStore.isAvailable() && example.getEmbedding() != null) {
+                    localVectorStore.upsert(agentType, toDocument(example, agentType, "example"));
                 }
                 
                 log.info("Updated example in {}: {}", agentType, exampleId);
@@ -755,8 +755,8 @@ public class KnowledgeBaseManager {
                 knowledgeBases.put(agentType, kb);
                 saveKnowledgeBase(agentType);
                 
-                if (qdrantVectorStore.isAvailable() && ec.getEmbedding() != null) {
-                    qdrantVectorStore.upsert(agentType, toDocument(ec, agentType, "error_correction"));
+                if (localVectorStore.isAvailable() && ec.getEmbedding() != null) {
+                    localVectorStore.upsert(agentType, toDocument(ec, agentType, "error_correction"));
                 }
                 
                 log.info("Updated error correction in {}: {}", agentType, ecId);
@@ -774,8 +774,8 @@ public class KnowledgeBaseManager {
             knowledgeBases.put(agentType, kb);
             saveKnowledgeBase(agentType);
             
-            if (qdrantVectorStore.isAvailable()) {
-                qdrantVectorStore.delete(agentType, basicId);
+            if (localVectorStore.isAvailable()) {
+                localVectorStore.delete(agentType, basicId);
             }
             
             log.info("Deleted basic knowledge from {}: {}", agentType, basicId);
@@ -791,8 +791,8 @@ public class KnowledgeBaseManager {
             knowledgeBases.put(agentType, kb);
             saveKnowledgeBase(agentType);
             
-            if (qdrantVectorStore.isAvailable()) {
-                qdrantVectorStore.delete(agentType, exampleId);
+            if (localVectorStore.isAvailable()) {
+                localVectorStore.delete(agentType, exampleId);
             }
             
             log.info("Deleted example from {}: {}", agentType, exampleId);
@@ -808,8 +808,8 @@ public class KnowledgeBaseManager {
             knowledgeBases.put(agentType, kb);
             saveKnowledgeBase(agentType);
             
-            if (qdrantVectorStore.isAvailable()) {
-                qdrantVectorStore.delete(agentType, ecId);
+            if (localVectorStore.isAvailable()) {
+                localVectorStore.delete(agentType, ecId);
             }
             
             log.info("Deleted error correction from {}: {}", agentType, ecId);
@@ -831,7 +831,7 @@ public class KnowledgeBaseManager {
     }
 
     public boolean isQdrantAvailable() {
-        return qdrantVectorStore.isAvailable();
+        return localVectorStore.isAvailable();
     }
 
     public List<Document> toDocuments(String agentType) {

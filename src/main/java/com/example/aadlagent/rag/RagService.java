@@ -14,7 +14,7 @@ import java.util.List;
 public class RagService {
 
     private final QueryRewriter queryRewriter;
-    private final QdrantVectorStore qdrantVectorStore;
+    private final LocalVectorStore LocalVectorStore;
     private final VectorSearchService vectorSearchService;
     private final RrfFusion rrfFusion;
     private final Reranker reranker;
@@ -23,7 +23,7 @@ public class RagService {
     private final EmbeddingService embeddingService;
 
     public RagService(QueryRewriter queryRewriter,
-                      QdrantVectorStore qdrantVectorStore,
+                      LocalVectorStore LocalVectorStore,
                       VectorSearchService vectorSearchService,
                       RrfFusion rrfFusion,
                       Reranker reranker,
@@ -31,7 +31,7 @@ public class RagService {
                       KnowledgeBaseManager knowledgeBaseManager,
                       EmbeddingService embeddingService) {
         this.queryRewriter = queryRewriter;
-        this.qdrantVectorStore = qdrantVectorStore;
+        this.LocalVectorStore = LocalVectorStore;
         this.vectorSearchService = vectorSearchService;
         this.rrfFusion = rrfFusion;
         this.reranker = reranker;
@@ -55,7 +55,7 @@ public class RagService {
 
         List<Document> results;
 
-        if (qdrantVectorStore.isAvailable()) {
+        if (LocalVectorStore.isAvailable()) {
             results = searchWithQdrant(rewrittenQuery, agentType);
             if (results == null || results.isEmpty()) {
                 log.warn("Qdrant search returned empty results, falling back to memory search");
@@ -70,7 +70,7 @@ public class RagService {
 
         long searchTime = System.currentTimeMillis() - startTime;
 
-        log.info("RAG search completed in {}ms (agentType: {}, qdrant: {})", searchTime, agentType, qdrantVectorStore.isAvailable());
+        log.info("RAG search completed in {}ms (agentType: {}, qdrant: {})", searchTime, agentType, LocalVectorStore.isAvailable());
 
         return SearchResult.builder()
                 .documents(rerankedResults)
@@ -92,12 +92,12 @@ public class RagService {
             
             if (queryEmbedding != null && queryEmbedding.length > 0) {
                 log.debug("Generated query embedding with dimension: {}", queryEmbedding.length);
-                List<Document> vectorResults = qdrantVectorStore.search(agentType, queryEmbedding, ragConfig.getTopK());
-                List<Document> keywordResults = qdrantVectorStore.keywordSearch(agentType, query, ragConfig.getTopK());
+                List<Document> vectorResults = LocalVectorStore.search(agentType, queryEmbedding, ragConfig.getTopK());
+                List<Document> keywordResults = LocalVectorStore.keywordSearch(agentType, query, ragConfig.getTopK());
                 return rrfFusion.fuse(List.of(vectorResults, keywordResults));
             } else {
                 log.warn("Failed to generate valid embedding for query (null or empty), falling back to keyword search");
-                return qdrantVectorStore.keywordSearch(agentType, query, ragConfig.getTopK());
+                return LocalVectorStore.keywordSearch(agentType, query, ragConfig.getTopK());
             }
         } catch (Exception e) {
             log.error("Qdrant search failed: {}, falling back to memory search", e.getMessage());
@@ -183,6 +183,6 @@ public class RagService {
     }
 
     public boolean isQdrantAvailable() {
-        return qdrantVectorStore.isAvailable();
+        return LocalVectorStore.isAvailable();
     }
 }
