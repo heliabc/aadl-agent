@@ -32,8 +32,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Slf4j
 public abstract class ReActAgent implements Agent<AgentInput, AgentOutput> {
 
-    /** 最大 ReAct 迭代次数，防止无限循环 */
-    protected static final int MAX_REACT_ITERATIONS = 6;
+    /** 最大 ReAct 迭代次数，防止无限循环（子类可覆盖） */
+    protected int getMaxIterations() {
+        return 6;
+    }
 
     protected final ModelService modelService;
     protected final ObjectMapper objectMapper;
@@ -130,13 +132,13 @@ public abstract class ReActAgent implements Agent<AgentInput, AgentOutput> {
         AtomicBoolean cancelled = input.getCancelled();
 
         // ReAct 循环
-        for (int iteration = 1; iteration <= MAX_REACT_ITERATIONS; iteration++) {
+        for (int iteration = 1; iteration <= getMaxIterations(); iteration++) {
             if (cancelled != null && cancelled.get()) {
                 log.info("任务已取消，{} 停止执行", getAgentName());
                 return AgentOutput.cancelled(input.getSessionId());
             }
 
-            log.info("\n--- ReAct 迭代 {}/{} ---", iteration, MAX_REACT_ITERATIONS);
+            log.info("\n--- ReAct 迭代 {}/{} ---", iteration, getMaxIterations());
 
             // 调用 LLM
             ChatResponse response = llmClient.chatWithTools(
@@ -213,16 +215,24 @@ public abstract class ReActAgent implements Agent<AgentInput, AgentOutput> {
         }
 
         // 达到最大迭代次数
-        log.warn("达到最大迭代次数 {}，返回最后一次有效内容", MAX_REACT_ITERATIONS);
+        log.warn("达到最大迭代次数 {}，尝试返回最后一次有效内容", getMaxIterations());
         long totalTime = System.currentTimeMillis() - startTime;
 
+        // 1. 优先找 assistant 的文本内容
         String lastContent = findLastContent(messages);
         if (lastContent != null && !lastContent.trim().isEmpty()) {
             return buildFinalOutput(input, lastContent, totalTime);
         }
 
+        // 2. 从 validate_aadl 工具的观察结果中提取最后一次的代码
+        String lastValidatedCode = extractLastValidatedCode(messages);
+        if (lastValidatedCode != null && !lastValidatedCode.trim().isEmpty()) {
+            log.info("从 validate_aadl 结果中提取到最后一次生成的代码（{} 字符）", lastValidatedCode.length());
+            return buildFinalOutput(input, lastValidatedCode, totalTime);
+        }
+
         return AgentOutput.failure(input.getSessionId(),
-                "达到最大迭代次数 " + MAX_REACT_ITERATIONS + "，未能获得最终答案");
+                "达到最大迭代次数 " + getMaxIterations() + "，未能获得最终答案");
     }
 
     // ==================== 辅助方法 ====================
@@ -270,6 +280,50 @@ public abstract class ReActAgent implements Agent<AgentInput, AgentOutput> {
                     && msg.getContent() != null
                     && !msg.getContent().trim().isEmpty()) {
                 return msg.getContent();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 从 validate_aadl 工具的观察结果中提取最后一次生成的 AADL 代码
+     * ValidateAadlTool 会在观察结果中包含 "修正后代码" 部分
+     */
+    private String extractLastValidatedCode(List<ChatMessage> messages) {
+        for (int i = messages.size() - 1; i >= 0; i--) {
+            ChatMessage msg = messages.get(i);
+            if (!"tool".equals(msg.getRole())) continue;
+            String content = msg.getContent();
+            if (content == null || content.isEmpty()) continue;
+
+            // 尝试从 "完整修复后代码" 标记中提取（ValidateAadlTool 输出的完整代码）
+            int codeIdx = content.indexOf("完整修复后代码");
+            if (codeIdx > 0) {
+                int backtickIdx = content.indexOf("```", codeIdx);
+                if (backtickIdx > 0) {
+                    int codeStart = content.indexOf("\n", backtickIdx);
+                    if (codeStart > 0) {
+                        int codeEnd = content.indexOf("```", codeStart + 1);
+                        if (codeEnd > codeStart) {
+                            return content.substring(codeStart + 1, codeEnd).trim();
+                        }
+                    }
+                }
+            }
+
+            // 再试试从 "修正后代码" 中提取（兼容旧格式）
+            int fixIdx = content.indexOf("修正后代码");
+            if (fixIdx > 0) {
+                int backtickIdx = content.indexOf("```", fixIdx);
+                if (backtickIdx > 0) {
+                    int codeStart = content.indexOf("\n", backtickIdx);
+                    if (codeStart > 0) {
+                        int codeEnd = content.indexOf("```", codeStart + 1);
+                        if (codeEnd > codeStart) {
+                            return content.substring(codeStart + 1, codeEnd).trim();
+                        }
+                    }
+                }
             }
         }
         return null;

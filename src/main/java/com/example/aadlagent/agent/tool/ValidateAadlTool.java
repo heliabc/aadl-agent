@@ -110,6 +110,8 @@ public class ValidateAadlTool implements Tool {
                     if (lines.length > 20) {
                         sb.append("  ... (共 ").append(lines.length).append(" 行)\n");
                     }
+                    // 完整修复后代码（用于达到迭代上限时提取返回）
+                    sb.append("\n【完整修复后代码】:\n```aadl\n").append(result.fixedContent).append("\n```\n");
                 }
             }
 
