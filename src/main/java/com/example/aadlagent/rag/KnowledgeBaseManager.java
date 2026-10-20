@@ -348,20 +348,43 @@ public class KnowledgeBaseManager {
                     basicsNode != null && basicsNode.isArray() ? basicsNode.size() : 0);
             
             if (basicsNode != null && basicsNode.isArray()) {
-                int index = 1;
-                for (com.fasterxml.jackson.databind.JsonNode node : basicsNode) {
-                    String category = node.has("category") ? node.get("category").asText() : null;
-                    String content = node.has("content") ? node.get("content").asText() : null;
-                    
-                    kb.getBasics().add(BasicKnowledge.builder()
-                            .id("BASIC-" + agentType + "-" + String.format("%03d", index++))
-                            .title(category != null ? category : "基本规则")
-                            .content(content)
-                            .section(category)
-                            .tags(new ArrayList<>())
-                            .createdAt(now)
-                            .updatedAt(now)
-                            .build());
+                // 检测格式：第一条有 syntax_name 字段就是新格式，直接用 Jackson 反序列化
+                boolean isStructuredFormat = basicsNode.size() > 0 
+                        && basicsNode.get(0).has("syntax_name");
+                
+                if (isStructuredFormat) {
+                    log.info("Detected structured format for {}, using full Jackson deserialization", agentType);
+                    int index = 1;
+                    for (com.fasterxml.jackson.databind.JsonNode node : basicsNode) {
+                        try {
+                            BasicKnowledge basic = objectMapper.treeToValue(node, BasicKnowledge.class);
+                            basic.setId("BASIC-" + agentType + "-" + String.format("%03d", index++));
+                            if (basic.getCreatedAt() == null) basic.setCreatedAt(now);
+                            if (basic.getUpdatedAt() == null) basic.setUpdatedAt(now);
+                            if (basic.getTags() == null) basic.setTags(new ArrayList<>());
+                            kb.getBasics().add(basic);
+                        } catch (Exception e) {
+                            log.warn("Failed to parse structured basic knowledge #{}: {}", index, e.getMessage());
+                        }
+                    }
+                    log.info("Parsed {} structured basic knowledge entries for {}", kb.getBasics().size(), agentType);
+                } else {
+                    // 旧格式：手动解析 category + content
+                    int index = 1;
+                    for (com.fasterxml.jackson.databind.JsonNode node : basicsNode) {
+                        String category = node.has("category") ? node.get("category").asText() : null;
+                        String content = node.has("content") ? node.get("content").asText() : null;
+                        
+                        kb.getBasics().add(BasicKnowledge.builder()
+                                .id("BASIC-" + agentType + "-" + String.format("%03d", index++))
+                                .title(category != null ? category : "基本规则")
+                                .content(content)
+                                .section(category)
+                                .tags(new ArrayList<>())
+                                .createdAt(now)
+                                .updatedAt(now)
+                                .build());
+                    }
                 }
             }
             
