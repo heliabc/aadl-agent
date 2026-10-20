@@ -56,7 +56,7 @@ public class RagService {
                 query != null ? query.length() : -1, agentType, 
                 query != null && query.length() > 100 ? query.substring(0, 100) + "..." : query);
 
-        String rewrittenQuery = queryRewriter.rewrite(query);
+        String rewrittenQuery = queryRewriter.rewrite(query, agentType);
         
         log.info("Rewritten query (len={}): {}", 
                 rewrittenQuery != null ? rewrittenQuery.length() : -1, 
@@ -80,12 +80,79 @@ public class RagService {
         long searchTime = System.currentTimeMillis() - startTime;
 
         log.info("RAG search completed in {}ms (agentType: {}, qdrant: {})", searchTime, agentType, qdrantVectorStore.isAvailable());
+        logRetrievedDocuments(agentType, rewrittenQuery, rerankedResults);
 
         return SearchResult.builder()
                 .documents(rerankedResults)
                 .rewrittenQuery(rewrittenQuery)
                 .searchTime(searchTime)
                 .build();
+    }
+
+    /**
+     * 将检索到的文档完整保存到 txt 文件，方便调试 RAG 召回质量。
+     * 文件路径：./logs/rag/rag_result_{agentType}_{时间戳}.txt
+     */
+    private void logRetrievedDocuments(String agentType, String query, List<Document> docs) {
+        if (docs == null || docs.isEmpty()) {
+            log.info("=== RAG 检索结果 [{}] ===  0 条（空）", agentType);
+            return;
+        }
+
+        // 构造文件路径
+        String timestamp = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss_SSS").format(new java.util.Date());
+        String dirPath = "./logs/rag";
+        String fileName = "rag_result_" + agentType + "_" + timestamp + ".txt";
+        java.nio.file.Path dir = java.nio.file.Paths.get(dirPath);
+        java.nio.file.Path filePath = dir.resolve(fileName);
+
+        try {
+            // 确保目录存在
+            if (!java.nio.file.Files.exists(dir)) {
+                java.nio.file.Files.createDirectories(dir);
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("============================================================\n");
+            sb.append("RAG 检索结果\n");
+            sb.append("============================================================\n");
+            sb.append("Agent类型: ").append(agentType).append("\n");
+            sb.append("检索查询: ").append(query != null ? query : "(空)").append("\n");
+            sb.append("文档数量: ").append(docs.size()).append("\n");
+            sb.append("时间: ").append(timestamp).append("\n");
+            sb.append("============================================================\n\n");
+
+            for (int i = 0; i < docs.size(); i++) {
+                Document doc = docs.get(i);
+                String scoreStr = doc.getScore() != null ? String.format("%.4f", doc.getScore()) : "N/A";
+
+                sb.append("────────────────────────────────────────────────────────────\n");
+                sb.append(String.format("[%d/%d] 标题: %s\n", i + 1, docs.size(),
+                        doc.getTitle() != null ? doc.getTitle() : "(无标题)"));
+                sb.append(String.format("类别: %s | 分数: %s\n",
+                        doc.getCategory() != null ? doc.getCategory() : "?",
+                        scoreStr));
+                if (doc.getTags() != null && !doc.getTags().isEmpty()) {
+                    sb.append("标签: ").append(String.join(", ", doc.getTags())).append("\n");
+                }
+                sb.append("────────────────────────────────────────────────────────────\n");
+                sb.append(doc.getContent() != null ? doc.getContent() : "(无内容)");
+                sb.append("\n\n");
+            }
+
+            java.nio.file.Files.writeString(filePath, sb.toString());
+            log.info("=== RAG 检索结果 [{}] === 共 {} 条，已保存到: {}", agentType, docs.size(), filePath.toAbsolutePath());
+
+        } catch (Exception e) {
+            // 写文件失败别影响主流程，降级为日志打印标题列表
+            log.warn("保存 RAG 结果到文件失败，降级为日志打印: {}", e.getMessage());
+            log.info("=== RAG 检索结果 [{}] === 共 {} 条", agentType, docs.size());
+            for (int i = 0; i < docs.size(); i++) {
+                Document doc = docs.get(i);
+                log.info("  [{}/{}] {}", i + 1, docs.size(),
+                        doc.getTitle() != null ? doc.getTitle() : "(无标题)");
+            }
+        }
     }
 
     private List<Document> searchWithQdrant(String query, String agentType) {

@@ -3,6 +3,8 @@ package com.example.aadlagent.rag;
 import com.example.aadlagent.client.LlmClient;
 import com.example.aadlagent.client.ModelService;
 import com.example.aadlagent.config.RewriteConfig;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -16,6 +18,7 @@ public class QueryRewriter {
 
     private final ModelService modelService;
     private final RewriteConfig rewriteConfig;
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private static final int MAX_RETRIES = 3;
     private static final int RETRY_DELAY_MS = 200;
 
@@ -143,65 +146,53 @@ public class QueryRewriter {
         SYNTAX_DICTIONARY.put("表达式", Arrays.asList("expression", "property_reference"));
         SYNTAX_DICTIONARY.put("expression", Arrays.asList("expression", "property_reference"));
         SYNTAX_DICTIONARY.put("属性引用", Arrays.asList("property_reference"));
+
+        // === 架构树JSON专用：精确feature kind值（aadl agent输入是JSON，不是自然语言）===
+        // 这些是 AadlArchitectureModel.FeatureModel.kind 的精确值
+        SYNTAX_DICTIONARY.put("data_port", Arrays.asList("port_spec", "feature_clause", "port_connection"));
+        SYNTAX_DICTIONARY.put("event_port", Arrays.asList("port_spec", "feature_clause", "port_connection"));
+        SYNTAX_DICTIONARY.put("event_data_port", Arrays.asList("port_spec", "feature_clause", "port_connection"));
+        SYNTAX_DICTIONARY.put("bus_access", Arrays.asList("bus_access_spec", "feature_clause", "access_connection"));
+        SYNTAX_DICTIONARY.put("data_access", Arrays.asList("data_access_spec", "feature_clause", "access_connection"));
+        SYNTAX_DICTIONARY.put("subprogram_access", Arrays.asList("subprogram_access_spec", "feature_clause"));
+        SYNTAX_DICTIONARY.put("feature_group", Arrays.asList("feature_group_spec", "feature_group_type", "feature_group_connection"));
+        SYNTAX_DICTIONARY.put("parameter_port", Arrays.asList("parameter_spec", "parameter_connection"));
+
+        // === 模块分析JSON专用：字段名映射（ModuleAnalysisResult）===
+        SYNTAX_DICTIONARY.put("port_requirements", Arrays.asList("port_spec", "feature_clause"));
+        SYNTAX_DICTIONARY.put("connection_hints", Arrays.asList("connection_clause", "port_connection", "access_connection"));
+        SYNTAX_DICTIONARY.put("component_hierarchy", Arrays.asList("subcomponent_clause", "component_type"));
+        SYNTAX_DICTIONARY.put("sub_components", Arrays.asList("subcomponent_clause", "subcomponent"));
+        SYNTAX_DICTIONARY.put("related_components", Arrays.asList("component_type", "component_category"));
     }
 
-    // AADL领域专用改写Prompt（结构化版本，注入语法概念）
+    // 概念检索：提取到的术语数量 >= 此阈值时，直接用概念做检索，跳过 LLM
+    private static final int ENOUGH_CONCEPTS_THRESHOLD = 3;
+    // 概念检索：最多保留的术语数量（避免查询过长影响向量质量）
+    private static final int MAX_CONCEPTS_FOR_SEARCH = 6;
+    // 超长查询阈值（字符数）
+    private static final int LONG_QUERY_THRESHOLD = 500;
+
+    // AADL领域专用改写Prompt（JSON格式，适配14B小模型）
+    // 输出严格 JSON，解析失败直接降级
     private static final String REWRITE_PROMPT = """
-你是AADL（Architecture Analysis and Design Language）核心语法查询重构专家。
-你的任务是将用户的自然语言查询改写为适合向量检索的AADL标准术语查询。
+将下面的查询改写为3-5个AADL标准术语。
 
-【AADL知识库结构】
-知识库包含81条结构化语法条目，每条有：syntax_name、bnf_syntax、语义说明、正例/反例、规则。
-核心章节：Ch.4词法、Ch.5包、Ch.6组件、Ch.7执行平台、Ch.8特征、Ch.9子组件/原型、Ch.10连接、Ch.11流、Ch.12属性、Ch.13模式、Ch.14子程序调用、附件、表达式。
-
-【用户查询涉及的核心语法概念】
+参考术语：
 {}
 
-【改写规则】
-1. 必须使用上述列出的标准 syntax_name 作为检索关键词，不得替换为口语化表达。
-2. 如果查询涉及组件定义，优先使用 component_type / component_implementation / component_type_extension。
-3. 如果查询涉及端口/特征，优先使用 port_spec / feature_clause / data_access_spec / subprogram_access_spec / bus_access_spec / parameter_spec。
-4. 如果查询涉及连接，优先使用 connection / port_connection / access_connection / feature_group_connection / parameter_connection。
-5. 如果查询涉及属性，优先使用 property_association / property_definition / property_type / property_set。
-6. 如果查询涉及模式，优先使用 mode_declaration / mode_transition / modes_subclause。
-7. 如果查询涉及子组件，优先使用 subcomponent / subcomponent_clause。
-8. 如果查询涉及子程序调用，优先使用 subprogram_call / subprogram_call_sequence / called_subprogram。
-9. 如果查询涉及流，优先使用 flow_specification / flow_implementation / end_to_end_flow。
-10. 保留原始查询中的具体约束条件（如"不能嵌套"、"必须绑定"、"方向错误"等）。
-11. 同义词扩展仅在同一语法领域内进行，禁止跨领域混淆（如不要把"端口"扩展成"属性"）。
-12. 输出必须是一条紧凑的检索语句，包含2~5个核心术语，适合向量相似度匹配。
+只输出JSON，不要其他文字。格式：{"terms": ["术语1", "术语2", "术语3"]}
 
-【禁止】
-- 禁止输出解释、序号、换行、Markdown格式。
-- 禁止 invent 不存在的AADL语法术语。
-- 禁止将硬件概念（processor/bus/memory）与软件概念（thread/process/data/subprogram）混为一谈。
+查询：{}
+JSON：""";
 
-用户原始查询：{}
-仅输出改写后的单行查询：
-""";
-
-    // AADL领域专用拆分Prompt（结构化版本）
+    // AADL领域专用拆分Prompt（极简版）
     private static final String DECOMPOSE_PROMPT = """
-你是AADL核心语法查询拆分专家。将用户复杂提问拆分为2~4条独立检索子查询，每条只包含单一AADL语法意图。
+将下面的AADL问题拆成2-3条子查询，每行一条。
+每条子查询只问一个知识点，用AADL标准术语。
 
-【AADL知识库核心术语】
-组件：component_type, component_implementation, component_type_extension, thread, data, subprogram, system, process, processor, memory, bus, device, abstract
-特征：feature_clause, port_spec, feature_group_type, data_access_spec, subprogram_access_spec, bus_access_spec, parameter_spec
-连接：connection, port_connection, access_connection, feature_group_connection, parameter_connection
-子组件：subcomponent, subcomponent_clause, prototype
-属性：property_set, property_type, property_definition, property_association
-模式：mode_declaration, mode_transition, modes_subclause
-流：flow_specification, flow_implementation, end_to_end_flow
-子程序调用：subprogram_call_sequence, subprogram_call, called_subprogram
-附件：annex_subclause, annex_library
-
-【拆分规则】
-1. 每条子查询必须包含1~2个上述标准术语。
-2. 如果查询涉及多个语法领域（如同时问端口和连接），按领域拆分。
-3. 如果查询涉及错误/约束检查，单独拆出一条包含"规则"或"合法性"关键词的子查询。
-4. 仅每行输出一条子查询，禁止空行、注释、序号、解释文本。
-
-原始查询：{}
+问题：{}
+子查询：
 """;
 
     public QueryRewriter(ModelService modelService, RewriteConfig rewriteConfig) {
@@ -260,74 +251,200 @@ public class QueryRewriter {
     }
 
     /**
-     * 将提取的语法概念格式化为 Prompt 注入文本。
-     */
-    private String formatSyntaxConceptsForPrompt(List<String> concepts) {
-        if (concepts.isEmpty()) {
-            return "（未匹配到明确语法概念，请根据查询内容推断最相关的AADL术语）";
-        }
-        return concepts.stream()
-                .map(c -> "- " + c)
-                .collect(Collectors.joining("\n"));
-    }
-
     /**
-     * 查询优化改写（带完整重试降级 + AADL语法概念注入）
+     * 按 agentType 选择改写策略。
+     * - aadl: AADL 语法特化改写（语法词典 + LLM 术语改写 + 有效性校验）
+     * 其他: 直接返回原查询（不做改写，避免引入幻觉；向量检索对原查询段落内容匹配更好）
      */
-    public String rewrite(String query) {
+    public String rewrite(String query, String agentType) {
         if (!StringUtils.hasText(query)) {
             log.warn("Input query is blank, return original");
             return query;
         }
         String trimmedQuery = query.trim();
-        log.info("Start rewrite raw query: {}", trimmedQuery);
 
-        // 1. 基于静态词典提取AADL语法概念（不依赖LLM，总是可用）
+        // 非 AADL agent 直接返回原查询，不做改写
+        // 原因：requirement/architecture/module/error_memory 的知识库是段落式内容，
+        // 长查询向量匹配原查询反而更准，改写容易丢失上下文
+        if (!"aadl".equals(agentType)) {
+            log.debug("agentType={}, skip query rewrite (use original query)", agentType);
+            return trimmedQuery;
+        }
+
+        return rewriteAadlQuery(trimmedQuery);
+    }
+
+    /**
+     * 兼容旧接口（无 agentType 参数），默认按通用处理（不改写）。
+     * @deprecated 请使用 rewrite(query, agentType)
+     */
+    @Deprecated
+    public String rewrite(String query) {
+        return rewrite(query, null);
+    }
+
+    /**
+     * AADL 专用改写主逻辑：
+     *
+     * 核心思路：aadl agent 的输入是长需求文档，不是短查询。
+     * 向量检索对长文档效果很差（日志验证过 0 命中），所以主路径是：
+     *   静态词典提取 AADL 概念 → 用标准术语做检索
+     *
+     * 策略优先级：
+     *   1. 概念数 >= ENOUGH_CONCEPTS_THRESHOLD → 直接用概念，不调 LLM（主路径）
+     *   2. 概念数 < 阈值 + 短查询 → 尝试 LLM 改写补充术语（兜底）
+     *   3. LLM 失败 → 降级为概念拼接
+     */
+    private String rewriteAadlQuery(String trimmedQuery) {
+        // 1. 静态词典提取 AADL 语法概念（O(1)，不依赖 LLM）
         List<String> concepts = extractSyntaxConcepts(trimmedQuery);
-        String conceptsText = formatSyntaxConceptsForPrompt(concepts);
         if (!concepts.isEmpty()) {
-            log.info("Matched AADL syntax concepts: {}", concepts);
+            log.info("[aadl] Matched syntax concepts ({}): {}", concepts.size(), concepts);
         }
 
-        // 获取配置的模型客户端
+        // 2. 主路径：概念足够多 → 直接用 top-N 概念做检索，跳过 LLM
+        // 原因：概念就是标准 syntax_name，与知识库精确匹配，比长文档 embedding 靠谱得多
+        if (concepts.size() >= ENOUGH_CONCEPTS_THRESHOLD) {
+            List<String> topConcepts = concepts.size() > MAX_CONCEPTS_FOR_SEARCH
+                    ? concepts.subList(0, MAX_CONCEPTS_FOR_SEARCH)
+                    : concepts;
+            String conceptQuery = String.join(" ", topConcepts);
+            log.info("[aadl] Concept-based retrieval ({} terms, top-{}): {}",
+                    concepts.size(), topConcepts.size(), conceptQuery);
+            return conceptQuery;
+        }
+
+        // 3. 概念太少 → 尝试 LLM 改写补充（短查询场景才走这里）
+        if (trimmedQuery.length() > LONG_QUERY_THRESHOLD) {
+            // 长查询但概念少，直接降级（调 LLM 也是白费劲）
+            String fallback = buildFallbackQuery(trimmedQuery, concepts);
+            log.info("[aadl] Long query with few concepts ({}), use fallback", concepts.size());
+            return fallback;
+        }
+
+        log.info("[aadl] Few concepts ({}), trying LLM rewrite for short query", concepts.size());
+
         LlmClient client = modelService.getClient(rewriteConfig.getModelType());
-        
-        // 模型不可用直接降级：但仍返回注入概念的查询（比原查询更有检索价值）
         if (!client.isAvailable()) {
-            log.warn("Rewrite model {} unavailable, skip LLM rewrite", rewriteConfig.getModelType());
-            // 降级策略：将提取到的语法概念拼接到原查询末尾，增强关键词密度
-            String fallbackQuery = buildFallbackQuery(trimmedQuery, concepts);
-            log.info("Fallback query with syntax concepts: {}", fallbackQuery);
-            return fallbackQuery;
+            log.warn("[aadl] Rewrite model unavailable, use fallback");
+            return buildFallbackQuery(trimmedQuery, concepts);
         }
 
-        // 2. 构造注入语法概念的Prompt
-        String prompt = String.format(REWRITE_PROMPT, conceptsText, trimmedQuery);
+        String conceptsForPrompt = concepts.isEmpty()
+                ? "component_type port_spec property_association mode_declaration subprogram_call flow_specification"
+                : String.join(" ", concepts);
+        String prompt = String.format(REWRITE_PROMPT, conceptsForPrompt, trimmedQuery);
         String modelName = rewriteConfig.getOllamaModelName();
-        
+
         for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
             try {
                 String rewritten = client.chat(prompt, rewriteConfig.getTemperature(), rewriteConfig.getMaxTokens(), modelName);
                 if (StringUtils.hasText(rewritten)) {
-                    String result = rewritten.trim();
-                    // 后处理：去除可能的引号、序号前缀
-                    result = sanitizeRewrittenQuery(result);
-                    log.info("Rewrite success, attempt {}, result: {}", attempt, result);
-                    return result;
+                    List<String> terms = parseJsonTerms(rewritten.trim());
+                    if (terms != null && terms.size() >= 2) {
+                        String result = String.join(" ", terms);
+                        log.info("[aadl] LLM rewrite success, terms ({}): {}", terms.size(), result);
+                        return result;
+                    }
+                    log.warn("[aadl] LLM rewrite JSON parse failed, attempt {}/{}", attempt, MAX_RETRIES);
                 }
-                log.warn("Rewrite empty response, attempt {}/{}", attempt, MAX_RETRIES);
             } catch (Exception e) {
-                log.warn("Rewrite LLM call error attempt {}/{} err={}", attempt, MAX_RETRIES, e.getMessage());
+                log.warn("[aadl] LLM rewrite error attempt {}/{}: {}", attempt, MAX_RETRIES, e.getMessage());
             }
-            // 重试休眠
             if (attempt < MAX_RETRIES) {
                 sleepSafe(RETRY_DELAY_MS);
             }
         }
-        
-        // 3. 全部重试失败，降级为概念增强查询
-        log.warn("Rewrite all {} retries failed, fallback to concept-enhanced query", MAX_RETRIES);
+
+        // 4. 全部失败降级
+        log.warn("[aadl] LLM rewrite all retries failed, fallback to concept-enhanced query");
         return buildFallbackQuery(trimmedQuery, concepts);
+    }
+
+    /**
+     * 从 LLM 输出中解析 JSON 格式的 terms 数组。
+     * 支持严格 JSON 也支持从废话中提取第一个 JSON 对象。
+     * 解析失败返回 null。
+     */
+    private List<String> parseJsonTerms(String rawOutput) {
+        if (!StringUtils.hasText(rawOutput)) {
+            return null;
+        }
+        String text = rawOutput.trim();
+
+        // 1. 尝试直接解析
+        try {
+            JsonNode node = objectMapper.readTree(text);
+            return extractTermsFromNode(node);
+        } catch (Exception ignored) {
+            // 不是纯 JSON，继续提取
+        }
+
+        // 2. 找第一个 { ... } JSON 对象（LLM 可能在前后加了文字）
+        int firstBrace = text.indexOf('{');
+        int lastBrace = text.lastIndexOf('}');
+        if (firstBrace >= 0 && lastBrace > firstBrace) {
+            String jsonStr = text.substring(firstBrace, lastBrace + 1);
+            try {
+                JsonNode node = objectMapper.readTree(jsonStr);
+                return extractTermsFromNode(node);
+            } catch (Exception e) {
+                log.debug("[aadl] JSON extraction failed: {}", e.getMessage());
+            }
+        }
+
+        // 3. 找第一个 [ ... ] JSON 数组（模型可能直接输出数组）
+        int firstBracket = text.indexOf('[');
+        int lastBracket = text.lastIndexOf(']');
+        if (firstBracket >= 0 && lastBracket > firstBracket) {
+            String jsonStr = text.substring(firstBracket, lastBracket + 1);
+            try {
+                JsonNode node = objectMapper.readTree(jsonStr);
+                if (node.isArray()) {
+                    List<String> terms = new ArrayList<>();
+                    for (JsonNode item : node) {
+                        if (item.isTextual()) {
+                            terms.add(item.asText().trim());
+                        }
+                    }
+                    return terms.isEmpty() ? null : terms;
+                }
+            } catch (Exception e) {
+                log.debug("[aadl] Array JSON extraction failed: {}", e.getMessage());
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * 从 JSON 节点中提取 terms 数组。
+     * 支持 {"terms": [...]} 和直接数组两种格式。
+     */
+    private List<String> extractTermsFromNode(JsonNode node) {
+        if (node == null) {
+            return null;
+        }
+        // 优先找 terms 字段
+        JsonNode termsNode = node.has("terms") ? node.get("terms") : null;
+        if (termsNode == null || !termsNode.isArray()) {
+            // 如果根节点就是数组
+            if (node.isArray()) {
+                termsNode = node;
+            } else {
+                return null;
+            }
+        }
+        List<String> terms = new ArrayList<>();
+        for (JsonNode item : termsNode) {
+            if (item.isTextual()) {
+                String t = item.asText().trim();
+                if (!t.isEmpty()) {
+                    terms.add(t);
+                }
+            }
+        }
+        return terms.isEmpty() ? null : terms;
     }
 
     /**
@@ -346,24 +463,6 @@ public class QueryRewriter {
             return originalQuery;
         }
         return originalQuery + " " + String.join(" ", newConcepts);
-    }
-
-    /**
-     * 清洗LLM改写结果：去除常见噪声。
-     */
-    private String sanitizeRewrittenQuery(String query) {
-        if (!StringUtils.hasText(query)) {
-            return query;
-        }
-        String result = query.trim();
-        // 去除首尾引号
-        if ((result.startsWith("\"") && result.endsWith("\"")) ||
-            (result.startsWith("'") && result.endsWith("'"))) {
-            result = result.substring(1, result.length() - 1).trim();
-        }
-        // 去除 "1."、"- " 等序号前缀
-        result = result.replaceFirst("^[\\d\\.\\-\\s]+", "").trim();
-        return result;
     }
 
     /**

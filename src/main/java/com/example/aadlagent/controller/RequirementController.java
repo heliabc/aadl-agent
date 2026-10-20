@@ -13,6 +13,7 @@ import com.example.aadlagent.client.ModelType;
 import com.example.aadlagent.config.DeepSeekConfig;
 import com.example.aadlagent.config.FileConfig;
 import com.example.aadlagent.rag.RagService;
+import com.example.aadlagent.rag.AadlQueryBuilder;
 import com.example.aadlagent.session.ChatMessage;
 import com.example.aadlagent.session.SessionManager;
 import com.example.aadlagent.service.TaskCancellationService;
@@ -51,6 +52,7 @@ public class RequirementController {
     private final ModelService modelService;
     private final DeepSeekConfig deepSeekConfig;
     private final RagService ragService;
+    private final AadlQueryBuilder aadlQueryBuilder;
     private final SessionManager sessionManager;
     private final TraceabilityService traceabilityService;
     private final TaskCancellationService cancellationService;
@@ -61,7 +63,7 @@ public class RequirementController {
                                  AadlFixerAgent aadlFixerAgent, AadlErrorParserAgent aadlErrorParserAgent,
                                  DocFileReader docFileReader, FileConfig fileConfig, 
                                  ModelService modelService, DeepSeekConfig deepSeekConfig,
-                                 RagService ragService, SessionManager sessionManager,
+                                 RagService ragService, AadlQueryBuilder aadlQueryBuilder, SessionManager sessionManager,
                                  TraceabilityService traceabilityService, TaskCancellationService cancellationService,
                                  AadlReferenceValidator aadlValidator) {
         this.requirementAgent = requirementAgent;
@@ -75,6 +77,7 @@ public class RequirementController {
         this.modelService = modelService;
         this.deepSeekConfig = deepSeekConfig;
         this.ragService = ragService;
+        this.aadlQueryBuilder = aadlQueryBuilder;
         this.sessionManager = sessionManager;
         this.traceabilityService = traceabilityService;
         this.cancellationService = cancellationService;
@@ -592,7 +595,9 @@ public class RequirementController {
             String architectureJson = docFileReader.readFile(architectureFilePath);
             String modulesJson = docFileReader.readFile(modulesFilePath);
 
-            String ragContext = ragService.getEnhancedContext(architectureJson + "\n" + modulesJson, "aadl");
+            // 使用结构化查询构造器：解析JSON结构，精准提取AADL概念
+            String aadlQuery = aadlQueryBuilder.buildQuery(architectureJson, modulesJson);
+            String ragContext = ragService.getEnhancedContext(aadlQuery, "aadl");
             String sessionContext = sessionManager.buildContext(sessionId, 10);
             if (sessionContext != null && !sessionContext.isEmpty()) {
                 ragContext = sessionContext + "\n\n" + ragContext;
@@ -710,7 +715,8 @@ public class RequirementController {
 
             String architectureJson = docFileReader.readFile(architectureFilePath);
             String modulesJson = docFileReader.readFile(modulesFilePath);
-            String ragContext = ragService.getEnhancedContext(architectureJson + "\n" + modulesJson, "aadl");
+            String aadlQuery = aadlQueryBuilder.buildQuery(architectureJson, modulesJson);
+            String ragContext = ragService.getEnhancedContext(aadlQuery, "aadl");
             String sessionContext = sessionManager.buildContext(sessionId, 10);
             if (sessionContext != null && !sessionContext.isEmpty()) {
                 ragContext = sessionContext + "\n\n" + ragContext;

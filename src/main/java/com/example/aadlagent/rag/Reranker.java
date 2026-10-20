@@ -119,26 +119,31 @@ public class Reranker {
 
     private List<Document> rerankWithLLM(String query, List<Document> documents) {
         StringBuilder promptBuilder = new StringBuilder();
-        promptBuilder.append("请根据以下查询语句，对提供的文档进行相关性排序：\n");
+        promptBuilder.append("根据查询对文档排序，只输出JSON。\n");
         promptBuilder.append("查询：").append(query).append("\n\n");
-        promptBuilder.append("文档列表：\n");
+        promptBuilder.append("文档：\n");
 
         for (int i = 0; i < documents.size(); i++) {
             Document doc = documents.get(i);
-            promptBuilder.append(String.format("%d. %s\n", i + 1, doc.getContent()));
+            // 截断文档内容，避免 prompt 过长
+            String content = doc.getContent();
+            if (content.length() > 150) {
+                content = content.substring(0, 150) + "...";
+            }
+            promptBuilder.append(String.format("[%d] %s\n", i, content));
         }
 
-        promptBuilder.append("\n请输出排序后的文档序号，按相关性从高到低排列，用逗号分隔。例如：1,3,2,4");
+        promptBuilder.append("\n只输出JSON：{\"rank\": [0,2,1]}\n数字是文档编号，按相关度从高到低。");
 
         String prompt = promptBuilder.toString();
-        String response = ollamaClient.chat(prompt, 0.0, 1024);
+        String response = ollamaClient.chat(prompt, 0.0, 512);
 
         if (response == null || response.trim().isEmpty()) {
-            log.warn("LLM reranking failed, returning original order");
+            log.warn("LLM reranking empty response, returning original order");
             return truncateTopK(documents);
         }
 
-        List<Integer> ranks = parseRanking(response);
+        List<Integer> ranks = parseRankingJson(response, documents.size());
 
         if (ranks.isEmpty()) {
             log.warn("Failed to parse ranking, returning original order");
@@ -149,7 +154,7 @@ public class Reranker {
         Set<Integer> addedIndices = new HashSet<>();
 
         for (Integer rank : ranks) {
-            int idx = rank - 1;
+            int idx = rank;
             if (idx >= 0 && idx < documents.size() && !addedIndices.contains(idx)) {
                 reranked.add(documents.get(idx));
                 addedIndices.add(idx);
@@ -175,23 +180,74 @@ public class Reranker {
         return documents;
     }
 
-    private List<Integer> parseRanking(String response) {
+    /**
+     * 从 LLM 输出中解析 JSON 格式的 rank 数组。
+     * 支持 {"rank": [...]}、纯数组、以及从废话中提取 JSON。
+     * 解析失败返回空列表。
+     */
+    private List<Integer> parseRankingJson(String response, int docCount) {
         List<Integer> ranks = new ArrayList<>();
+        if (response == null || response.trim().isEmpty()) {
+            return ranks;
+        }
+        String text = response.trim();
 
+        // 1. 尝试直接解析
         try {
-            String cleanResponse = response.replaceAll("[^0-9,]", "");
-            String[] parts = cleanResponse.split(",");
+            JsonNode root = objectMapper.readTree(text);
+            List<Integer> result = extractRankArray(root, docCount);
+            if (result != null) return result;
+        } catch (Exception ignored) {}
 
-            for (String part : parts) {
-                part = part.trim();
-                if (!part.isEmpty()) {
-                    ranks.add(Integer.parseInt(part));
+        // 2. 找第一个 { ... }
+        int firstBrace = text.indexOf('{');
+        int lastBrace = text.lastIndexOf('}');
+        if (firstBrace >= 0 && lastBrace > firstBrace) {
+            try {
+                JsonNode root = objectMapper.readTree(text.substring(firstBrace, lastBrace + 1));
+                List<Integer> result = extractRankArray(root, docCount);
+                if (result != null) return result;
+            } catch (Exception ignored) {}
+        }
+
+        // 3. 找第一个 [ ... ]
+        int firstBracket = text.indexOf('[');
+        int lastBracket = text.lastIndexOf(']');
+        if (firstBracket >= 0 && lastBracket > firstBracket) {
+            try {
+                JsonNode root = objectMapper.readTree(text.substring(firstBracket, lastBracket + 1));
+                if (root.isArray()) {
+                    for (JsonNode item : root) {
+                        if (item.isInt() || item.canConvertToInt()) {
+                            int v = item.asInt();
+                            if (v >= 0 && v < docCount) ranks.add(v);
+                        }
+                    }
+                    if (!ranks.isEmpty()) return ranks;
                 }
-            }
-        } catch (NumberFormatException e) {
-            log.warn("Failed to parse ranking response: {}", response);
+            } catch (Exception ignored) {}
         }
 
         return ranks;
+    }
+
+    private List<Integer> extractRankArray(JsonNode node, int docCount) {
+        if (node == null) return null;
+        JsonNode rankNode = node.has("rank") ? node.get("rank") : null;
+        if (rankNode == null || !rankNode.isArray()) {
+            if (node.isArray()) {
+                rankNode = node;
+            } else {
+                return null;
+            }
+        }
+        List<Integer> ranks = new ArrayList<>();
+        for (JsonNode item : rankNode) {
+            if (item.isInt() || item.canConvertToInt()) {
+                int v = item.asInt();
+                if (v >= 0 && v < docCount) ranks.add(v);
+            }
+        }
+        return ranks.isEmpty() ? null : ranks;
     }
 }
