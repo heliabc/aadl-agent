@@ -1,5 +1,6 @@
 package com.example.aadlagent.memory;
 
+import com.example.aadlagent.config.QdrantConfig;
 import com.example.aadlagent.rag.EmbeddingService;
 import com.example.aadlagent.rag.QdrantVectorStore;
 import com.example.aadlagent.rag.RagService;
@@ -48,13 +49,16 @@ public class LongTermMemoryService {
     private final EmbeddingService embeddingService;
     private final QdrantVectorStore qdrantVectorStore;
     private final RagService ragService;
+    private final QdrantConfig qdrantConfig;
 
     public LongTermMemoryService(EmbeddingService embeddingService,
                                  QdrantVectorStore qdrantVectorStore,
-                                 RagService ragService) {
+                                 RagService ragService,
+                                 QdrantConfig qdrantConfig) {
         this.embeddingService = embeddingService;
         this.qdrantVectorStore = qdrantVectorStore;
         this.ragService = ragService;
+        this.qdrantConfig = qdrantConfig;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
     }

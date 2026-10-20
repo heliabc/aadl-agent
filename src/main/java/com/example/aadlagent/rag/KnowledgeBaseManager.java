@@ -267,7 +267,7 @@ public class KnowledgeBaseManager {
                     long existingCount = qdrantVectorStore.count(agentType);
                     if (existingCount > 0) {
                         log.info("syncOnStartup=false and collection '{}' has {} points, skipping startup sync (reuse existing data)", agentType, existingCount);
-                        return knowledgeBase;
+                        return;
                     }
                     log.info("syncOnStartup=false but collection '{}' is empty, performing initial load", agentType);
                 }
