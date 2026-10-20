@@ -18,7 +18,7 @@ file:
 
 ollama:
   base-url: http://localhost:11434
-  chat-model: deepseek-coder-v2
+  chat-model: deepseek-coder-v2:latest
   embedding-model: qwen3-embedding:latest
   timeout: 900000
 
@@ -92,6 +92,6 @@ agent:
     max-tokens: 32768
   rewrite:
     model-type: OLLAMA
-    ollama-model-name: "deepseek-coder-v2"
+    ollama-model-name: "deepseek-coder-v2:latest"
     temperature: 0.3
     max-tokens: 2048
