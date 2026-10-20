@@ -124,7 +124,7 @@ public class RagService {
 
             for (int i = 0; i < docs.size(); i++) {
                 Document doc = docs.get(i);
-                String scoreStr = doc.getScore() != null ? String.format("%.4f", doc.getScore()) : "N/A";
+                String scoreStr = String.format("%.4f", doc.getScore());
 
                 sb.append("────────────────────────────────────────────────────────────\n");
                 sb.append(String.format("[%d/%d] 标题: %s\n", i + 1, docs.size(),
