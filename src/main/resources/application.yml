@@ -51,6 +51,8 @@ gemini:
   timeout: 600000
 
 rag:
+  # RAG 总开关：true=启用检索增强，false=完全跳过 RAG，模型直接生成
+  enabled: true
   top-k: 5
   rerank-top-k: 3
   rrf-k: 60
