@@ -6,7 +6,7 @@
     {
       "id": "AADL_CORE_001_IDENTIFIER",
       "syntax_name": "identifier",
-      "category": "Chapter 4.1 - Lexical Elements / Identifiers",
+      "category": "Chapter 15.3 - Lexical Elements / Identifiers",
       "applicable_constructs": [
         "all constructs"
       ],
@@ -78,7 +78,7 @@
     {
       "id": "AADL_CORE_002_NUMERIC_LITERAL",
       "syntax_name": "numeric_literal",
-      "category": "Chapter 4.2 - Lexical Elements / Numeric Literals",
+      "category": "Chapter 15.4 - Lexical Elements / Numeric Literals",
       "applicable_constructs": [
         "all constructs"
       ],
@@ -157,7 +157,7 @@
     {
       "id": "AADL_CORE_003_STRING_LITERAL",
       "syntax_name": "string_literal",
-      "category": "Chapter 4.3 - Lexical Elements / String Literals",
+      "category": "Chapter 15.5 - Lexical Elements / String Literals",
       "applicable_constructs": [
         "all constructs"
       ],
@@ -231,7 +231,7 @@
     {
       "id": "AADL_CORE_004_COMMENT",
       "syntax_name": "comment",
-      "category": "Chapter 4.4 - Lexical Elements / Comments",
+      "category": "Chapter 15.6 - Lexical Elements / Comments",
       "applicable_constructs": [
         "all constructs"
       ],
@@ -300,7 +300,7 @@
     {
       "id": "AADL_CORE_005_KEYWORDS",
       "syntax_name": "keywords",
-      "category": "Chapter 4.5 - Lexical Elements / Keywords",
+      "category": "Chapter 15.7 - Lexical Elements / Keywords (Reserved Words)",
       "applicable_constructs": [
         "all constructs"
       ],
@@ -449,7 +449,7 @@
     {
       "id": "AADL_CORE_006_DELIMITERS_AND_OPERATORS",
       "syntax_name": "delimiters_and_operators",
-      "category": "Chapter 4.6 - Lexical Elements / Delimiters and Operators",
+      "category": "Chapter 15.2 - Lexical Elements / Delimiters and Operators",
       "applicable_constructs": [
         "all constructs"
       ],
@@ -545,7 +545,7 @@
     {
       "id": "AADL_CORE_007_UNIT_IDENTIFIER",
       "syntax_name": "unit_identifier",
-      "category": "Chapter 4.7 - Lexical Elements / Unit Identifiers",
+      "category": "Chapter 15.3 - Lexical Elements / Unit Identifiers",
       "applicable_constructs": [
         "all constructs"
       ],
@@ -618,7 +618,7 @@
     {
       "id": "AADL_CORE_008_PACKAGE",
       "syntax_name": "package",
-      "category": "Chapter 5.1 - Package Structure",
+      "category": "Chapter 4.2 - Packages / Package Declaration",
       "applicable_constructs": [
         "all constructs"
       ],
@@ -704,7 +704,7 @@
     {
       "id": "AADL_CORE_009_WITH_CLAUSE",
       "syntax_name": "with_clause",
-      "category": "Chapter 5.2 - Package Structure / With Clause",
+      "category": "Chapter 4.2 - Packages / With Clause",
       "applicable_constructs": [
         "all constructs"
       ],
@@ -781,7 +781,7 @@
     {
       "id": "AADL_CORE_010_PROPERTY_SET",
       "syntax_name": "property_set",
-      "category": "Chapter 12.1 - Property Sets",
+      "category": "Chapter 11.1 - Property Sets",
       "applicable_constructs": [
         "all constructs"
       ],
@@ -862,7 +862,7 @@
     {
       "id": "AADL_CORE_011_PROPERTY_DEFINITION",
       "syntax_name": "property_definition",
-      "category": "Chapter 12.3 - Property Definitions",
+      "category": "Chapter 11.1.2 - Property Definitions",
       "applicable_constructs": [
         "all constructs"
       ],
@@ -946,7 +946,7 @@
     {
       "id": "AADL_CORE_012_PROPERTY_TYPE",
       "syntax_name": "property_type",
-      "category": "Chapter 12.2 - Property Types",
+      "category": "Chapter 11.1.1 - Property Types",
       "applicable_constructs": [
         "all constructs"
       ],
@@ -1039,7 +1039,7 @@
     {
       "id": "AADL_CORE_013_PROPERTY_ASSOCIATION",
       "syntax_name": "property_association",
-      "category": "Chapter 12.4 - Property Associations",
+      "category": "Chapter 11.3 - Property Associations",
       "applicable_constructs": [
         "all constructs"
       ],
@@ -1123,7 +1123,7 @@
     {
       "id": "AADL_CORE_014_COMPONENT_TYPE",
       "syntax_name": "component_type",
-      "category": "Chapter 6.1 - Component Types",
+      "category": "Chapter 4.3 - Component Types",
       "applicable_constructs": [
         "all component categories"
       ],
@@ -1208,7 +1208,7 @@
     {
       "id": "AADL_CORE_015_THREAD_COMPONENT_TYPE",
       "syntax_name": "thread_component_type",
-      "category": "Chapter 6.2 - Thread Components / Component Type",
+      "category": "Chapter 5.2 - Thread Components / Component Type",
       "applicable_constructs": [
         "thread"
       ],
@@ -1293,7 +1293,7 @@
     {
       "id": "AADL_CORE_016_DATA_COMPONENT_TYPE",
       "syntax_name": "data_component_type",
-      "category": "Chapter 6.3 - Data Components / Component Type",
+      "category": "Chapter 5.3 - Data Components / Component Type",
       "applicable_constructs": [
         "data",
         "all"
@@ -1379,7 +1379,7 @@
     {
       "id": "AADL_CORE_017_SUBPROGRAM_COMPONENT_TYPE",
       "syntax_name": "subprogram_component_type",
-      "category": "Chapter 6.4 - Subprogram Components / Component Type",
+      "category": "Chapter 5.4 - Subprogram Components / Component Type",
       "applicable_constructs": [
         "subprogram",
         "thread",
@@ -1466,7 +1466,7 @@
     {
       "id": "AADL_CORE_018_SYSTEM_COMPONENT_TYPE",
       "syntax_name": "system_component_type",
-      "category": "Chapter 6.5 - System Components / Component Type",
+      "category": "Chapter 5.5 - System Components / Component Type",
       "applicable_constructs": [
         "system"
       ],
@@ -1551,7 +1551,7 @@
     {
       "id": "AADL_CORE_019_PROCESS_COMPONENT_TYPE",
       "syntax_name": "process_component_type",
-      "category": "Chapter 6.6 - Process Components / Component Type",
+      "category": "Chapter 5.6 - Process Components / Component Type",
       "applicable_constructs": [
         "process",
         "system"
@@ -1637,7 +1637,7 @@
     {
       "id": "AADL_CORE_020_PROCESSOR_COMPONENT_TYPE",
       "syntax_name": "processor_component_type",
-      "category": "Chapter 7.2 - Processor Components / Component Type",
+      "category": "Chapter 6.2 - Processor Components / Component Type",
       "applicable_constructs": [
         "processor",
         "system"
@@ -1723,7 +1723,7 @@
     {
       "id": "AADL_CORE_021_MEMORY_COMPONENT_TYPE",
       "syntax_name": "memory_component_type",
-      "category": "Chapter 7.3 - Memory Components / Component Type",
+      "category": "Chapter 6.3 - Memory Components / Component Type",
       "applicable_constructs": [
         "memory",
         "system"
@@ -1809,7 +1809,7 @@
     {
       "id": "AADL_CORE_022_BUS_COMPONENT_TYPE",
       "syntax_name": "bus_component_type",
-      "category": "Chapter 7.4 - Bus Components / Component Type",
+      "category": "Chapter 6.4 - Bus Components / Component Type",
       "applicable_constructs": [
         "bus",
         "system"
@@ -1895,7 +1895,7 @@
     {
       "id": "AADL_CORE_023_DEVICE_COMPONENT_TYPE",
       "syntax_name": "device_component_type",
-      "category": "Chapter 7.5 - Device Components / Component Type",
+      "category": "Chapter 6.5 - Device Components / Component Type",
       "applicable_constructs": [
         "device",
         "system"
@@ -1981,7 +1981,7 @@
     {
       "id": "AADL_CORE_024_VIRTUAL_PROCESSOR_COMPONENT_TYPE",
       "syntax_name": "virtual_processor_component_type",
-      "category": "Chapter 7.6 - Virtual Processor Components / Component Type",
+      "category": "Chapter 6.6 - Virtual Processor Components / Component Type",
       "applicable_constructs": [
         "virtual processor",
         "processor"
@@ -2068,7 +2068,7 @@
     {
       "id": "AADL_CORE_025_VIRTUAL_BUS_COMPONENT_TYPE",
       "syntax_name": "virtual_bus_component_type",
-      "category": "Chapter 7.7 - Virtual Bus Components / Component Type",
+      "category": "Chapter 6.7 - Virtual Bus Components / Component Type",
       "applicable_constructs": [
         "virtual bus",
         "bus"
@@ -2155,7 +2155,7 @@
     {
       "id": "AADL_CORE_026_ABSTRACT_COMPONENT_TYPE",
       "syntax_name": "abstract_component_type",
-      "category": "Chapter 6.7 - Abstract Components / Component Type",
+      "category": "Chapter 5.7 - Abstract Components / Component Type",
       "applicable_constructs": [
         "abstract",
         "all"
@@ -2816,7 +2816,7 @@
     {
       "id": "AADL_CORE_034_COMPONENT_IMPLEMENTATION",
       "syntax_name": "component_implementation",
-      "category": "Chapter 6.1 - Component Implementations",
+      "category": "Chapter 4.4 - Component Implementations",
       "applicable_constructs": [
         "all component categories"
       ],
@@ -2908,7 +2908,7 @@
     {
       "id": "AADL_CORE_035_SUBCOMPONENT_CLAUSE",
       "syntax_name": "subcomponent_clause",
-      "category": "Chapter 9.1 - Subcomponents",
+      "category": "Chapter 7.1 - Subcomponents",
       "applicable_constructs": [
         "component implementation (composite categories)"
       ],
@@ -2988,7 +2988,7 @@
     {
       "id": "AADL_CORE_036_CONNECTION_CLAUSE",
       "syntax_name": "connection_clause",
-      "category": "Chapter 10.1 - Connections",
+      "category": "Chapter 9.1 - Feature Connections",
       "applicable_constructs": [
         "component implementation (composite categories)"
       ],
@@ -3069,7 +3069,7 @@
     {
       "id": "AADL_CORE_037_PORT_CONNECTION",
       "syntax_name": "port_connection",
-      "category": "Chapter 10.2 - Connections / Port Connections",
+      "category": "Chapter 9.2 - Port Connections",
       "applicable_constructs": [
         "system",
         "process",
@@ -3149,7 +3149,7 @@
     {
       "id": "AADL_CORE_038_ACCESS_CONNECTION",
       "syntax_name": "access_connection",
-      "category": "Chapter 10.3 - Connections / Access Connections",
+      "category": "Chapter 9.4 - Access Connections",
       "applicable_constructs": [
         "system",
         "process",
@@ -3227,7 +3227,7 @@
     {
       "id": "AADL_CORE_039_FEATURE_GROUP_CONNECTION",
       "syntax_name": "feature_group_connection",
-      "category": "Chapter 10.4 - Connections / Feature Group Connections",
+      "category": "Chapter 9.5 - Feature Group Connections",
       "applicable_constructs": [
         "system",
         "process",
@@ -3304,7 +3304,7 @@
     {
       "id": "AADL_CORE_040_PARAMETER_CONNECTION",
       "syntax_name": "parameter_connection",
-      "category": "Chapter 10.5 - Connections / Parameter Connections",
+      "category": "Chapter 9.3 - Parameter Connections",
       "applicable_constructs": [
         "thread implementation",
         "subprogram implementation"
@@ -3382,7 +3382,7 @@
     {
       "id": "AADL_CORE_041_FLOW_SPECIFICATION",
       "syntax_name": "flow_specification",
-      "category": "Chapter 11.1 - Flows / Flow Specification",
+      "category": "Chapter 10.1 - Flow Specifications",
       "applicable_constructs": [
         "all component types"
       ],
@@ -3467,7 +3467,7 @@
     {
       "id": "AADL_CORE_042_FLOW_IMPLEMENTATION",
       "syntax_name": "flow_implementation",
-      "category": "Chapter 11.2 - Flows / Flow Implementation",
+      "category": "Chapter 10.2 - Flow Implementations",
       "applicable_constructs": [
         "all component implementations"
       ],
@@ -3548,7 +3548,7 @@
     {
       "id": "AADL_CORE_043_END_TO_END_FLOW",
       "syntax_name": "end_to_end_flow",
-      "category": "Chapter 11.3 - Flows / End-to-End Flows",
+      "category": "Chapter 10.3 - End-To-End Flows",
       "applicable_constructs": [
         "system implementation"
       ],
@@ -3626,7 +3626,7 @@
     {
       "id": "AADL_CORE_044_MODE_DECLARATION",
       "syntax_name": "mode_declaration",
-      "category": "Chapter 13.1 - Modes / Mode Declaration",
+      "category": "Chapter 12.1 - Modes / Mode Declaration",
       "applicable_constructs": [
         "all component types"
       ],
@@ -3704,7 +3704,7 @@
     {
       "id": "AADL_CORE_045_MODE_TRANSITION",
       "syntax_name": "mode_transition",
-      "category": "Chapter 13.2 - Modes / Mode Transitions",
+      "category": "Chapter 12.2 - Mode Transitions",
       "applicable_constructs": [
         "thread",
         "system",
@@ -3788,7 +3788,7 @@
     {
       "id": "AADL_CORE_046_SUBPROGRAM_CALL_SEQUENCE",
       "syntax_name": "subprogram_call_sequence",
-      "category": "Chapter 14.1 - Subprogram Calls",
+      "category": "Chapter 13.4 - Subprogram Calls",
       "applicable_constructs": [
         "thread implementation",
         "subprogram implementation"
@@ -3865,7 +3865,7 @@
     {
       "id": "AADL_CORE_047_SUBPROGRAM_CALL",
       "syntax_name": "subprogram_call",
-      "category": "Chapter 14.2 - Subprogram Calls",
+      "category": "Chapter 13.4 - Subprogram Calls / Subprogram Call",
       "applicable_constructs": [
         "call sequence"
       ],
@@ -3944,7 +3944,7 @@
     {
       "id": "AADL_CORE_048_EXPRESSION",
       "syntax_name": "expression",
-      "category": "Annex C.1 - Expression Language",
+      "category": "Annex C.2 - Expression Language",
       "applicable_constructs": [
         "property_association",
         "behavior annex"
@@ -4124,7 +4124,7 @@
     {
       "id": "AADL_CORE_050_COMPONENT_CATEGORY",
       "syntax_name": "component_category",
-      "category": "Chapter 4.7 - Component Categories",
+      "category": "Chapter 4.3 - Component Types / Component Categories",
       "applicable_constructs": [
         "all component declarations"
       ],
@@ -4566,7 +4566,7 @@
     {
       "id": "AADL_CORE_055_PROTOTYPE",
       "syntax_name": "prototype",
-      "category": "Chapter 9.2 - Prototypes",
+      "category": "Chapter 7.2 - Prototypes",
       "applicable_constructs": [
         "component types, component implementations, feature group types"
       ],
@@ -4644,7 +4644,7 @@
     {
       "id": "AADL_CORE_056_COMPONENT_PROTOTYPE",
       "syntax_name": "component_prototype",
-      "category": "Chapter 9.3 - Component Prototype",
+      "category": "Chapter 7.3 - Component Prototypes",
       "applicable_constructs": [
         "component types, component implementations"
       ],
@@ -4731,7 +4731,7 @@
     {
       "id": "AADL_CORE_057_FEATURE_PROTOTYPE",
       "syntax_name": "feature_prototype",
-      "category": "Chapter 9.4 - Feature Prototype",
+      "category": "Chapter 7.4 - Feature Prototypes",
       "applicable_constructs": [
         "component types, feature group types"
       ],
@@ -4968,7 +4968,7 @@
     {
       "id": "AADL_CORE_060_MODE",
       "syntax_name": "mode",
-      "category": "Chapter 13.3 - Mode Declaration",
+      "category": "Chapter 12.1 - Modes / Mode Declaration",
       "applicable_constructs": [
         "all component types"
       ],
@@ -5044,7 +5044,7 @@
     {
       "id": "AADL_CORE_061_MODES_SUBCLAUSE",
       "syntax_name": "modes_subclause",
-      "category": "Chapter 13.4 - Modes Subclause",
+      "category": "Chapter 12.1 - Modes / Modes Subclause",
       "applicable_constructs": [
         "component type, component implementation"
       ],
@@ -5124,7 +5124,7 @@
     {
       "id": "AADL_CORE_062_MODE_TRANSITION_TRIGGER",
       "syntax_name": "mode_transition_trigger",
-      "category": "Chapter 13.5 - Mode Transition Trigger",
+      "category": "Chapter 12.2 - Mode Transitions / Transition Trigger",
       "applicable_constructs": [
         "mode transitions"
       ],
@@ -5361,7 +5361,7 @@
     {
       "id": "AADL_CORE_065_ENUMERATION_TYPE",
       "syntax_name": "enumeration_type",
-      "category": "Chapter 12.2 - Property Types / Enumeration Type",
+      "category": "Chapter 11.1.1 - Property Types / Enumeration Type",
       "applicable_constructs": [
         "property set"
       ],
@@ -5437,7 +5437,7 @@
     {
       "id": "AADL_CORE_066_RANGE_TYPE",
       "syntax_name": "range_type",
-      "category": "Chapter 12.2 - Property Types / Range Type",
+      "category": "Chapter 11.1.1 - Property Types / Range Type",
       "applicable_constructs": [
         "property set"
       ],
@@ -5513,7 +5513,7 @@
     {
       "id": "AADL_CORE_067_UNITS_TYPE",
       "syntax_name": "units_type",
-      "category": "Chapter 12.2 - Property Types / Units Type",
+      "category": "Chapter 11.1.1 - Property Types / Units Type",
       "applicable_constructs": [
         "property set"
       ],
@@ -5586,7 +5586,7 @@
     {
       "id": "AADL_CORE_068_RECORD_TYPE",
       "syntax_name": "record_type",
-      "category": "Chapter 12.2 - Property Types / Record Type",
+      "category": "Chapter 11.1.1 - Property Types / Record Type",
       "applicable_constructs": [
         "property set"
       ],
@@ -5662,7 +5662,7 @@
     {
       "id": "AADL_CORE_069_CLASSIFIER_TYPE",
       "syntax_name": "classifier_type",
-      "category": "Chapter 12.2 - Property Types / Classifier Type",
+      "category": "Chapter 11.1.1 - Property Types / Classifier Type",
       "applicable_constructs": [
         "property set"
       ],
@@ -5739,7 +5739,7 @@
     {
       "id": "AADL_CORE_070_REFERENCE_TYPE",
       "syntax_name": "reference_type",
-      "category": "Chapter 12.2 - Property Types / Reference Type",
+      "category": "Chapter 11.1.1 - Property Types / Reference Type",
       "applicable_constructs": [
         "property set"
       ],
@@ -5817,7 +5817,7 @@
     {
       "id": "AADL_CORE_071_CALLED_SUBPROGRAM",
       "syntax_name": "called_subprogram",
-      "category": "Chapter 14.3 - Called Subprogram",
+      "category": "Chapter 13.4 - Subprogram Calls / Called Subprogram",
       "applicable_constructs": [
         "subprogram call"
       ],
@@ -5895,7 +5895,7 @@
     {
       "id": "AADL_CORE_072_SUBCOMPONENT",
       "syntax_name": "subcomponent",
-      "category": "Chapter 9.1 - Subcomponent Declaration",
+      "category": "Chapter 7.1 - Subcomponents / Subcomponent Declaration",
       "applicable_constructs": [
         "component implementation"
       ],
@@ -5977,7 +5977,7 @@
     {
       "id": "AADL_CORE_073_CONNECTION",
       "syntax_name": "connection",
-      "category": "Chapter 10.1 - Connection Declaration",
+      "category": "Chapter 9.1 - Feature Connections",
       "applicable_constructs": [
         "component implementation"
       ],
@@ -6060,7 +6060,7 @@
     {
       "id": "AADL_CORE_074_FEATURE_CONNECTION",
       "syntax_name": "feature_connection",
-      "category": "Chapter 10.6 - Feature Connections",
+      "category": "Chapter 9.1 - Feature Connections",
       "applicable_constructs": [
         "system, process, thread group, device"
       ],
@@ -6309,7 +6309,7 @@
     {
       "id": "AADL_CORE_077_CONTAINED_PROPERTY_ASSOCIATION",
       "syntax_name": "contained_property_association",
-      "category": "Chapter 12.4 - Contained Property Associations",
+      "category": "Chapter 11.3 - Property Associations / Contained",
       "applicable_constructs": [
         "component implementation"
       ],
@@ -6394,7 +6394,7 @@
     {
       "id": "AADL_CORE_078_PROPERTY_TYPE_DECLARATION",
       "syntax_name": "property_type_declaration",
-      "category": "Chapter 12.2 - Property Type Declarations",
+      "category": "Chapter 11.1.1 - Property Types",
       "applicable_constructs": [
         "property set"
       ],
@@ -6471,7 +6471,7 @@
     {
       "id": "AADL_CORE_079_PROPERTY_DEFINITION_DECLARATION",
       "syntax_name": "property_definition_declaration",
-      "category": "Chapter 12.3 - Property Definition Declarations",
+      "category": "Chapter 11.1.2 - Property Definitions",
       "applicable_constructs": [
         "property set"
       ],
@@ -6558,7 +6558,7 @@
     {
       "id": "AADL_CORE_080_DATASET_ANNEX_LIBRARY",
       "syntax_name": "dataset_annex_library",
-      "category": "Chapter 4.10 - Dataset Annex Library",
+      "category": "Annex F.1 - Data Sets / Dataset Annex Library",
       "applicable_constructs": [
         "package"
       ],
@@ -6635,7 +6635,7 @@
     {
       "id": "AADL_CORE_081_DATASET_ANNEX_SUBCLAUSE",
       "syntax_name": "dataset_annex_subclause",
-      "category": "Chapter 4.11 - Dataset Annex Subclause",
+      "category": "Annex F.1 - Data Sets / Dataset Annex Subclause",
       "applicable_constructs": [
         "component implementation"
       ],

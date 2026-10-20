@@ -479,7 +479,73 @@ public class QdrantVectorStore {
             log.debug("Qdrant not available, returning empty results");
             return new ArrayList<>();
         }
-        return new ArrayList<>();
+        if (query == null || query.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        try {
+            // 获取集合中所有文档（81条量级，全量扫描没问题）
+            List<Document> allDocs = getAllDocuments(collectionName);
+            if (allDocs.isEmpty()) {
+                log.warn("Keyword search: no documents found in collection {}", collectionName);
+                return new ArrayList<>();
+            }
+
+            String[] keywords = query.toLowerCase().split("\\s+");
+            List<Map.Entry<Document, Double>> scored = new ArrayList<>();
+
+            for (Document doc : allDocs) {
+                // 在 title + tags + content 中统计关键词命中数
+                String searchText = (doc.getTitle() != null ? doc.getTitle() : "")
+                        + " " + (doc.getTags() != null ? String.join(" ", doc.getTags()) : "")
+                        + " " + (doc.getContent() != null ? doc.getContent() : "");
+                String lower = searchText.toLowerCase();
+
+                int matchCount = 0;
+                for (String kw : keywords) {
+                    if (kw.isEmpty()) continue;
+                    if (lower.contains(kw)) {
+                        matchCount++;
+                    }
+                }
+
+                if (matchCount > 0) {
+                    double score = (double) matchCount / keywords.length;
+                    // title 命中加权：术语精确匹配 title 的文档更相关
+                    if (doc.getTitle() != null) {
+                        String titleLower = doc.getTitle().toLowerCase();
+                        for (String kw : keywords) {
+                            if (titleLower.equals(kw) || titleLower.contains(kw + "_") || titleLower.contains("_" + kw)) {
+                                score += 0.3;  // title 命中加 0.3 分
+                                break;
+                            }
+                        }
+                    }
+                    scored.add(new AbstractMap.SimpleEntry<>(doc, score));
+                }
+            }
+
+            // 按分数降序排列
+            scored.sort((a, b) -> Double.compare(b.getValue(), a.getValue()));
+
+            int limit = Math.min(topK, scored.size());
+            List<Document> results = new ArrayList<>();
+            for (int i = 0; i < limit; i++) {
+                Document doc = scored.get(i).getKey();
+                doc.setScore(scored.get(i).getValue());
+                results.add(doc);
+            }
+
+            log.info("Qdrant keyword search: {} matches from {} docs (query: {})",
+                    results.size(), allDocs.size(),
+                    query.length() > 60 ? query.substring(0, 60) + "..." : query);
+
+            return results;
+
+        } catch (Exception e) {
+            log.error("Qdrant keyword search failed for {}: {}", collectionName, e.getMessage());
+            return new ArrayList<>();
+        }
     }
 
     public long count(String collectionName) {
