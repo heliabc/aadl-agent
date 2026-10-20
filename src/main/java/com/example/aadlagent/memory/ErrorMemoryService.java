@@ -1,7 +1,10 @@
 package com.example.aadlagent.memory;
 
 import com.example.aadlagent.rag.KnowledgeBaseManager;
+import com.example.aadlagent.rag.RagService;
+import com.example.aadlagent.rag.model.Document;
 import com.example.aadlagent.rag.model.ErrorCorrection;
+import com.example.aadlagent.rag.model.SearchResult;
 import com.example.aadlagent.util.AadlReferenceValidator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,6 +28,7 @@ import java.util.stream.Collectors;
 public class ErrorMemoryService {
 
     private final KnowledgeBaseManager knowledgeBaseManager;
+    private final RagService ragService;
 
     /** 知识库类型（独立的错误记忆库，对应 knowledge/error_memory.json） */
     private static final String KB_TYPE = "error_memory";
@@ -32,8 +36,9 @@ public class ErrorMemoryService {
     /** 内存中的错误指纹缓存（加速去重检查） */
     private final Set<String> fingerprintCache = new HashSet<>();
 
-    public ErrorMemoryService(KnowledgeBaseManager knowledgeBaseManager) {
+    public ErrorMemoryService(KnowledgeBaseManager knowledgeBaseManager, RagService ragService) {
         this.knowledgeBaseManager = knowledgeBaseManager;
+        this.ragService = ragService;
         // 初始化时加载已有指纹到缓存
         loadFingerprintCache();
     }
@@ -388,6 +393,9 @@ public class ErrorMemoryService {
     /**
      * 根据错误信息检索相似的历史错误修正案例
      *
+     * 检索路径与知识库统一：优先走 RAG（Qdrant 向量召回 + 关键词 + RRF 融合 + 重排），
+     * RAG 不可用或未召回时降级为关键词匹配。
+     *
      * @param errorText   当前的错误信息（可以是多条错误）
      * @param maxResults  最多返回多少个
      * @return 相似错误修正列表（按相关度降序）
@@ -397,6 +405,42 @@ public class ErrorMemoryService {
             return Collections.emptyList();
         }
 
+        // 优先走 RAG：检索 error_memory 集合，与知识库其它类型使用同一条召回路径
+        try {
+            SearchResult result = ragService.search(errorText, KB_TYPE);
+            List<Document> docs = result != null ? result.getDocuments() : null;
+            if (docs != null && !docs.isEmpty()) {
+                List<ErrorCorrection> fixes = new ArrayList<>();
+                for (Document doc : docs) {
+                    if (!"error_correction".equals(doc.getCategory())) {
+                        continue;
+                    }
+                    // RAG 只负责排序，结构化字段仍从知识库取，避免 payload 反解丢字段
+                    ErrorCorrection ec = knowledgeBaseManager.getErrorCorrection(KB_TYPE, doc.getId());
+                    if (ec != null && !fixes.contains(ec)) {
+                        fixes.add(ec);
+                        if (fixes.size() >= maxResults) {
+                            break;
+                        }
+                    }
+                }
+                if (!fixes.isEmpty()) {
+                    log.debug("RAG retrieved {} similar error fixes from error memory", fixes.size());
+                    return fixes;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("RAG retrieval for error memory failed, falling back to keyword scoring: {}", e.getMessage());
+        }
+
+        // 降级：RAG 不可用（Qdrant/Embedding 异常）时用关键词匹配
+        return keywordRetrieveSimilarFixes(errorText, maxResults);
+    }
+
+    /**
+     * 关键词匹配召回（RAG 降级兜底）
+     */
+    private List<ErrorCorrection> keywordRetrieveSimilarFixes(String errorText, int maxResults) {
         List<ErrorCorrection> all = knowledgeBaseManager.getErrorCorrections(KB_TYPE);
         if (all == null || all.isEmpty()) {
             return Collections.emptyList();

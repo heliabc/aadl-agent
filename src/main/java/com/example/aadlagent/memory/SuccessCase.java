@@ -1,5 +1,6 @@
 package com.example.aadlagent.memory;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -67,7 +68,8 @@ public class SuccessCase {
     /** 更新时间 */
     private LocalDateTime updatedAt;
 
-    /** 向量嵌入（用于相似度检索） */
+    /** 向量嵌入（用于相似度检索）；只存在于内存与 Qdrant，不写入 JSON 文件 */
+    @JsonIgnore
     private float[] embedding;
 
     /** 备注/说明 */

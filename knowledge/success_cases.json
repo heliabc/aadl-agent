@@ -1,0 +1,66 @@
+[
+  {
+    "caseId": "CASE-3f9a2b1c",
+    "title": "设计一个无人机飞行控制系统，包含传感器采集、姿态解算与控制律... (16组件)",
+    "requirementDoc": "设计一个无人机飞行控制系统，包含传感器采集、姿态解算与控制律计算、执行机构驱动三个功能模块。系统需以固定周期运行：传感器采集线程周期 10ms，控制律计算线程周期 20ms，且控制律线程优先级高于采集线程。系统运行于单核飞行控制器处理器上，通过 IMU 惯性测量单元采集姿态数据，通过舵机执行机构输出控制指令。要求满足实时性约束，采用周期性调度策略。",
+    "requirementSummary": "设计一个无人机飞行控制系统，包含传感器采集、姿态解算与控制律计算、执行机构驱动三个功能模块。系统需以固定周期运行：传感器采集线程周期 10ms，控制律计算线程周期 20ms，且控制律线程优先级高于采集线程。系统运行于单核飞行控制器处理器上，通过 IMU 惯性测量单元采集姿态数据，通过舵机执行机构输出控制指令。要求满足实时性约束，采用周期性调度策略。",
+    "aadlCode": "package UAV_FlightControl\npublic\n\n  data AttitudeData\n  end AttitudeData;\n\n  data CommandData\n  end CommandData;\n\n  system FlightControlSystem\n  end FlightControlSystem;\n\n  system implementation FlightControlSystem.Impl\n    subcomponents\n      ControlUnit: process ControlProcess.Impl;\n      IMU: device IMU_Sensor;\n      Servo: device ServoActuator;\n    connections\n      C1: port IMU.SensorData -> ControlUnit.SensorIn;\n      C2: port ControlUnit.ControlOut -> Servo.Command;\n  end FlightControlSystem.Impl;\n\n  process ControlProcess\n  end ControlProcess;\n\n  process implementation ControlProcess.Impl\n    subcomponents\n      SensorAcq: thread SensorAcqThread;\n      ControlLaw: thread ControlLawThread;\n    connections\n      L1: port SensorAcq.Attitude -> ControlLaw.AttitudeIn;\n  end ControlProcess.Impl;\n\n  thread SensorAcqThread\n    properties\n      Dispatch_Protocol => Periodic;\n      Period => 10 ms;\n      Priority => 10;\n  end SensorAcqThread;\n\n  thread ControlLawThread\n    properties\n      Dispatch_Protocol => Periodic;\n      Period => 20 ms;\n      Priority => 20;\n  end ControlLawThread;\n\n  processor FlightController\n  end FlightController;\n\n  device IMU_Sensor\n    features\n      SensorData: out data port AttitudeData;\n  end IMU_Sensor;\n\n  device ServoActuator\n    features\n      Command: in data port CommandData;\n  end ServoActuator;\n\nend UAV_FlightControl;",
+    "aadlCodeLength": 1377,
+    "componentCount": 16,
+    "connectionCount": 2,
+    "domainTags": [
+      "航空航天"
+    ],
+    "techTags": [
+      "实时系统",
+      "多线程"
+    ],
+    "qualityScore": 96,
+    "createdAt": "2026-10-15T11:17:08",
+    "updatedAt": "2026-10-15T11:17:08",
+    "notes": "飞控场景，周期调度与优先级配置经静态检查无错误。"
+  },
+  {
+    "caseId": "CASE-7c41e8d2",
+    "title": "设计一个汽车电子稳定控制系统 ESC。系统包含轮速传感器采集... (18组件)",
+    "requirementDoc": "设计一个汽车电子稳定控制系统 ESC。系统包含轮速传感器采集、车辆状态估计、横摆力矩控制与制动执行四个模块。轮速采集线程周期 5ms，状态估计线程周期 10ms，控制输出线程周期 10ms，其中控制输出线程优先级最高。系统需满足 ASIL-D 功能安全等级要求，采用周期性调度，并具备失效检测与降级处理能力。",
+    "requirementSummary": "设计一个汽车电子稳定控制系统 ESC。系统包含轮速传感器采集、车辆状态估计、横摆力矩控制与制动执行四个模块。轮速采集线程周期 5ms，状态估计线程周期 10ms，控制输出线程周期 10ms，其中控制输出线程优先级最高。系统需满足 ASIL-D 功能安全等级要求，采用周期性调度，并具备失效检测与降级处理能力。",
+    "aadlCode": "package Automotive_ESC\npublic\n\n  data WheelSpeedData\n  end WheelSpeedData;\n\n  data YawMomentCommand\n  end YawMomentCommand;\n\n  system ESCSystem\n  end ESCSystem;\n\n  system implementation ESCSystem.Impl\n    subcomponents\n      ESC_ECU: process ESCControlProcess.Impl;\n      WheelSensor: device WheelSpeedSensor;\n      BrakeActuator: device BrakeActuator;\n    connections\n      C1: port WheelSensor.WheelSpeed -> ESC_ECU.WheelSpeedIn;\n      C2: port ESC_ECU.BrakeCommand -> BrakeActuator.BrakeCmd;\n  end ESCSystem.Impl;\n\n  process ESCControlProcess\n  end ESCControlProcess;\n\n  process implementation ESCControlProcess.Impl\n    subcomponents\n      WheelAcq: thread WheelSpeedAcqThread;\n      StateEst: thread VehicleStateEstThread;\n      YawCtrl: thread YawControlThread;\n    connections\n      L1: port WheelAcq.WheelSpeed -> StateEst.WheelSpeedIn;\n      L2: port StateEst.VehicleState -> YawCtrl.StateIn;\n  end ESCControlProcess.Impl;\n\n  thread WheelSpeedAcqThread\n    properties\n      Dispatch_Protocol => Periodic;\n      Period => 5 ms;\n      Priority => 10;\n  end WheelSpeedAcqThread;\n\n  thread VehicleStateEstThread\n    properties\n      Dispatch_Protocol => Periodic;\n      Period => 10 ms;\n      Priority => 20;\n  end VehicleStateEstThread;\n\n  thread YawControlThread\n    properties\n      Dispatch_Protocol => Periodic;\n      Period => 10 ms;\n      Priority => 30;\n  end YawControlThread;\n\n  processor ESC_Processor\n  end ESC_Processor;\n\n  device WheelSpeedSensor\n    features\n      WheelSpeed: out data port WheelSpeedData;\n  end WheelSpeedSensor;\n\n  device BrakeActuator\n    features\n      BrakeCmd: in data port YawMomentCommand;\n  end BrakeActuator;\n\nend Automotive_ESC;",
+    "aadlCodeLength": 1676,
+    "componentCount": 18,
+    "connectionCount": 2,
+    "domainTags": [
+      "汽车电子"
+    ],
+    "techTags": [
+      "实时系统",
+      "安全关键"
+    ],
+    "qualityScore": 94,
+    "createdAt": "2026-10-15T11:17:08",
+    "updatedAt": "2026-10-15T11:17:08",
+    "notes": "ESC 场景，ASIL-D 安全等级，含三级任务优先级。"
+  },
+  {
+    "caseId": "CASE-a5d0f63e",
+    "title": "设计一个工业机器人关节控制器，包含关节角度采集、轨迹插补、伺... (20组件)",
+    "requirementDoc": "设计一个工业机器人关节控制器，包含关节角度采集、轨迹插补、伺服控制与安全监控四个线程。角度采集线程周期 2ms，轨迹插补线程周期 4ms，伺服控制线程周期 1ms 且优先级最高，安全监控线程周期 10ms。控制器运行于多核工业处理器，通过 EtherCAT 总线与伺服驱动器通信，要求支持分布式部署与实时调度。",
+    "requirementSummary": "设计一个工业机器人关节控制器，包含关节角度采集、轨迹插补、伺服控制与安全监控四个线程。角度采集线程周期 2ms，轨迹插补线程周期 4ms，伺服控制线程周期 1ms 且优先级最高，安全监控线程周期 10ms。控制器运行于多核工业处理器，通过 EtherCAT 总线与伺服驱动器通信，要求支持分布式部署与实时调度。",
+    "aadlCode": "package Industrial_RobotJoint\npublic\n\n  data JointAngleData\n  end JointAngleData;\n\n  data TorqueCommand\n  end TorqueCommand;\n\n  system RobotJointController\n  end RobotJointController;\n\n  system implementation RobotJointController.Impl\n    subcomponents\n      JointCtrl: process JointControlProcess.Impl;\n      Encoder: device JointEncoder;\n      ServoDrive: device ServoDriver;\n    connections\n      C1: port Encoder.Angle -> JointCtrl.AngleIn;\n      C2: port JointCtrl.TorqueCmd -> ServoDrive.TorqueIn;\n  end RobotJointController.Impl;\n\n  process JointControlProcess\n  end JointControlProcess;\n\n  process implementation JointControlProcess.Impl\n    subcomponents\n      AngleAcq: thread JointAngleAcqThread;\n      Interp: thread TrajectoryInterpThread;\n      ServoCtrl: thread ServoControlThread;\n      SafetyMon: thread SafetyMonitorThread;\n    connections\n      L1: port AngleAcq.Angle -> Interp.AngleIn;\n      L2: port Interp.Setpoint -> ServoCtrl.SetpointIn;\n      L3: port ServoCtrl.TorqueCmd -> SafetyMon.TorqueIn;\n  end JointControlProcess.Impl;\n\n  thread JointAngleAcqThread\n    properties\n      Dispatch_Protocol => Periodic;\n      Period => 2 ms;\n      Priority => 20;\n  end JointAngleAcqThread;\n\n  thread TrajectoryInterpThread\n    properties\n      Dispatch_Protocol => Periodic;\n      Period => 4 ms;\n      Priority => 30;\n  end TrajectoryInterpThread;\n\n  thread ServoControlThread\n    properties\n      Dispatch_Protocol => Periodic;\n      Period => 1 ms;\n      Priority => 40;\n  end ServoControlThread;\n\n  thread SafetyMonitorThread\n    properties\n      Dispatch_Protocol => Periodic;\n      Period => 10 ms;\n      Priority => 10;\n  end SafetyMonitorThread;\n\n  processor Industrial_MultiCore\n  end Industrial_MultiCore;\n\n  device JointEncoder\n    features\n      Angle: out data port JointAngleData;\n  end JointEncoder;\n\n  device ServoDriver\n    features\n      TorqueIn: in data port TorqueCommand;\n  end ServoDriver;\n\nend Industrial_RobotJoint;",
+    "aadlCodeLength": 1956,
+    "componentCount": 20,
+    "connectionCount": 2,
+    "domainTags": [
+      "工业控制"
+    ],
+    "techTags": [
+      "实时系统",
+      "多线程",
+      "分布式"
+    ],
+    "qualityScore": 92,
+    "createdAt": "2026-10-15T11:17:08",
+    "updatedAt": "2026-10-15T11:17:08",
+    "notes": "机器人关节控制，多核处理器与 EtherCAT 总线，含安全监控线程。"
+  }
+]

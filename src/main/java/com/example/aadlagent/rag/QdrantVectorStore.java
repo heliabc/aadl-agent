@@ -174,10 +174,15 @@ public class QdrantVectorStore {
                 ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
                 
                 if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                    Map<String, Object> status = (Map<String, Object>) response.getBody().get("status");
-                    if (status != null && "green".equalsIgnoreCase(status.get("ready").toString())) {
-                        log.info("Collection '{}' is ready", collectionName);
-                        return;
+                    // Qdrant 返回结构：{ result: { status: "green", ... } }
+                    // status 是字符串（"green"/"yellow"/"red"），不是对象
+                    Map<String, Object> result = (Map<String, Object>) response.getBody().get("result");
+                    if (result != null) {
+                        Object status = result.get("status");
+                        if (status != null && "green".equalsIgnoreCase(status.toString())) {
+                            log.info("Collection '{}' is ready", collectionName);
+                            return;
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -276,6 +281,7 @@ public class QdrantVectorStore {
         
         Map<String, Object> payload = new HashMap<>();
         payload.put("text", document.getContent() != null ? document.getContent() : "");
+        payload.put("doc_id", document.getId() != null ? document.getId() : "");
         payload.put("title", document.getTitle() != null ? document.getTitle() : "");
         payload.put("source", document.getSource() != null ? document.getSource() : "");
         payload.put("category", document.getCategory() != null ? document.getCategory() : "");
@@ -315,6 +321,46 @@ public class QdrantVectorStore {
             }
         } catch (Exception e) {
             log.error("Failed to delete document from {}: {}", collectionName, e.getMessage());
+        }
+    }
+
+    /**
+     * 批量删除点。用于孤儿点清理：Qdrant 中存在但 JSON 中已不存在的文档。
+     *
+     * @param collectionName 集合名
+     * @param documentIds    原始文档 id 列表（非 UUID 会自动哈希）
+     */
+    public void deleteBatch(String collectionName, List<String> documentIds) {
+        if (!available || documentIds == null || documentIds.isEmpty()) {
+            return;
+        }
+
+        try {
+            String url = getBaseUrl() + "/collections/" + collectionName + "/points/delete";
+
+            List<String> pointIds = new ArrayList<>(documentIds.size());
+            for (String docId : documentIds) {
+                try {
+                    UUID.fromString(docId);
+                    pointIds.add(docId);
+                } catch (IllegalArgumentException e) {
+                    pointIds.add(UUID.nameUUIDFromBytes(docId.getBytes()).toString());
+                }
+            }
+
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("points", pointIds);
+
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, createHeaders());
+            ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                log.info("Batch deleted {} documents from {}", documentIds.size(), collectionName);
+            } else {
+                log.error("Failed to batch delete from {}: {}", collectionName, response.getStatusCode());
+            }
+        } catch (Exception e) {
+            log.error("Failed to batch delete from {}: {}", collectionName, e.getMessage());
         }
     }
 
@@ -395,7 +441,13 @@ public class QdrantVectorStore {
             }
             
             Document document = new Document();
-            document.setId(id);
+            // 非 UUID 的文档 id 在写入 Qdrant 时会被哈希成点 id，这里从 payload 还原原始 id
+            Object docId = payload.get("doc_id");
+            if (docId != null && !docId.toString().isEmpty()) {
+                document.setId(docId.toString());
+            } else {
+                document.setId(id);
+            }
             document.setContent(content);
             document.setScore(score != null ? score.floatValue() : 0.0f);
             
@@ -443,12 +495,9 @@ public class QdrantVectorStore {
             
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 Map<String, Object> result = (Map<String, Object>) response.getBody().get("result");
-                if (result != null && result.get("points_count") != null) {
-                    return ((Number) result.get("points_count")).longValue();
-                }
-                // 兼容旧格式
-                if (response.getBody().get("count") != null) {
-                    return ((Number) response.getBody().get("count")).longValue();
+                // Qdrant count 接口返回：{ result: { count: N } }
+                if (result != null && result.get("count") != null) {
+                    return ((Number) result.get("count")).longValue();
                 }
             }
         } catch (Exception e) {
@@ -457,6 +506,10 @@ public class QdrantVectorStore {
         return 0;
     }
 
+    /**
+     * 获取集合中的所有文档（带翻页的 scroll）。
+     * 用于孤儿点清理：对比 Qdrant 与 JSON 的差异。
+     */
     public List<Document> getAllDocuments(String collectionName) {
         if (!available) {
             return new ArrayList<>();
@@ -466,33 +519,46 @@ public class QdrantVectorStore {
             ensureCollectionExists(collectionName);
             
             String url = getBaseUrl() + "/collections/" + collectionName + "/points/scroll";
-            
-            Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("limit", 100);
-            requestBody.put("with_payload", true);
-            
-            HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, createHeaders());
-            ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
-            
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                List<Map<String, Object>> resultList = (List<Map<String, Object>>) response.getBody().get("result");
-                
-                if (resultList == null || resultList.isEmpty()) {
-                    return new ArrayList<>();
+            List<Document> allDocs = new ArrayList<>();
+            String nextOffset = null;
+            int pageSize = 100;
+
+            do {
+                Map<String, Object> requestBody = new HashMap<>();
+                requestBody.put("limit", pageSize);
+                requestBody.put("with_payload", true);
+                if (nextOffset != null) {
+                    requestBody.put("offset", nextOffset);
                 }
-                
-                List<Document> documents = new ArrayList<>();
-                for (Map<String, Object> point : resultList) {
-                    String id = point.get("id").toString();
-                    Map<String, Object> payload = (Map<String, Object>) point.get("payload");
-                    
-                    Document doc = parsePayloadToDocument(id, null, payload);
-                    if (doc != null) {
-                        documents.add(doc);
+
+                HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, createHeaders());
+                ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
+
+                if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                    break;
+                }
+
+                Map<String, Object> body = response.getBody();
+                List<Map<String, Object>> resultList = (List<Map<String, Object>>) body.get("result");
+
+                if (resultList != null) {
+                    for (Map<String, Object> point : resultList) {
+                        String id = point.get("id").toString();
+                        Map<String, Object> payload = (Map<String, Object>) point.get("payload");
+                        Document doc = parsePayloadToDocument(id, null, payload);
+                        if (doc != null) {
+                            allDocs.add(doc);
+                        }
                     }
                 }
-                return documents;
-            }
+
+                // 翻页：next_page_offset 为 null 表示结束
+                Object npo = body.get("next_page_offset");
+                nextOffset = (npo != null) ? npo.toString() : null;
+
+            } while (nextOffset != null);
+
+            return allDocs;
         } catch (Exception e) {
             log.error("Failed to get all documents from {}: {}", collectionName, e.getMessage());
         }

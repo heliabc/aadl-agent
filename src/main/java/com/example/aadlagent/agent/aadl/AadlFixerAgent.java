@@ -111,8 +111,9 @@ public class AadlFixerAgent implements Agent<AgentInput, AgentOutput> {
         log.info("正在构建Prompt...");
 
         // 从错误记忆库中检索相似错误的历史修复经验
+        // 召回与归档解耦：召回只依赖服务是否可用，不受 autoArchiveErrors 开关影响
         String errorMemoryContext = "";
-        if (errorMemoryService != null && autoArchiveErrors) {
+        if (errorMemoryService != null) {
             try {
                 List<com.example.aadlagent.rag.model.ErrorCorrection> similarFixes =
                         errorMemoryService.retrieveSimilarFixes(structuredErrors, 3);

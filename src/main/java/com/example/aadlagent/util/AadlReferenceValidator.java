@@ -7689,8 +7689,15 @@ public class AadlReferenceValidator {
 
     /**
      * 4aa. 检测畸形 end 语句。
-     * 通过追踪组件声明栈来识别畸形 end：凡是以 "end " 开头但不符合正常格式的，都算畸形。
-     * 正常格式：end 标识符; 或 end 标识符.impl;
+     * 通过追踪组件声明栈来识别畸形 end。
+     * 正常格式：end 标识符; 或 end 标识符.impl; 或 end;（仅 properties 块内合法）
+     * 
+     * 修复要点：
+     * 1. suspiciousEndPattern 修复：原正则 end\s+\S 无法匹配 "end;"（end与分号间无空格），导致漏检
+     * 2. 子块上下文追踪：features/properties/connections 等子块不需要显式 end（组件 end 会隐式关闭它们），
+     *    因此不压入主栈，仅用上下文变量追踪，避免子块内的 end 语句错误弹出组件栈
+     * 3. 重复 end 检测：同一组件名连续出现两次 end 语句（大模型常见错误），第二次是多余的
+     * 4. 名称不匹配时不弹出栈顶：原 bug 是无论匹配与否都弹出，导致栈状态错乱
      */
     private void checkMalformedEndStatements(String aadlContent, ValidationResult result) {
         String[] lines = aadlContent.split("\n");
@@ -7730,18 +7737,34 @@ public class AadlReferenceValidator {
         Pattern normalEndPattern = Pattern.compile(
                 "^\\s*end\\s+(.+?)\\s*;\\s*$", Pattern.CASE_INSENSITIVE
         );
-        // 疑似 end 语句：以 end 开头，后面有内容（含畸形：尾逗号、缺分号等，与 fixMalformedEndStatements 保持一致）
-        Pattern suspiciousEndPattern = Pattern.compile(
-                "^\\s*end\\s+\\S.*$", Pattern.CASE_INSENSITIVE
+        // 匿名 end 语句格式（end; 或 end ; —— properties 块的匿名结束方式）
+        Pattern anonymousEndPattern = Pattern.compile(
+                "^\\s*end\\s*;\\s*$", Pattern.CASE_INSENSITIVE
         );
-
-        // 块栈：存期望的 end 名称
-        Stack<String> blockStack = new Stack<>();
+        // 疑似 end 语句：以 end 开头，后面可以是空格+非空字符，也可以直接是分号
+        // 修复：原来的 end\s+\S 无法匹配 "end;"（end 与分号之间无空格），导致漏检
+        Pattern suspiciousEndPattern = Pattern.compile(
+                "^\\s*end(?:\\s+\\S|\\s*;).*$", Pattern.CASE_INSENSITIVE
+        );
+        // 子块开始模式（features/properties/connections 等子块关键字行）
+        // 注意：AADL 子块不需要显式 end 语句，组件 end 会隐式关闭所有子块
+        Pattern subBlockStartPattern = Pattern.compile(
+                "^\\s*(features|properties|connections|subcomponents|flows|modes|calls" +
+                "|internal\\s+features|processor\\s+features|prototypes|annex\\b.*)$",
+                Pattern.CASE_INSENSITIVE
+        );
         // package 声明模式（去掉末尾分号）
         Pattern packageStartPattern = Pattern.compile(
                 "^\\s*package\\s+([A-Za-z_]\\w*(?:\\.[A-Za-z_]\\w*)*)\\s*;?",
                 Pattern.CASE_INSENSITIVE
         );
+
+        // 块栈：存期望的 end 名称（组件、包、EMV2块 —— 都需要显式命名 end）
+        Stack<String> blockStack = new Stack<>();
+        // 当前子块上下文（features / properties / connections / ...）—— 不需要显式 end
+        String currentSubBlock = null;
+        // 上一个刚关闭的块名称，用于检测重复 end
+        String lastClosedBlock = null;
 
         for (int i = 0; i < lines.length; i++) {
             String trimmed = lines[i].trim();
@@ -7751,6 +7774,8 @@ public class AadlReferenceValidator {
             Matcher pkgMatcher = packageStartPattern.matcher(trimmed);
             if (pkgMatcher.find()) {
                 blockStack.push(pkgMatcher.group(1));
+                currentSubBlock = null;
+                lastClosedBlock = null;
                 continue;
             }
 
@@ -7758,16 +7783,19 @@ public class AadlReferenceValidator {
             Matcher implMatcher = implStartPattern.matcher(trimmed);
             if (implMatcher.find()) {
                 blockStack.push(implMatcher.group(2) + ".impl");
+                currentSubBlock = null;
+                lastClosedBlock = null;
                 continue;
             }
             // 普通 AADL 类型声明开头
-            // 注意：不能简单用 contains("implementation") 判断，因为组件名本身可能包含 "Implementation"
             Matcher typeMatcher = typeStartPattern.matcher(trimmed);
             if (typeMatcher.find()) {
                 String lowerTrimmed = trimmed.toLowerCase();
                 boolean isImplFormat = lowerTrimmed.contains(" implementation ") && lowerTrimmed.contains(".impl");
                 if (!isImplFormat) {
                     blockStack.push(typeMatcher.group(2));
+                    currentSubBlock = null;
+                    lastClosedBlock = null;
                     continue;
                 }
             }
@@ -7779,58 +7807,142 @@ public class AadlReferenceValidator {
                 Matcher m = p.matcher(trimmed);
                 if (m.find()) {
                     blockStack.push(pair[1]);
+                    currentSubBlock = null;
+                    lastClosedBlock = null;
                     emv2Found = true;
                     break;
                 }
             }
             if (emv2Found) continue;
 
-            // 跳过 EMV2 内部以 end 开头但不是块结束的语句（如 end to end flow 声明）
+            // 子块开始（features/properties/connections 等）
+            // 子块不需要显式 end，组件 end 会隐式关闭它们
+            if (!blockStack.isEmpty()) {
+                Matcher subBlockMatcher = subBlockStartPattern.matcher(trimmed);
+                if (subBlockMatcher.find()) {
+                    String subBlockName = subBlockMatcher.group(1).replaceAll("\\s+", " ").toLowerCase();
+                    if (subBlockName.startsWith("annex")) {
+                        subBlockName = "annex";
+                    }
+                    currentSubBlock = subBlockName;
+                    continue;
+                }
+            }
+
+            // 跳过 EMV2 内部以 end 开头但不是块结束的语句
             if (emv2InternalEndPattern.matcher(trimmed).find()) {
                 continue;
             }
 
-            // 跳过单独的右大括号（大模型错误生成的 C/Java 风格语法，不影响栈结构）
+            // 跳过单独的右大括号（不影响栈结构）
             if (closingBracePattern.matcher(trimmed).matches()) {
                 continue;
             }
 
             // end 语句检查
             if (suspiciousEndPattern.matcher(trimmed).find()) {
+                // === 1. 匿名 end（end; 或 end ;）===
+                if (anonymousEndPattern.matcher(trimmed).matches()) {
+                    // properties 块的 end; 是冗余的，删除（AADL 中 properties 块随组件 end 隐式结束）
+                    if ("properties".equalsIgnoreCase(currentSubBlock)) {
+                        result.errors.add(String.format(
+                                "第%d行: 多余的 end 语句 '%s' — properties 块不需要显式 end，随组件 end 隐式结束",
+                                i + 1, trimmed
+                        ));
+                        currentSubBlock = null;
+                    } else if (!blockStack.isEmpty()) {
+                        // 组件/包级别匿名 end 是错误的，必须写明名称
+                        String expected = blockStack.peek();
+                        result.errors.add(String.format(
+                                "第%d行: 畸形 end 语句 '%s' — 组件/包级别 end 必须写明名称，如 'end %s;'",
+                                i + 1, trimmed, expected
+                        ));
+                        lastClosedBlock = blockStack.pop();
+                        currentSubBlock = null;
+                    } else {
+                        // 栈空却有匿名 end，是多余的
+                        result.errors.add(String.format(
+                                "第%d行: 多余的 end 语句 '%s' — 当前没有未闭合的块",
+                                i + 1, trimmed
+                        ));
+                    }
+                    continue;
+                }
+
+                // === 2. 有名称的 end 语句 ===
                 Matcher endMatcher = normalEndPattern.matcher(trimmed);
                 if (endMatcher.matches()) {
-                    // 格式正常，检查名称是否匹配
                     String endName = endMatcher.group(1);
+
                     if (!blockStack.isEmpty()) {
                         String expected = blockStack.peek();
-                        if (!endName.equalsIgnoreCase(expected)) {
+                        if (endName.equalsIgnoreCase(expected)) {
+                            // 名称匹配，正常关闭当前块
+                            lastClosedBlock = blockStack.pop();
+                            currentSubBlock = null;
+                        } else if (endName.equalsIgnoreCase(lastClosedBlock)) {
+                            // 与上一个刚关闭的块同名 —— 重复 end 语句（大模型常见错误）
+                            result.errors.add(String.format(
+                                    "第%d行: 多余的 end 语句 '%s' — '%s' 已经被关闭，这是重复的 end",
+                                    i + 1, trimmed, endName
+                            ));
+                        } else {
+                            // 名称不匹配
                             result.errors.add(String.format(
                                     "第%d行: end 语句名称错误 '%s' — 当前块期望结束为 'end %s;'",
                                     i + 1, trimmed, expected
                             ));
+                            // 名称不匹配时不弹出栈顶，保持栈状态正确
+                            // （原 bug：无论匹配与否都弹出，导致栈状态错乱）
                         }
-                        blockStack.pop();
+                    } else if (endName.equalsIgnoreCase(lastClosedBlock)) {
+                        // 栈空但与上一个关闭的块同名 —— 重复 end
+                        result.errors.add(String.format(
+                                "第%d行: 多余的 end 语句 '%s' — '%s' 已经被关闭，这是重复的 end",
+                                i + 1, trimmed, endName
+                        ));
+                    } else {
+                        // 栈空且不是重复 —— 多余的 end
+                        result.errors.add(String.format(
+                                "第%d行: 多余的 end 语句 '%s' — 当前没有未闭合的块",
+                                i + 1, trimmed
+                        ));
                     }
                 } else {
-                    // 格式畸形
+                    // === 3. 格式畸形（缺分号、尾逗号等）===
                     result.errors.add(String.format(
                             "第%d行: 畸形 end 语句 '%s' — 不符合 'end 标识符;' 的规范格式",
                             i + 1, trimmed
                     ));
                     if (!blockStack.isEmpty()) {
-                        blockStack.pop();
+                        lastClosedBlock = blockStack.pop();
+                        currentSubBlock = null;
                     }
                 }
             }
+        }
+
+        // 循环结束后，栈不为空说明有缺少 end 语句的块
+        if (!blockStack.isEmpty()) {
+            StringBuilder missingMsg = new StringBuilder();
+            for (int j = 0; j < blockStack.size(); j++) {
+                if (j > 0) missingMsg.append("、");
+                missingMsg.append("'end ").append(blockStack.get(j)).append(";'");
+            }
+            result.errors.add(String.format(
+                    "缺少 end 语句：有 %d 个块未正确闭合 — 缺少 %s",
+                    blockStack.size(), missingMsg.toString()
+            ));
         }
     }
 
     /**
      * 自动修正 0r：修复畸形 end 语句。
-     * 策略：不猜畸形文本的含义，直接用组件栈顶的正确名字替换。
-     * - 维护一个组件声明栈：遇到类型/实现声明开头就压栈
-     * - 遇到畸形 end 语句时，弹出栈顶组件名，生成正确的 end 语句
-     * - 遇到正常 end 语句也弹出栈顶（用于同步栈状态）
+     * 策略：基于块栈和子块上下文进行精确修复。
+     * - 主栈追踪组件、包、EMV2块（都需要显式命名 end）
+     * - 子块（features/properties/connections 等）不需要显式 end，组件 end 会隐式关闭它们
+     * - 匿名 end; 仅在 properties 块内合法
+     * - 重复 end 语句（大模型常见错误）直接删除
      */
     private String fixMalformedEndStatements(String content, ValidationResult result) {
         String[] lines = content.split("\n");
@@ -7873,23 +7985,32 @@ public class AadlReferenceValidator {
         Pattern normalEndPattern = Pattern.compile(
                 "^(\\s*)end\\s+(.+?)\\s*;\\s*$", Pattern.CASE_INSENSITIVE
         );
-        // 疑似畸形 end 语句（扩大范围：尾逗号、缺分号、尾点号等都算）
-        // 以 end 开头，后面有内容，末尾不是正常分号（或有非分号字符）都视为可疑
+        // 匿名 end 语句格式（end; 或 end ; —— properties 块的匿名结束方式）
+        Pattern anonymousEndPattern = Pattern.compile(
+                "^(\\s*)end\\s*;\\s*$", Pattern.CASE_INSENSITIVE
+        );
+        // 疑似畸形 end 语句：以 end 开头，后面可以是空格+非空字符，也可以直接是分号
         Pattern suspiciousEndPattern = Pattern.compile(
-                "^(\\s*)end\\s+\\S.*$", Pattern.CASE_INSENSITIVE
+                "^(\\s*)end(?:\\s+\\S|\\s*;).*$", Pattern.CASE_INSENSITIVE
         );
-        // 正常 end 语句的末尾分号模式（用于排除正常情况）
-        Pattern properEndSemicolonPattern = Pattern.compile(
-                "^end\\s+.+\\s*;\\s*$", Pattern.CASE_INSENSITIVE
+        // 子块开始模式（features/properties/connections 等）
+        Pattern subBlockStartPattern = Pattern.compile(
+                "^\\s*(features|properties|connections|subcomponents|flows|modes|calls" +
+                "|internal\\s+features|processor\\s+features|prototypes|annex\\b.*)$",
+                Pattern.CASE_INSENSITIVE
         );
-        // package 声明（去掉末尾分号）
+        // package 声明
         Pattern packageStartPattern = Pattern.compile(
                 "^\\s*package\\s+([A-Za-z_]\\w*(?:\\.[A-Za-z_]\\w*)*)\\s*;?",
                 Pattern.CASE_INSENSITIVE
         );
 
-        // 组件栈：存期望的 end 名称（如 "PwmBus.impl"、"behavior"、"error type"）
+        // 块栈：存期望的 end 名称（组件、包、EMV2块 —— 都需要显式命名 end）
         Stack<String> componentStack = new Stack<>();
+        // 当前子块上下文 —— 不需要显式 end
+        String currentSubBlock = null;
+        // 上一个刚关闭的块名称，用于检测重复 end
+        String lastClosedBlock = null;
 
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i];
@@ -7904,6 +8025,8 @@ public class AadlReferenceValidator {
             Matcher pkgMatcher = packageStartPattern.matcher(trimmed);
             if (pkgMatcher.find()) {
                 componentStack.push(pkgMatcher.group(1));
+                currentSubBlock = null;
+                lastClosedBlock = null;
                 resultLines.add(line);
                 continue;
             }
@@ -7912,6 +8035,8 @@ public class AadlReferenceValidator {
             Matcher implMatcher = implStartPattern.matcher(line);
             if (implMatcher.find()) {
                 componentStack.push(implMatcher.group(2) + ".impl");
+                currentSubBlock = null;
+                lastClosedBlock = null;
                 resultLines.add(line);
                 continue;
             }
@@ -7926,6 +8051,8 @@ public class AadlReferenceValidator {
                 boolean isImplFormat = lowerTrimmed.contains(" implementation ") && lowerTrimmed.contains(".impl");
                 if (!isImplFormat) {
                     componentStack.push(typeMatcher.group(2));
+                    currentSubBlock = null;
+                    lastClosedBlock = null;
                     resultLines.add(line);
                     continue;
                 }
@@ -7938,12 +8065,29 @@ public class AadlReferenceValidator {
                 Matcher m = p.matcher(trimmed);
                 if (m.find()) {
                     componentStack.push(pair[1]);
+                    currentSubBlock = null;
+                    lastClosedBlock = null;
                     resultLines.add(line);
                     emv2Found = true;
                     break;
                 }
             }
             if (emv2Found) continue;
+
+            // 子块开始（features/properties/connections 等）
+            // 子块不需要显式 end，组件 end 会隐式关闭它们
+            if (!componentStack.isEmpty()) {
+                Matcher subBlockMatcher = subBlockStartPattern.matcher(trimmed);
+                if (subBlockMatcher.find()) {
+                    String subBlockName = subBlockMatcher.group(1).replaceAll("\\s+", " ").toLowerCase();
+                    if (subBlockName.startsWith("annex")) {
+                        subBlockName = "annex";
+                    }
+                    currentSubBlock = subBlockName;
+                    resultLines.add(line);
+                    continue;
+                }
+            }
 
             // 跳过 EMV2 内部以 end 开头但不是块结束的语句
             if (emv2InternalEndPattern.matcher(trimmed).find()) {
@@ -7957,23 +8101,87 @@ public class AadlReferenceValidator {
                 continue;
             }
 
-            // 正常 end 语句：先校验名称是否匹配，匹配才弹出栈顶；不匹配则交由下方畸形逻辑修正
             // 去掉行尾注释后再匹配，支持 "end Foo;  -- xxx" 这种写法
             String trimmedNoComment = trimmed.replaceAll("--.*$", "").trim();
+
+            // === 1. 匿名 end（end; 或 end ;）===
+            Matcher anonymousEndMatcher = anonymousEndPattern.matcher(trimmedNoComment);
+            if (anonymousEndMatcher.matches()) {
+                // properties 块的 end; 是冗余的，删除（AADL 中 properties 块随组件 end 隐式结束）
+                if ("properties".equalsIgnoreCase(currentSubBlock)) {
+                    currentSubBlock = null;
+                    fixCount++;
+                    result.fixes.add(String.format(
+                            "第%d行: 已删除多余的 end 语句 '%s'（properties 块不需要显式 end，随组件 end 隐式结束）",
+                            i + 1, trimmed
+                    ));
+                } else if (!componentStack.isEmpty()) {
+                    // 组件/包级别匿名 end → 补上名称
+                    String correctName = componentStack.pop();
+                    lastClosedBlock = correctName;
+                    currentSubBlock = null;
+                    String indent = anonymousEndMatcher.group(1);
+                    String trailingComment = "";
+                    int commentIdx = line.indexOf("--");
+                    if (commentIdx >= 0) {
+                        trailingComment = "  " + line.substring(commentIdx).trim();
+                    }
+                    String fixedLine = indent + "end " + correctName + ";" + trailingComment;
+                    fixCount++;
+                    result.fixes.add(String.format(
+                            "第%d行: 已修正 end 语句 '%s' → 'end %s;'（缺少组件名，已补全）",
+                            i + 1, trimmed, correctName
+                    ));
+                    resultLines.add(fixedLine);
+                } else {
+                    // 栈空 —— 多余的 end，删除
+                    fixCount++;
+                    result.fixes.add(String.format(
+                            "第%d行: 已删除多余的 end 语句 '%s'（当前无未闭合的块）",
+                            i + 1, trimmed
+                    ));
+                }
+                continue;
+            }
+
+            // === 2. 有名称的 end 语句 ===
             Matcher normalEndMatcher = normalEndPattern.matcher(trimmedNoComment);
             if (normalEndMatcher.matches()) {
                 String declaredName = normalEndMatcher.group(2);
+
                 if (!componentStack.isEmpty()) {
                     String expectedName = componentStack.peek();
-                    // 名称匹配才出栈；不匹配则继续向下，交由畸形 end 逻辑自动修正名称
                     if (declaredName.equalsIgnoreCase(expectedName)) {
-                        componentStack.pop();
+                        // 名称匹配 —— 正常关闭
+                        lastClosedBlock = componentStack.pop();
+                        currentSubBlock = null;
                         resultLines.add(line);
                         continue;
+                    } else if (declaredName.equalsIgnoreCase(lastClosedBlock)) {
+                        // 与上一个关闭的块同名 —— 重复 end，删除
+                        fixCount++;
+                        result.fixes.add(String.format(
+                                "第%d行: 已删除多余的 end 语句 '%s'（'%s' 已经被关闭，这是重复的 end）",
+                                i + 1, trimmed, declaredName
+                        ));
+                        continue;
                     }
+                    // 名称不匹配且不是重复 → 交由下方畸形逻辑修正
+                } else if (declaredName.equalsIgnoreCase(lastClosedBlock)) {
+                    // 栈空但与上一个关闭的块同名 —— 重复 end，删除
+                    fixCount++;
+                    result.fixes.add(String.format(
+                            "第%d行: 已删除多余的 end 语句 '%s'（'%s' 已经被关闭，这是重复的 end）",
+                            i + 1, trimmed, declaredName
+                    ));
+                    continue;
                 } else {
-                    // 栈空但有合法格式的 end，也加入结果（可能是多余的 end，由后续逻辑处理）
-                    resultLines.add(line);
+                    // 栈空且不是重复 —— 多余的 end，删除
+                    fixCount++;
+                    result.fixes.add(String.format(
+                            "第%d行: 已删除多余的 end 语句 '%s'（当前无未闭合的块）",
+                            i + 1, trimmed
+                    ));
                     continue;
                 }
             }
@@ -7992,16 +8200,18 @@ public class AadlReferenceValidator {
                 }
 
                 if (componentStack.isEmpty()) {
-                    // 栈空说明没有未关闭的组件，这行畸形 end 是多余的，直接删除
+                    // 栈空说明没有未关闭的块，这行畸形 end 是多余的，直接删除
                     fixCount++;
                     result.fixes.add(String.format(
-                            "第%d行: 已删除多余的畸形 end 语句 '%s'（当前无未关闭的组件）",
+                            "第%d行: 已删除多余的畸形 end 语句 '%s'（当前无未关闭的块）",
                             i + 1, trimmed
                     ));
                     continue; // 不加入结果，相当于删除
                 }
 
                 String correctName = componentStack.pop();
+                lastClosedBlock = correctName;
+                currentSubBlock = null;
                 String fixedLine = indent + "end " + correctName + ";" + trailingComment;
 
                 fixCount++;
@@ -8012,6 +8222,21 @@ public class AadlReferenceValidator {
                 resultLines.add(fixedLine);
             } else {
                 resultLines.add(line);
+            }
+        }
+
+        // 文件末尾仍有未闭合的块，自动补全 end 语句
+        if (!componentStack.isEmpty()) {
+            // 从栈顶开始，依次补全 end 语句（先内后外）
+            while (!componentStack.isEmpty()) {
+                String missingName = componentStack.pop();
+                String fixedLine = "end " + missingName + ";";
+                fixCount++;
+                result.fixes.add(String.format(
+                        "文件末尾: 已补全缺失的 end 语句 'end %s;'",
+                        missingName
+                ));
+                resultLines.add(fixedLine);
             }
         }
 

@@ -1,0 +1,169 @@
+package Controller_Arch
+public
+  -- =======================================
+  -- 1. EMV2 错误模型库声明
+  -- =======================================
+  annex EMV2 {**
+    error behavior FailStopBehavior
+      events
+        ServiceOmissionEvent : error event;
+        ValueErrorEvent : error event;
+      states
+        Operational : initial state;
+        FailStop : state;
+      transitions
+        FailStopTransition : Operational -[ServiceOmissionEvent]-> FailStop;
+        FailStopTransition2 : Operational -[ValueErrorEvent]-> FailStop;
+    end behavior;
+  **};
+
+  -- =======================================
+  -- 2. 数据类型定义
+  -- =======================================
+  data SensorData
+  end SensorData;
+
+  data BrakeSignal
+  end BrakeSignal;
+
+  data ErrorLibrary
+  end ErrorLibrary;
+
+  data implementation SensorData.impl
+    properties
+      Data_Size => 16 Bytes;
+    end;
+  end SensorData.impl;
+
+  data implementation BrakeSignal.impl
+    properties
+      Data_Size => 8 Bytes;
+    end;
+  end BrakeSignal.impl;
+
+  data implementation ErrorLibrary.impl
+    properties
+      Data_Size => 4 Bytes;
+    end;
+  end ErrorLibrary.impl;
+
+  -- =======================================
+  -- 3. 总线定义
+  -- =======================================
+  bus Bus1553
+    features
+      busOut : provides bus access Bus1553;
+    end features;
+  end Bus1553;
+
+  bus implementation Bus1553.impl
+  end Bus1553.impl;
+
+  bus CanBus
+    features
+      busOut : provides bus access CanBus;
+    end features;
+  end CanBus;
+
+  bus implementation CanBus.impl
+  end CanBus.impl;
+
+  bus PowerGeneric
+    features
+      busOut : provides bus access PowerGeneric;
+    end features;
+  end PowerGeneric;
+
+  bus implementation PowerGeneric.impl
+  end PowerGeneric.impl;
+
+  -- =======================================
+  -- 4. 硬件设备定义
+  -- =======================================
+  device SimpleControllerImpl
+    features
+      bus_access1 : requires bus access Bus1553;
+      bus_access2 : requires bus access CanBus;
+      bus_access3 : requires bus access PowerGeneric;
+      dataIn : in data port SensorData;
+      dataOut : out data port BrakeSignal;
+    end features;
+  end SimpleControllerImpl;
+
+  device implementation SimpleControllerImpl.impl
+    properties
+      Memory_Properties::RAM_Size => 1.2 Kbyte;
+      Power_Consumption => 4.0 W;
+    end;
+  end SimpleControllerImpl.impl;
+
+  -- =======================================
+  -- 5. 软件组件定义
+  -- =======================================
+  system SimpleController
+    features
+      busIn : requires bus access Bus1553;
+      dataIn : in data port SensorData;
+      busOut : provides bus access CanBus;
+      dataOut : out data port BrakeSignal;
+      powerIn : requires bus access PowerGeneric;
+    controllerFlow : internal data port ControllerFlow;
+    dataIn : in data port SensorData;
+    dataOut : out data port BrakeSignal;
+    errorPort : in data port ErrorLibrary;
+    end features;
+  end SimpleController;
+
+  system implementation SimpleController.impl
+    subcomponents
+      bus1553 : bus Bus1553.impl;
+      canBus : bus CanBus.impl;
+      powerGeneric : bus PowerGeneric.impl;
+      simpleControllerImpl : device SimpleControllerImpl.impl;
+      controllerProcess : process ControllerProcess.impl;
+    connections
+      -- 总线连接
+      bus1553_connection : bus access simpleControllerImpl.bus_access1 <-> bus1553.busOut;
+      canBus_connection : bus access simpleControllerImpl.bus_access2 <-> canBus.busOut;
+      powerGeneric_connection : bus access simpleControllerImpl.bus_access3 <-> powerGeneric.busOut;
+    properties
+      Allowed_Connection_Binding => (reference (bus1553)) applies to controllerProcess.controllerFlow;
+    end properties;
+
+  process ControllerProcess
+    features
+    dataIn : in data port SensorData;
+    dataOut : out data port BrakeSignal;
+    errorPort : in data port ErrorLibrary;
+    end features;
+  end ControllerProcess;
+
+  process implementation ControllerProcess.impl
+    subcomponents
+      controlThread : thread ControlThread.impl;
+    connections
+      -- 数据流连接
+      controllerFlow_connection : port controlThread.dataIn -> controlThread.dataOut;
+      -- 错误端口连接
+      error_connection : port controlThread.errorPort -> errorPort;
+    properties
+      Allowed_Connection_Binding => (reference (bus1553)) applies to controllerFlow_connection;
+    end properties;
+
+  thread ControlThread
+    end features;
+  end ControlThread;
+
+  thread implementation ControlThread.impl
+    properties
+      Compute_Execution_Time => 3 ms .. 5 ms;
+    end;
+  end ControlThread.impl;
+end connections;
+end subcomponents;
+end ControllerProcess.impl;
+end connections;
+end subcomponents;
+end SimpleController.impl;
+end annex;
+end Controller_Arch;

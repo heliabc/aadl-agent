@@ -43,6 +43,15 @@ public class RagService {
     public SearchResult search(String query, String agentType) {
         long startTime = System.currentTimeMillis();
 
+        if (!ragConfig.isEnabled()) {
+            log.info("RAG is disabled (rag.enabled=false), returning empty result for agentType={}", agentType);
+            return SearchResult.builder()
+                    .documents(new ArrayList<>())
+                    .rewrittenQuery(query)
+                    .searchTime(0L)
+                    .build();
+        }
+
         log.info("Starting RAG search for query (len={}, agentType={}): {}", 
                 query != null ? query.length() : -1, agentType, 
                 query != null && query.length() > 100 ? query.substring(0, 100) + "..." : query);
@@ -185,4 +194,5 @@ public class RagService {
     public boolean isQdrantAvailable() {
         return qdrantVectorStore.isAvailable();
     }
+
 }

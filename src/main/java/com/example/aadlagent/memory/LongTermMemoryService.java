@@ -1,5 +1,10 @@
 package com.example.aadlagent.memory;
 
+import com.example.aadlagent.rag.EmbeddingService;
+import com.example.aadlagent.rag.QdrantVectorStore;
+import com.example.aadlagent.rag.RagService;
+import com.example.aadlagent.rag.model.Document;
+import com.example.aadlagent.rag.model.SearchResult;
 import com.example.aadlagent.util.AadlReferenceValidator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -23,7 +28,8 @@ import java.util.stream.Collectors;
  * 1. 新需求进来时，召回相似案例作为参考
  * 2. 积累领域知识
  *
- * 存储方式：JSON 文件（knowledge/success_cases.json）
+ * 存储方式：JSON 文件（knowledge/success_cases.json）保存源数据，
+ *           Qdrant 集合（success_case）保存向量索引，检索统一走 RAG
  */
 @Slf4j
 @Service
@@ -32,12 +38,23 @@ public class LongTermMemoryService {
     @Value("${memory.long-term.storage-path:knowledge/success_cases.json}")
     private String storagePath;
 
+    /** Qdrant 集合名（与 success_cases.json 同名，成功案例统一走向量检索） */
+    private static final String COLLECTION = "success_cases";
+
     /** 内存中的案例索引 */
     private final Map<String, SuccessCase> caseIndex = new LinkedHashMap<>();
 
     private final ObjectMapper objectMapper;
+    private final EmbeddingService embeddingService;
+    private final QdrantVectorStore qdrantVectorStore;
+    private final RagService ragService;
 
-    public LongTermMemoryService() {
+    public LongTermMemoryService(EmbeddingService embeddingService,
+                                 QdrantVectorStore qdrantVectorStore,
+                                 RagService ragService) {
+        this.embeddingService = embeddingService;
+        this.qdrantVectorStore = qdrantVectorStore;
+        this.ragService = ragService;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
     }
@@ -45,6 +62,7 @@ public class LongTermMemoryService {
     @PostConstruct
     public void init() {
         loadCases();
+        syncCasesToQdrant();
         log.info("Long-term memory initialized: {} success cases loaded", caseIndex.size());
     }
 
@@ -158,6 +176,7 @@ public class LongTermMemoryService {
                 .build();
 
         caseIndex.put(caseId, newCase);
+        upsertCase(newCase);
         saveCases();
 
         log.info("Added success case: {} ({} components, quality={})",
@@ -167,9 +186,12 @@ public class LongTermMemoryService {
     }
 
     /**
-     * 根据需求文档召回相似的成功案例（基于关键词匹配）
+     * 根据需求文档召回相似的成功案例
      *
-     * @param query     查询文本（需求文档或描述）
+     * 检索路径与知识库统一：优先走 RAG（Qdrant 向量召回 + 关键词 + RRF 融合 + 重排），
+     * RAG 不可用或未召回时降级为关键词匹配。
+     *
+     * @param query      查询文本（需求文档或描述）
      * @param maxResults 最多返回多少个
      * @return 相似案例列表（按相似度降序）
      */
@@ -178,6 +200,42 @@ public class LongTermMemoryService {
             return Collections.emptyList();
         }
 
+        // 优先走 RAG：检索 success_case 集合
+        try {
+            SearchResult result = ragService.search(query, COLLECTION);
+            List<Document> docs = result != null ? result.getDocuments() : null;
+            if (docs != null && !docs.isEmpty()) {
+                List<SuccessCase> cases = new ArrayList<>();
+                for (Document doc : docs) {
+                    if (!"success_case".equals(doc.getCategory())) {
+                        continue;
+                    }
+                    // RAG 只负责排序，结构化字段仍从内存索引取
+                    SuccessCase c = caseIndex.get(doc.getId());
+                    if (c != null && !cases.contains(c)) {
+                        cases.add(c);
+                        if (cases.size() >= maxResults) {
+                            break;
+                        }
+                    }
+                }
+                if (!cases.isEmpty()) {
+                    log.debug("RAG retrieved {} similar success cases", cases.size());
+                    return cases;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("RAG retrieval for success cases failed, falling back to keyword scoring: {}", e.getMessage());
+        }
+
+        // 降级：RAG 不可用（Qdrant/Embedding 异常）时用关键词匹配
+        return keywordFindSimilarCases(query, maxResults);
+    }
+
+    /**
+     * 关键词匹配召回（RAG 降级兜底）
+     */
+    private List<SuccessCase> keywordFindSimilarCases(String query, int maxResults) {
         // 从查询中提取关键词
         Set<String> queryKeywords = extractKeywords(query);
 
@@ -219,11 +277,173 @@ public class LongTermMemoryService {
      */
     public boolean removeCase(String caseId) {
         if (caseIndex.remove(caseId) != null) {
+            if (qdrantVectorStore.isAvailable()) {
+                qdrantVectorStore.delete(COLLECTION, caseId);
+            }
             saveCases();
             log.info("Removed success case: {}", caseId);
             return true;
         }
         return false;
+    }
+
+    // ==================== Qdrant 同步 ====================
+
+    /**
+     * 生成向量并写入 Qdrant（与知识库统一走向量检索）
+     */
+    private boolean upsertCase(SuccessCase c) {
+        if (c == null || c.getCaseId() == null || !qdrantVectorStore.isAvailable()) {
+            return false;
+        }
+        try {
+            if (c.getEmbedding() == null || c.getEmbedding().length == 0) {
+                float[] embedding = embeddingService.embed(buildSemanticText(c));
+                if (embedding == null || embedding.length == 0) {
+                    log.warn("Failed to generate embedding for success case {}", c.getCaseId());
+                    return false;
+                }
+                c.setEmbedding(embedding);
+            }
+            qdrantVectorStore.upsert(COLLECTION, toDocument(c));
+            return true;
+        } catch (Exception e) {
+            log.warn("Failed to upsert success case {}: {}", c.getCaseId(), e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 启动时把内存中的案例全量同步到 Qdrant（幂等覆盖 + 孤儿清理）
+     * 保证 JSON 文件是唯一真值来源。
+     */
+    private void syncCasesToQdrant() {
+        if (!qdrantVectorStore.isAvailable()) {
+            log.info("Qdrant not available, success cases kept in memory only");
+            return;
+        }
+        // syncOnStartup=false 且集合已有数据时跳过启动同步
+        if (!qdrantConfig.isSyncOnStartup()) {
+            long existingCount = qdrantVectorStore.count(COLLECTION);
+            if (existingCount > 0) {
+                log.info("syncOnStartup=false and collection '{}' has {} points, skipping startup sync (reuse existing data)", COLLECTION, existingCount);
+                return;
+            }
+            log.info("syncOnStartup=false but collection '{}' is empty, performing initial load", COLLECTION);
+        }
+        if (caseIndex.isEmpty()) {
+            // 没有案例，但集合里可能有旧数据，做一次清理
+            try {
+                List<com.example.aadlagent.rag.model.Document> existing = qdrantVectorStore.getAllDocuments(COLLECTION);
+                if (!existing.isEmpty()) {
+                    java.util.List<String> ids = new java.util.ArrayList<>();
+                    for (com.example.aadlagent.rag.model.Document d : existing) {
+                        ids.add(d.getId());
+                    }
+                    log.info("No success cases in JSON, cleaning {} orphan points from '{}'", ids.size(), COLLECTION);
+                    qdrantVectorStore.deleteBatch(COLLECTION, ids);
+                }
+            } catch (Exception e) {
+                log.warn("Failed to clean orphan points for {}: {}", COLLECTION, e.getMessage());
+            }
+            return;
+        }
+
+        // 为所有缺失 embedding 的案例生成向量
+        List<com.example.aadlagent.rag.model.Document> docs = new ArrayList<>();
+        for (SuccessCase c : caseIndex.values()) {
+            if (c.getEmbedding() == null || c.getEmbedding().length == 0) {
+                try {
+                    float[] emb = embeddingService.embed(buildSemanticText(c));
+                    if (emb != null && emb.length > 0) {
+                        c.setEmbedding(emb);
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to generate embedding for success case {}: {}", c.getCaseId(), e.getMessage());
+                }
+            }
+            if (c.getEmbedding() != null && c.getEmbedding().length > 0) {
+                docs.add(toDocument(c));
+            }
+        }
+
+        if (docs.isEmpty()) {
+            log.warn("No valid embeddings for success cases, skipping Qdrant sync");
+            return;
+        }
+
+        // 全量 upsert（幂等覆盖）
+        qdrantVectorStore.upsertBatch(COLLECTION, docs);
+        log.info("Synced {} success cases to Qdrant collection '{}'", docs.size(), COLLECTION);
+
+        // 孤儿点清理
+        try {
+            java.util.List<com.example.aadlagent.rag.model.Document> existing = qdrantVectorStore.getAllDocuments(COLLECTION);
+            java.util.Set<String> expectedIds = docs.stream()
+                    .map(com.example.aadlagent.rag.model.Document::getId)
+                    .collect(java.util.stream.Collectors.toSet());
+            java.util.List<String> orphanIds = new java.util.ArrayList<>();
+            for (com.example.aadlagent.rag.model.Document d : existing) {
+                if (!expectedIds.contains(d.getId())) {
+                    orphanIds.add(d.getId());
+                }
+            }
+            if (!orphanIds.isEmpty()) {
+                log.info("Found {} orphan success cases in Qdrant, cleaning up...", orphanIds.size());
+                qdrantVectorStore.deleteBatch(COLLECTION, orphanIds);
+                log.info("Cleaned up {} orphan success cases", orphanIds.size());
+            }
+        } catch (Exception e) {
+            log.warn("Failed to clean orphan success cases: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 生成向量用的语义文本（以需求侧为主，检索 query 也是需求）
+     */
+    private String buildSemanticText(SuccessCase c) {
+        StringBuilder sb = new StringBuilder();
+        if (c.getTitle() != null) {
+            sb.append(c.getTitle()).append("\n");
+        }
+        if (c.getRequirementSummary() != null) {
+            sb.append(c.getRequirementSummary());
+        } else if (c.getRequirementDoc() != null) {
+            sb.append(c.getRequirementDoc());
+        }
+        return sb.toString().trim();
+    }
+
+    private Document toDocument(SuccessCase c) {
+        List<String> tags = new ArrayList<>();
+        if (c.getDomainTags() != null) {
+            tags.addAll(c.getDomainTags());
+        }
+        if (c.getTechTags() != null) {
+            tags.addAll(c.getTechTags());
+        }
+
+        StringBuilder payload = new StringBuilder();
+        if (c.getRequirementSummary() != null) {
+            payload.append("需求摘要: ").append(c.getRequirementSummary()).append("\n");
+        }
+        if (!tags.isEmpty()) {
+            payload.append("标签: ").append(String.join(", ", tags)).append("\n");
+        }
+        payload.append("质量分: ").append(c.getQualityScore())
+               .append("，组件数: ").append(c.getComponentCount())
+               .append("，连接数: ").append(c.getConnectionCount());
+
+        return Document.builder()
+                .id(c.getCaseId())
+                .content(buildSemanticText(c))
+                .payload(payload.toString())
+                .title(c.getTitle())
+                .source(COLLECTION)
+                .category("success_case")
+                .tags(tags)
+                .embedding(c.getEmbedding())
+                .build();
     }
 
     // ==================== 辅助方法 ====================

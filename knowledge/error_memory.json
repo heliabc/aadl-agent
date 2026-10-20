@@ -2,7 +2,626 @@
   "agentType": "error_memory",
   "basics": [],
   "examples": [],
-  "errorCorrections": [],
+  "errorCorrections": [
+    {
+      "errorType": "缺少 end 闭合语句",
+      "badBehavior": "声明了组件类型但忘记闭合，如 'thread TaskScheduler' 没有后续。",
+      "correctionRule": "【语法错误】任何组件的类型声明和实现声明都必须以 'end 组件名;' 闭合。正确格式：类型声明 -> end; 实现声明 -> end;。",
+      "tags": [
+        "缺少 end 闭合语句"
+      ]
+    },
+    {
+      "errorType": "硬件中直接嵌套软件（非法包含）",
+      "badBehavior": "在处理器的实现中直接声明进程或线程，如 'processor implementation CPU.impl subcomponents P: process Proc.impl; end CPU.impl;'。",
+      "correctionRule": "【语义错误】处理器只能包含内存、总线、虚拟处理器等硬件抽象，不能直接包含进程或线程。软件进程必须放在系统层级，并通过 Actual_Processor_Binding 绑定。",
+      "tags": [
+        "线程",
+        "进程",
+        "硬件中直接嵌套软件（非法包含）",
+        "处理器"
+      ]
+    },
+    {
+      "errorType": "端口类型不匹配",
+      "badBehavior": "将数据端口连接到事件端口，或 data port 连接到 event data port 等不匹配的组合。",
+      "correctionRule": "【语义错误】数据端口只能连接数据端口，事件端口只能连接事件端口，事件数据端口可连接事件数据端口或分别连接事件和数据（需具体场景）。检查两端端口类型一致性。",
+      "tags": [
+        "端口类型不匹配"
+      ]
+    },
+    {
+      "errorType": "包名称与 end 不匹配",
+      "badBehavior": "package 声明为 'package MySystem'，但结尾写 'end WrongSystem;'。",
+      "correctionRule": "【语法错误】end 后的名称必须与 package 名称完全一致。",
+      "tags": [
+        "包名称与 end 不匹配"
+      ]
+    },
+    {
+      "errorType": "缺少分号",
+      "badBehavior": "语句末尾未加分号，如 'thread MyThread' 或 'properties Period => 10 ms'。",
+      "correctionRule": "【语法错误】每条声明、定义、属性赋值、连接等均需以分号 ';' 结束。",
+      "tags": [
+        "缺少分号"
+      ]
+    },
+    {
+      "errorType": "连接缺少关键字",
+      "badBehavior": "总线端口连接未加 'bus'，如 'connections port ECU.CANPort -> CANBus;'，或事件端口连接未加 'event'。",
+      "correctionRule": "【语法错误】总线连接必须使用 'bus' 关键字，事件端口连接必须使用 'event port'。正确示例：'connections bus ECU.CANPort -> CANBus;'。",
+      "tags": [
+        "总线",
+        "连接缺少关键字"
+      ]
+    },
+    {
+      "errorType": "端口方向错误",
+      "badBehavior": "输入端口使用了 'out'，输出端口使用了 'in'，如 'features DataIn: out data port;'。",
+      "correctionRule": "【语义错误】输入端口必须声明为 'in'，输出端口声明为 'out'，双向为 'in out'。修正方向。",
+      "tags": [
+        "端口方向错误"
+      ]
+    },
+    {
+      "errorType": "属性应用未指定目标",
+      "badBehavior": "属性绑定未加 'applies to'，如 'Actual_Processor_Binding => reference (CPU);'。",
+      "correctionRule": "【语法错误】部署属性必须通过 'applies to' 指明作用对象。正确写法：'Actual_Processor_Binding => (reference (CPU)) applies to Process_Inst;'。",
+      "tags": [
+        "属性应用未指定目标",
+        "属性",
+        "绑定"
+      ]
+    },
+    {
+      "errorType": "流规范缺少对应流实现",
+      "badBehavior": "在类型中定义了 flow，但在实现中未提供 flow implementation。",
+      "correctionRule": "【语义错误】类型中的流规范必须在对应实现中通过流实现具体化，描述路径经过的子组件和连接。",
+      "tags": [
+        "流规范缺少对应流实现"
+      ]
+    },
+    {
+      "errorType": "违反虚拟处理器一致性规则（C1）",
+      "badBehavior": "虚拟处理器未直接或间接绑定到物理处理器。",
+      "correctionRule": "【语义错误】完全绑定系统中，每个虚拟处理器必须直接或间接绑定到或包含在一个物理处理器中（参见第6.2节 C1）。",
+      "tags": [
+        "处理器",
+        "违反虚拟处理器一致性规则（C1）",
+        "绑定"
+      ]
+    },
+    {
+      "errorType": "违反虚拟总线一致性规则（C2）",
+      "badBehavior": "虚拟总线之间绑定存在循环。",
+      "correctionRule": "【语义错误】虚拟总线之间的绑定声明不能存在循环（参见第6.5节 C2）。",
+      "tags": [
+        "总线",
+        "违反虚拟总线一致性规则（C2）",
+        "绑定"
+      ]
+    },
+    {
+      "errorType": "补充 - 声明不在包内",
+      "badBehavior": "AADL声明直接写在文件顶部，未包含在 package ... end 块内。",
+      "correctionRule": "【语法错误】所有AADL声明必须放在 package 声明和对应的 end 之间。",
+      "tags": [
+        "补充 - 声明不在包内"
+      ]
+    },
+    {
+      "errorType": "补充 - 端口/参数缺少数据类型",
+      "badBehavior": "端口或参数声明时未指定数据类型，如 'Input: in data port;'。",
+      "correctionRule": "【语义错误】端口和参数必须指定数据类型（如 Base_Types::Integer）。正确示例：'Input: in data port Base_Types::Integer;'。",
+      "tags": [
+        "补充 - 端口/参数缺少数据类型"
+      ]
+    },
+    {
+      "errorType": "补充 - 将子程序用作特征",
+      "badBehavior": "试图直接在 features 中声明 subprogram，如 'features Calc: subprogram MathLib;'。",
+      "correctionRule": "【语义错误】子程序不能作为特征直接声明，应使用 'provides subprogram access' 或 'requires subprogram access'。",
+      "tags": [
+        "补充 - 将子程序用作特征"
+      ]
+    },
+    {
+      "errorType": "补充 - 忽略标准库导入",
+      "badBehavior": "使用了 Base_Types 中的类型，但文件顶部未添加 'with Base_Types;'。",
+      "correctionRule": "【语法错误】使用外部包（包括标准库）时，必须用 with 语句显式导入。",
+      "tags": [
+        "补充 - 忽略标准库导入"
+      ]
+    },
+    {
+      "errorType": "补充 - 数组连接语义错误",
+      "badBehavior": "试图直接连接两个数组组件，如 'connections port A[0] -> B[0];' 并期望自动展开。",
+      "correctionRule": "【语义错误】AADL 不支持直接连接数组元素，应使用连接模式（如 One_To_One）来定义组件数组间的连接。",
+      "tags": [
+        "补充 - 数组连接语义错误"
+      ]
+    },
+    {
+      "errorType": "补充 - applies to 使用不当",
+      "badBehavior": "在属性赋值中，'applies to' 指向了组件类型而非实例。",
+      "correctionRule": "【语义错误】'applies to' 应作用于实例对象（如 Process_Inst），而非类型名。正确示例：'Actual_Processor_Binding => (reference (CPU)) applies to Process_Inst;'。",
+      "tags": [
+        "补充 - applies to 使用不当",
+        "属性"
+      ]
+    },
+    {
+      "errorType": "补充 - 流实现连接断裂",
+      "badBehavior": "流实现中引用的子组件和连接没有形成从源到汇的完整路径。",
+      "correctionRule": "【语义错误】流实现必须描述一条连续、完整的路径，路径中的每个连接和子组件都必须正确连接。",
+      "tags": [
+        "补充 - 流实现连接断裂"
+      ]
+    },
+    {
+      "errorType": "补充 - 分类器不可见",
+      "badBehavior": "引用的组件分类器未在当前包的 public 部分声明，也未通过 with 导入。",
+      "correctionRule": "【语义错误】确保引用的分类器可见：要么在当前包的 public 部分定义，要么通过 with 导入外部包。",
+      "tags": [
+        "补充 - 分类器不可见"
+      ]
+    },
+    {
+      "errorType": "补充 - Initial_Value 误用",
+      "badBehavior": "在未设置 Data_Representation 的数据组件上使用 Initial_Value 属性。",
+      "correctionRule": "【语义错误】Initial_Value 通常仅当数据组件设置了 Data_Representation 属性时才能使用。",
+      "tags": [
+        "属性",
+        "补充 - Initial_Value 误用"
+      ]
+    },
+    {
+      "errorType": "虚拟处理器 - 包含子程序调用子句",
+      "badBehavior": "在虚拟处理器实现中声明了子程序调用子句，如 'thread calls Sub;'。",
+      "correctionRule": "【语义错误】虚拟处理器实现不得包含子程序调用子句（违反合法性规则L4）。将子程序调用移至线程组件中。",
+      "tags": [
+        "虚拟处理器 - 包含子程序调用子句",
+        "处理器",
+        "子程序"
+      ]
+    },
+    {
+      "errorType": "虚拟处理器 - 类型缺少必要特征",
+      "badBehavior": "虚拟处理器类型未声明必要的访问特征，如 provides subprogram access。",
+      "correctionRule": "【语义错误】虚拟处理器类型可包含端口、特征组、提供子程序访问、子程序组访问声明（合法性规则L1）。根据需要添加访问特征。",
+      "tags": [
+        "虚拟处理器 - 类型缺少必要特征",
+        "处理器"
+      ]
+    },
+    {
+      "errorType": "虚拟处理器 - 实现包含非法子组件",
+      "badBehavior": "虚拟处理器实现中包含了线程、进程等软件子组件。",
+      "correctionRule": "【语义错误】虚拟处理器实现只能包含虚拟总线、虚拟处理器和抽象子组件（合法性规则L2）。软件组件应放在系统层级。",
+      "tags": [
+        "虚拟处理器 - 实现包含非法子组件",
+        "进程",
+        "线程",
+        "处理器"
+      ]
+    },
+    {
+      "errorType": "虚拟处理器 - 违反一致性规则C3",
+      "badBehavior": "虚拟处理器之间的绑定存在循环，如 VP1 绑定到 VP2，VP2 绑定到 VP1。",
+      "correctionRule": "【语义错误】虚拟处理器之间的绑定不能存在循环（一致性规则C3）。重新设计绑定结构，确保无环。",
+      "tags": [
+        "绑定",
+        "虚拟处理器 - 违反一致性规则C3",
+        "处理器"
+      ]
+    },
+    {
+      "errorType": "线程 - 调度协议不兼容",
+      "badBehavior": "线程的调度协议与绑定的虚拟处理器支持的协议不匹配。",
+      "correctionRule": "【语义错误】Allowed_Dispatch_Protocol 属性指定虚拟处理器提供的调度协议，只有协议匹配的线程才能被绑定。检查 Dispatch_Protocol 和 Allowed_Dispatch_Protocol 的兼容性。",
+      "tags": [
+        "线程",
+        "线程 - 调度协议不兼容",
+        "处理器",
+        "绑定"
+      ]
+    },
+    {
+      "errorType": "线程 - 缺少必要属性",
+      "badBehavior": "周期性线程未指定 Period 属性，或未指定 Dispatch_Protocol。",
+      "correctionRule": "【语义错误】Periodic 调度协议的线程必须指定 Period 属性。确保线程类型声明包含必要的属性配置。",
+      "tags": [
+        "线程",
+        "线程 - 缺少必要属性",
+        "属性"
+      ]
+    },
+    {
+      "errorType": "进程 - 缺少线程",
+      "badBehavior": "进程实现中未声明任何线程子组件。",
+      "correctionRule": "【语义错误】进程必须包含至少一个线程。添加线程子组件声明。",
+      "tags": [
+        "进程 - 缺少线程",
+        "进程",
+        "线程"
+      ]
+    },
+    {
+      "errorType": "模式 - 未覆盖父类型模式",
+      "badBehavior": "组件实现中定义的模式未完全覆盖类型中声明的模式。",
+      "correctionRule": "【语义错误】组件类型中定义的模式必须在实现中完全覆盖。检查模式定义的完整性。",
+      "tags": [
+        "模式",
+        "模式 - 未覆盖父类型模式"
+      ]
+    },
+    {
+      "errorType": "模式 - 名称重复",
+      "badBehavior": "同一组件中声明了两个同名模式。",
+      "correctionRule": "【语义错误】每个模式必须有唯一名称。修改重复的模式名称。",
+      "tags": [
+        "模式",
+        "模式 - 名称重复"
+      ]
+    },
+    {
+      "errorType": "流 - 端到端流路径断裂",
+      "badBehavior": "端到端流中引用的子组件或连接不存在，导致路径断裂。",
+      "correctionRule": "【语义错误】端到端流必须描述一条连续、完整的路径。检查所有引用的子组件和连接是否正确定义。",
+      "tags": [
+        "流 - 端到端流路径断裂"
+      ]
+    },
+    {
+      "errorType": "流 - 流源与流汇不匹配",
+      "badBehavior": "流源和流汇的端口类型不匹配，如数据端口作为流源连接到事件端口作为流汇。",
+      "correctionRule": "【语义错误】流源和流汇必须类型匹配。确保流路径两端的端口类型一致。",
+      "tags": [
+        "流 - 流源与流汇不匹配"
+      ]
+    },
+    {
+      "errorType": "属性 - inherit 使用不当",
+      "badBehavior": "在非继承属性上使用了 inherit 关键字。",
+      "correctionRule": "【语法错误】只有声明为 inherit 的属性才能使用 inherit 关键字。检查属性定义是否包含 inherit 修饰符。",
+      "tags": [
+        "属性 - inherit 使用不当",
+        "属性"
+      ]
+    },
+    {
+      "errorType": "属性 - 值类型不匹配",
+      "badBehavior": "属性赋值的值类型与属性定义的类型不匹配，如向整数属性赋值字符串。",
+      "correctionRule": "【语义错误】属性值类型必须与属性定义的类型一致。检查属性类型定义和赋值的值。",
+      "tags": [
+        "属性 - 值类型不匹配",
+        "属性"
+      ]
+    },
+    {
+      "errorType": "属性 - list of 语法错误",
+      "badBehavior": "多值属性赋值时未使用列表语法，如 'Allowed_Processor_Binding => reference (CPU);' 应为列表。",
+      "correctionRule": "【语法错误】声明为 list of 的属性必须使用列表语法赋值。正确示例：'Allowed_Processor_Binding => list {reference (CPU)};'。",
+      "tags": [
+        "属性 - list of 语法错误",
+        "属性"
+      ]
+    },
+    {
+      "errorType": "绑定 - 线程未绑定处理器",
+      "badBehavior": "线程未通过 Actual_Processor_Binding 绑定到处理器或虚拟处理器。",
+      "correctionRule": "【语义错误】完全绑定系统要求每个线程必须绑定到处理器或虚拟处理器。添加 Actual_Processor_Binding 属性。",
+      "tags": [
+        "绑定 - 线程未绑定处理器",
+        "线程",
+        "处理器",
+        "绑定"
+      ]
+    },
+    {
+      "errorType": "绑定 - 进程未绑定内存",
+      "badBehavior": "进程未通过 Actual_Memory_Binding 绑定到内存组件。",
+      "correctionRule": "【语义错误】完全绑定系统要求每个进程的二进制映像必须绑定到内存组件。添加 Actual_Memory_Binding 属性。",
+      "tags": [
+        "内存",
+        "进程",
+        "绑定 - 进程未绑定内存",
+        "绑定"
+      ]
+    },
+    {
+      "errorType": "绑定 - 类别不匹配",
+      "badBehavior": "将线程绑定到不允许的组件类别，如绑定到设备组件。",
+      "correctionRule": "【语义错误】只能绑定到 Allowed_*_Binding_Class 指定的类别。检查 Allowed_Processor_Binding_Class 属性配置。",
+      "tags": [
+        "线程",
+        "设备",
+        "绑定 - 类别不匹配",
+        "绑定"
+      ]
+    },
+    {
+      "errorType": "组件包含 - 线程包含进程",
+      "badBehavior": "在线程实现中声明了进程子组件。",
+      "correctionRule": "【语义错误】线程只能包含数据、子程序、子程序组和抽象子组件。进程应作为系统或处理器的子组件。",
+      "tags": [
+        "线程",
+        "进程",
+        "组件包含 - 线程包含进程"
+      ]
+    },
+    {
+      "errorType": "组件包含 - 内存包含处理器",
+      "badBehavior": "在内存实现中声明了处理器子组件。",
+      "correctionRule": "【语义错误】内存只能包含抽象、内存、总线和虚拟总线子组件。处理器应作为系统的子组件。",
+      "tags": [
+        "组件包含 - 内存包含处理器",
+        "内存",
+        "处理器"
+      ]
+    },
+    {
+      "errorType": "总线 - 包含流子句",
+      "badBehavior": "在总线实现中声明了流子句。",
+      "correctionRule": "【语义错误】总线实现不能包含流或子程序调用子句。流应在系统或线程级别定义。",
+      "tags": [
+        "总线",
+        "总线 - 包含流子句"
+      ]
+    },
+    {
+      "errorType": "设备 - 包含子程序调用",
+      "badBehavior": "在设备实现中声明了子程序调用子句。",
+      "correctionRule": "【语义错误】设备实现不能包含子程序调用子句。驱动程序调用应通过子程序访问特征实现。",
+      "tags": [
+        "设备",
+        "设备 - 包含子程序调用",
+        "子程序"
+      ]
+    },
+    {
+      "errorType": "设备 - 未连接总线",
+      "badBehavior": "设备组件未通过总线访问连接到总线。",
+      "correctionRule": "【语义错误】设备需要通过总线访问连接到总线才能与处理器通信。添加总线访问特征和连接。",
+      "tags": [
+        "总线",
+        "设备",
+        "设备 - 未连接总线"
+      ]
+    },
+    {
+      "errorType": "子程序 - 参数方向错误",
+      "badBehavior": "子程序参数使用了 in out 方向但实际只需要 in 或 out。",
+      "correctionRule": "【语义错误】参数方向应准确反映数据流向。检查参数的实际用途，使用正确的方向（in/out/in out）。",
+      "tags": [
+        "子程序 - 参数方向错误",
+        "子程序"
+      ]
+    },
+    {
+      "errorType": "子程序 - 远程调用无代理",
+      "badBehavior": "跨线程调用子程序时未配置代理机制。",
+      "correctionRule": "【语义错误】远程子程序调用需要通过代理处理。确保提供子程序访问的组件配置了正确的调用代理。",
+      "tags": [
+        "子程序 - 远程调用无代理",
+        "线程",
+        "子程序"
+      ]
+    },
+    {
+      "errorType": "数据组件 - 缺少并发控制协议",
+      "badBehavior": "多个线程共享访问的数据组件未指定 Concurrency_Control_Protocol 属性。",
+      "correctionRule": "【语义错误】共享数据应指定并发访问控制协议（如互斥）。添加 Concurrency_Control_Protocol 属性。",
+      "tags": [
+        "数据组件 - 缺少并发控制协议",
+        "线程",
+        "属性"
+      ]
+    },
+    {
+      "errorType": "特征组 - 嵌套层级过深",
+      "badBehavior": "特征组嵌套超过3层。",
+      "correctionRule": "【语义错误】特征组嵌套应保持合理层级，建议不超过3层。重构特征组结构，减少嵌套。",
+      "tags": [
+        "特征组 - 嵌套层级过深"
+      ]
+    },
+    {
+      "errorType": "端口 - 队列大小为零",
+      "badBehavior": "事件或事件数据端口的 Queue_Size 设置为 0。",
+      "correctionRule": "【语义错误】事件端口默认队列大小为1，不能设置为0。将 Queue_Size 设置为至少1。",
+      "tags": [
+        "端口 - 队列大小为零"
+      ]
+    },
+    {
+      "errorType": "端口 - 数据端口设置队列",
+      "badBehavior": "数据端口设置了 Queue_Size 属性。",
+      "correctionRule": "【语义错误】数据端口不支持队列，只保留最新值。移除数据端口的 Queue_Size 属性。",
+      "tags": [
+        "端口 - 数据端口设置队列",
+        "属性"
+      ]
+    },
+    {
+      "errorType": "包 - 循环导入",
+      "badBehavior": "包 A 导入包 B，包 B 又导入包 A。",
+      "correctionRule": "【语义错误】包导入不能形成循环。重构包结构，避免循环依赖。",
+      "tags": [
+        "包 - 循环导入"
+      ]
+    },
+    {
+      "errorType": "包 - 私有分类器被外部引用",
+      "badBehavior": "在包的 private 部分声明的分类器被包外组件引用。",
+      "correctionRule": "【语义错误】private 部分声明的分类器在包外不可见。将需要外部访问的分类器移至 public 部分。",
+      "tags": [
+        "包 - 私有分类器被外部引用"
+      ]
+    },
+    {
+      "errorType": "别名 - 类别不匹配",
+      "badBehavior": "使用 renames 创建别名时，别名的组件类别与原组件不一致。",
+      "correctionRule": "【语义错误】别名声明中的组件类别必须与被引用的组件类别匹配。修正别名的类别声明。",
+      "tags": [
+        "别名 - 类别不匹配"
+      ]
+    },
+    {
+      "errorType": "抽象组件 - 细化类型不兼容",
+      "badBehavior": "将抽象组件细化为与原接口不兼容的具体组件类型。",
+      "correctionRule": "【语义错误】抽象组件细化时必须保持接口兼容性。确保细化后的组件类型与原抽象接口匹配。",
+      "tags": [
+        "抽象组件 - 细化类型不兼容"
+      ]
+    },
+    {
+      "errorType": "系统组件 - 包含线程但未绑定",
+      "badBehavior": "系统实现中包含线程子组件但未通过 Actual_Processor_Binding 绑定到处理器。",
+      "correctionRule": "【语义错误】系统中的线程必须绑定到处理器或虚拟处理器才能执行。添加绑定属性或使用虚拟处理器作为中介。",
+      "tags": [
+        "系统组件 - 包含线程但未绑定",
+        "线程",
+        "处理器",
+        "绑定"
+      ]
+    },
+    {
+      "errorType": "虚拟总线 - 未绑定到物理总线",
+      "badBehavior": "虚拟总线未直接或间接绑定到支持它的处理器或总线。",
+      "correctionRule": "【语义错误】虚拟总线必须直接或间接绑定到支持它们的处理器或总线（一致性规则C1）。添加绑定声明。",
+      "tags": [
+        "总线",
+        "虚拟总线 - 未绑定到物理总线",
+        "处理器",
+        "绑定"
+      ]
+    },
+    {
+      "errorType": "虚拟总线 - 违反一致性规则C2",
+      "badBehavior": "虚拟总线之间的绑定存在循环。",
+      "correctionRule": "【语义错误】虚拟总线之间的绑定声明不能存在循环（一致性规则C2）。重新设计绑定结构。",
+      "tags": [
+        "总线",
+        "绑定",
+        "虚拟总线 - 违反一致性规则C2"
+      ]
+    },
+    {
+      "errorType": "进程 - 重复绑定",
+      "badBehavior": "同一进程通过 Actual_Processor_Binding 绑定到多个处理器。",
+      "correctionRule": "【语义错误】一个进程只能绑定到一个处理器或虚拟处理器。移除重复的绑定声明。",
+      "tags": [
+        "进程",
+        "进程 - 重复绑定",
+        "处理器",
+        "绑定"
+      ]
+    },
+    {
+      "errorType": "线程 - 优先级超出范围",
+      "badBehavior": "线程的优先级值超出了绑定处理器的 Priority_Range 范围。",
+      "correctionRule": "【语义错误】线程优先级必须在绑定处理器的 Priority_Range 范围内。调整优先级值或处理器的优先级范围。",
+      "tags": [
+        "线程",
+        "线程 - 优先级超出范围",
+        "处理器",
+        "绑定"
+      ]
+    },
+    {
+      "errorType": "属性集 - extends 循环",
+      "badBehavior": "属性集 A extends 属性集 B，属性集 B 又 extends 属性集 A。",
+      "correctionRule": "【语义错误】属性集继承不能形成循环。重构属性集继承结构。",
+      "tags": [
+        "属性集 - extends 循环",
+        "属性"
+      ]
+    },
+    {
+      "errorType": "属性 - 未定义属性引用",
+      "badBehavior": "引用了未在任何属性集中定义的属性。",
+      "correctionRule": "【语义错误】确保引用的属性已在当前包或通过 with 导入的属性集中定义。检查属性名称拼写和导入声明。",
+      "tags": [
+        "属性 - 未定义属性引用",
+        "属性"
+      ]
+    },
+    {
+      "errorType": "连接 - 数组连接未使用连接模式",
+      "badBehavior": "试图直接连接数组组件的元素，如 'port A[0] -> B[0];'。",
+      "correctionRule": "【语义错误】AADL不支持直接连接数组元素，应使用连接模式（如 One_To_One）来定义组件数组间的连接。",
+      "tags": [
+        "连接 - 数组连接未使用连接模式"
+      ]
+    },
+    {
+      "errorType": "连接 - 访问方向不匹配",
+      "badBehavior": "将 provides data access 连接到 provides data access（应为 provides 连接到 requires）。",
+      "correctionRule": "【语义错误】访问连接必须在 provides 和 requires 之间建立。确保连接两端的访问方向正确匹配。",
+      "tags": [
+        "连接 - 访问方向不匹配"
+      ]
+    },
+    {
+      "errorType": "流 - 流实现与流规范不匹配",
+      "badBehavior": "实现中的流路径与类型中定义的流规范不对应。",
+      "correctionRule": "【语义错误】流实现必须与类型中的流规范一一对应。检查流名称和路径定义的一致性。",
+      "tags": [
+        "流 - 流实现与流规范不匹配"
+      ]
+    },
+    {
+      "errorType": "模式 - 转换条件冲突",
+      "badBehavior": "同一事件端口触发多个互斥的模式转换。",
+      "correctionRule": "【语义错误】模式转换条件不应产生歧义。确保每个事件只触发一个模式转换，或使用优先级规则。",
+      "tags": [
+        "模式",
+        "模式 - 转换条件冲突"
+      ]
+    },
+    {
+      "errorType": "设备 - 重复总线访问",
+      "badBehavior": "设备声明了多个 requires bus access 特征连接到同一总线。",
+      "correctionRule": "【语义错误】设备通常只需要一个总线访问特征。移除重复的总线访问声明。",
+      "tags": [
+        "总线",
+        "设备 - 重复总线访问",
+        "设备"
+      ]
+    },
+    {
+      "errorType": "处理器 - 包含线程子组件",
+      "badBehavior": "在处理器实现中直接声明了线程子组件。",
+      "correctionRule": "【语义错误】处理器只能包含内存、总线、虚拟处理器和虚拟总线子组件。线程应通过绑定关联，而非直接包含。",
+      "tags": [
+        "线程",
+        "处理器 - 包含线程子组件",
+        "处理器"
+      ]
+    },
+    {
+      "errorType": "虚拟处理器 - 缺少启动时间属性",
+      "badBehavior": "虚拟处理器未指定 Startup_Execution_Time 或 Startup_Deadline 属性。",
+      "correctionRule": "【语义错误】虚拟处理器应配置启动相关属性以支持初始化时序分析。添加 Startup_Execution_Time 和 Startup_Deadline 属性。",
+      "tags": [
+        "虚拟处理器 - 缺少启动时间属性",
+        "处理器",
+        "属性"
+      ]
+    },
+    {
+      "errorType": "线程 - 执行时间超出限制",
+      "badBehavior": "线程的 Execution_Time 超过了绑定处理器的时间片限制。",
+      "correctionRule": "【语义错误】线程执行时间应在处理器调度能力范围内。优化线程实现或调整处理器配置。",
+      "tags": [
+        "绑定",
+        "线程",
+        "线程 - 执行时间超出限制",
+        "处理器"
+      ]
+    }
+  ],
   "codeExamples": [],
-  "lastModified": null
+  "lastModified": "2026-10-15T11:17:08"
 }

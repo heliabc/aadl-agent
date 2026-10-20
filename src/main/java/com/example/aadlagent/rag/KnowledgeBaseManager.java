@@ -1,5 +1,6 @@
 package com.example.aadlagent.rag;
 
+import com.example.aadlagent.config.QdrantConfig;
 import com.example.aadlagent.rag.model.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -30,9 +31,12 @@ public class KnowledgeBaseManager {
     private final ConcurrentHashMap<String, Long> lastModifiedTimes = new ConcurrentHashMap<>();
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-    public KnowledgeBaseManager(EmbeddingService embeddingService, QdrantVectorStore qdrantVectorStore) {
+    private final QdrantConfig qdrantConfig;
+
+    public KnowledgeBaseManager(EmbeddingService embeddingService, QdrantVectorStore qdrantVectorStore, QdrantConfig qdrantConfig) {
         this.embeddingService = embeddingService;
         this.qdrantVectorStore = qdrantVectorStore;
+        this.qdrantConfig = qdrantConfig;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
     }
@@ -257,17 +261,58 @@ public class KnowledgeBaseManager {
                     agentType, docsToUpsert.size(), generatedEmbeddings, skippedEmbeddings);
             
             if (qdrantAvailable && !docsToUpsert.isEmpty()) {
-                // 只在 collection 为空时才全量 upsert；已有数据则跳过（靠 watcher 和 API 操作做增量同步）
-                long existingCount = qdrantVectorStore.count(agentType);
-                if (existingCount == 0) {
-                    log.info("Collection '{}' is empty, performing initial bulk upsert of {} documents", agentType, docsToUpsert.size());
-                    qdrantVectorStore.upsertBatch(agentType, docsToUpsert);
-                    log.info("Initial bulk upsert completed for {}", agentType);
-                } else {
-                    log.info("Collection '{}' already has {} points, skipping full upsert (watcher handles changes)", agentType, existingCount);
+                // syncOnStartup=false 且集合已有数据时跳过启动同步，直接复用 Qdrant 数据
+                // 仅当集合为空（count==0）时才做初始写入
+                if (!qdrantConfig.isSyncOnStartup()) {
+                    long existingCount = qdrantVectorStore.count(agentType);
+                    if (existingCount > 0) {
+                        log.info("syncOnStartup=false and collection '{}' has {} points, skipping startup sync (reuse existing data)", agentType, existingCount);
+                        return knowledgeBase;
+                    }
+                    log.info("syncOnStartup=false but collection '{}' is empty, performing initial load", agentType);
+                }
+                // 始终全量 upsert（幂等覆盖），保证 JSON 是唯一真值来源
+                // 同时清理孤儿点：Qdrant 中存在但 JSON 中已不存在的文档
+                log.info("Performing full sync for collection '{}': {} documents", agentType, docsToUpsert.size());
+                qdrantVectorStore.upsertBatch(agentType, docsToUpsert);
+                log.info("Full upsert completed for {}", agentType);
+
+                // 孤儿点清理
+                try {
+                    List<Document> existingDocs = qdrantVectorStore.getAllDocuments(agentType);
+                    Set<String> expectedIds = docsToUpsert.stream()
+                            .map(Document::getId)
+                            .collect(Collectors.toSet());
+                    List<String> orphanIds = new ArrayList<>();
+                    for (Document doc : existingDocs) {
+                        if (!expectedIds.contains(doc.getId())) {
+                            orphanIds.add(doc.getId());
+                        }
+                    }
+                    if (!orphanIds.isEmpty()) {
+                        log.info("Found {} orphan points in '{}', cleaning up...", orphanIds.size(), agentType);
+                        qdrantVectorStore.deleteBatch(agentType, orphanIds);
+                        log.info("Cleaned up {} orphan points from '{}'", orphanIds.size(), agentType);
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to clean up orphan points for {}: {}", agentType, e.getMessage());
                 }
             } else if (qdrantAvailable) {
                 log.warn("No documents to upsert for {} - check if embeddings are being generated", agentType);
+                // 没有要 upsert 的文档，但集合里可能有旧数据，也要清理
+                try {
+                    List<Document> existingDocs = qdrantVectorStore.getAllDocuments(agentType);
+                    if (!existingDocs.isEmpty()) {
+                        List<String> allIds = new ArrayList<>();
+                        for (Document doc : existingDocs) {
+                            allIds.add(doc.getId());
+                        }
+                        log.info("No docs to upsert but {} orphan points found in '{}', cleaning up...", allIds.size(), agentType);
+                        qdrantVectorStore.deleteBatch(agentType, allIds);
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to clean up orphan points for {}: {}", agentType, e.getMessage());
+                }
             } else {
                 log.warn("Qdrant not available, skipping upsert for {}", agentType);
             }
@@ -747,7 +792,7 @@ public class KnowledgeBaseManager {
     public List<Document> toDocuments(String agentType) {
         KnowledgeBase kb = getKnowledgeBase(agentType);
         List<Document> documents = new ArrayList<>();
-        
+
         for (BasicKnowledge basic : kb.getBasics()) {
             documents.add(toDocument(basic, agentType, "basic"));
         }
@@ -757,8 +802,15 @@ public class KnowledgeBaseManager {
         for (ErrorCorrection ec : kb.getErrorCorrections()) {
             documents.add(toDocument(ec, agentType, "error_correction"));
         }
-        
+
         return documents;
+    }
+
+    /**
+     * 将单个 BasicKnowledge 转换为 Document（供 RAG 优化方法使用）。
+     */
+    public Document toDocument(BasicKnowledge basic, String agentType) {
+        return toDocument(basic, agentType, "basic");
     }
 
     private Document toDocument(BasicKnowledge basic, String agentType, String type) {
