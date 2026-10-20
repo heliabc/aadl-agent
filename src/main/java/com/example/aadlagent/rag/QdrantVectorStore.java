@@ -539,7 +539,20 @@ public class QdrantVectorStore {
                 }
 
                 Map<String, Object> body = response.getBody();
-                List<Map<String, Object>> resultList = (List<Map<String, Object>>) body.get("result");
+                // Qdrant scroll API: result 是对象，包含 points 数组和 next_page_offset
+                Map<String, Object> resultObj = (Map<String, Object>) body.get("result");
+                List<Map<String, Object>> resultList = null;
+                if (resultObj != null) {
+                    Object pointsObj = resultObj.get("points");
+                    if (pointsObj instanceof List) {
+                        resultList = (List<Map<String, Object>>) pointsObj;
+                    }
+                    // 翻页 offset 在 result 对象内部
+                    Object npo = resultObj.get("next_page_offset");
+                    nextOffset = (npo != null) ? npo.toString() : null;
+                } else {
+                    nextOffset = null;
+                }
 
                 if (resultList != null) {
                     for (Map<String, Object> point : resultList) {
@@ -551,10 +564,6 @@ public class QdrantVectorStore {
                         }
                     }
                 }
-
-                // 翻页：next_page_offset 为 null 表示结束
-                Object npo = body.get("next_page_offset");
-                nextOffset = (npo != null) ? npo.toString() : null;
 
             } while (nextOffset != null);
 
