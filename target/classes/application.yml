@@ -53,6 +53,12 @@ gemini:
 rag:
   # RAG 总开关：true=启用检索增强，false=完全跳过 RAG，模型直接生成
   enabled: true
+  # 按 agentType 粒度禁用 RAG。这些 agent 的 prompt 已经包含足够规则/示例，不需要 RAG 补充。
+  # 注释/移除列表即可重新启用对应 agent 的 RAG。
+  disabled-agents:
+    - requirement
+    - architecture
+    - module
   top-k: 5
   rerank-top-k: 3
   rrf-k: 60

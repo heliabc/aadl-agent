@@ -165,6 +165,32 @@ public class KnowledgeBaseManager {
             
             kb.setAgentType(agentType);
 
+            // 交叉引用增强：为每条 BasicKnowledge 注入非终结符速查表
+            // 小模型看到 BNF 里的非终结符时，能马上知道是什么意思，不用瞎猜
+            if (kb.getBasics() != null && kb.getBasics().size() > 1) {
+                // 构建 name -> 一句话摘要 的速查表
+                java.util.Map<String, String> summaryMap = new java.util.HashMap<>();
+                for (BasicKnowledge bk : kb.getBasics()) {
+                    if (bk.getSyntaxName() != null 
+                        && bk.getNaturalLanguageSemantics() != null) {
+                        String summary = bk.getNaturalLanguageSemantics().get("summary");
+                        if (summary != null && !summary.isEmpty()) {
+                            summaryMap.put(bk.getSyntaxName(), summary);
+                        }
+                    }
+                }
+                // 给每条注入
+                int enhancedCount = 0;
+                for (BasicKnowledge bk : kb.getBasics()) {
+                    if (bk.getNonTerminalList() != null && !bk.getNonTerminalList().isEmpty()) {
+                        bk.setNonTerminalSummaries(summaryMap);
+                        enhancedCount++;
+                    }
+                }
+                log.info("Enhanced {} basics with non-terminal cross-references ({} entries in summary map)", 
+                        enhancedCount, summaryMap.size());
+            }
+
             boolean qdrantAvailable = qdrantVectorStore.isAvailable();
             log.info("Loading knowledge base {}: qdrantAvailable={}, basics={}, examples={}, corrections={}", 
                     agentType, qdrantAvailable, 

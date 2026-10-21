@@ -18,6 +18,22 @@ public class RagConfig {
      */
     private boolean enabled = true;
 
+    /**
+     * 按 agentType 粒度禁用 RAG 的列表。
+     * 例如 ["requirement", "architecture", "module"] 表示这三个 agent 不走 RAG。
+     * 列表为空时，所有 agent 都使用 RAG（前提是 rag.enabled=true）。
+     * 用途：某些 agent 的 prompt 已经包含足够的规则和示例，不需要 RAG 补充，
+     *       禁用后可以节省检索时间并避免引入噪声。
+     */
+    private java.util.List<String> disabledAgents = new java.util.ArrayList<>();
+
+    public boolean isAgentDisabled(String agentType) {
+        if (agentType == null || disabledAgents == null || disabledAgents.isEmpty()) {
+            return false;
+        }
+        return disabledAgents.contains(agentType);
+    }
+
     private int topK = 5;
 
     private int rerankTopK = 3;

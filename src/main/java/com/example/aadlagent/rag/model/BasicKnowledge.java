@@ -94,6 +94,39 @@ public class BasicKnowledge {
 
     private String semantics;
 
+    // 非终结符速查表（运行时注入，来自知识库交叉引用）
+    // key: 非终结符名称，value: 一句话中文释义
+    private transient java.util.Map<String, String> nonTerminalSummaries;
+
+    public void setNonTerminalSummaries(java.util.Map<String, String> summaries) {
+        this.nonTerminalSummaries = summaries;
+        // content 需要重新生成
+        this.content = null;
+    }
+
+    /**
+     * 将 BNF 元符号替换为中文描述，避免小模型把 {} [] 等元符号当真写进代码。
+     * - { X }*  →  【零次或多次：X】
+     * - { X }+  →  【一次或多次：X】
+     * - [ X ]   →  【可选：X】
+     * - ::=     →  定义为
+     * - |       →  或
+     * 注意：只替换单行模式，多行的由警告 + 正例/反例兜底。
+     */
+    private String renderBnfSafe(String bnf) {
+        if (bnf == null || bnf.isEmpty()) return "";
+        String result = bnf;
+
+        // 替换 { X }* → 【零次或多次：X】（单行）
+        result = result.replaceAll("\\{\\s*([^{}]+?)\\s*\\}\\s*\\*", "【零次或多次：$1】");
+        // 替换 { X }+ → 【一次或多次：X】（单行）
+        result = result.replaceAll("\\{\\s*([^{}]+?)\\s*\\}\\s*\\+", "【一次或多次：$1】");
+        // 替换 [ X ] → 【可选：X】（单行，不含嵌套）
+        result = result.replaceAll("\\[\\s*([^\\[\\]]+?)\\s*\\]", "【可选：$1】");
+
+        return result;
+    }
+
     /**
      * 返回适合做 embedding 和 prompt 注入的格式化纯文本。
      * 新格式：按"标题→BNF→语义→正例→反例→规则"的顺序组织。
@@ -106,6 +139,18 @@ public class BasicKnowledge {
         }
 
         StringBuilder sb = new StringBuilder();
+
+        // 顶部重要提醒（小模型容易忽略 BNF 元符号概念，放在最前面强化记忆）
+        if (bnfSyntax != null && !bnfSyntax.isEmpty()) {
+            sb.append("═══════════════════════════════════════\n");
+            sb.append("⚠️  语法知识阅读须知\n");
+            sb.append("  1. BNF 里的 {}（花括号）和 []（方括号）是【语法说明符号】，不是代码字符！\n");
+            sb.append("  2. { X }* 表示 X 可以写 0 次或多次；{ X }+ 表示 X 至少写 1 次\n");
+            sb.append("  3. [ X ] 表示 X 是可选的，可以写也可以不写\n");
+            sb.append("  4. 只有「终结符」列表里出现的字符，才是代码里必须原样写的\n");
+            sb.append("  5. 真实 AADL 代码里几乎不用 {}，唯一例外是附件的 {** 和 **}\n");
+            sb.append("═══════════════════════════════════════\n\n");
+        }
 
         // 标题行
         if (syntaxName != null) {
@@ -124,7 +169,29 @@ public class BasicKnowledge {
 
         // BNF
         if (bnfSyntax != null && !bnfSyntax.isEmpty()) {
-            sb.append("【BNF 语法】\n").append(bnfSyntax).append("\n\n");
+            sb.append("【BNF 语法规则（重要说明）】\n");
+            sb.append("  ⚠️  这是语法规则描述，不是代码模板！\n");
+            sb.append("  ⚠️  BNF 中的 {} 花括号和 [] 方括号是【元符号】，表示「重复」和「可选」，绝对不能写进 AADL 代码！\n");
+            sb.append("  ⚠️  只有「终结符」列表里的字符才是代码中必须原样写的。\n\n");
+            sb.append("【BNF 产生式】\n").append(renderBnfSafe(bnfSyntax)).append("\n\n");
+
+            // 非终结符速查表（交叉引用增强）
+            if (nonTerminalList != null && !nonTerminalList.isEmpty()
+                && nonTerminalSummaries != null && !nonTerminalSummaries.isEmpty()) {
+                int found = 0;
+                StringBuilder ntSb = new StringBuilder();
+                ntSb.append("【BNF 中非终结符速查（点击/查找同名条目查看完整写法）】\n");
+                for (String nt : nonTerminalList) {
+                    String summary = nonTerminalSummaries.get(nt);
+                    if (summary != null) {
+                        ntSb.append("  • ").append(nt).append(" → ").append(summary).append("\n");
+                        found++;
+                    }
+                }
+                if (found > 0) {
+                    sb.append(ntSb).append("\n");
+                }
+            }
         }
 
         // 元符号解释（对小模型很重要）

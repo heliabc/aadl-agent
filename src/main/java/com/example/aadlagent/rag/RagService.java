@@ -196,6 +196,17 @@ public class RagService {
     }
 
     public String getEnhancedContext(String query, String agentType) {
+        // 总开关关闭 → 直接返回空
+        if (!ragConfig.isEnabled()) {
+            return "";
+        }
+
+        // 按 agentType 粒度禁用 → 直接返回空
+        if (ragConfig.isAgentDisabled(agentType)) {
+            log.info("RAG disabled for agentType={}, returning empty context", agentType);
+            return "";
+        }
+
         SearchResult result = search(query, agentType);
 
         if (result.getDocuments() == null || result.getDocuments().isEmpty()) {
