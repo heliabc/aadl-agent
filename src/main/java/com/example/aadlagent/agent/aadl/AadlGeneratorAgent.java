@@ -6,9 +6,13 @@ import com.example.aadlagent.agent.AgentOutput;
 import com.example.aadlagent.client.LlmClient;
 import com.example.aadlagent.client.ModelService;
 import com.example.aadlagent.client.ModelType;
+import com.example.aadlagent.constrained.GbnfDecodingManager;
+import com.example.aadlagent.constrained.GbnfDecodingRequest;
+import com.example.aadlagent.constrained.GbnfDecodingResult;
 import com.example.aadlagent.util.AadlInputParser;
 import com.example.aadlagent.util.AadlReferenceValidator;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -27,6 +31,7 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
 
     private final ModelService modelService;
     private final AadlGeneratorPrompt prompt;
+    private final GbnfDecodingManager gbnfDecodingManager;
 
     @Value("${agent.aadl.max-retries:3}")
     private int maxRetries;
@@ -36,10 +41,16 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
 
     @Value("${agent.aadl.max-tokens:16384}")
     private int maxTokens;
+    
+    @Value("${gbnf.enabled:false}")
+    private boolean gbnfEnabled;
 
-    public AadlGeneratorAgent(ModelService modelService) {
+    @Autowired
+    public AadlGeneratorAgent(ModelService modelService, 
+                              GbnfDecodingManager gbnfDecodingManager) {
         this.modelService = modelService;
         this.prompt = new AadlGeneratorPrompt();
+        this.gbnfDecodingManager = gbnfDecodingManager;
     }
 
     @Override
@@ -117,6 +128,11 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
             log.info("正在解析LLM响应...");
             String aadlContent = extractAadlContent(llmResponse);
 
+            // ===== GBNF 受限解码：语法质检 =====
+            if (gbnfEnabled) {
+                aadlContent = applyGbnfGrammarCheck(aadlContent);
+            }
+
             // 引用完整性验证与自动修正（不依赖大模型）
             String rawAadlContent = aadlContent; // 保存修复前的原始版本
             AadlReferenceValidator.ValidationResult validationResult =
@@ -151,10 +167,56 @@ public class AadlGeneratorAgent implements Agent<AgentInput, AgentOutput> {
         }
     }
 
+    /**
+     * GBNF 语法质检：对生成的 AADL 代码进行语法检查。
+     * 
+     * 工作模式：
+     * 1. 如果 GBNF 约束服务可用：输出语法一定正确（token级约束）
+     * 2. 如果只有本地验证器：快速检查常见语法错误并尝试自动修复
+     * 
+     * 注意：真正的 GBNF 受限解码应该在生成阶段就启用（直接调用 gbnfService.generate），
+     * 这里的"质检"是对已有生成结果的后置检查和兜底修复。
+     * 
+     * @param aadlContent 原始 AADL 代码
+     * @return 检查/修复后的 AADL 代码
+     */
+    private String applyGbnfGrammarCheck(String aadlContent) {
+        // 本地语法验证（快速检查）
+        com.example.aadlagent.constrained.AadlBnfValidator.ValidationResult validation = 
+            gbnfDecodingManager.getLocalValidator().validate(aadlContent);
+        
+        if (validation.isValid) {
+            log.debug("GBNF语法质检：通过");
+            return aadlContent;
+        }
+        
+        log.warn("GBNF语法质检：发现 {} 个语法错误", validation.errors.size());
+        for (int i = 0; i < Math.min(validation.errors.size(), 5); i++) {
+            log.warn("  - {}", validation.errors.get(i));
+        }
+        
+        // 尝试本地自动修复（补充缺失的 end 语句等简单修复）
+        String fixed = gbnfDecodingManager.getLocalValidator()
+            .fixMissingEndStatements(aadlContent);
+        
+        if (!fixed.equals(aadlContent)) {
+            log.info("GBNF语法质检：本地自动修复已应用（补充缺失的 end 语句）");
+            
+            // 再次验证
+            var revalidation = gbnfDecodingManager.getLocalValidator().validate(fixed);
+            if (revalidation.isValid) {
+                log.info("GBNF语法质检：修复后验证通过");
+            } else {
+                log.warn("GBNF语法质检：修复后仍有 {} 个错误", revalidation.errors.size());
+            }
+            return fixed;
+        }
+        
+        return aadlContent;
+    }
+
     private String extractAadlContent(String response) {
         String cleaned = response.trim();
-
-        // 1. 优先尝试 aadl 代码块
         if (cleaned.startsWith("```aadl")) {
             int start = cleaned.indexOf("```aadl") + 7;
             int end = cleaned.lastIndexOf("```");

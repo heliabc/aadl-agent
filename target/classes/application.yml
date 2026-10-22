@@ -101,3 +101,15 @@ agent:
     ollama-model-name: "deepseek-coder-v2:latest"
     temperature: 0.3
     max-tokens: 2048
+
+# ============================================================
+# GBNF 受限解码配置
+# 通过 llama.cpp GBNF 语法在 token 级约束模型生成，保证输出语法正确
+# ============================================================
+gbnf:
+  # 是否启用语法质检（生成后检查+本地修复）
+  enabled: false
+  # Python GBNF 服务地址（真正的 token 级约束生成服务）
+  server:
+    base-url: http://localhost:8082
+    timeout-seconds: 300

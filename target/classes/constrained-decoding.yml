@@ -1,0 +1,33 @@
+# ============================================================
+# 受限解码（Constrained Decoding）配置
+# ============================================================
+# 通过 AADL BNF 语法约束模型生成，保证输出语法正确
+
+constrained-decoding:
+  # 是否启用受限解码
+  enabled: true
+  
+  # 首选服务类型: ollama | llamacpp
+  # - ollama: 基于 Ollama 的增量验证式约束（伪受限解码，无需额外依赖）
+  # - llamacpp: 基于 llama-cpp-python 的真正 token 级 GBNF 约束
+  preferred-service: ollama
+  
+  # Ollama 增量验证服务配置
+  ollama:
+    # Ollama API 地址（直接调用 Ollama 时使用）
+    base-url: http://localhost:11434
+    # 使用的模型名称
+    model: qwen3:8b
+    # 最大重试次数
+    max-retries: 3
+    # 外部 Python 服务地址（use-external-service=true 时使用）
+    service-url: http://localhost:8081
+    # 是否使用外部 Python 服务（false 时使用内置增量验证）
+    use-external-service: false
+  
+  # LlamaCpp GBNF 服务配置（真正的 token 级约束）
+  llama-cpp:
+    # Python GBNF 服务地址
+    base-url: http://localhost:8082
+    # 默认 GBNF 语法根规则
+    grammar-root: root

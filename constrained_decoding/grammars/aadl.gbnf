@@ -1,0 +1,519 @@
+# AADL (Architecture Analysis & Design Language) GBNF Grammar
+# Based on AS5506C AADL v2.2 standard
+# Used for constrained decoding with llama.cpp
+
+# ==================== Root Rule ====================
+root ::= aadl_model
+
+# ==================== Top-level Model ====================
+aadl_model ::= package_declaration (package_declaration)*
+
+# ==================== Package Declaration ====================
+package_declaration ::=
+    "package" ws package_name ws
+    (public_section | private_section)+
+    "end" ws package_name ";" ws
+
+package_name ::= identifier ("::" identifier)*
+
+public_section ::= "public" ws package_content
+private_section ::= "private" ws package_content
+
+package_content ::= (
+    component_type_declaration
+    | component_implementation_declaration
+    | feature_group_type_declaration
+    | property_set_declaration
+    | with_clause
+    | import_declaration
+    | alias_declaration
+    | annex_library
+)*
+
+# ==================== With Clause ====================
+with_clause ::= "with" ws package_name ("," ws package_name)* ";" ws
+
+# ==================== Import Declaration ====================
+import_declaration ::=
+    "import" ws (
+        "all" ws "from" ws package_name
+        | package_name "::" (identifier | "*")
+    ) ";" ws
+
+# ==================== Alias Declaration ====================
+alias_declaration ::=
+    "alias" ws identifier "is" ws qualified_reference ";" ws
+
+# ==================== Component Type Declaration ====================
+component_type_declaration ::=
+    component_category ws defining_identifier
+    (extends_clause)?
+    component_type_body
+    "end" ws defining_identifier ";" ws
+
+component_category ::=
+    "abstract"
+    | "bus"
+    | "data"
+    | "device"
+    | "memory"
+    | "process"
+    | "processor"
+    | "subprogram"
+    | "subprogram group"
+    | "system"
+    | "thread"
+    | "thread group"
+    | "virtual bus"
+    | "virtual processor"
+
+component_type_body ::=
+    (prototypes_subclause)?
+    (features_subclause)?
+    (flows_subclause)?
+    (modes_subclause)?
+    (properties_subclause)?
+    (annex_subclause)*
+
+# ==================== Component Implementation Declaration ====================
+component_implementation_declaration ::=
+    component_category ws "implementation" ws defining_identifier "." defining_identifier
+    (extends_clause)?
+    component_implementation_body
+    "end" ws defining_identifier "." defining_identifier ";" ws
+
+component_implementation_body ::=
+    (prototypes_subclause)?
+    (subcomponents_subclause)?
+    (internal_features_subclause)?
+    (processor_features_subclause)?
+    (calls_subclause)?
+    (connections_subclause)?
+    (flows_subclause)?
+    (modes_subclause)?
+    (properties_subclause)?
+    (annex_subclause)*
+
+# ==================== Extends Clause ====================
+extends_clause ::= "extends" ws unique_reference ("," ws unique_reference)* ws
+
+# ==================== Prototypes Subclause ====================
+prototypes_subclause ::= "prototypes" ws (prototype_declaration)*
+
+prototype_declaration ::=
+    ( "abstract" | component_category ) ws defining_identifier
+    (":" ws prototype_reference)?
+    (array_dimension)?
+    ";" ws
+
+# ==================== Features Subclause ====================
+features_subclause ::= "features" ws (feature_declaration)*
+
+feature_declaration ::=
+    data_port_feature
+    | event_port_feature
+    | event_data_port_feature
+    | data_access_feature
+    | bus_access_feature
+    | subprogram_access_feature
+    | subprogram_group_access_feature
+    | feature_group_feature
+    | parameter_feature
+    | abstract_feature
+
+data_port_feature ::=
+    defining_identifier ":" ws port_direction ws "data port"
+    (ws component_reference)?
+    (property_associations)? ";" ws
+
+event_port_feature ::=
+    defining_identifier ":" ws port_direction ws "event port"
+    (property_associations)? ";" ws
+
+event_data_port_feature ::=
+    defining_identifier ":" ws port_direction ws "event data port"
+    (ws component_reference)?
+    (property_associations)? ";" ws
+
+data_access_feature ::=
+    defining_identifier ":" ws access_direction ws "data access"
+    (ws component_reference)?
+    (property_associations)? ";" ws
+
+bus_access_feature ::=
+    defining_identifier ":" ws access_direction ws ("virtual ")? "bus access"
+    (ws component_reference)?
+    (property_associations)? ";" ws
+
+subprogram_access_feature ::=
+    defining_identifier ":" ws access_direction ws "subprogram access"
+    (ws component_reference)?
+    (property_associations)? ";" ws
+
+subprogram_group_access_feature ::=
+    defining_identifier ":" ws access_direction ws "subprogram group access"
+    (ws component_reference)?
+    (property_associations)? ";" ws
+
+feature_group_feature ::=
+    defining_identifier ":" ws (port_direction ws)? "feature group"
+    (ws component_reference)?
+    (property_associations)? ";" ws
+
+parameter_feature ::=
+    defining_identifier ":" ws port_direction ws "parameter"
+    (ws component_reference)?
+    (property_associations)? ";" ws
+
+abstract_feature ::=
+    defining_identifier ":" ws (port_direction ws)?
+    ("feature" | "prototype" ws identifier)
+    (property_associations)? ";" ws
+
+port_direction ::= "in" | "out" | "in out"
+access_direction ::= "requires" | "provides"
+
+# ==================== Feature Group Type ====================
+feature_group_type_declaration ::=
+    "feature group" ws defining_identifier
+    (extends_clause)?
+    feature_group_type_body
+    "end" ws defining_identifier ";" ws
+
+feature_group_type_body ::=
+    (features_subclause)?
+    (properties_subclause)?
+    (annex_subclause)*
+
+# ==================== Subcomponents Subclause ====================
+subcomponents_subclause ::= "subcomponents" ws (subcomponent_declaration)*
+
+subcomponent_declaration ::=
+    defining_identifier ":" ws component_category ws component_reference
+    (array_dimension)?
+    (property_associations)? ";" ws
+
+# ==================== Internal Features Subclause ====================
+internal_features_subclause ::= "internal features" ws (internal_feature_declaration)*
+
+internal_feature_declaration ::=
+    defining_identifier ":" ws internal_feature_kind
+    (ws component_reference)?
+    (property_associations)? ";" ws
+
+internal_feature_kind ::=
+    "internal event"
+    | "internal event data"
+    | "subprogram access"
+    | "data access"
+    | "abstract"
+
+# ==================== Processor Features Subclause ====================
+processor_features_subclause ::= "processor features" ws (processor_feature_declaration)*
+
+processor_feature_declaration ::=
+    defining_identifier ":" ws processor_feature_kind
+    (property_associations)? ";" ws
+
+processor_feature_kind ::=
+    "memory"
+    | "system bus"
+    | "virtual processor"
+    | "virtual bus"
+    | "access"
+
+# ==================== Calls Subclause ====================
+calls_subclause ::= "calls" ws (call_declaration)*
+
+call_declaration ::=
+    defining_identifier ":" ws "subprogram" ws called_subprogram
+    (property_associations)? ";" ws
+
+called_subprogram ::=
+    subprogram_reference
+    ( "(" ws (parameter_connection)* ")" ws )?
+
+# ==================== Connections Subclause ====================
+connections_subclause ::= "connections" ws (connection_declaration)*
+
+connection_declaration ::=
+    port_connection
+    | access_connection
+    | feature_group_connection
+    | feature_connection
+    | parameter_connection
+
+port_connection ::=
+    defining_identifier ":" ws "port" ws
+    connected_element ws connection_direction ws connected_element
+    (connection_properties)?
+    ("in modes" ws "(" ws mode_reference ("," ws mode_reference)* ")" ws)?
+    ";" ws
+
+access_connection ::=
+    defining_identifier ":" ws access_category ws "access" ws
+    connected_element ws connection_direction ws connected_element
+    (connection_properties)?
+    ("in modes" ws "(" ws mode_reference ("," ws mode_reference)* ")" ws)?
+    ";" ws
+
+feature_group_connection ::=
+    defining_identifier ":" ws "feature group" ws
+    connected_element ws connection_direction ws connected_element
+    (connection_properties)?
+    ("in modes" ws "(" ws mode_reference ("," ws mode_reference)* ")" ws)?
+    ";" ws
+
+feature_connection ::=
+    defining_identifier ":" ws "feature" ws
+    connected_element ws connection_direction ws connected_element
+    (connection_properties)?
+    ("in modes" ws "(" ws mode_reference ("," ws mode_reference)* ")" ws)?
+    ";" ws
+
+parameter_connection ::=
+    defining_identifier ":" ws "parameter" ws
+    connected_element ws "->" ws connected_element
+    (connection_properties)?
+    ("in modes" ws "(" ws mode_reference ("," ws mode_reference)* ")" ws)?
+    ";" ws
+
+access_category ::=
+    "bus" | "data" | "subprogram" | "subprogram group" | "virtual bus"
+
+connection_direction ::= "->" | "<->"
+
+connected_element ::= (context_element ".")? connection_end
+
+context_element ::= identifier
+
+connection_end ::= identifier
+
+connection_properties ::= "{" ws (property_expression ("," ws property_expression)*)? "}" ws
+
+# ==================== Flows Subclause ====================
+flows_subclause ::= "flows" ws (flow_declaration)*
+
+flow_declaration ::=
+    flow_spec_declaration
+    | flow_implementation_declaration
+
+flow_spec_declaration ::=
+    defining_identifier ":" ws flow_kind ws "flow" ws flow_direction
+    (flow_source)? (flow_sink)?
+    (property_associations)? ";" ws
+
+flow_implementation_declaration ::=
+    defining_identifier ":" ws "flow" ws flow_direction
+    flow_path
+    (property_associations)? ";" ws
+
+flow_kind ::= "source" | "sink" | "path"
+flow_direction ::= /* implied by flow_kind */
+
+flow_source ::= "{" ws flow_end_spec "}" ws
+flow_sink ::= "{" ws flow_end_spec "}" ws
+flow_end_spec ::= feature_reference
+flow_path ::= flow_segment ( "->" ws flow_segment )*
+flow_segment ::= connected_element
+
+# ==================== Modes Subclause ====================
+modes_subclause ::=
+    "modes" ws
+    (mode_declaration)*
+    (mode_transition_declaration)*
+
+mode_declaration ::=
+    defining_identifier ":" ws "mode"
+    (mode_initial)?
+    (mode_derived)?
+    (property_associations)? ";" ws
+
+mode_initial ::= ", initial"
+mode_derived ::= ", derived"
+
+mode_transition_declaration ::=
+    defining_identifier ":" ws "mode transition" ws
+    mode_transition_trigger ws
+    mode_reference "->" ws mode_reference
+    (property_associations)? ";" ws
+
+mode_transition_trigger ::=
+    "(" ws mode_trigger_condition ("," ws mode_trigger_condition)* ")" ws
+
+mode_trigger_condition ::=
+    (port_reference | mode_transition_event)
+    ( "(" ws expression ")" ws )?
+
+mode_transition_event ::=
+    "timeout"
+    | "error"
+    | "computation complete"
+    | "output complete"
+    | "input complete"
+    | "abort"
+
+mode_reference ::= identifier
+
+# ==================== Properties Subclause ====================
+properties_subclause ::= "properties" ws (property_association)*
+
+property_association ::=
+    property_reference "=>" ws property_expression
+    ( "applies to" ws applies_to_element ("," ws applies_to_element)* )?
+    ";" ws
+
+property_reference ::= (property_set_name "::")? property_name
+
+property_set_name ::= identifier
+property_name ::= identifier
+
+property_expression ::=
+    literal_value
+    | reference_value
+    | list_value
+    | range_value
+    | expression
+
+literal_value ::=
+    string_literal
+    | numeric_literal
+    | boolean_literal
+    | "true"
+    | "false"
+
+reference_value ::= component_reference | classifier_reference
+
+list_value ::= "[" ws (property_expression ("," ws property_expression)*)? "]" ws
+
+range_value ::= numeric_literal ".." ws numeric_literal
+
+applies_to_element ::=
+    "self"
+    | feature_reference
+    | subcomponent_reference
+    | connection_reference
+    | mode_reference
+
+# ==================== Property Set ====================
+property_set_declaration ::=
+    "property set" ws defining_identifier "is" ws
+    property_set_content
+    "end" ws defining_identifier ";" ws
+
+property_set_content ::=
+    ( property_type_declaration
+    | property_definition_declaration
+    | property_constant_declaration
+    )*
+
+property_type_declaration ::=
+    "type" ws defining_identifier "is" ws property_type_definition ";" ws
+
+property_type_definition ::=
+    enumeration_type
+    | range_type
+    | units_type
+    | record_type
+    | classifier_type
+    | reference_type
+    | string_type
+    | integer_type
+    | real_type
+    | boolean_type
+
+enumeration_type ::= "enumeration" ws "(" ws identifier ("," ws identifier)* ")" ws
+range_type ::= numeric_literal ".." ws numeric_literal (units_spec)?
+units_type ::= "units" ws unit_identifier ("," ws unit_identifier)* "end" ws "units" ws
+record_type ::= "record" ws (record_field)* "end" ws "record" ws
+record_field ::= defining_identifier ":" ws property_type_definition ";" ws
+classifier_type ::= "classifier" ( "(" component_category ("," ws component_category)* ")" )?
+reference_type ::= "reference" ( "(" component_category ("," ws component_category)* ")" )?
+string_type ::= "string"
+integer_type ::= "integer"
+real_type ::= "real"
+boolean_type ::= "boolean"
+
+property_definition_declaration ::=
+    "property" ws defining_identifier ":" ws property_type_definition
+    ( "default" ws property_expression )?
+    ( "applies to" ws applies_to_element ("," ws applies_to_element)* )?
+    ";" ws
+
+property_constant_declaration ::=
+    "constant" ws defining_identifier ":" ws property_type_definition "=>" ws property_expression ";" ws
+
+# ==================== Annex Subclause ====================
+annex_subclause ::=
+    "annex" ws annex_name "{" ws annex_content "}" ws
+
+annex_library ::=
+    "annex" ws annex_name "{" ws annex_library_content "}" ws
+
+annex_name ::= identifier
+annex_content ::= [^{}]*  /* flexible: any text except unbalanced braces */
+annex_library_content ::= [^{}]*
+
+# ==================== Contained Property Association ====================
+contained_property_association ::=
+    contained_path property_reference "=>" ws property_expression ";" ws
+
+contained_path ::= (contained_element ".")+
+contained_element ::= subcomponent_reference | feature_reference
+
+# ==================== References ====================
+unique_reference ::= (package_name "::")? identifier ("." identifier)?
+component_reference ::= unique_reference
+subprogram_reference ::= unique_reference
+feature_reference ::= (subcomponent_reference ".")? identifier
+subcomponent_reference ::= identifier
+connection_reference ::= identifier
+classifier_reference ::= unique_reference
+qualified_reference ::= unique_reference
+
+unique_component_classifier_reference ::= unique_reference
+component_classifier_reference ::= unique_reference
+
+# ==================== Array Dimension ====================
+array_dimension ::= "[" ws expression "]" ws
+
+# ==================== Expressions ====================
+expression ::= simple_expression ( relational_operator ws simple_expression )*
+simple_expression ::= (unary_operator ws)? term ( adding_operator ws term )*
+term ::= factor ( multiplying_operator ws factor )*
+factor ::= primary ( "**" ws primary )*
+primary ::=
+    literal_value
+    | "(" ws expression ")" ws
+    | identifier
+    | function_call
+
+function_call ::= identifier "(" ws (expression ("," ws expression)*)? ")" ws
+
+relational_operator ::= "=" | "/=" | "<" | "<=" | ">" | ">="
+adding_operator ::= "+" | "-" | "&"
+multiplying_operator ::= "*" | "/" | "mod" | "rem"
+unary_operator ::= "+" | "-" | "not"
+
+# ==================== Basic Lexical Elements ====================
+defining_identifier ::= identifier
+
+identifier ::= letter (letter | digit | "_")*
+letter ::= [a-zA-Z]
+digit ::= [0-9]
+
+unit_identifier ::= identifier
+
+numeric_literal ::= decimal_literal | based_literal
+decimal_literal ::= numeral ("." numeral)? (exponent)?
+numeral ::= digit (digit | "_")*
+exponent ::= "E" ("+" | "-")? numeral
+based_literal ::= digit "#" based_numeral ("." based_numeral)? "#" (exponent)?
+based_numeral ::= (digit | letter) ((digit | letter) | "_")*
+
+string_literal ::= '"' [^"]* '"'
+
+boolean_literal ::= "true" | "false"
+
+# ==================== Whitespace ====================
+ws ::= ([ \t\n\r]+)

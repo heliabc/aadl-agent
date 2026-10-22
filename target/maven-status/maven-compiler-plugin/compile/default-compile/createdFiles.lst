@@ -67,7 +67,6 @@ com\example\aadlagent\rag\RagService.class
 com\example\aadlagent\session\SessionManager$SessionState.class
 com\example\aadlagent\client\AbstractOpenAiCompatibleClient.class
 com\example\aadlagent\client\ModelType.class
-com\example\aadlagent\ablation\EndToEndAblationRunner.class
 com\example\aadlagent\ablation\AblationResult.class
 com\example\aadlagent\service\TraceabilityService$2.class
 com\example\aadlagent\client\OllamaClient$1.class
@@ -128,7 +127,6 @@ com\example\aadlagent\agent\AgentOutput.class
 com\example\aadlagent\util\DocFileReader.class
 com\example\aadlagent\agent\aadl\AadlGeneratorPrompt.class
 com\example\aadlagent\memory\QualityGateStatus.class
-com\example\aadlagent\controller\RequirementController.class
 com\example\aadlagent\model\AadlArchitectureModel$FeatureModel$FeatureModelBuilder.class
 com\example\aadlagent\memory\gate\RequirementQualityGate.class
 com\example\aadlagent\service\TraceabilityService$4.class
@@ -153,7 +151,6 @@ com\example\aadlagent\client\LlmClient.class
 com\example\aadlagent\service\TraceabilityService$AadlComponentInfo.class
 com\example\aadlagent\model\TraceabilityRecord$TraceabilityRecordBuilder.class
 com\example\aadlagent\AadlAgentApplication.class
-com\example\aadlagent\agent\aadl\AadlGeneratorAgent.class
 com\example\aadlagent\model\Requirement$TimingConstraint.class
 com\example\aadlagent\agent\requirement\RequirementAgent.class
 com\example\aadlagent\model\ModuleAnalysisResult$ModuleAnalysisResultBuilder.class

@@ -1,0 +1,373 @@
+# ============================================================
+# AADL Core GBNF Grammar (for llama.cpp constrained decoding)
+# ============================================================
+# 基于 AS5506C AADL v2.2 标准的核心子集
+# 覆盖 80% 常用场景，确保可被 llama.cpp 正确解析
+#
+# 使用方法:
+#   llm(prompt, grammar=open('aadl_core.gbnf').read(), grammar_root='root')
+#
+# 设计原则:
+#   - 只约束语法结构，不约束语义（语义由模型保证）
+#   - 宽松匹配标识符，避免过度约束
+#   - 明确的空白处理（WS 规则）
+#   - 支持部分生成（partial）和完整生成（root）
+# ============================================================
+
+# ---- 根规则 ----
+root ::= package-declaration
+
+# ---- 包声明 ----
+package-declaration ::= "package" WS package-name WS 
+    ("public" WS package-section-contents)?
+    ("private" WS package-section-contents)?
+    "end" WS package-name ";" WS
+
+package-name ::= identifier ("::" identifier)*
+
+package-section-contents ::= (
+    with-clause
+    | component-type
+    | component-implementation
+    | feature-group-type
+    | property-set
+    | annex-library
+)*
+
+# ---- With 子句 ----
+with-clause ::= "with" WS package-name ("," WS package-name)* ";" WS
+
+# ---- 组件类型 ----
+component-type ::= component-category WS defining-identifier 
+    extends-clause? WS
+    component-type-body
+    "end" WS defining-identifier ";" WS
+
+component-type-body ::= (
+    prototypes-subclause
+    | features-subclause
+    | flows-subclause
+    | modes-subclause
+    | properties-subclause
+    | annex-subclause
+)*
+
+# ---- 组件实现 ----
+component-implementation ::= component-category WS "implementation" WS 
+    defining-identifier "." defining-identifier
+    extends-clause? WS
+    component-impl-body
+    "end" WS defining-identifier "." defining-identifier ";" WS
+
+component-impl-body ::= (
+    prototypes-subclause
+    | subcomponents-subclause
+    | internal-features-subclause
+    | calls-subclause
+    | connections-subclause
+    | flows-subclause
+    | modes-subclause
+    | properties-subclause
+    | annex-subclause
+)*
+
+# ---- Extends ----
+extends-clause ::= "extends" WS classifier-reference ("," WS classifier-reference)*
+
+# ---- 组件类别（14种） ----
+component-category ::= 
+    "abstract"
+    | "bus"
+    | "data"
+    | "device"
+    | "memory"
+    | "process"
+    | "processor"
+    | "subprogram group"
+    | "subprogram"
+    | "system"
+    | "thread group"
+    | "thread"
+    | "virtual bus"
+    | "virtual processor"
+
+# ---- 特征（Features） ----
+features-subclause ::= "features" WS (feature-decl)*
+
+feature-decl ::=
+    data-port-feature
+    | event-port-feature
+    | event-data-port-feature
+    | data-access-feature
+    | bus-access-feature
+    | subprogram-access-feature
+    | feature-group-feature
+    | parameter-feature
+
+data-port-feature ::= 
+    defining-identifier ":" WS port-direction WS "data port" 
+    (WS classifier-reference)? (WS property-associations)? ";" WS
+
+event-port-feature ::= 
+    defining-identifier ":" WS port-direction WS "event port" 
+    (WS property-associations)? ";" WS
+
+event-data-port-feature ::= 
+    defining-identifier ":" WS port-direction WS "event data port" 
+    (WS classifier-reference)? (WS property-associations)? ";" WS
+
+data-access-feature ::= 
+    defining-identifier ":" WS access-direction WS "data access" 
+    (WS classifier-reference)? (WS property-associations)? ";" WS
+
+bus-access-feature ::= 
+    defining-identifier ":" WS access-direction WS ("virtual ")? "bus access" 
+    (WS classifier-reference)? (WS property-associations)? ";" WS
+
+subprogram-access-feature ::= 
+    defining-identifier ":" WS access-direction WS "subprogram access" 
+    (WS classifier-reference)? (WS property-associations)? ";" WS
+
+feature-group-feature ::= 
+    defining-identifier ":" WS (port-direction WS)? "feature group" 
+    (WS classifier-reference)? (WS property-associations)? ";" WS
+
+parameter-feature ::= 
+    defining-identifier ":" WS port-direction WS "parameter" 
+    (WS classifier-reference)? (WS property-associations)? ";" WS
+
+port-direction ::= "in out" | "in" | "out"
+access-direction ::= "requires" | "provides"
+
+# ---- 特征组类型 ----
+feature-group-type ::= "feature group" WS defining-identifier 
+    extends-clause? WS
+    (features-subclause)? (properties-subclause)?
+    "end" WS defining-identifier ";" WS
+
+# ---- 子组件 ----
+subcomponents-subclause ::= "subcomponents" WS (subcomponent-decl)*
+
+subcomponent-decl ::= 
+    defining-identifier ":" WS component-category WS classifier-reference
+    (WS array-dimension)? (WS property-associations)? ";" WS
+
+# ---- 内部特征 ----
+internal-features-subclause ::= "internal features" WS (internal-feature-decl)*
+
+internal-feature-decl ::=
+    defining-identifier ":" WS internal-feature-kind
+    (WS classifier-reference)? (WS property-associations)? ";" WS
+
+internal-feature-kind ::= 
+    "internal event" 
+    | "internal event data"
+    | "internal data access"
+    | "internal subprogram access"
+
+# ---- 调用 ----
+calls-subclause ::= "calls" WS (call-decl)*
+
+call-decl ::= 
+    defining-identifier ":" WS "subprogram" WS called-subprogram
+    (WS property-associations)? ";" WS
+
+called-subprogram ::= subprogram-ref ("(" WS (parameter-connection)* ")" WS)?
+
+parameter-connection ::= 
+    defining-identifier ":" WS "parameter" WS 
+    connection-end "->" connection-end ";" WS
+
+# ---- 连接 ----
+connections-subclause ::= "connections" WS (connection-decl)*
+
+connection-decl ::=
+    port-connection
+    | access-connection
+    | feature-group-connection
+
+port-connection ::= 
+    defining-identifier ":" WS "port" WS 
+    connection-end WS "->" WS connection-end
+    (WS connection-props)? (WS "in modes" WS "(" WS mode-ref ("," WS mode-ref)* ")")?
+    ";" WS
+
+access-connection ::= 
+    defining-identifier ":" WS access-category WS "access" WS 
+    connection-end WS "->" WS connection-end
+    (WS connection-props)?
+    ";" WS
+
+feature-group-connection ::= 
+    defining-identifier ":" WS "feature group" WS 
+    connection-end WS "->" WS connection-end
+    (WS connection-props)?
+    ";" WS
+
+access-category ::= 
+    "bus" | "data" | "subprogram" | "subprogram group" | "virtual bus"
+
+connection-end ::= (context-element ".")? feature-ref
+context-element ::= identifier
+feature-ref ::= identifier
+
+connection-props ::= "{" WS (property-expression ("," WS property-expression)*)? "}" WS
+
+# ---- 流 ----
+flows-subclause ::= "flows" WS (flow-decl)*
+
+flow-decl ::=
+    flow-spec-decl
+    | flow-impl-decl
+
+flow-spec-decl ::= 
+    defining-identifier ":" WS flow-kind WS "flow" 
+    (WS flow-source)? (WS flow-sink)?
+    (WS property-associations)? ";" WS
+
+flow-impl-decl ::= 
+    defining-identifier ":" WS "flow" WS "path" WS
+    flow-segment (WS "->" WS flow-segment)*
+    (WS property-associations)? ";" WS
+
+flow-kind ::= "source" | "sink" | "path"
+flow-source ::= "{" WS flow-end-spec "}" WS
+flow-sink ::= "{" WS flow-end-spec "}" WS
+flow-end-spec ::= feature-ref
+flow-segment ::= connection-end
+
+# ---- 模式 ----
+modes-subclause ::= "modes" WS (mode-decl)* (mode-transition-decl)*
+
+mode-decl ::= 
+    defining-identifier ":" WS "mode" 
+    (", initial")? (", derived")?
+    (WS property-associations)? ";" WS
+
+mode-transition-decl ::= 
+    defining-identifier ":" WS "mode transition" WS
+    "(" WS trigger-condition ("," WS trigger-condition)* ")" WS
+    mode-ref "->" mode-ref
+    (WS property-associations)? ";" WS
+
+trigger-condition ::= port-ref ("(" WS expression ")" WS)?
+mode-ref ::= identifier
+port-ref ::= identifier
+
+# ---- 属性 ----
+properties-subclause ::= "properties" WS (property-assoc)*
+
+property-assoc ::= 
+    property-ref "=>" WS property-expression
+    (WS "applies to" WS applies-to-element ("," WS applies-to-element)*)?
+    ";" WS
+
+property-associations ::= "{" WS (property-assoc)* "}" WS
+
+property-ref ::= (property-set-name "::")? property-name
+property-set-name ::= identifier
+property-name ::= identifier
+
+property-expression ::=
+    literal-value
+    | reference-value
+    | list-value
+    | range-value
+    | expression
+
+literal-value ::= string-literal | numeric-literal | boolean-literal
+reference-value ::= classifier-reference
+list-value ::= "[" WS (property-expression ("," WS property-expression)*)? "]" WS
+range-value ::= numeric-literal ".." WS numeric-literal
+
+applies-to-element ::=
+    "self"
+    | feature-ref
+    | subcomponent-ref
+    | connection-ref
+    | mode-ref
+
+subcomponent-ref ::= identifier
+connection-ref ::= identifier
+
+# ---- 属性集 ----
+property-set ::= "property set" WS defining-identifier "is" WS
+    (property-type-decl | property-def-decl | property-constant-decl)*
+    "end" WS defining-identifier ";" WS
+
+property-type-decl ::= "type" WS defining-identifier "is" WS property-type ";" WS
+property-def-decl ::= 
+    "property" WS defining-identifier ":" WS property-type
+    ("default" WS property-expression)?
+    ("applies to" WS applies-to-element ("," WS applies-to-element)*)?
+    ";" WS
+property-constant-decl ::= 
+    "constant" WS defining-identifier ":" WS property-type 
+    "=>" WS property-expression ";" WS
+
+property-type ::=
+    "string"
+    | "integer"
+    | "real"
+    | "boolean"
+    | enumeration-type
+    | range-type
+    | classifier-type
+    | reference-type
+
+enumeration-type ::= "enumeration" WS "(" WS identifier ("," WS identifier)* ")" WS
+range-type ::= numeric-literal ".." WS numeric-literal
+classifier-type ::= "classifier" ("(" WS component-category ("," WS component-category)* ")")?
+reference-type ::= "reference" ("(" WS component-category ("," WS component-category)* ")")?
+
+# ---- 原型 ----
+prototypes-subclause ::= "prototypes" WS (prototype-decl)*
+
+prototype-decl ::= 
+    (component-category | "abstract") WS defining-identifier
+    (":" WS prototype-ref)?
+    (WS property-associations)? ";" WS
+
+prototype-ref ::= classifier-reference
+
+# ---- Annex ----
+annex-subclause ::= "annex" WS annex-name "{" annex-text "}" WS
+annex-library ::= "annex" WS annex-name "{" annex-text "}" WS
+annex-name ::= identifier
+annex-text ::= [^{}]*
+
+# ---- 引用 ----
+classifier-reference ::= (package-name "::")? identifier ("." identifier)?
+subprogram-ref ::= classifier-reference
+
+# ---- 数组维度 ----
+array-dimension ::= "[" WS expression "]" WS
+
+# ---- 表达式（简化版） ----
+expression ::= simple-expr (relational-op WS simple-expr)*
+simple-expr ::= (unary-op WS)? term (additive-op WS term)*
+term ::= factor (multiplicative-op WS factor)*
+factor ::= primary ("**" WS primary)*
+primary ::= literal-value | "(" WS expression ")" WS | identifier | function-call
+
+function-call ::= identifier "(" WS (expression ("," WS expression)*)? ")" WS
+
+relational-op ::= "=" | "/=" | "<" | "<=" | ">" | ">="
+additive-op ::= "+" | "-" | "&"
+multiplicative-op ::= "*" | "/" | "mod" | "rem"
+unary-op ::= "+" | "-" | "not"
+
+# ---- 词法元素 ----
+defining-identifier ::= identifier
+
+identifier ::= [A-Za-z_][A-Za-z0-9_]*
+
+numeric-literal ::= decimal-literal
+decimal-literal ::= [0-9]+ ("." [0-9]+)? (("e" | "E") ("+" | "-")? [0-9]+)?
+
+string-literal ::= "\"" [^"]* "\""
+
+boolean-literal ::= "true" | "false"
+
+# ---- 空白（必须在所有语法规则中显式处理） ----
+WS ::= [ \t\n\r]+
