@@ -1,0 +1,529 @@
+{
+  "package_name": "FlightControl",
+  "with_packages": ["Base_Types"],
+  "components": [
+    {
+      "name": "FlightControlBus",
+      "category": "bus",
+      "has_impl": false,
+      "ports": [],
+      "accesses": [],
+      "flows": [],
+      "properties": [
+        {"name": "Bus_Width", "value": "32", "unit": "bits"},
+        {"name": "Bandwidth", "value": "100", "unit": "MBps"}
+      ]
+    },
+    {
+      "name": "FlightProcessor",
+      "category": "processor",
+      "has_impl": true,
+      "ports": [],
+      "accesses": [],
+      "flows": [],
+      "properties": [
+        {"name": "MIPS", "value": "1000", "unit": "MIPS"},
+        {"name": "Clock_Period", "value": "1", "unit": "ns"}
+      ]
+    },
+    {
+      "name": "FlightProcessor.impl",
+      "category": "processor implementation",
+      "base_type": "FlightProcessor",
+      "subcomponents": [],
+      "connections": [],
+      "bindings": [],
+      "flows": [],
+      "properties": []
+    },
+    {
+      "name": "SensorData",
+      "category": "data",
+      "has_impl": false,
+      "ports": [],
+      "accesses": [],
+      "flows": [],
+      "properties": []
+    },
+    {
+      "name": "FlightControlProcess",
+      "category": "process",
+      "has_impl": true,
+      "ports": [],
+      "accesses": [],
+      "flows": [],
+      "properties": [
+        {"name": "Dispatch_Protocol", "value": "Periodic"}
+      ]
+    },
+    {
+      "name": "FlightControlProcess.impl",
+      "category": "process implementation",
+      "base_type": "FlightControlProcess",
+      "subcomponents": [
+        {
+          "name": "GuidanceThread",
+          "category": "thread",
+          "classifier": "GuidanceThread",
+          "properties": [
+            {"name": "Priority", "value": "5"},
+            {"name": "Period", "value": "20", "unit": "ms"}
+          ]
+        },
+        {
+          "name": "NavigationThread",
+          "category": "thread",
+          "classifier": "NavigationThread",
+          "properties": [
+            {"name": "Priority", "value": "4"},
+            {"name": "Period", "value": "10", "unit": "ms"}
+          ]
+        },
+        {
+          "name": "ControlThread",
+          "category": "thread",
+          "classifier": "ControlThread",
+          "properties": [
+            {"name": "Priority", "value": "6"},
+            {"name": "Period", "value": "5", "unit": "ms"}
+          ]
+        }
+      ],
+      "connections": [
+        {
+          "name": "nav_to_guidance",
+          "kind": "port connection",
+          "source": "NavigationThread.nav_out",
+          "target": "GuidanceThread.nav_data_in",
+          "bidirectional": false,
+          "bound_to_bus": null,
+          "properties": []
+        },
+        {
+          "name": "guidance_to_control",
+          "kind": "port connection",
+          "source": "GuidanceThread.target_out",
+          "target": "ControlThread.target_in",
+          "bidirectional": false,
+          "bound_to_bus": null,
+          "properties": []
+        }
+      ],
+      "bindings": [],
+      "flows": [],
+      "properties": []
+    },
+    {
+      "name": "IMUSensor",
+      "category": "device",
+      "has_impl": false,
+      "ports": [
+        {
+          "name": "accel_out",
+          "direction": "out",
+          "kind": "data port",
+          "data_type": "Base_Types::Float",
+          "data_type_source": "predefined",
+          "properties": []
+        },
+        {
+          "name": "gyro_out",
+          "direction": "out",
+          "kind": "data port",
+          "data_type": "Base_Types::Float",
+          "data_type_source": "predefined",
+          "properties": []
+        }
+      ],
+      "accesses": [],
+      "flows": [
+        {
+          "name": "f0",
+          "kind": "flow source",
+          "source": "accel_out",
+          "target": null,
+          "path": null,
+          "properties": []
+        }
+      ],
+      "properties": [
+        {"name": "Device_Model", "value": "BMI088"}
+      ]
+    },
+    {
+      "name": "GPSReceiver",
+      "category": "device",
+      "has_impl": false,
+      "ports": [
+        {
+          "name": "position_out",
+          "direction": "out",
+          "kind": "data port",
+          "data_type": "Base_Types::Float",
+          "data_type_source": "predefined",
+          "properties": []
+        },
+        {
+          "name": "velocity_out",
+          "direction": "out",
+          "kind": "data port",
+          "data_type": "Base_Types::Float",
+          "data_type_source": "predefined",
+          "properties": []
+        }
+      ],
+      "accesses": [],
+      "flows": [
+        {
+          "name": "f0",
+          "kind": "flow source",
+          "source": "position_out",
+          "target": null,
+          "path": null,
+          "properties": []
+        }
+      ],
+      "properties": [
+        {"name": "Device_Model", "value": "u-blox M8"}
+      ]
+    },
+    {
+      "name": "ActuatorController",
+      "category": "device",
+      "has_impl": false,
+      "ports": [
+        {
+          "name": "command_in",
+          "direction": "in",
+          "kind": "data port",
+          "data_type": "Base_Types::Float",
+          "data_type_source": "predefined",
+          "properties": []
+        },
+        {
+          "name": "status_out",
+          "direction": "out",
+          "kind": "data port",
+          "data_type": "Base_Types::Float",
+          "data_type_source": "predefined",
+          "properties": []
+        }
+      ],
+      "accesses": [],
+      "flows": [
+        {
+          "name": "f0",
+          "kind": "flow sink",
+          "source": null,
+          "target": "command_in",
+          "path": null,
+          "properties": []
+        }
+      ],
+      "properties": [
+        {"name": "Device_Model", "value": "PX4-ESC"}
+      ]
+    },
+    {
+      "name": "GuidanceThread",
+      "category": "thread",
+      "has_impl": false,
+      "ports": [
+        {
+          "name": "nav_data_in",
+          "direction": "in",
+          "kind": "data port",
+          "data_type": "Base_Types::Float",
+          "data_type_source": "predefined",
+          "properties": []
+        },
+        {
+          "name": "target_out",
+          "direction": "out",
+          "kind": "data port",
+          "data_type": "Base_Types::Float",
+          "data_type_source": "predefined",
+          "properties": []
+        }
+      ],
+      "accesses": [],
+      "flows": [
+        {
+          "name": "f0",
+          "kind": "flow path",
+          "source": "nav_data_in",
+          "target": "target_out",
+          "path": null,
+          "properties": []
+        }
+      ],
+      "properties": [
+        {"name": "Dispatch_Protocol", "value": "Periodic"},
+        {"name": "Deadline", "value": "15", "unit": "ms"}
+      ]
+    },
+    {
+      "name": "NavigationThread",
+      "category": "thread",
+      "has_impl": false,
+      "ports": [
+        {
+          "name": "imu_in",
+          "direction": "in",
+          "kind": "data port",
+          "data_type": "Base_Types::Float",
+          "data_type_source": "predefined",
+          "properties": []
+        },
+        {
+          "name": "gps_in",
+          "direction": "in",
+          "kind": "data port",
+          "data_type": "Base_Types::Float",
+          "data_type_source": "predefined",
+          "properties": []
+        },
+        {
+          "name": "nav_out",
+          "direction": "out",
+          "kind": "data port",
+          "data_type": "Base_Types::Float",
+          "data_type_source": "predefined",
+          "properties": []
+        }
+      ],
+      "accesses": [],
+      "flows": [
+        {
+          "name": "f_imu",
+          "kind": "flow path",
+          "source": "imu_in",
+          "target": "nav_out",
+          "path": null,
+          "properties": []
+        },
+        {
+          "name": "f_gps",
+          "kind": "flow path",
+          "source": "gps_in",
+          "target": "nav_out",
+          "path": null,
+          "properties": []
+        }
+      ],
+      "properties": [
+        {"name": "Dispatch_Protocol", "value": "Periodic"},
+        {"name": "Deadline", "value": "8", "unit": "ms"}
+      ]
+    },
+    {
+      "name": "ControlThread",
+      "category": "thread",
+      "has_impl": false,
+      "ports": [
+        {
+          "name": "target_in",
+          "direction": "in",
+          "kind": "data port",
+          "data_type": "Base_Types::Float",
+          "data_type_source": "predefined",
+          "properties": []
+        },
+        {
+          "name": "control_out",
+          "direction": "out",
+          "kind": "data port",
+          "data_type": "Base_Types::Float",
+          "data_type_source": "predefined",
+          "properties": []
+        }
+      ],
+      "accesses": [],
+      "flows": [
+        {
+          "name": "f0",
+          "kind": "flow path",
+          "source": "target_in",
+          "target": "control_out",
+          "path": null,
+          "properties": []
+        }
+      ],
+      "properties": [
+        {"name": "Dispatch_Protocol", "value": "Periodic"},
+        {"name": "Deadline", "value": "3", "unit": "ms"}
+      ]
+    },
+    {
+      "name": "FlightControlSystem",
+      "category": "system",
+      "has_impl": true,
+      "ports": [
+        {
+          "name": "imu_data_in",
+          "direction": "in",
+          "kind": "data port",
+          "data_type": "Base_Types::Float",
+          "data_type_source": "predefined",
+          "properties": []
+        },
+        {
+          "name": "gps_data_in",
+          "direction": "in",
+          "kind": "data port",
+          "data_type": "Base_Types::Float",
+          "data_type_source": "predefined",
+          "properties": []
+        },
+        {
+          "name": "control_out",
+          "direction": "out",
+          "kind": "data port",
+          "data_type": "Base_Types::Float",
+          "data_type_source": "predefined",
+          "properties": []
+        }
+      ],
+      "accesses": [],
+      "flows": [
+        {
+          "name": "f_imu",
+          "kind": "flow path",
+          "source": "imu_data_in",
+          "target": "control_out",
+          "path": null,
+          "properties": []
+        }
+      ],
+      "properties": []
+    },
+    {
+      "name": "FlightControlSystem.impl",
+      "category": "system implementation",
+      "base_type": "FlightControlSystem",
+      "subcomponents": [
+        {
+          "name": "FlightProcessor",
+          "category": "processor",
+          "classifier": "FlightProcessor.impl",
+          "properties": []
+        },
+        {
+          "name": "FlightControlProcess",
+          "category": "process",
+          "classifier": "FlightControlProcess.impl",
+          "properties": []
+        },
+        {
+          "name": "IMUSensor",
+          "category": "device",
+          "classifier": "IMUSensor",
+          "properties": []
+        },
+        {
+          "name": "GPSReceiver",
+          "category": "device",
+          "classifier": "GPSReceiver",
+          "properties": []
+        },
+        {
+          "name": "ActuatorController",
+          "category": "device",
+          "classifier": "ActuatorController",
+          "properties": []
+        },
+        {
+          "name": "FlightControlBus",
+          "category": "bus",
+          "classifier": "FlightControlBus",
+          "properties": []
+        }
+      ],
+      "connections": [
+        {
+          "name": "imu_to_nav",
+          "kind": "port connection",
+          "source": "IMUSensor.accel_out",
+          "target": "FlightControlProcess.NavigationThread.imu_in",
+          "bidirectional": false,
+          "bound_to_bus": "FlightControlBus",
+          "properties": [
+            {"name": "Timing", "value": "Immediate"}
+          ]
+        },
+        {
+          "name": "gps_to_nav",
+          "kind": "port connection",
+          "source": "GPSReceiver.position_out",
+          "target": "FlightControlProcess.NavigationThread.gps_in",
+          "bidirectional": false,
+          "bound_to_bus": "FlightControlBus",
+          "properties": [
+            {"name": "Timing", "value": "Immediate"}
+          ]
+        },
+        {
+          "name": "nav_to_guidance",
+          "kind": "port connection",
+          "source": "FlightControlProcess.NavigationThread.nav_out",
+          "target": "FlightControlProcess.GuidanceThread.nav_data_in",
+          "bidirectional": false,
+          "bound_to_bus": "FlightControlBus",
+          "properties": [
+            {"name": "Timing", "value": "Immediate"}
+          ]
+        },
+        {
+          "name": "guidance_to_control",
+          "kind": "port connection",
+          "source": "FlightControlProcess.GuidanceThread.target_out",
+          "target": "FlightControlProcess.ControlThread.target_in",
+          "bidirectional": false,
+          "bound_to_bus": "FlightControlBus",
+          "properties": [
+            {"name": "Timing", "value": "Immediate"}
+          ]
+        },
+        {
+          "name": "control_to_actuator",
+          "kind": "port connection",
+          "source": "FlightControlProcess.ControlThread.control_out",
+          "target": "ActuatorController.command_in",
+          "bidirectional": false,
+          "bound_to_bus": "FlightControlBus",
+          "properties": [
+            {"name": "Timing", "value": "Immediate"}
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "kind": "actual_processor_binding",
+          "source": "FlightControlProcess",
+          "target": "FlightProcessor"
+        }
+      ],
+      "flows": [
+        {
+          "name": "f_imu_to_actuator",
+          "kind": "end to end flow",
+          "source": "IMUSensor.accel_out",
+          "target": "ActuatorController.command_in",
+          "path": [
+            "imu_to_nav",
+            "FlightControlProcess.NavigationThread.f_imu",
+            "nav_to_guidance",
+            "FlightControlProcess.GuidanceThread.f0",
+            "guidance_to_control",
+            "FlightControlProcess.ControlThread.f0",
+            "control_to_actuator"
+          ],
+          "properties": [
+            {"name": "Latency", "value": "5", "unit": "ms"}
+          ]
+        }
+      ],
+      "properties": []
+    }
+  ]
+}

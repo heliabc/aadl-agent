@@ -1,0 +1,136 @@
+{
+  "package_name": "ProcessTest",
+  "with_packages": ["Base_Types"],
+  "components": [
+    {
+      "name": "SensorData",
+      "category": "data",
+      "has_impl": false,
+      "ports": []
+    },
+    {
+      "name": "CalcUtils",
+      "category": "subprogram",
+      "has_impl": false,
+      "ports": []
+    },
+    {
+      "name": "WorkerThread",
+      "category": "thread",
+      "has_impl": false,
+      "ports": [
+        {
+          "name": "input",
+          "direction": "in",
+          "kind": "data port",
+          "data_type": "Base_Types::Float"
+        },
+        {
+          "name": "output",
+          "direction": "out",
+          "kind": "data port",
+          "data_type": "Base_Types::Float"
+        }
+      ]
+    },
+    {
+      "name": "MonitorThread",
+      "category": "thread",
+      "has_impl": false,
+      "ports": [
+        {
+          "name": "status_in",
+          "direction": "in",
+          "kind": "data port",
+          "data_type": "Base_Types::Integer"
+        },
+        {
+          "name": "alert_out",
+          "direction": "out",
+          "kind": "event port",
+          "data_type": null
+        }
+      ]
+    },
+    {
+      "name": "ControlThreadGroup",
+      "category": "thread group",
+      "has_impl": false,
+      "ports": [
+        {
+          "name": "data_in",
+          "direction": "in",
+          "kind": "data port",
+          "data_type": "Base_Types::Float"
+        }
+      ]
+    },
+    {
+      "name": "MyProcess",
+      "category": "process",
+      "has_impl": true,
+      "ports": [
+        {
+          "name": "req_in",
+          "direction": "in",
+          "kind": "event data port",
+          "data_type": "Base_Types::Float"
+        },
+        {
+          "name": "resp_out",
+          "direction": "out",
+          "kind": "event data port",
+          "data_type": "Base_Types::Float"
+        }
+      ]
+    },
+    {
+      "name": "MyProcess.impl",
+      "category": "process implementation",
+      "subcomponents": [
+        {
+          "name": "worker",
+          "category": "thread",
+          "classifier": "WorkerThread"
+        },
+        {
+          "name": "monitor",
+          "category": "thread",
+          "classifier": "MonitorThread"
+        },
+        {
+          "name": "tg1",
+          "category": "thread group",
+          "classifier": "ControlThreadGroup"
+        },
+        {
+          "name": "shared_data",
+          "category": "data",
+          "classifier": "SensorData"
+        },
+        {
+          "name": "utils",
+          "category": "subprogram",
+          "classifier": "CalcUtils"
+        }
+      ],
+      "connections": [
+        {
+          "name": "req_to_worker",
+          "source": "req_in",
+          "target": "worker.input"
+        },
+        {
+          "name": "worker_to_monitor",
+          "source": "worker.output",
+          "target": "monitor.status_in"
+        },
+        {
+          "name": "monitor_alert",
+          "source": "monitor.alert_out",
+          "target": "resp_out"
+        }
+      ]
+    }
+  ]
+}

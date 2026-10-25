@@ -1,0 +1,114 @@
+// AADL Core EBNF Grammar (Lark format for Outlines)
+// ====================================================
+// 基于 SAE AS5506C Appendix C.2 提取的核心语法子集
+// 支持 package / component type / impl / features / subcomponents /
+// connections / properties / modes / flows / with 子句
+//
+// 注意: 所有规则写在同一行，Lark 不支持缩进式多行规则
+//       每个 section 关键字前允许可选 WS（缩进）
+
+start: [think_block] package_spec
+think_block: "<think>" think_chars "</think>" NEWLINE+
+think_chars: think_char+
+think_char: /./
+
+// ---- Package ----
+package_spec: "package" WS package_name NEWLINE [with_list] "public" NEWLINE public_decls [private_section] [WS] "end" WS package_name ";" NEWLINE
+package_name: IDENT
+with_list: with_clause+
+with_clause: "with" WS package_name with_rest* ";" NEWLINE
+with_rest: "," WS package_name
+public_decls: public_decl+
+public_decl: component_type | component_impl
+private_section: "private" NEWLINE private_decls
+private_decls: private_decl*
+private_decl: component_type | component_impl
+
+// ---- Component Type ----
+component_type: comp_category WS comp_name NEWLINE type_sections [WS] "end" WS comp_name ";" NEWLINE
+comp_name: IDENT
+type_sections: [WS features_section] [WS flows_section] [WS modes_section] [WS properties_section]
+comp_category: "system" | "process" | "thread" | "subprogram" | "data" | "device" | "processor" | "memory" | "bus" | "abstract"
+
+// ---- Component Implementation ----
+// 支持 "system Foo.impl" 和 "system implementation Foo.impl" 两种格式
+component_impl: comp_category WS ["implementation" WS] comp_name "." impl_name NEWLINE impl_sections [WS] "end" WS comp_name "." impl_name ";" NEWLINE
+impl_name: IDENT
+impl_sections: [WS subcomponents_section] [WS connections_section] [WS flows_impl_section] [WS modes_section] [WS properties_section]
+
+// ---- Features ----
+features_section: "features" NEWLINE feature_list
+feature_list: feature_decl+
+feature_decl: WS feature_name ":" WS feature_kind ";" NEWLINE
+feature_name: IDENT
+feature_kind: port_spec | feature_group_spec | access_spec
+port_spec: port_dir WS "data port" WS classifier_ref | port_dir WS "event port" | port_dir WS "event data port" WS classifier_ref
+port_dir: "in" | "out" | "in out"
+feature_group_spec: "feature group" WS classifier_ref
+access_spec: access_dir WS access_kind WS classifier_ref
+access_dir: "provides" | "requires"
+access_kind: "bus access" | "data access" | "subprogram access" | "subprogram group access"
+
+// ---- Subcomponents ----
+subcomponents_section: "subcomponents" NEWLINE subcomp_list
+subcomp_list: subcomp_decl+
+subcomp_decl: WS subcomp_name ":" WS comp_category WS classifier_ref [in_modes] ";" NEWLINE
+subcomp_name: IDENT
+in_modes: WS "in" WS "modes" WS "(" WS mode_name mode_rest* WS ")"
+mode_rest: "," WS mode_name
+mode_name: IDENT
+
+// ---- Connections ----
+connections_section: "connections" NEWLINE conn_list
+conn_list: conn_decl+
+conn_decl: WS [conn_name] conn_end WS "->" WS conn_end ";" NEWLINE
+conn_name: IDENT ":" WS
+conn_end: conn_segment ("." conn_segment)*
+conn_segment: IDENT
+
+// ---- Properties ----
+properties_section: "properties" NEWLINE prop_list
+prop_list: prop_decl*
+prop_decl: WS prop_ref WS "=>" WS prop_value ["applies" WS "to" WS prop_target] ";" NEWLINE
+prop_ref: [prop_pkg "::"] prop_name
+prop_pkg: IDENT
+prop_name: IDENT
+prop_value: string_literal | numeric_literal | boolean_literal | classifier_ref | prop_reference
+prop_reference: [prop_pkg "::"] prop_name
+prop_target: classifier_ref | "all"
+
+// ---- Modes ----
+modes_section: "modes" NEWLINE mode_list
+mode_list: mode_decl+
+mode_decl: WS mode_name ":" WS [mode_init] "mode" ";" NEWLINE
+mode_init: "initial" WS
+
+// ---- Flows (type) ----
+flows_section: "flows" NEWLINE flow_spec_list
+flow_spec_list: flow_spec_decl+
+flow_spec_decl: WS flow_name ":" WS flow_kind_spec WS flow_end WS "->" WS flow_end ";" NEWLINE
+flow_name: IDENT
+flow_kind_spec: "path flow" | "source flow" | "sink flow"
+flow_end: IDENT
+
+// ---- Flows (implementation) ----
+flows_impl_section: "flows" NEWLINE flow_impl_list
+flow_impl_list: flow_impl_decl+
+flow_impl_decl: WS flow_name ":" WS flow_kind WS flow_segs ";" NEWLINE
+flow_kind: "flow" | "end to end flow"
+flow_segs: flow_seg (WS "->" WS flow_seg)*
+flow_seg: IDENT ["." IDENT]
+
+// ---- Classifier Reference ----
+classifier_ref: [pkg_prefix "::"] classifier_name ["." impl_suffix]
+pkg_prefix: IDENT
+classifier_name: IDENT
+impl_suffix: IDENT
+
+// ---- Terminals ----
+IDENT: /[A-Za-z_][A-Za-z0-9_]*/
+numeric_literal: /[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?/
+string_literal: /"[^"]*"/
+boolean_literal: "true" | "false"
+WS: /[ \t]+/
+NEWLINE: /[\n]+/
