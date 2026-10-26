@@ -1,0 +1,127 @@
+【AADL 架构生成任务】
+======================================================================
+
+包名：FlightControl
+with 包：Base_Types
+
+请按顺序生成以下组件。每个组件的详细信息如下：
+
+--------------------------------------------------
+组件 1：FlightControlBus（bus）
+--------------------------------------------------
+是否需要实现：否
+features：无（不要生成 features 节，直接 end 结束）
+
+--------------------------------------------------
+组件 2：FlightProcessor（processor）
+--------------------------------------------------
+是否需要实现：是（FlightProcessor.impl）
+features：无（不要生成 features 节，直接 end 结束）
+
+实现 FlightProcessor.impl：
+  subcomponents：无
+  connections：无（不要生成 connections 节）
+
+--------------------------------------------------
+组件 3：SensorData（data）
+--------------------------------------------------
+是否需要实现：否
+features：无（不要生成 features 节，直接 end 结束）
+
+--------------------------------------------------
+组件 4：FlightControlProcess（process）
+--------------------------------------------------
+是否需要实现：是（FlightControlProcess.impl）
+features：无（不要生成 features 节，直接 end 结束）
+
+实现 FlightControlProcess.impl：
+  subcomponents（3 个）：
+    • GuidanceThread: thread GuidanceThread
+    • NavigationThread: thread NavigationThread
+    • ControlThread: thread ControlThread
+  connections（2 个）：
+    1. nav_to_guidance: NavigationThread.nav_out -> GuidanceThread.nav_data_in
+    2. guidance_to_control: GuidanceThread.target_out -> ControlThread.target_in
+
+--------------------------------------------------
+组件 5：IMUSensor（device）
+--------------------------------------------------
+是否需要实现：否
+features（2 个端口）：
+  • accel_out: out data port Base_Types::Float
+  • gyro_out: out data port Base_Types::Float
+
+--------------------------------------------------
+组件 6：GPSReceiver（device）
+--------------------------------------------------
+是否需要实现：否
+features（2 个端口）：
+  • position_out: out data port Base_Types::Float
+  • velocity_out: out data port Base_Types::Float
+
+--------------------------------------------------
+组件 7：ActuatorController（device）
+--------------------------------------------------
+是否需要实现：否
+features（2 个端口）：
+  • command_in: in data port Base_Types::Float
+  • status_out: out data port Base_Types::Float
+
+--------------------------------------------------
+组件 8：GuidanceThread（thread）
+--------------------------------------------------
+是否需要实现：否
+features（2 个端口）：
+  • nav_data_in: in data port Base_Types::Float
+  • target_out: out data port Base_Types::Float
+
+--------------------------------------------------
+组件 9：NavigationThread（thread）
+--------------------------------------------------
+是否需要实现：否
+features（3 个端口）：
+  • imu_in: in data port Base_Types::Float
+  • gps_in: in data port Base_Types::Float
+  • nav_out: out data port Base_Types::Float
+
+--------------------------------------------------
+组件 10：ControlThread（thread）
+--------------------------------------------------
+是否需要实现：否
+features（2 个端口）：
+  • target_in: in data port Base_Types::Float
+  • control_out: out data port Base_Types::Float
+
+--------------------------------------------------
+组件 11：FlightControlSystem（system）
+--------------------------------------------------
+是否需要实现：是（FlightControlSystem.impl）
+features（3 个端口）：
+  • imu_data_in: in data port Base_Types::Float
+  • gps_data_in: in data port Base_Types::Float
+  • control_out: out data port Base_Types::Float
+
+实现 FlightControlSystem.impl：
+  subcomponents（6 个）：
+    • FlightProcessor: processor FlightProcessor.impl
+    • FlightControlProcess: process FlightControlProcess.impl
+    • IMUSensor: device IMUSensor
+    • GPSReceiver: device GPSReceiver
+    • ActuatorController: device ActuatorController
+    • FlightControlBus: bus FlightControlBus
+  connections（5 个）：
+    1. imu_to_nav: IMUSensor.accel_out -> FlightControlProcess.NavigationThread.imu_in
+    2. gps_to_nav: GPSReceiver.position_out -> FlightControlProcess.NavigationThread.gps_in
+    3. nav_to_guidance: FlightControlProcess.NavigationThread.nav_out -> FlightControlProcess.GuidanceThread.nav_data_in
+    4. guidance_to_control: FlightControlProcess.GuidanceThread.target_out -> FlightControlProcess.ControlThread.target_in
+    5. control_to_actuator: FlightControlProcess.ControlThread.control_out -> ActuatorController.command_in
+
+======================================================================
+生成规则：
+1. 按上面列出的顺序生成组件类型和实现
+2. 无 features 的组件不要生成 features 节
+3. 无 connections 的实现不要生成 connections 节
+4. 生成到 end FlightControl; 就停止
+
+AADL 代码：
+package 

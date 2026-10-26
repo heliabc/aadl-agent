@@ -408,7 +408,7 @@ class ArchitectureValidator:
                     if cls_type:
                         cls_cat = cls_type.get("category", "")
                         if cls_cat != sub_cat and cls_cat != "abstract":
-                            result.warn(
+                            result.error(
                                 f"类别不匹配：{impl_name}.{sub_name} "
                                 f"声明类别为 {sub_cat}，"
                                 f"但分类器 {sub_classifier} 的类别是 {cls_cat}"
@@ -496,11 +496,11 @@ class ArchitectureValidator:
                         f"目标端 {tgt} 是 {tgt_dir}，必须是 in 或 in out"
                     )
 
-                # 5c: 数据类型匹配（简化：完全相同才算匹配，否则警告）
+                # 5c: 数据类型匹配
                 src_type = src_info.get("type")
                 tgt_type = tgt_info.get("type")
                 if src_type and tgt_type and src_type != tgt_type:
-                    result.warn(
+                    result.error(
                         f"类型不匹配：{impl_name} 连接 {conn_name} "
                         f"源端类型 {src_type} ≠ 目标端类型 {tgt_type}"
                     )
@@ -572,6 +572,12 @@ class ArchitectureValidator:
             cat = comp.get("category", "")
             valid_props = get_valid_properties(cat)
             for prop in comp.get("properties", []):
+                if not isinstance(prop, dict):
+                    result.warn(
+                        f"属性警告：{comp_name}（{cat}）的属性格式不正确"
+                        f"（应为对象，实际为 {type(prop).__name__}），已跳过"
+                    )
+                    continue
                 prop_name = prop.get("name", "")
                 # 去掉包限定前缀做检查
                 prop_local = get_local_name(prop_name)
@@ -586,6 +592,8 @@ class ArchitectureValidator:
                 port_kind = port.get("kind", "")
                 valid_port_props = get_port_valid_properties(port_kind)
                 for prop in port.get("properties", []):
+                    if not isinstance(prop, dict):
+                        continue
                     prop_name = prop.get("name", "")
                     prop_local = get_local_name(prop_name)
                     if prop_local not in valid_port_props and prop_name not in valid_port_props:

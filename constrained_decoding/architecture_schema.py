@@ -17,7 +17,7 @@ AADL 架构 JSON Schema 定义
 - 数据类型（预定义 Base_Types + 自定义 data 组件 + 跨包引用）
 """
 
-from typing import List, Optional, Literal
+from typing import List, Optional, Literal, Union
 from pydantic import BaseModel, Field
 
 
@@ -259,69 +259,83 @@ class FlowDef(BaseModel):
 # 组件类型 / 实现
 # ============================================================
 
-class ComponentType(BaseModel):
-    """组件类型声明"""
-    name: str = Field(..., description="组件类型名称",
-                      pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
-    category: ComponentCategory = Field(..., description="组件类别")
+class ComponentDef(BaseModel):
+    """
+    统一组件声明（类型 + 实现合并为一个模型）。
+
+    用 category 字段区分：
+      - 类型：category 不带 "implementation" 后缀（如 "process", "system"）
+      - 实现：category 带 "implementation" 后缀（如 "process implementation"）
+
+    设计考量：
+    合并为单一模型而非 Union[ComponentType, ComponentImpl]，
+    是因为 JSON Schema 的 oneOf/anyOf 对约束解码（llguidance 等）不友好，
+    扁平结构能提供更强的格式约束保证。
+    语义区分由下游 validator 负责。
+    """
+    name: str = Field(
+        ...,
+        description=(
+            "组件名称。"
+            "类型名用大驼峰（如 NavigationThread）；"
+            "实现名格式为 '类型名.标识'（如 NavThread.i / Sys.impl）。"
+        ),
+        pattern=r"^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)?$",
+    )
+    category: str = Field(
+        ...,
+        description=(
+            "组件类别。"
+            "类型类别：system / process / thread / thread group / "
+            "subprogram / subprogram group / data / device / processor / "
+            "virtual processor / memory / bus / virtual bus / abstract。"
+            "实现类别：以上类别加 ' implementation' 后缀，如 'process implementation'。"
+        ),
+    )
+    base_type: Optional[str] = Field(
+        None,
+        description="【实现专用】对应的组件类型名（仅实现组件需要）",
+    )
     extends: Optional[str] = Field(
         None,
-        description="继承的父类型（同包内用名称，跨包用 :: 限定）",
+        description="继承的父类型/父实现名（同包内用名称，跨包用 :: 限定）",
     )
-    has_impl: bool = Field(
-        True, description="是否有对应的实现",
+    has_impl: Optional[bool] = Field(
+        True,
+        description="【类型专用】是否有对应的实现（类型组件用）",
     )
+    # ---- 类型层特征（类型和实现都可以有属性，类型层特征主要在类型上） ----
     ports: List[PortDef] = Field(
-        default_factory=list, description="端口列表",
+        default_factory=list, description="端口列表（类型组件的对外接口）",
     )
     accesses: List[AccessDef] = Field(
-        default_factory=list, description="Access 特征列表（bus access 等）",
+        default_factory=list, description="Access 特征列表（bus access / data access 等）",
     )
     feature_groups: List[FeatureGroupDef] = Field(
         default_factory=list, description="Feature Group 列表",
     )
-    flows: List[FlowDef] = Field(
-        default_factory=list, description="流定义（flow path/source/sink）",
-    )
-    properties: List[PropertyDef] = Field(
-        default_factory=list, description="组件类型属性",
-    )
-
-
-class ComponentImpl(BaseModel):
-    """组件实现声明"""
-    name: str = Field(
-        ...,
-        description=(
-            "组件实现名。"
-            "真实 AADL 中命名灵活：.impl / .i / .generic / .implementation1 等。"
-            "约定：以 '类型名.' 开头，后面是实现标识。"
-        ),
-    )
-    category: ComponentImplCategory = Field(
-        ..., description="实现类别",
-    )
-    base_type: str = Field(
-        ..., description="对应的组件类型名",
-    )
-    extends: Optional[str] = Field(
-        None,
-        description="继承的父实现名",
-    )
+    # ---- 实现层结构（实现组件才有子组件、连接等） ----
     subcomponents: List[SubcomponentDef] = Field(
-        default_factory=list, description="子组件列表",
+        default_factory=list, description="【实现专用】子组件列表",
     )
     connections: List[ConnectionDef] = Field(
-        default_factory=list, description="连接列表",
+        default_factory=list, description="【实现专用】连接列表",
     )
     bindings: List[BindingDef] = Field(
-        default_factory=list, description="绑定列表",
+        default_factory=list, description="【实现专用】绑定列表",
     )
+    # ---- 流（类型和实现都有，但种类不同） ----
     flows: List[FlowDef] = Field(
-        default_factory=list, description="端到端流定义",
+        default_factory=list,
+        description=(
+            "流定义列表。"
+            "类型上：flow path / flow source / flow sink；"
+            "实现上：end to end flow。"
+        ),
     )
+    # ---- 属性（类型和实现都可以有） ----
     properties: List[PropertyDef] = Field(
-        default_factory=list, description="组件实现属性",
+        default_factory=list, description="属性列表",
     )
     calls: List[dict] = Field(
         default_factory=list,
@@ -420,12 +434,13 @@ class ArchitectureModel(BaseModel):
         default_factory=list,
         description="依赖的包列表（with 子句），如 ['Base_Types', 'speed_regulation::icd']",
     )
-    components: List[dict] = Field(
+    components: List[ComponentDef] = Field(
         ...,
         description=(
             "组件列表，按生成顺序排列。"
-            "每个元素是 ComponentType 或 ComponentImpl。"
+            "每个元素是统一的 ComponentDef。"
             "类型组件在前，对应的实现在后。"
+            "通过 category 字段区分类型/实现：带 implementation 后缀的是实现。"
         ),
         min_length=1,
     )
