@@ -115,6 +115,26 @@ def verify_grammar(grammar_text: str) -> bool:
 # Prompt 构建（从 JSON 架构生成结构化提示词）
 # ============================================================
 
+def build_chat_prompt(user_content: str, tokenizer,
+                      system_content: str = "你是 AADL 代码生成专家，严格按语法输出完整的 AADL 代码。") -> str:
+    """用模型的 chat template 包装 user message（参考 aadl_outlines_demo.py）
+
+    Qwen3 等 Instruct 模型必选。chat template 默认开启 thinking 模式，
+    模型会先输出 <think>...</think> 再输出正文。
+    返回的 prompt 以 assistant 开头结束，约束从下一个 token 开始生效。
+    """
+    messages = [
+        {"role": "system", "content": system_content},
+        {"role": "user", "content": user_content},
+    ]
+    prompt = tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True,
+    )
+    return prompt
+
+
 def build_generation_prompt(arch: dict) -> str:
     """
     从架构 JSON 构建结构化的 AADL 生成提示词。
@@ -269,17 +289,91 @@ def build_generation_prompt(arch: dict) -> str:
 
 
 # ============================================================
-# AADL 生成（Outlines CFG 约束）
+# AADL 生成（CFG + 语义约束，可配置）
 # ============================================================
+
+def build_logits_processors(
+    model,
+    tokenizer,
+    grammar_text: str,
+    constraint_config=None,
+    arch: Optional[dict] = None,
+    backend: str = "llguidance",
+) -> list:
+    """
+    根据约束配置组装 logits processor 链。
+
+    顺序：CFG 约束 → 语义约束（先语法过滤，再语义收窄）
+
+    Args:
+        model: HF 模型
+        tokenizer: HF tokenizer
+        grammar_text: Lark EBNF 语法文本
+        constraint_config: ConstraintConfig 实例，None 表示默认（CFG+全语义）
+        arch: 架构 JSON，用于预填充语义引擎符号表
+        backend: CFG 约束后端
+
+    Returns:
+        logits_processor 列表
+    """
+    from constraint_config import ConstraintConfig
+
+    if constraint_config is None:
+        constraint_config = ConstraintConfig()  # 默认配置
+
+    processors = []
+
+    # ---- 1. CFG 约束 ----
+    if constraint_config.cfg_enabled:
+        import outlines
+        from outlines.generator import get_cfg_logits_processor
+
+        print("[Constraints] 编译 CFG 文法到 FSM...")
+        t0 = time.time()
+        outlines_model = outlines.from_transformers(model, tokenizer)
+        cfg_lp = get_cfg_logits_processor(
+            backend_name=backend,
+            model=outlines_model,
+            grammar=grammar_text,
+        )
+        if isinstance(cfg_lp, (list, tuple)):
+            processors.extend(cfg_lp)
+        else:
+            processors.append(cfg_lp)
+        print(f"[Constraints] CFG 约束已启用（{time.time() - t0:.1f}s 编译）")
+    else:
+        print("[Constraints] CFG 约束已关闭")
+
+    # ---- 2. 语义约束 ----
+    semantic_count = constraint_config.enabled_semantic_count()
+    if semantic_count > 0:
+        from aadl_semantic_full import FullAadlSemanticEngine
+
+        print(f"[Constraints] 初始化语义约束引擎（{semantic_count}/11 条启用）...")
+        t0 = time.time()
+        semantic_engine = FullAadlSemanticEngine(config=constraint_config)
+        if arch:
+            semantic_engine.prefill_from_arch_json(arch)
+            print(f"[Constraints] 符号表预填充完成")
+
+        semantic_lp = semantic_engine.get_logits_processor(tokenizer)
+        processors.append(semantic_lp)
+        print(f"[Constraints] 语义约束已启用（{time.time() - t0:.2f}s 初始化）")
+    else:
+        print("[Constraints] 语义约束已全部关闭")
+
+    return processors
+
 
 def generate_aadl(model, tokenizer, grammar_text: str, prompt: str,
                   max_tokens: int = 4096,
                   temperature: float = 0.7,
-                  stop_text: Optional[str] = None,
                   backend: str = "llguidance",
-                  show_thinking: bool = False) -> str:
+                  show_thinking: bool = False,
+                  constraint_config=None,
+                  arch: Optional[dict] = None) -> str:
     """
-    使用 Outlines CFG 约束生成 AADL 代码。
+    使用可配置约束生成 AADL 代码。
 
     Args:
         model: HF 模型
@@ -288,77 +382,35 @@ def generate_aadl(model, tokenizer, grammar_text: str, prompt: str,
         prompt: 输入提示词
         max_tokens: 最大生成 token 数
         temperature: 采样温度
-        stop_text: 停止词（如 "end PackageName;"）
         backend: 约束后端（llguidance / xgrammar / outlines_core）
         show_thinking: 是否保留 thinking 块
+        constraint_config: ConstraintConfig 约束配置，None 用默认
+        arch: 架构 JSON（用于预填充语义引擎符号表）
 
     Returns:
         生成的 AADL 代码字符串
     """
     import torch
-    import outlines
-    from outlines.generator import get_cfg_logits_processor
+    from transformers import TextIteratorStreamer
 
-    print("[AADL Gen] 编译语法到 FSM...")
-    t0 = time.time()
-
-    # 包装模型为 outlines 的 Transformers 对象
-    outlines_model = outlines.from_transformers(model, tokenizer)
-
-    # 获取 CFG logits processor
-    logits_processor = get_cfg_logits_processor(
-        backend_name=backend,
-        model=outlines_model,
-        grammar=grammar_text,
+    # 组装 logits processor 链
+    lp_list = build_logits_processors(
+        model=model,
+        tokenizer=tokenizer,
+        grammar_text=grammar_text,
+        constraint_config=constraint_config,
+        arch=arch,
+        backend=backend,
     )
-
-    compile_time = time.time() - t0
-    print(f"[AADL Gen] FSM 编译完成（后端: {backend}），耗时 {compile_time:.1f}s")
 
     # 流式生成
     print(f"[AADL Gen] 开始生成 (max_tokens={max_tokens}, temp={temperature})...")
-    if stop_text:
-        print(f"[AADL Gen] 停止词: {repr(stop_text)}")
     print()
     print("─" * 60)
 
     t1 = time.time()
 
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-
-    # logits_processor 包装为列表
-    if isinstance(logits_processor, (list, tuple)):
-        lp_list = list(logits_processor)
-    else:
-        lp_list = [logits_processor]
-
-    from transformers import (
-        TextIteratorStreamer,
-        StoppingCriteria,
-        StoppingCriteriaList,
-    )
-
-    # 停止词检测
-    class StopTextCriteria(StoppingCriteria):
-        def __init__(self, stop_str, tok):
-            self.stop_str = stop_str
-            self.tokenizer = tok
-            self.generated_text = ""
-
-        def __call__(self, input_ids, scores, **kwargs):
-            text = self.tokenizer.decode(
-                input_ids[0][-30:], skip_special_tokens=True
-            )
-            if self.stop_str in text:
-                return True
-            return False
-
-    if stop_text:
-        stopping_criteria = StoppingCriteriaList([
-            StopTextCriteria(stop_text, tokenizer)
-        ])
-    else:
-        stopping_criteria = None
 
     streamer = TextIteratorStreamer(
         tokenizer,
@@ -368,12 +420,10 @@ def generate_aadl(model, tokenizer, grammar_text: str, prompt: str,
 
     gen_kwargs = {
         "max_new_tokens": max_tokens,
-        "logits_processor": lp_list,
+        "logits_processor": lp_list if lp_list else None,
         "pad_token_id": tokenizer.eos_token_id,
         "streamer": streamer,
     }
-    if stopping_criteria is not None:
-        gen_kwargs["stopping_criteria"] = stopping_criteria
     if temperature > 0:
         gen_kwargs["do_sample"] = True
         gen_kwargs["temperature"] = temperature
@@ -384,7 +434,6 @@ def generate_aadl(model, tokenizer, grammar_text: str, prompt: str,
     import threading
 
     generated_text_parts = []
-    stopped_early = False
 
     def generate_thread():
         with torch.no_grad():
@@ -396,18 +445,9 @@ def generate_aadl(model, tokenizer, grammar_text: str, prompt: str,
     for new_text in streamer:
         print(new_text, end="", flush=True)
         generated_text_parts.append(new_text)
-        # 检查停止词
-        if stop_text and stop_text in "".join(generated_text_parts):
-            stopped_early = True
-            break
 
     thread.join(timeout=2.0)
     result = "".join(generated_text_parts)
-
-    # 命中停止词时截断
-    if stop_text and stop_text in result:
-        idx = result.index(stop_text) + len(stop_text)
-        result = result[:idx]
 
     print()
     print("─" * 60)
@@ -423,9 +463,6 @@ def generate_aadl(model, tokenizer, grammar_text: str, prompt: str,
     print(f"\n[AADL Gen] 生成完成，约 {num_tokens} tokens，"
           f"耗时 {gen_time:.1f}s ({speed:.1f} tokens/s)")
 
-    if stopped_early:
-        print("[AADL Gen] 命中停止词，提前结束")
-
     # 去掉 thinking 块
     if not show_thinking:
         import re
@@ -439,14 +476,61 @@ def generate_aadl(model, tokenizer, grammar_text: str, prompt: str,
 # 主函数
 # ============================================================
 
+def _arch_to_semantic_format(arch: dict) -> dict:
+    """把通用 arch JSON 转为语义引擎需要的格式（type_components + impl_components）"""
+    components = arch.get("components", [])
+    type_components = []
+    impl_components = []
+
+    for comp in components:
+        cat = comp.get("category", "")
+        if "implementation" in cat:
+            impl_components.append({
+                "name": comp.get("name", ""),
+                "category": cat,
+                "base_type": comp.get("base_type", comp.get("name", "").rsplit(".", 1)[0]),
+                "subcomponents": comp.get("subcomponents", []),
+            })
+        else:
+            type_components.append({
+                "name": comp.get("name", ""),
+                "category": cat,
+                "ports": comp.get("ports", []),
+            })
+
+    return {
+        "package_name": arch.get("package_name", ""),
+        "type_components": type_components,
+        "impl_components": impl_components,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(
-        description="阶段二：AADL 代码生成（Outlines + llguidance CFG 约束）"
+        description="阶段二：AADL 代码生成（可配置约束：CFG + 语义）",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+约束预设示例：
+  --constraint-preset baseline        无约束（原生生成）
+  --constraint-preset cfg_only        仅 CFG 文法约束
+  --constraint-preset cfg_semantic    CFG + 全部语义约束（推荐）
+  --constraint-preset cfg_semantic_core  CFG + 核心5条语义约束
+  --constraint-preset ablation_no_classifier  消融：关分类器引用
+
+单条约束控制（在预设基础上覆盖）：
+  --disable-classifier-ref    关闭子组件分类器引用约束
+  --disable-port-direction    关闭端口方向匹配约束
+  --disable-port-type-match   关闭端口类型匹配约束
+  --disable-property-name     关闭属性名合法性约束
+  --enable-naming-unique      启用命名唯一性约束（默认关闭）
+        """,
     )
-    parser.add_argument("--model", default="~/autodl-tmp/qwen3-14b",
-                        help="HuggingFace 模型名或本地路径")
+    parser.add_argument("-m", "--model", default=None,
+                        help="模型路径（HF 模型目录或模型名），也可通过环境变量 AADL_MODEL 设置")
     parser.add_argument("--arch-json", default=None,
-                        help="架构 JSON 文件路径（阶段一的输出）")
+                        help="架构 JSON 文件路径（阶段一的输出，自动构建 prompt）")
+    parser.add_argument("--prompt-file", default=None,
+                        help="直接指定 prompt txt 文件（优先级高于 --arch-json）")
     parser.add_argument("--grammar", default="grammars/aadl_core.lark",
                         help="Lark EBNF 语法文件路径")
     parser.add_argument("--output", default=None,
@@ -460,13 +544,64 @@ def main():
                         help="约束解码后端（默认 llguidance）")
     parser.add_argument("--verify-only", action="store_true",
                         help="仅验证语法，不加载模型")
-    parser.add_argument("--no-constraint", action="store_true",
-                        help="不使用 CFG 约束（用于对比）")
+    parser.add_argument("--chat", action="store_true",
+                        help="使用 Chat Template 格式（Qwen3 Instruct 模型必选，默认开启 thinking 模式）")
     parser.add_argument("--show-thinking", action="store_true",
                         help="保留模型的 thinking 输出")
     parser.add_argument("--print-prompt", action="store_true",
                         help="只打印生成的 prompt，不生成")
+
+    # ---- 约束配置参数 ----
+    parser.add_argument("--constraint-preset", default="cfg_semantic",
+                        help="约束预设（默认 cfg_semantic）")
+    parser.add_argument("--list-presets", action="store_true",
+                        help="列出所有可用预设并退出")
+
+    # CFG 开关
+    parser.add_argument("--no-cfg", action="store_true",
+                        help="关闭 CFG 文法约束（覆盖预设）")
+
+    # 语义约束总开关
+    parser.add_argument("--no-semantic", action="store_true",
+                        help="关闭所有语义约束（覆盖预设）")
+    parser.add_argument("--all-semantic", action="store_true",
+                        help="启用所有语义约束（覆盖预设）")
+
+    # 单条约束开关（在预设基础上覆盖）
+    parser.add_argument("--disable-classifier-ref", action="store_true",
+                        help="关闭子组件分类器引用约束")
+    parser.add_argument("--disable-containment", action="store_true",
+                        help="关闭包含规则约束")
+    parser.add_argument("--disable-port-direction", action="store_true",
+                        help="关闭端口方向匹配约束")
+    parser.add_argument("--disable-port-type-match", action="store_true",
+                        help="关闭端口类型匹配约束")
+    parser.add_argument("--disable-binding", action="store_true",
+                        help="关闭绑定约束")
+    parser.add_argument("--disable-port-data-type", action="store_true",
+                        help="关闭端口数据类型约束")
+    parser.add_argument("--disable-impl-base-type", action="store_true",
+                        help="关闭实现 base_type 约束")
+    parser.add_argument("--disable-conn-bound-bus", action="store_true",
+                        help="关闭连接 bound_to_bus 约束")
+    parser.add_argument("--disable-flow-endpoint", action="store_true",
+                        help="关闭 Flow 端点约束")
+    parser.add_argument("--disable-property-name", action="store_true",
+                        help="关闭属性名合法性约束")
+    parser.add_argument("--enable-naming-unique", action="store_true",
+                        help="启用命名唯一性约束（默认关闭）")
+
+    # 兼容旧参数
+    parser.add_argument("--no-constraint", action="store_true",
+                        help="（兼容旧版）等价于 --constraint-preset baseline")
+
     args = parser.parse_args()
+
+    # --- 列出预设 ---
+    if args.list_presets:
+        from constraint_config import print_all_presets
+        print_all_presets()
+        return
 
     # --- 仅验证语法 ---
     if args.verify_only:
@@ -474,26 +609,55 @@ def main():
         verify_grammar(grammar_text)
         return
 
-    # --- 读取架构 JSON ---
-    if not args.arch_json:
-        print("错误：请指定 --arch-json（架构 JSON 文件路径）")
+    # --- 解析模型路径（命令行 > 环境变量 > 报错） ---
+    model_path = args.model
+    if not model_path:
+        model_path = os.environ.get("AADL_MODEL", "")
+    if not model_path:
+        print("错误：未指定模型路径。请使用：")
+        print("  1. -m / --model 参数指定，如：-m D:\\models\\qwen3-14b")
+        print("  2. 设置环境变量 AADL_MODEL")
         sys.exit(1)
+    model_path = os.path.expanduser(model_path)
+    if not os.path.isdir(model_path) and not model_path.startswith(
+        ("http", "hf://", "/")
+    ):
+        # 可能是 HF 模型名，不检查路径
+        print(f"[Model] 使用 HuggingFace 模型: {model_path}")
+    else:
+        print(f"[Model] 本地模型路径: {model_path}")
 
-    with open(args.arch_json, "r", encoding="utf-8") as f:
-        arch = json.load(f)
-    print(f"[Input] 已加载架构: {arch['package_name']} "
-          f"({len(arch['components'])} 个组件)")
+    # --- 读取输入（两种模式：prompt txt 或 arch json） ---
+    prompt = None
+    arch = None
 
-    # 预构建符号表
-    st = build_symbol_table(arch)
-    print(f"[Symbol Table] {len(st.component_types)} 个类型, "
-          f"{len(st.component_impls)} 个实现")
+    if args.prompt_file:
+        # 模式1：直接用 txt 文件作为 prompt
+        with open(args.prompt_file, "r", encoding="utf-8") as f:
+            prompt = f.read()
+        print(f"[Input] 已加载 prompt 文件: {args.prompt_file} ({len(prompt)} 字符)")
+
+    elif args.arch_json:
+        # 模式2：从架构 JSON 构建 prompt
+        with open(args.arch_json, "r", encoding="utf-8") as f:
+            arch = json.load(f)
+        print(f"[Input] 已加载架构: {arch['package_name']} "
+              f"({len(arch['components'])} 个组件)")
+
+        # 预构建符号表
+        st = build_symbol_table(arch)
+        print(f"[Symbol Table] {len(st.component_types)} 个类型, "
+              f"{len(st.component_impls)} 个实现")
+
+        # 构建 prompt
+        prompt = build_generation_prompt(arch)
+    else:
+        print("错误：请指定 --prompt-file 或 --arch-json 作为输入")
+        sys.exit(1)
 
     # 加载语法
     grammar_text = load_grammar(args.grammar)
 
-    # 构建 prompt
-    prompt = build_generation_prompt(arch)
     print(f"[Prompt] 提示词长度: {len(prompt)} 字符")
 
     if args.print_prompt:
@@ -502,15 +666,78 @@ def main():
         print("=" * 60)
         return
 
+    # ---- 构建约束配置 ----
+    from constraint_config import get_preset
+
+    # 兼容旧参数
+    preset_name = "baseline" if args.no_constraint else args.constraint_preset
+
+    try:
+        config = get_preset(preset_name)
+    except ValueError as e:
+        print(f"错误：{e}")
+        sys.exit(1)
+
+    # CFG 覆盖
+    if args.no_cfg:
+        config.cfg_enabled = False
+
+    # 语义总开关覆盖
+    if args.no_semantic:
+        config.disable_all_semantic()
+    if args.all_semantic:
+        config.enable_all_semantic()
+
+    # 单条约束覆盖（关闭）
+    if args.disable_classifier_ref:
+        config.semantic_classifier_ref = False
+    if args.disable_containment:
+        config.semantic_containment = False
+    if args.disable_port_direction:
+        config.semantic_port_direction = False
+    if args.disable_port_type_match:
+        config.semantic_port_type_match = False
+    if args.disable_binding:
+        config.semantic_binding = False
+    if args.disable_port_data_type:
+        config.semantic_port_data_type = False
+    if args.disable_impl_base_type:
+        config.semantic_impl_base_type = False
+    if args.disable_conn_bound_bus:
+        config.semantic_conn_bound_bus = False
+    if args.disable_flow_endpoint:
+        config.semantic_flow_endpoint = False
+    if args.disable_property_name:
+        config.semantic_property_name = False
+
+    # 单条约束覆盖（启用）
+    if args.enable_naming_unique:
+        config.semantic_naming_unique = True
+
+    print()
+    print("=" * 60)
+    print("约束配置")
+    print("=" * 60)
+    print(config.summary())
+    print("=" * 60)
+
     # --- 加载模型 ---
     model, tokenizer = load_model(
-        args.model,
+        model_path,
         load_in_4bit=args.load_in_4bit,
         load_in_8bit=args.load_in_8bit,
     )
 
-    # 停止词：end <package_name>;
-    stop_text = f"end {arch['package_name']};"
+    # 转为语义引擎需要的格式（仅 arch 模式有）
+    semantic_arch = None
+    if arch:
+        semantic_arch = _arch_to_semantic_format(arch)
+
+    # --- Chat 模式包装（Qwen3 thinking 支持，参考 aadl_outlines_demo.py） ---
+    if args.chat:
+        prompt = build_chat_prompt(prompt, tokenizer)
+        prompt_tokens = len(tokenizer.encode(prompt))
+        print(f"[Prompt] Chat 模式（thinking 默认开启），prompt 长度: {prompt_tokens} tokens")
 
     # --- 生成 AADL ---
     print()
@@ -519,59 +746,18 @@ def main():
     print("=" * 60)
 
     try:
-        if args.no_constraint:
-            # 无约束模式（简单的原生生成，用于对比）
-            print("[AADL Gen] 无约束模式（原生生成）...")
-            import torch
-
-            inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-            generated_ids = inputs["input_ids"].clone()
-            generated_text = ""
-
-            for i in range(args.max_tokens):
-                with torch.no_grad():
-                    outputs = model(generated_ids)
-                    logits = outputs.logits[:, -1, :]
-
-                if args.temperature > 0:
-                    logits = logits / args.temperature
-                    probs = torch.softmax(logits, dim=-1)
-                    next_token = torch.multinomial(probs, num_samples=1)
-                else:
-                    next_token = torch.argmax(logits, dim=-1, keepdim=True)
-
-                generated_ids = torch.cat([generated_ids, next_token], dim=-1)
-                new_text = tokenizer.decode(
-                    generated_ids[0][inputs["input_ids"].shape[1]:],
-                    skip_special_tokens=True,
-                )
-                delta = new_text[len(generated_text):]
-                print(delta, end="", flush=True)
-                generated_text = new_text
-
-                if stop_text and stop_text in generated_text:
-                    idx = generated_text.index(stop_text) + len(stop_text)
-                    generated_text = generated_text[:idx]
-                    break
-
-                if next_token.item() == tokenizer.eos_token_id:
-                    break
-
-            result = generated_text
-            print()
-        else:
-            # CFG 约束模式
-            result = generate_aadl(
-                model=model,
-                tokenizer=tokenizer,
-                grammar_text=grammar_text,
-                prompt=prompt,
-                max_tokens=args.max_tokens,
-                temperature=args.temperature,
-                stop_text=stop_text,
-                backend=args.backend,
-                show_thinking=args.show_thinking,
-            )
+        result = generate_aadl(
+            model=model,
+            tokenizer=tokenizer,
+            grammar_text=grammar_text,
+            prompt=prompt,
+            max_tokens=args.max_tokens,
+            temperature=args.temperature,
+            backend=args.backend,
+            show_thinking=args.show_thinking,
+            constraint_config=config,
+            arch=semantic_arch,
+        )
 
     except Exception as e:
         print(f"\n[Error] 生成失败: {e}")

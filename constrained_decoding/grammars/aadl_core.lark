@@ -19,22 +19,22 @@ with_list: with_clause+
 with_clause: "with" WS package_name with_rest* ";" NEWLINE
 with_rest: "," WS package_name
 public_decls: public_decl+
-public_decl: component_type | component_impl
+public_decl: [WS] component_type | [WS] component_impl
 private_section: "private" NEWLINE private_decls
 private_decls: private_decl*
-private_decl: component_type | component_impl
+private_decl: [WS] component_type | [WS] component_impl
 
 // ---- Component Type ----
 component_type: comp_category WS comp_name NEWLINE type_sections [WS] "end" WS comp_name ";" NEWLINE
 comp_name: IDENT
-type_sections: [WS features_section] [WS flows_section] [WS modes_section] [WS properties_section]
+type_sections: [[WS] features_section] [[WS] flows_section] [[WS] modes_section] [[WS] properties_section]
 comp_category: "system" | "process" | "thread" | "subprogram" | "data" | "device" | "processor" | "memory" | "bus" | "abstract"
 
 // ---- Component Implementation ----
 // 支持 "system Foo.impl" 和 "system implementation Foo.impl" 两种格式
 component_impl: comp_category WS ["implementation" WS] comp_name "." impl_name NEWLINE impl_sections [WS] "end" WS comp_name "." impl_name ";" NEWLINE
 impl_name: IDENT
-impl_sections: [WS subcomponents_section] [WS connections_section] [WS flows_impl_section] [WS modes_section] [WS properties_section]
+impl_sections: [[WS] subcomponents_section] [[WS] connections_section] [[WS] flows_impl_section] [[WS] modes_section] [[WS] properties_section]
 
 // ---- Features ----
 features_section: "features" NEWLINE feature_list
@@ -67,15 +67,13 @@ conn_end: conn_segment ("." conn_segment)*
 conn_segment: IDENT
 
 // ---- Properties ----
-properties_section: "properties" NEWLINE prop_list
-prop_list: prop_decl*
-prop_decl: WS prop_ref WS "=>" WS prop_value ["applies" WS "to" WS prop_target] ";" NEWLINE
-prop_ref: [prop_pkg "::"] prop_name
-prop_pkg: IDENT
-prop_name: IDENT
-prop_value: string_literal | numeric_literal | boolean_literal | classifier_ref | prop_reference
-prop_reference: [prop_pkg "::"] prop_name
-prop_target: classifier_ref | "all"
+// 宽松匹配：整个 properties 节当作任意文本处理
+// （用于解析验证，语义约束不依赖属性值的具体内容）
+properties_section: "properties" NEWLINE prop_lines
+prop_lines: prop_line*
+prop_line: prop_chars NEWLINE
+prop_chars: prop_char+
+prop_char: /./
 
 // ---- Modes ----
 modes_section: "modes" NEWLINE mode_list
@@ -86,9 +84,12 @@ mode_init: "initial" WS
 // ---- Flows (type) ----
 flows_section: "flows" NEWLINE flow_spec_list
 flow_spec_list: flow_spec_decl+
-flow_spec_decl: WS flow_name ":" WS flow_kind_spec WS flow_end WS "->" WS flow_end ";" NEWLINE
+flow_spec_decl: WS flow_name ":" WS "flow" WS flow_kind_spec ";" NEWLINE
 flow_name: IDENT
-flow_kind_spec: "path flow" | "source flow" | "sink flow"
+flow_kind_spec: flow_source_spec | flow_sink_spec | flow_path_spec
+flow_source_spec: "source" WS flow_end
+flow_sink_spec: "sink" WS flow_end
+flow_path_spec: "path" WS flow_end WS "->" WS flow_end
 flow_end: IDENT
 
 // ---- Flows (implementation) ----

@@ -19,7 +19,7 @@
 9. ControlThread，类型 thread，不需要实现，有 features
 10. FlightControlSystem，类型 system，需要实现，有 features
 
-注意：bus、processor、process 类型的组件没有 features，不要生成 features 节，直接 end 结束。
+注意：bus、processor、process 类型的组件没有 features，不要生成 features 节，直接 end 结束。需要实现的，一定要有实现。
 
 ----------------------------------------------------------------------
 二、每个组件的 features 说明（仅描述数量和方向，具体端口名自己推断）
@@ -106,3 +106,4 @@ FlightProcessor.impl 没有 connections（不要生成 connections 节）。
 
 package FlightControl
   public
+最后请输出aadl代码

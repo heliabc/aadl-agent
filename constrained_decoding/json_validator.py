@@ -135,9 +135,23 @@ PROPERTY_RULES = {
         "Dispatch_Offset",
         "Time_Slot",
         "Required_Processor",
+        "reference_processor",
         "Actual_Processor_Binding",
         "Actual_Memory_Binding",
-        "reference_processor",
+        "Reference_Processor",
+        "Execution_Time",
+        "Latency",
+        "Input_Rate",
+        "Output_Rate",
+        "Input_Time",
+        "Output_Time",
+        "Capacity",
+    },
+    # ---- 线程组 ----
+    "thread group": {
+        "Actual_Processor_Binding",
+        "Actual_Memory_Binding",
+        "Priority",
     },
     # ---- 进程 ----
     "process": {
@@ -148,6 +162,13 @@ PROPERTY_RULES = {
         "Actual_Processor_Binding",
         "Actual_Memory_Binding",
         "Virtual_Processor_Binding",
+        "Required_Processor",
+        "Reference_Processor",
+        "Input_Rate",
+        "Output_Rate",
+        "Input_Time",
+        "Output_Time",
+        "Capacity",
     },
     # ---- 处理器 ----
     "processor": {
@@ -158,6 +179,16 @@ PROPERTY_RULES = {
         "Supported_Connection_Services",
         "Available_Processor_Speed",
         "Total_Memory_Size",
+        "Execution_Time",
+        "Supported_Thread_Speed",
+    },
+    # ---- 虚拟处理器 ----
+    "virtual processor": {
+        "MIPS",
+        "Period",
+        "Time_Slot",
+        "Dispatch_Protocol",
+        "Actual_Processor_Binding",
     },
     # ---- 内存 ----
     "memory": {
@@ -167,6 +198,12 @@ PROPERTY_RULES = {
         "Memory_Protocol",
         "Read_Time",
         "Write_Time",
+        "Data_Size",
+        "By_Count",
+        "Per_Read_Cost",
+        "Per_Write_Cost",
+        "Per_Byte_Read_Cost",
+        "Per_Byte_Write_Cost",
     },
     # ---- 总线 ----
     "bus": {
@@ -178,6 +215,20 @@ PROPERTY_RULES = {
         "Arbitration",
         "Latency",
         "Transmission_Time",
+        "Maximum_Throughput",
+        "Minimum_Throughput",
+        "Timing",
+        "Per_Message_Cost",
+        "Per_Byte_Cost",
+        "Allowed_Connection_Binding_Class",
+        "Allowed_Connection_Binding_Class_Or_Descendant",
+    },
+    # ---- 虚拟总线 ----
+    "virtual bus": {
+        "Bus_Width",
+        "Max_Message_Size",
+        "Protocol",
+        "Actual_Bus_Binding",
     },
     # ---- 设备 ----
     "device": {
@@ -186,6 +237,16 @@ PROPERTY_RULES = {
         "Period",
         "Compute_Execution_Time",
         "compute_execution_time",
+        "Deadline",
+        "Dispatch_Protocol",
+        "Priority",
+        "Execution_Time",
+        "Latency",
+        "Input_Rate",
+        "Output_Rate",
+        "Input_Time",
+        "Output_Time",
+        "Capacity",
     },
     # ---- 数据 ----
     "data": {
@@ -194,6 +255,22 @@ PROPERTY_RULES = {
         "data_representation",
         "Enumerators",
         "enumerators",
+        "Dimension",
+        "Data_Model",
+    },
+    # ---- 子程序 ----
+    "subprogram": {
+        "Compute_Execution_Time",
+        "compute_execution_time",
+        "Execution_Time",
+        "Deadline",
+        "Stack_Size",
+        "Priority",
+    },
+    # ---- 子程序组 ----
+    "subprogram group": {
+        "Compute_Execution_Time",
+        "Execution_Time",
     },
     # ---- 数据端口 ----
     "data port": {
@@ -203,25 +280,84 @@ PROPERTY_RULES = {
         "Queue_Size",
         "Overwrite_Allowed",
         "Rate",
+        "Timing",
+        "Input_Rate",
+        "Output_Rate",
     },
     # ---- 事件端口 ----
     "event port": {
         "Queue_Size",
         "Overwrite_Allowed",
         "Timing",
+        "Rate",
+    },
+    # ---- 事件数据端口 ----
+    "event data port": {
+        "Queue_Size",
+        "Overwrite_Allowed",
+        "Timing",
+        "Rate",
+        "Data_Size",
     },
     # ---- 连接 ----
     "port connection": {
         "Timing",
         "Filter",
         "Actual_Connection_Binding",
+        "actual_connection_binding",
         "Maximum_Throughput",
         "Minimum_Throughput",
+        "Latency",
+        "Connection_Service",
     },
     # ---- 系统 ----
     "system": {
         "Actual_Processor_Binding",
         "Actual_Memory_Binding",
+        "Actual_Bus_Binding",
+        "Virtual_Processor_Binding",
+        "Virtual_Bus_Binding",
+        "Reference_Processor",
+        "Input_Rate",
+        "Output_Rate",
+    },
+    # ---- abstract ----
+    "abstract": {
+        "Actual_Processor_Binding",
+        "Actual_Memory_Binding",
+        "Actual_Bus_Binding",
+    },
+    # ---- feature group ----
+    "feature group": {
+        "Inverse_Of",
+    },
+    # ---- access connection ----
+    "access connection": {
+        "Actual_Connection_Binding",
+        "Timing",
+    },
+    # ---- parameter connection ----
+    "parameter connection": {
+        "Timing",
+        "Actual_Connection_Binding",
+    },
+    # ---- bus access ----
+    "bus access": {
+        "Bus_Access_Priority",
+    },
+    # ---- data access ----
+    "data access": {
+        "Data_Size",
+        "Timing",
+    },
+    # ---- subprogram access ----
+    "subprogram access": {
+        "Execution_Time",
+    },
+    # ---- feature group connection ----
+    "feature group connection": {
+        "Actual_Connection_Binding",
+        "Timing",
     },
 }
 

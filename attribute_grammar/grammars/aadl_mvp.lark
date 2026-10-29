@@ -1,0 +1,66 @@
+// AADL MVP EBNF Grammar (Lark format for Attribute Grammar)
+// ==========================================================
+// 最小可行子集：package / component type / impl / features /
+//               subcomponents / connections
+//
+// 带 CURSOR 标记：用于精确判断当前生成位置
+// 在当前文本末尾追加 CURSOR token 后解析，可确定光标所在的规则路径
+
+start: package_spec
+
+// ---- Package ----
+package_spec: "package" WS package_name WS "is" NEWLINE "public" NEWLINE public_decls [WS] "end" WS package_name ";" NEWLINE?
+package_name: IDENT
+public_decls: public_decl+
+public_decl: [WS] component_type | [WS] component_impl
+
+// ---- Component Type ----
+component_type: comp_category WS comp_name NEWLINE type_sections [WS] "end" WS comp_name ";" NEWLINE
+comp_name: IDENT
+type_sections: [WS features_section]
+comp_category: COMP_CATEGORY
+COMP_CATEGORY: "system" | "process" | "thread" | "data" | "bus"
+
+// ---- Features ----
+features_section: "features" NEWLINE feature_list
+feature_list: feature_decl+
+feature_decl: WS feature_name WS ":" WS port_spec ";" NEWLINE
+feature_name: IDENT
+port_spec: port_dir WS "data port" WS classifier_ref
+port_dir: PORT_DIR
+PORT_DIR: "in out" | "in" | "out"
+
+// ---- Component Implementation ----
+component_impl: comp_category WS "implementation" WS comp_name "." impl_name NEWLINE impl_sections [WS] "end" WS comp_name "." impl_name ";" NEWLINE
+impl_name: IDENT
+impl_sections: [WS subcomponents_section] [WS connections_section]
+
+// ---- Subcomponents ----
+subcomponents_section: "subcomponents" NEWLINE subcomp_list
+subcomp_list: subcomp_decl+
+subcomp_decl: WS subcomp_name WS ":" WS comp_category WS classifier_ref ";" NEWLINE
+subcomp_name: IDENT
+
+// ---- Connections ----
+connections_section: "connections" NEWLINE conn_list
+conn_list: conn_decl+
+conn_decl: WS conn_name WS ":" WS "port" WS conn_end WS "->" WS conn_end ";" NEWLINE
+conn_name: IDENT
+conn_end: conn_segment ("." conn_segment)*
+conn_segment: IDENT | CURSOR
+
+// ---- Classifier Reference ----
+// 注意：classifier_ref 是语义约束的关键点
+//  - 在 feature 的 data port 后面：必须是 data 类别
+//  - 在 subcomponent 后面：必须和声明的 category 一致
+classifier_ref: classifier_name | CURSOR
+classifier_name: IDENT
+
+// ---- Cursor Marker ----
+// 用于标记当前生成位置，判断语义上下文
+CURSOR: "__CURSOR__"
+
+// ---- Terminals ----
+IDENT: /[A-Za-z_][A-Za-z0-9_]*/
+WS: /[ \t]+/
+NEWLINE: /\n+/

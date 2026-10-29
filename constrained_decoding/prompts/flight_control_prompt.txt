@@ -1,0 +1,65 @@
+请根据以下架构描述，生成完整的 AADL 代码。
+
+包名：FlightControl
+with 包：Base_Types
+
+组件列表：
+  1. SensorData，类型 data，不需要实现
+  2. ControlData，类型 data，不需要实现
+  3. NavThread，类型 thread，需要实现，有 features
+  4. GuidThread，类型 thread，需要实现，有 features
+  5. SensorDev，类型 device，需要实现，有 features
+  6. MainProc，类型 processor，不需要实现，无 features
+  7. FcProc，类型 process，需要实现，有 features
+  8. FlightControlSys，类型 system，需要实现，有 features
+
+每个组件的 features：
+  NavThread 的 features：
+    - sensor_in: in data port SensorData
+    - cmd_out: out data port ControlData
+
+  GuidThread 的 features：
+    - nav_in: in data port SensorData
+    - cmd_out: out data port ControlData
+
+  SensorDev 的 features：
+    - data_out: out data port SensorData
+
+  FcProc 的 features：
+    - sensor_in: in data port SensorData
+    - cmd_out: out data port ControlData
+
+  FlightControlSys 的 features：
+    - sensor_in: in data port SensorData
+    - cmd_out: out data port ControlData
+
+每个组件实现的 subcomponents：
+  FcProc.impl 的 subcomponents：
+    - nav: thread NavThread
+    - guid: thread GuidThread
+    - sensor: device SensorDev
+    - cpu: processor MainProc
+
+  FlightControlSys.impl 的 subcomponents：
+    - fc_proc: process FcProc
+    - sensor_io: device SensorDev
+
+每个组件实现的 connections：
+  FcProc.impl 的 connections：
+    1. c1: sensor.data_out -> nav.sensor_in
+    2. c2: nav.cmd_out -> guid.nav_in
+
+  FlightControlSys.impl 的 connections：
+    1. s1: sensor_io.data_out -> fc_proc.sensor_in
+
+生成规则：
+1. 按上面列出的顺序生成所有组件类型声明
+2. 需要实现的组件，在组件类型后面生成对应的 .impl 实现
+3. 无 features 的组件，不要生成 features 节，直接 end 结束
+4. 子组件的类别关键字必须和类型一致
+5. 生成到 end FlightControlSys; 就停止
+
+AADL 代码：
+package FlightControl
+public
+with Base_Types;

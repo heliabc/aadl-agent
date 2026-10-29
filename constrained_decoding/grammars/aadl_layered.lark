@@ -1,0 +1,189 @@
+// AADL Layered-Recursive EBNF Grammar
+// ====================================
+// 分层 + 递归版本的 AADL 核心文法
+//
+// 设计目标：
+//   强制生成顺序为"从底向上"，保证被引用者先于引用者生成，
+//   从而使上下文敏感约束（符号表）在引用点始终完整。
+//
+// 分层结构：
+//   类型层（从底向上）：
+//     1. data 类型
+//     2. 叶子组件类型（device / processor / memory / bus / virtual bus / virtual processor）
+//     3. thread / subprogram 类型
+//     4. process / thread group / subprogram group 类型
+//     5. system 类型（所有 system 平级，因为类型之间不引用实现）
+//
+//   实现层（从底向上）：
+//     6. 叶子组件实现（device / processor / memory / bus 等）
+//     7. thread / subprogram 实现
+//     8. process / thread group / subprogram group 实现
+//     9. system 实现（递归深度优先：子 system 实现先于父 system）
+//
+// 缩进处理：
+//   NEWLINE 规则包含换行后的缩进空格（/[\n]+[ \t]*/）
+//   因此各 section 关键字前不需要额外的 WS，缩进由 NEWLINE 统一处理
+//
+// 注意：所有规则写在同一行，Lark 不支持缩进式多行规则
+
+start: [think_block] package_spec
+think_block: "<think>" think_chars "</think>" NEWLINE+
+think_chars: think_char+
+think_char: /./
+
+// ---- Package ----
+package_spec: "package" WS package_name NEWLINE [with_list] "public" NEWLINE type_layer_1_data type_layer_2_leaf type_layer_3_thread type_layer_4_process type_layer_5_system impl_layer_1_leaf impl_layer_2_thread impl_layer_3_process impl_layer_4_system [private_section] "end" WS package_name ";" NEWLINE
+package_name: IDENT
+with_list: with_clause+
+with_clause: "with" WS package_name with_rest* ";" NEWLINE
+with_rest: "," WS package_name
+private_section: "private" NEWLINE private_decls
+private_decls: private_decl*
+private_decl: data_type_decl | leaf_type_decl | thread_type_decl | process_type_decl | system_type_decl | leaf_impl_decl | thread_impl_decl | process_impl_decl | system_impl_decl
+
+// ============================================================
+// 类型层（Type Layers）
+// ============================================================
+
+// ---- 类型层1：data ----
+type_layer_1_data: data_type_decl*
+data_type_decl: "data" WS comp_name NEWLINE data_type_sections "end" WS comp_name ";" NEWLINE
+data_type_sections: [features_section] [flows_section] [properties_section]
+
+// ---- 类型层2：叶子组件（device / processor / memory / bus / virtual bus / virtual processor / abstract） ----
+type_layer_2_leaf: leaf_type_decl*
+leaf_type_decl: leaf_category WS comp_name NEWLINE type_sections "end" WS comp_name ";" NEWLINE
+leaf_category: "device" | "processor" | "virtual processor" | "memory" | "bus" | "virtual bus" | "abstract"
+
+// ---- 类型层3：thread / subprogram ----
+type_layer_3_thread: thread_type_decl*
+thread_type_decl: thread_category WS comp_name NEWLINE type_sections "end" WS comp_name ";" NEWLINE
+thread_category: "thread" | "subprogram"
+
+// ---- 类型层4：process / thread group / subprogram group ----
+type_layer_4_process: process_type_decl*
+process_type_decl: process_category WS comp_name NEWLINE type_sections "end" WS comp_name ";" NEWLINE
+process_category: "process" | "thread group" | "subprogram group"
+
+// ---- 类型层5：system ----
+type_layer_5_system: system_type_decl*
+system_type_decl: "system" WS comp_name NEWLINE type_sections "end" WS comp_name ";" NEWLINE
+
+// ---- 通用类型 sections ----
+type_sections: [features_section] [flows_section] [modes_section] [properties_section]
+comp_name: IDENT
+
+// ============================================================
+// 实现层（Implementation Layers）
+// ============================================================
+
+// ---- 实现层1：叶子组件实现 ----
+impl_layer_1_leaf: leaf_impl_decl*
+leaf_impl_decl: leaf_category WS ["implementation" WS] comp_name "." impl_name NEWLINE impl_sections "end" WS comp_name "." impl_name ";" NEWLINE
+
+// ---- 实现层2：thread / subprogram 实现 ----
+impl_layer_2_thread: thread_impl_decl*
+thread_impl_decl: thread_category WS ["implementation" WS] comp_name "." impl_name NEWLINE impl_sections "end" WS comp_name "." impl_name ";" NEWLINE
+
+// ---- 实现层3：process / thread group / subprogram group 实现 ----
+impl_layer_3_process: process_impl_decl*
+process_impl_decl: process_category WS ["implementation" WS] comp_name "." impl_name NEWLINE impl_sections "end" WS comp_name "." impl_name ";" NEWLINE
+
+// ---- 实现层4：system 实现（递归深度优先） ----
+// 关键设计：system_impl_block 先递归生成所有子 system 块，再生成本 system 实现
+// 这样保证：任何 system 实现的 subcomponents 引用的子 system 实现，都已经在符号表里
+impl_layer_4_system: system_impl_block*
+system_impl_block: nested_system_impls system_impl_decl
+nested_system_impls: system_impl_block*
+system_impl_decl: "system" WS ["implementation" WS] comp_name "." impl_name NEWLINE system_impl_sections "end" WS comp_name "." impl_name ";" NEWLINE
+
+// system 实现的 sections
+// 子 system 的实现已经在 nested_system_impls 中生成，
+// 所以这里 subcomponents 引用 system 实现时，符号表已经有了
+system_impl_sections: [subcomponents_section] [connections_section] [flows_impl_section] [modes_section] [properties_section]
+
+// ---- 通用 impl ----
+impl_name: IDENT
+impl_sections: [subcomponents_section] [connections_section] [flows_impl_section] [modes_section] [properties_section]
+
+// ============================================================
+// 通用 Sections
+// ============================================================
+
+// ---- Features ----
+features_section: "features" NEWLINE feature_list
+feature_list: feature_decl+
+feature_decl: feature_name ":" WS feature_kind ";" NEWLINE
+feature_name: IDENT
+feature_kind: port_spec | feature_group_spec | access_spec
+port_spec: port_dir WS "data port" WS classifier_ref | port_dir WS "event port" | port_dir WS "event data port" WS classifier_ref
+port_dir: "in" | "out" | "in out"
+feature_group_spec: "feature group" WS classifier_ref
+access_spec: access_dir WS access_kind WS classifier_ref
+access_dir: "provides" | "requires"
+access_kind: "bus access" | "data access" | "subprogram access" | "subprogram group access"
+
+// ---- Subcomponents ----
+subcomponents_section: "subcomponents" NEWLINE subcomp_list
+subcomp_list: subcomp_decl+
+subcomp_decl: subcomp_name ":" WS subcomp_category WS classifier_ref [in_modes] ";" NEWLINE
+subcomp_name: IDENT
+subcomp_category: "system" | "process" | "thread" | "thread group" | "subprogram" | "subprogram group" | "data" | "device" | "processor" | "virtual processor" | "memory" | "bus" | "virtual bus" | "abstract"
+in_modes: WS "in" WS "modes" WS "(" WS mode_name mode_rest* WS ")"
+mode_rest: "," WS mode_name
+mode_name: IDENT
+
+// ---- Connections ----
+connections_section: "connections" NEWLINE conn_list
+conn_list: conn_decl+
+conn_decl: [conn_name] conn_end WS "->" WS conn_end ";" NEWLINE
+conn_name: IDENT ":" WS
+conn_end: conn_segment ("." conn_segment)*
+conn_segment: IDENT
+
+// ---- Properties ----
+properties_section: "properties" NEWLINE prop_list
+prop_list: prop_decl*
+prop_decl: prop_ref WS "=>" WS prop_value ["applies" WS "to" WS prop_target] ";" NEWLINE
+prop_ref: [prop_pkg "::"] prop_name
+prop_pkg: IDENT
+prop_name: IDENT
+prop_value: string_literal | numeric_literal | boolean_literal | classifier_ref | prop_reference
+prop_reference: [prop_pkg "::"] prop_name
+prop_target: classifier_ref | "all"
+
+// ---- Modes ----
+modes_section: "modes" NEWLINE mode_list
+mode_list: mode_decl+
+mode_decl: mode_name ":" WS [mode_init] "mode" ";" NEWLINE
+mode_init: "initial" WS
+
+// ---- Flows (type) ----
+flows_section: "flows" NEWLINE flow_spec_list
+flow_spec_list: flow_spec_decl+
+flow_spec_decl: flow_name ":" WS flow_kind_spec WS flow_end WS "->" WS flow_end ";" NEWLINE
+flow_name: IDENT
+flow_kind_spec: "path flow" | "source flow" | "sink flow"
+flow_end: IDENT
+
+// ---- Flows (implementation) ----
+flows_impl_section: "flows" NEWLINE flow_impl_list
+flow_impl_list: flow_impl_decl+
+flow_impl_decl: flow_name ":" WS flow_kind WS flow_segs ";" NEWLINE
+flow_kind: "flow" | "end to end flow"
+flow_segs: flow_seg (WS "->" WS flow_seg)*
+flow_seg: IDENT ["." IDENT]
+
+// ---- Classifier Reference ----
+classifier_ref: [pkg_prefix "::"] classifier_name ["." impl_suffix]
+pkg_prefix: IDENT
+classifier_name: IDENT
+impl_suffix: IDENT
+
+// ---- Terminals ----
+IDENT: /[A-Za-z_][A-Za-z0-9_]*/
+numeric_literal: /[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?/
+string_literal: /"[^"]*"/
+boolean_literal: "true" | "false"
+WS: /[ \t]+/
+NEWLINE: /[\n]+[ \t]*/
