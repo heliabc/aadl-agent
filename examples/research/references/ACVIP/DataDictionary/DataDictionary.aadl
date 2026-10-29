@@ -1,0 +1,12 @@
+package DataDictionary
+public
+	data SensorData
+		properties
+			Data_Size => 8 bytes;
+	end SensorData;
+
+	data BrakeSignal
+		properties
+			Data_Size => 8 bytes;
+	end BrakeSignal;
+end DataDictionary;

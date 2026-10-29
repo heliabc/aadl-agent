@@ -1,0 +1,8 @@
+# Change only this API base URL when switching between compatible model servers.
+base_url: http://10.96.234.51:8000/v1
+
+# Reuse the CLI already installed on this machine; no download is required.
+# Relative paths are resolved from this configuration file's directory.
+# For a new local installation, use .tools/osate-cli-0.3.0/bin/osate-cli.bat.
+osate_cli: ../aadl-research/.tools/osate-cli-0.3.0/bin/osate-cli.bat
+

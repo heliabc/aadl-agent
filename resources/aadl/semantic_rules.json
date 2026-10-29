@@ -1,0 +1,281 @@
+{
+  "categories": [
+    "system",
+    "process",
+    "thread",
+    "device",
+    "processor",
+    "bus",
+    "data",
+    "memory"
+  ],
+  "containment": {
+    "system": [
+      "system",
+      "process",
+      "processor",
+      "device",
+      "bus",
+      "data",
+      "memory"
+    ],
+    "process": [
+      "thread",
+      "data"
+    ],
+    "thread": [
+      "data"
+    ],
+    "device": [
+      "bus",
+      "data"
+    ],
+    "processor": [
+      "bus"
+    ],
+    "bus": [],
+    "data": [
+      "data"
+    ],
+    "memory": [
+      "memory",
+      "bus"
+    ]
+  },
+  "port_categories": [
+    "system",
+    "process",
+    "thread",
+    "device",
+    "processor",
+    "bus",
+    "memory"
+  ],
+  "port_destinations": {
+    "event port": [
+      "event port"
+    ],
+    "data port": [
+      "event port",
+      "data port",
+      "event data port"
+    ],
+    "event data port": [
+      "event port",
+      "data port",
+      "event data port"
+    ]
+  },
+  "port_connection_categories": [
+    "system",
+    "process",
+    "thread",
+    "device",
+    "processor",
+    "bus"
+  ],
+  "reserved_words": [
+    "aadlboolean",
+    "aadlinteger",
+    "aadlreal",
+    "aadlstring",
+    "abstract",
+    "access",
+    "all",
+    "and",
+    "annex",
+    "applies",
+    "binding",
+    "bus",
+    "calls",
+    "classifier",
+    "compute",
+    "connections",
+    "constant",
+    "data",
+    "device",
+    "end",
+    "enumeration",
+    "event",
+    "extends",
+    "false",
+    "feature",
+    "features",
+    "flow",
+    "flows",
+    "group",
+    "implementation",
+    "in",
+    "inherit",
+    "initial",
+    "internal",
+    "inverse",
+    "is",
+    "list",
+    "memory",
+    "mode",
+    "modes",
+    "none",
+    "not",
+    "of",
+    "or",
+    "out",
+    "package",
+    "parameter",
+    "path",
+    "port",
+    "private",
+    "process",
+    "processor",
+    "properties",
+    "property",
+    "prototypes",
+    "provides",
+    "public",
+    "range",
+    "record",
+    "reference",
+    "refined",
+    "renames",
+    "requires",
+    "self",
+    "set",
+    "sink",
+    "source",
+    "subcomponents",
+    "subprogram",
+    "system",
+    "thread",
+    "to",
+    "true",
+    "type",
+    "units",
+    "virtual",
+    "with"
+  ],
+  "builtin_properties": {
+    "programming_properties::source_name": {
+      "kind": "string",
+      "applies_to": [
+        "data",
+        "port"
+      ],
+      "units": [],
+      "source": "https://github.com/osate/osate2/blob/d1aa7f7fbca3cb41d92c40d788101ca3dcf0a100/core/org.osate.aadl2.contrib/resources/properties/Predeclared_Property_Sets/Programming_Properties.aadl"
+    },
+    "programming_properties::type_source_name": {
+      "kind": "string",
+      "applies_to": [
+        "data",
+        "port"
+      ],
+      "units": [],
+      "source": "https://github.com/osate/osate2/blob/d1aa7f7fbca3cb41d92c40d788101ca3dcf0a100/core/org.osate.aadl2.contrib/resources/properties/Predeclared_Property_Sets/Programming_Properties.aadl"
+    },
+    "memory_properties::data_size": {
+      "kind": "integer",
+      "applies_to": [
+        "data",
+        "feature",
+        "thread",
+        "process",
+        "system",
+        "processor",
+        "bus",
+        "device"
+      ],
+      "units": [
+        "bits",
+        "Bytes",
+        "KByte",
+        "MByte",
+        "GByte",
+        "TByte",
+        "KiByte",
+        "MiByte",
+        "GiByte",
+        "TiByte"
+      ],
+      "source": "https://github.com/osate/osate2/blob/d1aa7f7fbca3cb41d92c40d788101ca3dcf0a100/core/org.osate.aadl2.contrib/resources/properties/Predeclared_Property_Sets/Memory_Properties.aadl",
+      "minimum": 0,
+      "minimum_origin": "User-approved generation profile: nonnegative size. AADL_Project::Size itself does not declare this lower bound."
+    },
+    "memory_properties::code_size": {
+      "kind": "integer",
+      "applies_to": [
+        "data",
+        "thread",
+        "process",
+        "system",
+        "processor",
+        "device"
+      ],
+      "units": [
+        "bits",
+        "Bytes",
+        "KByte",
+        "MByte",
+        "GByte",
+        "TByte",
+        "KiByte",
+        "MiByte",
+        "GiByte",
+        "TiByte"
+      ],
+      "source": "https://github.com/osate/osate2/blob/d1aa7f7fbca3cb41d92c40d788101ca3dcf0a100/core/org.osate.aadl2.contrib/resources/properties/Predeclared_Property_Sets/Memory_Properties.aadl",
+      "minimum": 0,
+      "minimum_origin": "User-approved generation profile: nonnegative size. AADL_Project::Size itself does not declare this lower bound."
+    },
+    "memory_properties::memory_size": {
+      "kind": "integer",
+      "applies_to": [
+        "memory",
+        "system",
+        "processor"
+      ],
+      "units": [
+        "bits",
+        "Bytes",
+        "KByte",
+        "MByte",
+        "GByte",
+        "TByte",
+        "KiByte",
+        "MiByte",
+        "GiByte",
+        "TiByte"
+      ],
+      "source": "https://github.com/osate/osate2/blob/d1aa7f7fbca3cb41d92c40d788101ca3dcf0a100/core/org.osate.aadl2.contrib/resources/properties/Predeclared_Property_Sets/Memory_Properties.aadl",
+      "minimum": 0,
+      "minimum_origin": "User-approved generation profile: nonnegative size. AADL_Project::Size itself does not declare this lower bound."
+    },
+    "memory_properties::word_size": {
+      "kind": "integer",
+      "applies_to": [
+        "memory"
+      ],
+      "units": [
+        "bits",
+        "Bytes",
+        "KByte",
+        "MByte",
+        "GByte",
+        "TByte",
+        "KiByte",
+        "MiByte",
+        "GiByte",
+        "TiByte"
+      ],
+      "source": "https://github.com/osate/osate2/blob/d1aa7f7fbca3cb41d92c40d788101ca3dcf0a100/core/org.osate.aadl2.contrib/resources/properties/Predeclared_Property_Sets/Memory_Properties.aadl",
+      "minimum": 0,
+      "minimum_origin": "User-approved generation profile: nonnegative size. AADL_Project::Size itself does not declare this lower bound."
+    }
+  },
+  "source_revision": "d1aa7f7fbca3cb41d92c40d788101ca3dcf0a100",
+  "source": "https://github.com/osate/osate2/blob/d1aa7f7fbca3cb41d92c40d788101ca3dcf0a100/core/org.osate.xtext.aadl2/src/org/osate/xtext/aadl2/Aadl2.xtext",
+  "scope": "Single public package; eight categories; ordinary ports; subcomponents; port connections; six scalar properties. No external classifier libraries in v1.",
+  "property_sets": [
+    "memory_properties",
+    "programming_properties"
+  ]
+}

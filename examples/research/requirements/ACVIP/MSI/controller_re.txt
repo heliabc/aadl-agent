@@ -1,0 +1,33 @@
+一、模块依赖与架构划分需求
+
+1. 系统需独立设计控制器业务包 Controller，包内定义整车控制核心组件，内容对外公开供其他模块调用。
+2. Controller 包必须引入三类外部依赖包，分别为全局数据字典 DataDictionary、底层基础设施 Infrastructure、标准化硬件属性规范 SEI，以此引用统一数据结构、底层总线资源、硬件约束参数。
+
+二、控制器核心组件外部接口需求
+
+1. 系统需要实现核心控制组件 SimpleController，组件类型为 system，承担信号采集、逻辑运算、制动指令下发的控制功能。
+2. 组件输入总线接口 busIn：需要占用基础设施包 Bus1553 总线实例 bus1553.i，通过该总线接收外部传输的传感器原始数据。
+3. 组件数据输入端口 dataIn：输入数据类型为 DataDictionary 包内 SensorData 传感器数据，用于接收外部上传的传感采集信息。
+4. 组件输出总线接口 busOut：需要占用基础设施包 CanBus 总线实例 canBus.i，通过该总线向外发送制动控制指令。
+5. 组件数据输出端口 dataOut：输出数据类型为 DataDictionary 包内 BrakeSignal 制动信号，用于下发经过控制器运算后的制动指令。
+6. 组件供电接入接口 powerIn：需要接入基础设施通用供电总线 power.generic，为控制器硬件提供工作电源。
+
+三、控制器内部数据流需求
+
+1. 组件内部定义完整业务数据流 controllerFlow，数据通路逻辑为外部传感器输入 dataIn 经过控制器内部运算处理后，从 dataOut 端口输出制动指令。
+
+四、故障安全与错误管理需求（EMV2 错误模型）
+
+1. 控制器组件必须搭载 EMV2 错误建模规范，引用通用故障库 ErrorLibrary，采用 FailStop 停机失效故障行为模型。
+2. 故障传播通道定义需求
+输入故障通道 datain：允许接收两类外部输入故障，分别为服务缺失故障 ServiceOmission、数值异常故障 ValueError；数据流 f1 作为输入故障接收端，捕获输入端口产生的两类故障。
+输出故障通道 dataout：可向外传播两类自身故障，分别为服务缺失故障 ServiceOmission、数值异常故障 ValueError；数据流 f2 作为输出故障源头，向外发送控制器自身产生的两类故障。
+3. 组件故障状态切换需求
+控制器正常工作状态为 Operational 运行态；一旦触发服务缺失故障事件 serviceommission、数值异常故障事件 valueerror，组件立即切换至 FailStop 停机失效状态，停止全部控制输出。
+
+五、控制器硬件性能与物理约束需求
+
+1. SimpleController 配套独立实现实例 SimpleController.i，所有时延、重量、功耗量化约束统一配置在实现层。
+2. 数据流时延约束：controllerFlow 完整信号处理通路，从接收传感器数据到输出制动指令总时延范围为 3 毫秒至 5 毫秒。
+3. 硬件重量约束：遵循 SEI 重量规范，整套 SimpleController 控制器硬件总重量上限为 1.2 千克。
+4. 供电功耗约束：针对 powerIn 供电接口，控制器运行功耗预算最大值为 4.0 瓦，工作功耗不可超出该限值。

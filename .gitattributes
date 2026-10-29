@@ -1,0 +1,3 @@
+# Rule versions and corpus checksums use raw bytes, including line endings.
+# Preserve those bytes across Windows and Linux checkouts.
+* -text

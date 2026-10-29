@@ -1,0 +1,36 @@
+一、顶层系统模块依赖与架构划分需求
+
+1. 系统顶层业务包命名为 SCS，对外公开顶层整车控制系统定义，作为全系统集成根节点。
+2. SCS 包需引入外部依赖组件包，包含 SimpleSensor 传感器包、Controller 控制器包、Infrastructure 底层基础设施包、Brake 制动执行机构包，用于集成所有底层硬件、控制单元、执行单元。
+3. 顶层系统分为基础声明与实现两层，HighLevelSCS 为顶层系统基础定义，所有子组件实例、连接关系、端到端数据流、绑定规则、时延约束全部配置在 HighLevelSCS.i 实现实例中。
+
+二、系统子组件集成部署需求
+
+1. 顶层系统内部需要实例化全部功能硬件与底层资源，共六类子组件：
+第一，传感硬件实例 sensor1，设备类型引用 SimpleSensor 包 SimpleSensor.i 传感器实现；
+第二，核心控制单元实例 controller1，系统类型引用 Controller 包 SimpleController.i 控制器实现；
+第三，制动执行机构实例 brake1，设备类型引用 Brake 包 SimpleBrake.i 制动设备实现；
+第四，CAN 通信总线实例 canBus，总线类型引用 Infrastructure 包 CanBus.i，额外约束该总线传输时延区间 13 毫秒至 15 毫秒；
+第五，1553 通信总线实例 bus1553，总线类型引用 Infrastructure 包 Bus1553.i，固定总线时延为 7 毫秒；
+第六，集中供电源实例 powerSource，系统类型引用 Infrastructure 包 PowerSource.i 电源实现；
+第七，通用供电总线实例 power，总线类型引用 Infrastructure 包 power.generic 通用供电通道。
+
+三、组件端口数据连接需求
+
+1. 端口连接 c1：传感器 sensor1 的数据输出端口 dataOut，直连控制器 controller1 的数据输入端口 dataIn，实现传感数据向控制器单向传输。
+2. 端口连接 c2：控制器 controller1 的数据输出端口 dataOut，直连制动设备 brake1 的数据输入端口 dataIn，实现控制器制动指令向制动执行机构单向下发。
+3. 端口连接统一时延约束：c1、c2 两条数据端口链路，数据传输时延范围 15 毫秒至 25 毫秒。
+4. 端口链路总线绑定规则：c1 传感数据链路物理绑定至 bus1553 总线；c2 制动指令链路物理绑定至 canBus 总线，明确两条数据流对应的底层物理传输总线。
+
+四、硬件总线资源接入连接需求
+
+1. 总线连接 bus1：传感器 sensor1 的总线输出接口 busOut 双向接入 bus1553 总线，传感器通过 1553 总线对外发送传感数据。
+2. 总线连接 bus2：控制器 controller1 的总线输入接口 busIn 双向接入 bus1553 总线，控制器通过 1553 总线接收传感器上传数据。
+3. 总线连接 bus3：控制器 controller1 的总线输出接口 busOut 双向接入 canBus 总线，控制器通过 CAN 总线下发制动控制指令。
+4. 总线连接 bus4：制动设备 brake1 的总线输入接口 busIn 双向接入 canBus 总线，制动设备通过 CAN 总线接收控制器下发的制动信号。
+5. 供电总线连接 bus5、bus6、bus7：通用供电总线 power 分别双向接入传感器 sensor1、制动设备 brake1、控制器 controller1 的供电输入接口 powerIn，所有用电硬件统一由集中供电总线供电。
+
+五、全链路端到端数据流需求
+
+1. 系统定义完整端到端业务数据流 ete1，完整数据流转路径为：传感器内部传感数据流 sensorFlow，经过端口连接 c1 传输至控制器，经控制器内部控制数据流 controllerFlow 处理后，通过端口连接 c2 传输至制动设备，最终流入制动设备内部制动数据流 brakeFlow。
+2. 端到端全链路时延约束：从传感器采集数据到制动机构接收指令的完整流程总时延区间为 30 毫秒至 40 毫秒。

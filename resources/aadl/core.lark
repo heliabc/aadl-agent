@@ -1,0 +1,76 @@
+// Explicit boundaries: llguidance does not use Lark's longest-match lexer.
+// Captures close semantic units; the package prefix hook checks unfinished names.
+start: gap package gap
+package: package_header sep imports* declaration+ package_end
+package_header[capture]: PACKAGE sep qname sep PUBLIC
+package_end[capture]: END sep qname gap SEMI
+imports[capture]: WITH sep qname (gap COMMA gap qname)* gap SEMI gap
+declaration: component | implementation
+component: component_header sep features? properties? component_end gap
+implementation: implementation_header sep subcomponents? connections? properties? implementation_end gap
+component_header[capture]: category sep IDENT
+implementation_header[capture]: category sep IMPLEMENTATION sep impl_name
+component_end[capture]: END sep IDENT gap SEMI
+implementation_end[capture]: END sep impl_name gap SEMI
+category: SYSTEM | PROCESS | THREAD | DEVICE | PROCESSOR | BUS | DATA | MEMORY
+features: FEATURES sep (feature gap)+ | FEATURES sep NONE gap SEMI gap
+feature[capture]: IDENT gap COLON gap direction sep port_kind (sep classifier)? gap property_block? SEMI
+direction: IN (sep OUT)? | OUT
+port_kind: DATA sep PORT | EVENT sep (DATA sep)? PORT
+subcomponents: SUBCOMPONENTS sep (subcomponent gap)+ | SUBCOMPONENTS sep NONE gap SEMI gap
+subcomponent[capture]: IDENT gap COLON gap category sep classifier gap property_block? SEMI
+connections: CONNECTIONS sep (connection gap)+ | CONNECTIONS sep NONE gap SEMI gap
+connection[capture]: IDENT gap COLON gap PORT sep endpoint gap arrow gap endpoint gap SEMI
+arrow: ARROW | BIARROW
+properties: PROPERTIES sep (property gap)+
+property_block: LBRACE gap (property_body gap)+ RBRACE gap
+property[capture]: property_body
+property_body: qname gap ASSIGN gap value applies? gap SEMI
+value: INT (gap IDENT)? | STRING
+applies: sep APPLIES sep TO sep endpoint (gap COMMA gap endpoint)*
+qname: IDENT (gap DCOLON gap IDENT)*
+impl_name: IDENT gap DOT gap IDENT
+classifier: qname (gap DOT gap IDENT)?
+endpoint: IDENT (gap DOT gap IDENT)?
+gap: (WS | COMMENT)*
+sep: (WS | LINE_COMMENT)+
+PACKAGE: "package"i
+PUBLIC: "public"i
+WITH: "with"i
+END: "end"i
+IMPLEMENTATION: "implementation"i
+SYSTEM: "system"i
+PROCESS: "process"i
+THREAD: "thread"i
+DEVICE: "device"i
+PROCESSOR: "processor"i
+BUS: "bus"i
+DATA: "data"i
+MEMORY: "memory"i
+FEATURES: "features"i
+IN: "in"i
+OUT: "out"i
+EVENT: "event"i
+PORT: "port"i
+SUBCOMPONENTS: "subcomponents"i
+CONNECTIONS: "connections"i
+PROPERTIES: "properties"i
+APPLIES: "applies"i
+TO: "to"i
+NONE: "none"i
+DCOLON: "::"
+COLON: ":"
+DOT: "."
+SEMI: ";"
+COMMA: ","
+ASSIGN: "=>"
+ARROW: "->"
+BIARROW: "<->"
+LBRACE: "{"
+RBRACE: "}"
+IDENT: /[A-Za-z](?:_?[A-Za-z0-9])*/ & ~("aadlboolean"i | "aadlinteger"i | "aadlreal"i | "aadlstring"i | "abstract"i | "access"i | "all"i | "and"i | "annex"i | "applies"i | "binding"i | "bus"i | "calls"i | "classifier"i | "compute"i | "connections"i | "constant"i | "data"i | "device"i | "end"i | "enumeration"i | "event"i | "extends"i | "false"i | "feature"i | "features"i | "flow"i | "flows"i | "group"i | "implementation"i | "in"i | "inherit"i | "initial"i | "internal"i | "inverse"i | "is"i | "list"i | "memory"i | "mode"i | "modes"i | "none"i | "not"i | "of"i | "or"i | "out"i | "package"i | "parameter"i | "path"i | "port"i | "private"i | "process"i | "processor"i | "properties"i | "property"i | "prototypes"i | "provides"i | "public"i | "range"i | "record"i | "reference"i | "refined"i | "renames"i | "requires"i | "self"i | "set"i | "sink"i | "source"i | "subcomponents"i | "subprogram"i | "system"i | "thread"i | "to"i | "true"i | "type"i | "units"i | "virtual"i | "with"i)
+INT: /[+-]?[0-9]+/
+STRING: /"(?:""|[^"])*"/
+WS: /[ \t\r\n]+/
+LINE_COMMENT: /--[^\r\n]*[\r\n]/
+COMMENT: /--[^\r\n]*/

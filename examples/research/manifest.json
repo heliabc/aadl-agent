@@ -1,0 +1,2869 @@
+{
+  "schema_version": 1,
+  "source_project": "aadl-research",
+  "source_root": "osate-examples/examples",
+  "scope": {
+    "requirement_pattern": "**/*_re.txt",
+    "reference_pattern": "**/*.aadl"
+  },
+  "counts": {
+    "requirements": 146,
+    "references": 75,
+    "reference_groups_with_requirements": 57,
+    "languages": {
+      "zh": 89,
+      "en": 57
+    },
+    "references_without_requirements": 18
+  },
+  "text_loading": {
+    "encoding": "utf-8-sig",
+    "newlines": "universal",
+    "raw_copies": "byte-identical",
+    "cases_jsonl_fields": [
+      "id",
+      "requirements"
+    ]
+  },
+  "variant_group_meaning": "Requirements associated with the same candidate reference by source paths and explicit filename aliases. Grouping records possible source variants; it does not establish semantic equivalence or human-verified ground truth.",
+  "mapping_notes": [
+    "ACVIP/DataDictionary/data_re.txt explicitly maps to ACVIP/DataDictionary/DataDictionary.aadl.",
+    "stepper-motor_output contains WBS/arp4761 requirement variants; it does not map to the stepper-motor reference project.",
+    "stepper-motor_output/advanced/integration/main1_re.txt explicitly maps to arp4761/advanced/integration/main.aadl.",
+    "Original source directories and filename case are preserved in both copied trees."
+  ],
+  "license_notices": {
+    "separate_notice_files_found": [],
+    "references": "Existing per-file copyright, permission and warranty notices are preserved verbatim. No new license is granted by this manifest.",
+    "requirements": "No independent license statement was found for the requirement texts; no license is inferred from the reference AADL."
+  },
+  "requirements": [
+    {
+      "id": "ACVIP__DataDictionary__data_re",
+      "path": "requirements/ACVIP/DataDictionary/data_re.txt",
+      "source_path": "osate-examples/examples/ACVIP/DataDictionary/data_re.txt",
+      "sha256": "a6fe8a872a3cf86f23447bbc7cbbbede67644affc1da4e82c1572849836e8c66",
+      "language": "zh",
+      "reference": "references/ACVIP/DataDictionary/DataDictionary.aadl",
+      "variant_group": "ACVIP/DataDictionary/DataDictionary",
+      "variant": "zh",
+      "association_method": "explicit_alias"
+    },
+    {
+      "id": "ACVIP__EfectorsInc__brake_re",
+      "path": "requirements/ACVIP/EfectorsInc/brake_re.txt",
+      "source_path": "osate-examples/examples/ACVIP/EfectorsInc/brake_re.txt",
+      "sha256": "73351f817bbd33dd8a3e2b194e8daba20c557174f409db099c963d00dec87622",
+      "language": "zh",
+      "reference": "references/ACVIP/EfectorsInc/Brake.aadl",
+      "variant_group": "ACVIP/EfectorsInc/Brake",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP__Infrastructure__infrastructure_re",
+      "path": "requirements/ACVIP/Infrastructure/infrastructure_re.txt",
+      "source_path": "osate-examples/examples/ACVIP/Infrastructure/infrastructure_re.txt",
+      "sha256": "0af0997a3122ae95600889bba82a8bedcea7086e2ff60b56bfadda6d3dd163b7",
+      "language": "zh",
+      "reference": "references/ACVIP/Infrastructure/Infrastructure.aadl",
+      "variant_group": "ACVIP/Infrastructure/Infrastructure",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP__MSI__controller_re",
+      "path": "requirements/ACVIP/MSI/controller_re.txt",
+      "source_path": "osate-examples/examples/ACVIP/MSI/controller_re.txt",
+      "sha256": "0d325be6deb0f426d6bbb93e68bb2adeaf433d1ff5155686699885b5e3d6f158",
+      "language": "zh",
+      "reference": "references/ACVIP/MSI/Controller.aadl",
+      "variant_group": "ACVIP/MSI/Controller",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP__MSI__scs_re",
+      "path": "requirements/ACVIP/MSI/scs_re.txt",
+      "source_path": "osate-examples/examples/ACVIP/MSI/scs_re.txt",
+      "sha256": "be36470f979465b786dda48515b6f4a7d412f2263f33cd5c0adfb85551f8b78e",
+      "language": "zh",
+      "reference": "references/ACVIP/MSI/SCS.aadl",
+      "variant_group": "ACVIP/MSI/SCS",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP__SensorsInc__simplesensor_re",
+      "path": "requirements/ACVIP/SensorsInc/simplesensor_re.txt",
+      "source_path": "osate-examples/examples/ACVIP/SensorsInc/simplesensor_re.txt",
+      "sha256": "14e748543306fe993568ce84b767d5bc61b53cc0d1a5e31b6f81f656e957bba6",
+      "language": "zh",
+      "reference": "references/ACVIP/SensorsInc/SimpleSensor.aadl",
+      "variant_group": "ACVIP/SensorsInc/SimpleSensor",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_ALISA__SCSProject__DataModel_re",
+      "path": "requirements/ACVIP_ALISA/SCSProject/DataModel_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_ALISA/SCSProject/DataModel_re.txt",
+      "sha256": "27a1732597b279c88a4e1a2fb91df6fa7e23f5c00dc890c4c492650ac0de01f8",
+      "language": "zh",
+      "reference": "references/ACVIP_ALISA/SCSProject/DataModel.aadl",
+      "variant_group": "ACVIP_ALISA/SCSProject/DataModel",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_ALISA__SCSProject__IntegratedSCS_re",
+      "path": "requirements/ACVIP_ALISA/SCSProject/IntegratedSCS_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_ALISA/SCSProject/IntegratedSCS_re.txt",
+      "sha256": "dba8dafcf46f0e09dfa76d6110ffd03948cfa6a0349546b105402f1c7e764300",
+      "language": "zh",
+      "reference": "references/ACVIP_ALISA/SCSProject/IntegratedSCS.aadl",
+      "variant_group": "ACVIP_ALISA/SCSProject/IntegratedSCS",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_ALISA__SCSProject__PhysicalParts_re",
+      "path": "requirements/ACVIP_ALISA/SCSProject/PhysicalParts_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_ALISA/SCSProject/PhysicalParts_re.txt",
+      "sha256": "ff4858d99ca87519cd2778eac1d80a187d845947947a5f83f5e5db5f668fed1a",
+      "language": "zh",
+      "reference": "references/ACVIP_ALISA/SCSProject/PhysicalParts.aadl",
+      "variant_group": "ACVIP_ALISA/SCSProject/PhysicalParts",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_ALISA__SCSProject__SoftwareParts_re",
+      "path": "requirements/ACVIP_ALISA/SCSProject/SoftwareParts_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_ALISA/SCSProject/SoftwareParts_re.txt",
+      "sha256": "3a9b1c79f813a073a649af096cfe48dca7e98c61ffd3cd509be942b98004f1ea",
+      "language": "zh",
+      "reference": "references/ACVIP_ALISA/SCSProject/SoftwareParts.aadl",
+      "variant_group": "ACVIP_ALISA/SCSProject/SoftwareParts",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_ALISA__SCSProject__heat_source_re",
+      "path": "requirements/ACVIP_ALISA/SCSProject/heat_source_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_ALISA/SCSProject/heat_source_re.txt",
+      "sha256": "01ebd8aade38fc4d88e7f6a221e7618fbfa3ad1a92b431ae9614ee80af63ebd0",
+      "language": "zh",
+      "reference": "references/ACVIP_ALISA/SCSProject/heat_source.aadl",
+      "variant_group": "ACVIP_ALISA/SCSProject/heat_source",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_ALISA__SCSProject__isoletteDataModel_re",
+      "path": "requirements/ACVIP_ALISA/SCSProject/isoletteDataModel_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_ALISA/SCSProject/isoletteDataModel_re.txt",
+      "sha256": "32e38529c8ba832a3c2b6410b166e81eb1c7e7922984a028de125c03f91c68e6",
+      "language": "zh",
+      "reference": "references/ACVIP_ALISA/SCSProject/isoletteDataModel.aadl",
+      "variant_group": "ACVIP_ALISA/SCSProject/isoletteDataModel",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_ALISA__SCSProject__isoletteSystem_re",
+      "path": "requirements/ACVIP_ALISA/SCSProject/isoletteSystem_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_ALISA/SCSProject/isoletteSystem_re.txt",
+      "sha256": "70b27befb7f5b933ba7f7be74ba5748a45c337a3c3cbf257ddb9e9dad20a79d3",
+      "language": "zh",
+      "reference": "references/ACVIP_ALISA/SCSProject/isoletteSystem.aadl",
+      "variant_group": "ACVIP_ALISA/SCSProject/isoletteSystem",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_ALISA__SCSProject__operator_interface_re",
+      "path": "requirements/ACVIP_ALISA/SCSProject/operator_interface_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_ALISA/SCSProject/operator_interface_re.txt",
+      "sha256": "d81bf3808f5f87cb88b9920f617328ce34b28aaea54eb51a515a45f7c87e4439",
+      "language": "zh",
+      "reference": "references/ACVIP_ALISA/SCSProject/operator_interface.aadl",
+      "variant_group": "ACVIP_ALISA/SCSProject/operator_interface",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_ALISA__SCSProject__temperature_sensor_re",
+      "path": "requirements/ACVIP_ALISA/SCSProject/temperature_sensor_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_ALISA/SCSProject/temperature_sensor_re.txt",
+      "sha256": "2f5e381afbdf58d282e5d25e6901c3f888647608b0643bd2c5768bd56a9ab2fc",
+      "language": "zh",
+      "reference": "references/ACVIP_ALISA/SCSProject/temperature_sensor.aadl",
+      "variant_group": "ACVIP_ALISA/SCSProject/temperature_sensor",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_ALISA__SCSProject__thermostat_re",
+      "path": "requirements/ACVIP_ALISA/SCSProject/thermostat_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_ALISA/SCSProject/thermostat_re.txt",
+      "sha256": "a0df2e04d317d13f6f58412b41f3751514e4b2e694907ade7c5eb9a9344219fd",
+      "language": "zh",
+      "reference": "references/ACVIP_ALISA/SCSProject/thermostat.aadl",
+      "variant_group": "ACVIP_ALISA/SCSProject/thermostat",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_ALISA_en__SCSProject__DataModel_re",
+      "path": "requirements/ACVIP_ALISA_en/SCSProject/DataModel_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_ALISA_en/SCSProject/DataModel_re.txt",
+      "sha256": "a3c9505bf791ef80f6c712903f9aca5c25a36a28fe6d1c748faff993dd21e930",
+      "language": "en",
+      "reference": "references/ACVIP_ALISA/SCSProject/DataModel.aadl",
+      "variant_group": "ACVIP_ALISA/SCSProject/DataModel",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_ALISA_en__SCSProject__IntegratedSCS_re",
+      "path": "requirements/ACVIP_ALISA_en/SCSProject/IntegratedSCS_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_ALISA_en/SCSProject/IntegratedSCS_re.txt",
+      "sha256": "cf8f279976e56660ef9cdf04a92ddb2abb52ceffb4dd1cabafcfc4715b541eeb",
+      "language": "en",
+      "reference": "references/ACVIP_ALISA/SCSProject/IntegratedSCS.aadl",
+      "variant_group": "ACVIP_ALISA/SCSProject/IntegratedSCS",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_ALISA_en__SCSProject__PhysicalParts_re",
+      "path": "requirements/ACVIP_ALISA_en/SCSProject/PhysicalParts_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_ALISA_en/SCSProject/PhysicalParts_re.txt",
+      "sha256": "de7ff7e50ac33442efd12533b1b902646edb46f0b078f24c4de3f821e50bbb7e",
+      "language": "en",
+      "reference": "references/ACVIP_ALISA/SCSProject/PhysicalParts.aadl",
+      "variant_group": "ACVIP_ALISA/SCSProject/PhysicalParts",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_ALISA_en__SCSProject__SoftwareParts_re",
+      "path": "requirements/ACVIP_ALISA_en/SCSProject/SoftwareParts_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_ALISA_en/SCSProject/SoftwareParts_re.txt",
+      "sha256": "fd410888d6fb8ca143dd4bfbee55e542a76aa6e1a21426b11b2a9b1902612e61",
+      "language": "en",
+      "reference": "references/ACVIP_ALISA/SCSProject/SoftwareParts.aadl",
+      "variant_group": "ACVIP_ALISA/SCSProject/SoftwareParts",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_ALISA_en__SCSProject__heat_source_re",
+      "path": "requirements/ACVIP_ALISA_en/SCSProject/heat_source_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_ALISA_en/SCSProject/heat_source_re.txt",
+      "sha256": "3d99320cba6f17fdd2c698824e37fd97b5183fe0ef6adb292a204c7a3abe47b3",
+      "language": "en",
+      "reference": "references/ACVIP_ALISA/SCSProject/heat_source.aadl",
+      "variant_group": "ACVIP_ALISA/SCSProject/heat_source",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_ALISA_en__SCSProject__isoletteDataModel_re",
+      "path": "requirements/ACVIP_ALISA_en/SCSProject/isoletteDataModel_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_ALISA_en/SCSProject/isoletteDataModel_re.txt",
+      "sha256": "ce70b7d5af12b491c0da90f4b8bed64cafc93b554ff5d75e6354ff09e383b339",
+      "language": "en",
+      "reference": "references/ACVIP_ALISA/SCSProject/isoletteDataModel.aadl",
+      "variant_group": "ACVIP_ALISA/SCSProject/isoletteDataModel",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_ALISA_en__SCSProject__isoletteSystem_re",
+      "path": "requirements/ACVIP_ALISA_en/SCSProject/isoletteSystem_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_ALISA_en/SCSProject/isoletteSystem_re.txt",
+      "sha256": "a1c660b7dfb27a6350fc7ec18b748063bf522c798277cdd89b44748e267fdb64",
+      "language": "en",
+      "reference": "references/ACVIP_ALISA/SCSProject/isoletteSystem.aadl",
+      "variant_group": "ACVIP_ALISA/SCSProject/isoletteSystem",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_ALISA_en__SCSProject__operator_interface_re",
+      "path": "requirements/ACVIP_ALISA_en/SCSProject/operator_interface_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_ALISA_en/SCSProject/operator_interface_re.txt",
+      "sha256": "2e797313535c8f956a9bfb1f6b3719fa3b70b306ed450fb67daf0ee6a7065355",
+      "language": "en",
+      "reference": "references/ACVIP_ALISA/SCSProject/operator_interface.aadl",
+      "variant_group": "ACVIP_ALISA/SCSProject/operator_interface",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_ALISA_en__SCSProject__temperature_sensor_re",
+      "path": "requirements/ACVIP_ALISA_en/SCSProject/temperature_sensor_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_ALISA_en/SCSProject/temperature_sensor_re.txt",
+      "sha256": "8719c7e7dabd95305e958a13ccca45db9a8885edc68a0df6f2271ab9ae5cc890",
+      "language": "en",
+      "reference": "references/ACVIP_ALISA/SCSProject/temperature_sensor.aadl",
+      "variant_group": "ACVIP_ALISA/SCSProject/temperature_sensor",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_ALISA_en__SCSProject__thermostat_re",
+      "path": "requirements/ACVIP_ALISA_en/SCSProject/thermostat_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_ALISA_en/SCSProject/thermostat_re.txt",
+      "sha256": "c8d865bf4c69fc0f344b23e7021cb5dbd8aa69e8e2f34b1f89172797dcff33c2",
+      "language": "en",
+      "reference": "references/ACVIP_ALISA/SCSProject/thermostat.aadl",
+      "variant_group": "ACVIP_ALISA/SCSProject/thermostat",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_en__DataDictionary__DataDictionary_re",
+      "path": "requirements/ACVIP_en/DataDictionary/DataDictionary_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_en/DataDictionary/DataDictionary_re.txt",
+      "sha256": "cb4da89f5c01642b1b742a1f96b8599ef3338c0de3c6e8333720778a28064a9d",
+      "language": "en",
+      "reference": "references/ACVIP/DataDictionary/DataDictionary.aadl",
+      "variant_group": "ACVIP/DataDictionary/DataDictionary",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_en__EfectorsInc__Brake_re",
+      "path": "requirements/ACVIP_en/EfectorsInc/Brake_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_en/EfectorsInc/Brake_re.txt",
+      "sha256": "8eb578a8b9de4542844056a4a242035f27a98b4ec9e0a4ecd8d94e967454ca09",
+      "language": "en",
+      "reference": "references/ACVIP/EfectorsInc/Brake.aadl",
+      "variant_group": "ACVIP/EfectorsInc/Brake",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_en__Infrastructure__Infrastructure_re",
+      "path": "requirements/ACVIP_en/Infrastructure/Infrastructure_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_en/Infrastructure/Infrastructure_re.txt",
+      "sha256": "39894aa7facd76fb5703e85f913ee0d22e747a8a2a568fd0f53fbfa4078de59b",
+      "language": "en",
+      "reference": "references/ACVIP/Infrastructure/Infrastructure.aadl",
+      "variant_group": "ACVIP/Infrastructure/Infrastructure",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_en__InitialSCS_re",
+      "path": "requirements/ACVIP_en/InitialSCS_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_en/InitialSCS_re.txt",
+      "sha256": "5f3f3305729b08ff69289645895e948560c7b72e3c448baf3882bfc75a9ce56f",
+      "language": "en",
+      "reference": "references/ACVIP/InitialSCS.aadl",
+      "variant_group": "ACVIP/InitialSCS",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_en__MSI__Controller_re",
+      "path": "requirements/ACVIP_en/MSI/Controller_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_en/MSI/Controller_re.txt",
+      "sha256": "c92903ff2801534ad0ea13e5201029ed962051922a16ada556573313c2966d45",
+      "language": "en",
+      "reference": "references/ACVIP/MSI/Controller.aadl",
+      "variant_group": "ACVIP/MSI/Controller",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_en__MSI__SCS_re",
+      "path": "requirements/ACVIP_en/MSI/SCS_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_en/MSI/SCS_re.txt",
+      "sha256": "72a355f0d8997e27a8a03f9a34017c01906fd32c532c07df2b24cc600ebf9b5c",
+      "language": "en",
+      "reference": "references/ACVIP/MSI/SCS.aadl",
+      "variant_group": "ACVIP/MSI/SCS",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "ACVIP_en__SensorsInc__SimpleSensor_re",
+      "path": "requirements/ACVIP_en/SensorsInc/SimpleSensor_re.txt",
+      "source_path": "osate-examples/examples/ACVIP_en/SensorsInc/SimpleSensor_re.txt",
+      "sha256": "a1972510ca10089ea3a6c344aca14ed5910830d20a3aa7185297e1ad2a42b546",
+      "language": "en",
+      "reference": "references/ACVIP/SensorsInc/SimpleSensor.aadl",
+      "variant_group": "ACVIP/SensorsInc/SimpleSensor",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__advanced_re__common__WBSPS_re",
+      "path": "requirements/arp4761/advanced_re/common/WBSPS_re.txt",
+      "source_path": "osate-examples/examples/arp4761/advanced_re/common/WBSPS_re.txt",
+      "sha256": "f7b34c69f0d1c4c2aa82972f30efcb222ff3f6ce4e24046d97d44c7546cc58ea",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/common/WBSPS.aadl",
+      "variant_group": "arp4761/advanced/common/WBSPS",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__advanced_re__functional__WBSFunctionalErrorLib_re",
+      "path": "requirements/arp4761/advanced_re/functional/WBSFunctionalErrorLib_re.txt",
+      "source_path": "osate-examples/examples/arp4761/advanced_re/functional/WBSFunctionalErrorLib_re.txt",
+      "sha256": "b291d581c5072a7f761ba1ff1d26890f33272074358bb8063f9dbd5904332231",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/functional/WBSFunctionalErrorLib.aadl",
+      "variant_group": "arp4761/advanced/functional/WBSFunctionalErrorLib",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__advanced_re__functional__electrical_re",
+      "path": "requirements/arp4761/advanced_re/functional/electrical_re.txt",
+      "source_path": "osate-examples/examples/arp4761/advanced_re/functional/electrical_re.txt",
+      "sha256": "e7eced814d3175fbf9f5bfc2d6c1d99dda6d523b846bf208706bdf0d80cb0c09",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/functional/electrical.aadl",
+      "variant_group": "arp4761/advanced/functional/electrical",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__advanced_re__functional__generic_functions_re",
+      "path": "requirements/arp4761/advanced_re/functional/generic_functions_re.txt",
+      "source_path": "osate-examples/examples/arp4761/advanced_re/functional/generic_functions_re.txt",
+      "sha256": "a758ddbf0881d719fe67158286451b2d75edbb4262392a4adc6e08f842ed75dc",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/functional/generic_functions.aadl",
+      "variant_group": "arp4761/advanced/functional/generic_functions",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__advanced_re__functional__hydraulic_re",
+      "path": "requirements/arp4761/advanced_re/functional/hydraulic_re.txt",
+      "source_path": "osate-examples/examples/arp4761/advanced_re/functional/hydraulic_re.txt",
+      "sha256": "932dba6405471f6e02d316464b78a6a4e31eeddac2033cdf0994f602ff73f697",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/functional/hydraulic.aadl",
+      "variant_group": "arp4761/advanced/functional/hydraulic",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__advanced_re__functional__main_re",
+      "path": "requirements/arp4761/advanced_re/functional/main_re.txt",
+      "source_path": "osate-examples/examples/arp4761/advanced_re/functional/main_re.txt",
+      "sha256": "9d887fa45850b81fde86c66a42c22332189fdbe11ba8a7e11baa00a49098b0a7",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/functional/main.aadl",
+      "variant_group": "arp4761/advanced/functional/main",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__advanced_re__functional__throttle_re",
+      "path": "requirements/arp4761/advanced_re/functional/throttle_re.txt",
+      "source_path": "osate-examples/examples/arp4761/advanced_re/functional/throttle_re.txt",
+      "sha256": "ef543330134665f4768b006a8d9d0c20df03021d94002546fed61c0f06aec16e",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/functional/throttle.aadl",
+      "variant_group": "arp4761/advanced/functional/throttle",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__advanced_re__functional__wbs__command-control_re",
+      "path": "requirements/arp4761/advanced_re/functional/wbs/command-control_re.txt",
+      "source_path": "osate-examples/examples/arp4761/advanced_re/functional/wbs/command-control_re.txt",
+      "sha256": "54ffb90ebdf35c78a69f008ed8cf7758c63fdc9fdf8d4918b5baa62b96b28659",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/functional/wbs/command-control.aadl",
+      "variant_group": "arp4761/advanced/functional/wbs/command-control",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__advanced_re__functional__wbs__generic_re",
+      "path": "requirements/arp4761/advanced_re/functional/wbs/generic_re.txt",
+      "source_path": "osate-examples/examples/arp4761/advanced_re/functional/wbs/generic_re.txt",
+      "sha256": "3ee3b892e1c5637626a706a8e0257b018deb9e212972c3abe83dfacd48944f8f",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/functional/wbs/generic.aadl",
+      "variant_group": "arp4761/advanced/functional/wbs/generic",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__advanced_re__functional__wbs__main_re",
+      "path": "requirements/arp4761/advanced_re/functional/wbs/main_re.txt",
+      "source_path": "osate-examples/examples/arp4761/advanced_re/functional/wbs/main_re.txt",
+      "sha256": "df848c52edef59a81ed051245ac6ffdc9555e8d66a95ae67198b2b5a20c8cca4",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/functional/wbs/main.aadl",
+      "variant_group": "arp4761/advanced/functional/wbs/main",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__advanced_re__implementation__WBSImplementationErrorLib_re",
+      "path": "requirements/arp4761/advanced_re/implementation/WBSImplementationErrorLib_re.txt",
+      "source_path": "osate-examples/examples/arp4761/advanced_re/implementation/WBSImplementationErrorLib_re.txt",
+      "sha256": "e3036dfcc4f68db4efc6d7de955e22b5ca149b68121d04ea3a983ecfb46ef71c",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/implementation/WBSImplementationErrorLib.aadl",
+      "variant_group": "arp4761/advanced/implementation/WBSImplementationErrorLib",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__advanced_re__implementation__bscu_re",
+      "path": "requirements/arp4761/advanced_re/implementation/bscu_re.txt",
+      "source_path": "osate-examples/examples/arp4761/advanced_re/implementation/bscu_re.txt",
+      "sha256": "997d92c275a842b753fdd880633eba71d4c6106e5fc4c99b462f4686ae15e850",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/implementation/bscu.aadl",
+      "variant_group": "arp4761/advanced/implementation/bscu",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__advanced_re__implementation__common_re",
+      "path": "requirements/arp4761/advanced_re/implementation/common_re.txt",
+      "source_path": "osate-examples/examples/arp4761/advanced_re/implementation/common_re.txt",
+      "sha256": "856098c018e438b664f027582f04ba5d50289654972653ef3e1c8c7d1167faf5",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/implementation/common.aadl",
+      "variant_group": "arp4761/advanced/implementation/common",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__advanced_re__implementation__communication_re",
+      "path": "requirements/arp4761/advanced_re/implementation/communication_re.txt",
+      "source_path": "osate-examples/examples/arp4761/advanced_re/implementation/communication_re.txt",
+      "sha256": "575c7210f35e71e114cc3a9b7a5d7b57116d66fb687f3b48d57ade0978c22dbf",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/implementation/communication.aadl",
+      "variant_group": "arp4761/advanced/implementation/communication",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__advanced_re__implementation__pedals_re",
+      "path": "requirements/arp4761/advanced_re/implementation/pedals_re.txt",
+      "source_path": "osate-examples/examples/arp4761/advanced_re/implementation/pedals_re.txt",
+      "sha256": "237d526fb1c6a058dc1015c6922c2a4e5eb071705f3bebb7df12e3e84d1ec00a",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/implementation/pedals.aadl",
+      "variant_group": "arp4761/advanced/implementation/pedals",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__advanced_re__implementation__platform_re",
+      "path": "requirements/arp4761/advanced_re/implementation/platform_re.txt",
+      "source_path": "osate-examples/examples/arp4761/advanced_re/implementation/platform_re.txt",
+      "sha256": "e86bc64b3d88379b501657d733529ff7066e6c3f46badc6e881a72214f19968e",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/implementation/platform.aadl",
+      "variant_group": "arp4761/advanced/implementation/platform",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__advanced_re__implementation__power_re",
+      "path": "requirements/arp4761/advanced_re/implementation/power_re.txt",
+      "source_path": "osate-examples/examples/arp4761/advanced_re/implementation/power_re.txt",
+      "sha256": "e2af25e35e73506fc23f445b29bee78e2b5d26deb2a0c606a34fcfc475987f13",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/implementation/power.aadl",
+      "variant_group": "arp4761/advanced/implementation/power",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__advanced_re__implementation__pump_re",
+      "path": "requirements/arp4761/advanced_re/implementation/pump_re.txt",
+      "source_path": "osate-examples/examples/arp4761/advanced_re/implementation/pump_re.txt",
+      "sha256": "ec103d4f7255f617aea84119c404b543463b8e1f72faff1f9839bbe147d5dfdc",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/implementation/pump.aadl",
+      "variant_group": "arp4761/advanced/implementation/pump",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__advanced_re__implementation__valves_re",
+      "path": "requirements/arp4761/advanced_re/implementation/valves_re.txt",
+      "source_path": "osate-examples/examples/arp4761/advanced_re/implementation/valves_re.txt",
+      "sha256": "93b2057aad1dd2dd417c69eed31e1c9de6a119af94bf64974afb3a5b56c53814",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/implementation/valves.aadl",
+      "variant_group": "arp4761/advanced/implementation/valves",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__advanced_re__implementation__wbs_re",
+      "path": "requirements/arp4761/advanced_re/implementation/wbs_re.txt",
+      "source_path": "osate-examples/examples/arp4761/advanced_re/implementation/wbs_re.txt",
+      "sha256": "a3e59d6ff5248fb59606e1670727a0ab392fc69f5a502b26d4b9e78a6040b967",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/implementation/wbs.aadl",
+      "variant_group": "arp4761/advanced/implementation/wbs",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__advanced_re__implementation__wheel_re",
+      "path": "requirements/arp4761/advanced_re/implementation/wheel_re.txt",
+      "source_path": "osate-examples/examples/arp4761/advanced_re/implementation/wheel_re.txt",
+      "sha256": "e2b02463e64c6a100c0c41a1a29ba0b99fb2f22936773abfa3ca45d8a042a283",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/implementation/wheel.aadl",
+      "variant_group": "arp4761/advanced/implementation/wheel",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__advanced_re__integration__WBSMappingErrorLib_re",
+      "path": "requirements/arp4761/advanced_re/integration/WBSMappingErrorLib_re.txt",
+      "source_path": "osate-examples/examples/arp4761/advanced_re/integration/WBSMappingErrorLib_re.txt",
+      "sha256": "df3be5fca52fa11eeea95cbc0db2d970172f8f463a9e1caef14324ffc7b15296",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/integration/WBSMappingErrorLib.aadl",
+      "variant_group": "arp4761/advanced/integration/WBSMappingErrorLib",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__advanced_re__integration__main_re",
+      "path": "requirements/arp4761/advanced_re/integration/main_re.txt",
+      "source_path": "osate-examples/examples/arp4761/advanced_re/integration/main_re.txt",
+      "sha256": "d182e8b723ded5fc444a2970376d6cca57c539da5694c7c146cd2b57058650c8",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/integration/main.aadl",
+      "variant_group": "arp4761/advanced/integration/main",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__advanced_re__misc__functional-initial_re",
+      "path": "requirements/arp4761/advanced_re/misc/functional-initial_re.txt",
+      "source_path": "osate-examples/examples/arp4761/advanced_re/misc/functional-initial_re.txt",
+      "sha256": "feb75a57579177c4907a926c55c2c5a8425cc6bd750e722359b929e6a21274f1",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/misc/functional-initial.aadl",
+      "variant_group": "arp4761/advanced/misc/functional-initial",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__simple_re__bscu_re",
+      "path": "requirements/arp4761/simple_re/bscu_re.txt",
+      "source_path": "osate-examples/examples/arp4761/simple_re/bscu_re.txt",
+      "sha256": "91478924992488935e556d0a2f186ac07464acfe1925c0ed97dee168e1d499e7",
+      "language": "zh",
+      "reference": "references/arp4761/simple/bscu.aadl",
+      "variant_group": "arp4761/simple/bscu",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__simple_re__common_re",
+      "path": "requirements/arp4761/simple_re/common_re.txt",
+      "source_path": "osate-examples/examples/arp4761/simple_re/common_re.txt",
+      "sha256": "79394429de05ecb8a71b24e61acc66f139f8d4c2d1b424abc072919859e24db0",
+      "language": "zh",
+      "reference": "references/arp4761/simple/common.aadl",
+      "variant_group": "arp4761/simple/common",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__simple_re__communication_re",
+      "path": "requirements/arp4761/simple_re/communication_re.txt",
+      "source_path": "osate-examples/examples/arp4761/simple_re/communication_re.txt",
+      "sha256": "b1918804bf9c092e9477285c1530678e797323b81c462874ce2a25652d469ffd",
+      "language": "zh",
+      "reference": "references/arp4761/simple/communication.aadl",
+      "variant_group": "arp4761/simple/communication",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__simple_re__error_re",
+      "path": "requirements/arp4761/simple_re/error_re.txt",
+      "source_path": "osate-examples/examples/arp4761/simple_re/error_re.txt",
+      "sha256": "43ef434ea4b6fc767d178d5ab49bff591db9a7f0a603aba68224143b40d9ba8c",
+      "language": "zh",
+      "reference": "references/arp4761/simple/error.aadl",
+      "variant_group": "arp4761/simple/error",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__simple_re__pedals_re",
+      "path": "requirements/arp4761/simple_re/pedals_re.txt",
+      "source_path": "osate-examples/examples/arp4761/simple_re/pedals_re.txt",
+      "sha256": "9cb44ecafc007e23812951da2ff73d129e2fb8376882a54e9c5eb3775e1cf08e",
+      "language": "zh",
+      "reference": "references/arp4761/simple/pedals.aadl",
+      "variant_group": "arp4761/simple/pedals",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__simple_re__platform_re",
+      "path": "requirements/arp4761/simple_re/platform_re.txt",
+      "source_path": "osate-examples/examples/arp4761/simple_re/platform_re.txt",
+      "sha256": "eb482d50f120fd53ad23d566fddd72707ae19b5fa705a4bf8b1b6c9efff1d5c5",
+      "language": "zh",
+      "reference": "references/arp4761/simple/platform.aadl",
+      "variant_group": "arp4761/simple/platform",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__simple_re__power_re",
+      "path": "requirements/arp4761/simple_re/power_re.txt",
+      "source_path": "osate-examples/examples/arp4761/simple_re/power_re.txt",
+      "sha256": "375a80ed5dcd1977d2e65c5568d633ca2a643d8eaeec21b3e4571657a5b155cf",
+      "language": "zh",
+      "reference": "references/arp4761/simple/power.aadl",
+      "variant_group": "arp4761/simple/power",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__simple_re__proofs_re",
+      "path": "requirements/arp4761/simple_re/proofs_re.txt",
+      "source_path": "osate-examples/examples/arp4761/simple_re/proofs_re.txt",
+      "sha256": "2dc02d9c65368047bf353f5a3f05ba9aad640aaabb4a5931176aac8ccc6e0621",
+      "language": "zh",
+      "reference": "references/arp4761/simple/proofs.aadl",
+      "variant_group": "arp4761/simple/proofs",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__simple_re__pump_re",
+      "path": "requirements/arp4761/simple_re/pump_re.txt",
+      "source_path": "osate-examples/examples/arp4761/simple_re/pump_re.txt",
+      "sha256": "8f671b72712955ab3c6d81ebd21e1e473529a3cfe08b89c13ad6d1f9ab050b89",
+      "language": "zh",
+      "reference": "references/arp4761/simple/pump.aadl",
+      "variant_group": "arp4761/simple/pump",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__simple_re__valves_re",
+      "path": "requirements/arp4761/simple_re/valves_re.txt",
+      "source_path": "osate-examples/examples/arp4761/simple_re/valves_re.txt",
+      "sha256": "bb657fdab75cf40886f8b1fa59541593cfc9b74210639315a718a9044fb5a292",
+      "language": "zh",
+      "reference": "references/arp4761/simple/valves.aadl",
+      "variant_group": "arp4761/simple/valves",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__simple_re__wbs_re",
+      "path": "requirements/arp4761/simple_re/wbs_re.txt",
+      "source_path": "osate-examples/examples/arp4761/simple_re/wbs_re.txt",
+      "sha256": "6995b676a0f3feeaba40e6ecf1be6236e8a7c97c22536a8e024da64546872040",
+      "language": "zh",
+      "reference": "references/arp4761/simple/wbs.aadl",
+      "variant_group": "arp4761/simple/wbs",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761__simple_re__wheel_re",
+      "path": "requirements/arp4761/simple_re/wheel_re.txt",
+      "source_path": "osate-examples/examples/arp4761/simple_re/wheel_re.txt",
+      "sha256": "2f0b5b16f4671c88021ffcdade1d60c16052a8981cc22ea8d782c8cd47d648c9",
+      "language": "zh",
+      "reference": "references/arp4761/simple/wheel.aadl",
+      "variant_group": "arp4761/simple/wheel",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__advanced__common__WBSPS_re",
+      "path": "requirements/arp4761_en/advanced/common/WBSPS_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/advanced/common/WBSPS_re.txt",
+      "sha256": "7a150c99f612a833c74d46e3c2a4f7010b0aafb33357bb2b16d3926c1fd2bcee",
+      "language": "en",
+      "reference": "references/arp4761/advanced/common/WBSPS.aadl",
+      "variant_group": "arp4761/advanced/common/WBSPS",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__advanced__functional__WBSFunctionalErrorLib_re",
+      "path": "requirements/arp4761_en/advanced/functional/WBSFunctionalErrorLib_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/advanced/functional/WBSFunctionalErrorLib_re.txt",
+      "sha256": "c09e61988eb2cfee05f38fac906f0d3d16ef435b749b21427d511066645e4ef3",
+      "language": "en",
+      "reference": "references/arp4761/advanced/functional/WBSFunctionalErrorLib.aadl",
+      "variant_group": "arp4761/advanced/functional/WBSFunctionalErrorLib",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__advanced__functional__electrical_re",
+      "path": "requirements/arp4761_en/advanced/functional/electrical_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/advanced/functional/electrical_re.txt",
+      "sha256": "a6069c57981c649054d7cf0fe8a26ae2f947e25edc2c816bb5bbc78d935d5b65",
+      "language": "en",
+      "reference": "references/arp4761/advanced/functional/electrical.aadl",
+      "variant_group": "arp4761/advanced/functional/electrical",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__advanced__functional__generic_functions_re",
+      "path": "requirements/arp4761_en/advanced/functional/generic_functions_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/advanced/functional/generic_functions_re.txt",
+      "sha256": "d543ee0745b9d33e3828b3cd09ddca9ff47af6c346bd681d20adff44a989c8d2",
+      "language": "en",
+      "reference": "references/arp4761/advanced/functional/generic_functions.aadl",
+      "variant_group": "arp4761/advanced/functional/generic_functions",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__advanced__functional__hydraulic_re",
+      "path": "requirements/arp4761_en/advanced/functional/hydraulic_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/advanced/functional/hydraulic_re.txt",
+      "sha256": "a129a0ae2b85aeeaf94ed191bcbe073e46c6e13857ccc821a5ff054ef23e0671",
+      "language": "en",
+      "reference": "references/arp4761/advanced/functional/hydraulic.aadl",
+      "variant_group": "arp4761/advanced/functional/hydraulic",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__advanced__functional__main_re",
+      "path": "requirements/arp4761_en/advanced/functional/main_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/advanced/functional/main_re.txt",
+      "sha256": "9509936ec1ed88d2613174211b2c5914447cd0524f45b753afa36a50e29f8de2",
+      "language": "en",
+      "reference": "references/arp4761/advanced/functional/main.aadl",
+      "variant_group": "arp4761/advanced/functional/main",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__advanced__functional__throttle_re",
+      "path": "requirements/arp4761_en/advanced/functional/throttle_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/advanced/functional/throttle_re.txt",
+      "sha256": "79fc9caf04032da5c20d68377bf654054dee15e68ac73f61f87989c2ea78abde",
+      "language": "en",
+      "reference": "references/arp4761/advanced/functional/throttle.aadl",
+      "variant_group": "arp4761/advanced/functional/throttle",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__advanced__functional__wbs__command-control_re",
+      "path": "requirements/arp4761_en/advanced/functional/wbs/command-control_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/advanced/functional/wbs/command-control_re.txt",
+      "sha256": "0f391c93789fd5c79c6a2d6b5c323ea89873096866261144d02ab9e2073aa0a5",
+      "language": "en",
+      "reference": "references/arp4761/advanced/functional/wbs/command-control.aadl",
+      "variant_group": "arp4761/advanced/functional/wbs/command-control",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__advanced__functional__wbs__generic_re",
+      "path": "requirements/arp4761_en/advanced/functional/wbs/generic_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/advanced/functional/wbs/generic_re.txt",
+      "sha256": "f6623e24b7d27b24717a67d5848d3d604d403d89d323c8be3336ad41854fd835",
+      "language": "en",
+      "reference": "references/arp4761/advanced/functional/wbs/generic.aadl",
+      "variant_group": "arp4761/advanced/functional/wbs/generic",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__advanced__functional__wbs__main_re",
+      "path": "requirements/arp4761_en/advanced/functional/wbs/main_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/advanced/functional/wbs/main_re.txt",
+      "sha256": "b8e893b18d890b0de82dc574cc5723f268ae54c310d2f7d4765268c7ad5c468f",
+      "language": "en",
+      "reference": "references/arp4761/advanced/functional/wbs/main.aadl",
+      "variant_group": "arp4761/advanced/functional/wbs/main",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__advanced__implementation__WBSImplementationErrorLib_re",
+      "path": "requirements/arp4761_en/advanced/implementation/WBSImplementationErrorLib_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/advanced/implementation/WBSImplementationErrorLib_re.txt",
+      "sha256": "7d79326f7475b8ace578564c694728571d7aa362c742c01b340e5cb4a2481cf4",
+      "language": "en",
+      "reference": "references/arp4761/advanced/implementation/WBSImplementationErrorLib.aadl",
+      "variant_group": "arp4761/advanced/implementation/WBSImplementationErrorLib",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__advanced__implementation__bscu_re",
+      "path": "requirements/arp4761_en/advanced/implementation/bscu_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/advanced/implementation/bscu_re.txt",
+      "sha256": "2536b89ab550b10be390d156aee976ef605f433b710727bd96ac84b241e4f60a",
+      "language": "en",
+      "reference": "references/arp4761/advanced/implementation/bscu.aadl",
+      "variant_group": "arp4761/advanced/implementation/bscu",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__advanced__implementation__common_re",
+      "path": "requirements/arp4761_en/advanced/implementation/common_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/advanced/implementation/common_re.txt",
+      "sha256": "45b24738683276b24249907afa134395a8792aa7b2754a2501b48604396dd9c8",
+      "language": "en",
+      "reference": "references/arp4761/advanced/implementation/common.aadl",
+      "variant_group": "arp4761/advanced/implementation/common",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__advanced__implementation__communication_re",
+      "path": "requirements/arp4761_en/advanced/implementation/communication_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/advanced/implementation/communication_re.txt",
+      "sha256": "57cf4a91efefb7a1d5803792f2b1d4ebe9794ff7783477f6d5e6d686a97a59f0",
+      "language": "en",
+      "reference": "references/arp4761/advanced/implementation/communication.aadl",
+      "variant_group": "arp4761/advanced/implementation/communication",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__advanced__implementation__pedals_re",
+      "path": "requirements/arp4761_en/advanced/implementation/pedals_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/advanced/implementation/pedals_re.txt",
+      "sha256": "eeb86c3676e528eecfb01041cf5fad63d669aeb6b28feac11c8030dd9faea76b",
+      "language": "en",
+      "reference": "references/arp4761/advanced/implementation/pedals.aadl",
+      "variant_group": "arp4761/advanced/implementation/pedals",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__advanced__implementation__platform_re",
+      "path": "requirements/arp4761_en/advanced/implementation/platform_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/advanced/implementation/platform_re.txt",
+      "sha256": "d5f7f18f48433d5b5640906c680aee0d8c2683599dd4abcd1280b09f185e792a",
+      "language": "en",
+      "reference": "references/arp4761/advanced/implementation/platform.aadl",
+      "variant_group": "arp4761/advanced/implementation/platform",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__advanced__implementation__power_re",
+      "path": "requirements/arp4761_en/advanced/implementation/power_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/advanced/implementation/power_re.txt",
+      "sha256": "d2766d1c76bd062ed1f23c71d673631efe7de128944df9322efb82f494ac9fae",
+      "language": "en",
+      "reference": "references/arp4761/advanced/implementation/power.aadl",
+      "variant_group": "arp4761/advanced/implementation/power",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__advanced__implementation__pump_re",
+      "path": "requirements/arp4761_en/advanced/implementation/pump_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/advanced/implementation/pump_re.txt",
+      "sha256": "0e275952222c571e6aa5e8a591360701d42969ff260db5169a2ba9000015a8e2",
+      "language": "en",
+      "reference": "references/arp4761/advanced/implementation/pump.aadl",
+      "variant_group": "arp4761/advanced/implementation/pump",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__advanced__implementation__valves_re",
+      "path": "requirements/arp4761_en/advanced/implementation/valves_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/advanced/implementation/valves_re.txt",
+      "sha256": "6e85b4b36e773793c2edff7ce963d24063760973284c702d4cc8acc2a38d9f19",
+      "language": "en",
+      "reference": "references/arp4761/advanced/implementation/valves.aadl",
+      "variant_group": "arp4761/advanced/implementation/valves",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__advanced__implementation__wbs_re",
+      "path": "requirements/arp4761_en/advanced/implementation/wbs_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/advanced/implementation/wbs_re.txt",
+      "sha256": "317edc00f897d94a89ba62127f0ee1688af5cf6c1bee3852fec4a7b77a3f5daf",
+      "language": "en",
+      "reference": "references/arp4761/advanced/implementation/wbs.aadl",
+      "variant_group": "arp4761/advanced/implementation/wbs",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__advanced__implementation__wheel_re",
+      "path": "requirements/arp4761_en/advanced/implementation/wheel_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/advanced/implementation/wheel_re.txt",
+      "sha256": "c9e17d5cdc7a863c0f81b41ce074cea9de1825151717c43f38c7bb66f58e5663",
+      "language": "en",
+      "reference": "references/arp4761/advanced/implementation/wheel.aadl",
+      "variant_group": "arp4761/advanced/implementation/wheel",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__advanced__integration__WBSMappingErrorLib_re",
+      "path": "requirements/arp4761_en/advanced/integration/WBSMappingErrorLib_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/advanced/integration/WBSMappingErrorLib_re.txt",
+      "sha256": "6fda66e99d90a80955087d8f19b67d38d378303371339331b2017218fb41db13",
+      "language": "en",
+      "reference": "references/arp4761/advanced/integration/WBSMappingErrorLib.aadl",
+      "variant_group": "arp4761/advanced/integration/WBSMappingErrorLib",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__advanced__integration__main_re",
+      "path": "requirements/arp4761_en/advanced/integration/main_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/advanced/integration/main_re.txt",
+      "sha256": "716116cee71d0718a3d24fc809860bac85c9a922e397cd04b28d6c9e4f77111f",
+      "language": "en",
+      "reference": "references/arp4761/advanced/integration/main.aadl",
+      "variant_group": "arp4761/advanced/integration/main",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__advanced__misc__functional-initial_re",
+      "path": "requirements/arp4761_en/advanced/misc/functional-initial_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/advanced/misc/functional-initial_re.txt",
+      "sha256": "45cf70ffd54cb393307027fe8d0e5e27daaa1435d217ec65e2ae261a4f45848c",
+      "language": "en",
+      "reference": "references/arp4761/advanced/misc/functional-initial.aadl",
+      "variant_group": "arp4761/advanced/misc/functional-initial",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__simple__bscu_re",
+      "path": "requirements/arp4761_en/simple/bscu_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/simple/bscu_re.txt",
+      "sha256": "9208c9c78747633016f016ec0efcc65e51279ecfd0a96ddd7feb7d4ce1bc347f",
+      "language": "en",
+      "reference": "references/arp4761/simple/bscu.aadl",
+      "variant_group": "arp4761/simple/bscu",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__simple__common_re",
+      "path": "requirements/arp4761_en/simple/common_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/simple/common_re.txt",
+      "sha256": "3a9af046719c7f40a7a84e1f1231e3ff367eddef579885f4bdc6499c1c17528c",
+      "language": "en",
+      "reference": "references/arp4761/simple/common.aadl",
+      "variant_group": "arp4761/simple/common",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__simple__communication_re",
+      "path": "requirements/arp4761_en/simple/communication_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/simple/communication_re.txt",
+      "sha256": "52933e3e9e04296d7ffeb1b0d733e008d43ee79d0056c2a2ab73b38463e88bdd",
+      "language": "en",
+      "reference": "references/arp4761/simple/communication.aadl",
+      "variant_group": "arp4761/simple/communication",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__simple__error_re",
+      "path": "requirements/arp4761_en/simple/error_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/simple/error_re.txt",
+      "sha256": "c4e464d5e9f70d9fa5f43da72f6cb6422c99c87728ee4a965bfe94a8806b2231",
+      "language": "en",
+      "reference": "references/arp4761/simple/error.aadl",
+      "variant_group": "arp4761/simple/error",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__simple__pedals_re",
+      "path": "requirements/arp4761_en/simple/pedals_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/simple/pedals_re.txt",
+      "sha256": "cce62907e3b423ee1944f387f60022a4bc2297e4ccd618205b015eacb80a2260",
+      "language": "en",
+      "reference": "references/arp4761/simple/pedals.aadl",
+      "variant_group": "arp4761/simple/pedals",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__simple__platform_re",
+      "path": "requirements/arp4761_en/simple/platform_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/simple/platform_re.txt",
+      "sha256": "f9471aa4f384fa5d7c48b43c70f29716b5016f80e5e5e5c38a4f9639e57d9df2",
+      "language": "en",
+      "reference": "references/arp4761/simple/platform.aadl",
+      "variant_group": "arp4761/simple/platform",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__simple__power_re",
+      "path": "requirements/arp4761_en/simple/power_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/simple/power_re.txt",
+      "sha256": "546be493d382e7630da5ca3a1822d3f1ccf7fc5f5c1a247210b3d9e4d4d0bb5f",
+      "language": "en",
+      "reference": "references/arp4761/simple/power.aadl",
+      "variant_group": "arp4761/simple/power",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__simple__proofs_re",
+      "path": "requirements/arp4761_en/simple/proofs_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/simple/proofs_re.txt",
+      "sha256": "165af041924f5c6c959b50831dcd025ed383b56b369309ee87c628407995fe2d",
+      "language": "en",
+      "reference": "references/arp4761/simple/proofs.aadl",
+      "variant_group": "arp4761/simple/proofs",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__simple__pump_re",
+      "path": "requirements/arp4761_en/simple/pump_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/simple/pump_re.txt",
+      "sha256": "8269150d531ebb834ec1dc0ae3ee84901f8f23a21ca184d5e37472c80000edd9",
+      "language": "en",
+      "reference": "references/arp4761/simple/pump.aadl",
+      "variant_group": "arp4761/simple/pump",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__simple__valves_re",
+      "path": "requirements/arp4761_en/simple/valves_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/simple/valves_re.txt",
+      "sha256": "82e61ec75f173ea0cb7a2bba9f535fbcb76135a4f6d08d2ce206d3906b29bf14",
+      "language": "en",
+      "reference": "references/arp4761/simple/valves.aadl",
+      "variant_group": "arp4761/simple/valves",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__simple__wbs_re",
+      "path": "requirements/arp4761_en/simple/wbs_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/simple/wbs_re.txt",
+      "sha256": "6d9b463950cf4c6962a44ae4149dd973d2c18341a5f6284c59b155aead180c17",
+      "language": "en",
+      "reference": "references/arp4761/simple/wbs.aadl",
+      "variant_group": "arp4761/simple/wbs",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "arp4761_en__simple__wheel_re",
+      "path": "requirements/arp4761_en/simple/wheel_re.txt",
+      "source_path": "osate-examples/examples/arp4761_en/simple/wheel_re.txt",
+      "sha256": "da5432c572330b102dd074d42cfe401012766a52e71a40f01c9a7a4c6518aece",
+      "language": "en",
+      "reference": "references/arp4761/simple/wheel.aadl",
+      "variant_group": "arp4761/simple/wheel",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "continuous-safety-risk-evaluation_en__AircraftSafetyExample_ACCAOARedundancy_re",
+      "path": "requirements/continuous-safety-risk-evaluation_en/AircraftSafetyExample_ACCAOARedundancy_re.txt",
+      "source_path": "osate-examples/examples/continuous-safety-risk-evaluation_en/AircraftSafetyExample_ACCAOARedundancy_re.txt",
+      "sha256": "cb48d10056f72c68352a07c58a9637c3b488c25a673a9d13c4801c91ff39d6f7",
+      "language": "en",
+      "reference": "references/continuous-safety-risk-evaluation/AircraftSafetyExample_ACCAOARedundancy.aadl",
+      "variant_group": "continuous-safety-risk-evaluation/AircraftSafetyExample_ACCAOARedundancy",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "continuous-safety-risk-evaluation_en__AircraftSafetyExample_AOADiscrepancy_re",
+      "path": "requirements/continuous-safety-risk-evaluation_en/AircraftSafetyExample_AOADiscrepancy_re.txt",
+      "source_path": "osate-examples/examples/continuous-safety-risk-evaluation_en/AircraftSafetyExample_AOADiscrepancy_re.txt",
+      "sha256": "5227b6a0ab20163c610f24ea6d4d2757c507f0557804e8d02347f0ad4a2cf014",
+      "language": "en",
+      "reference": "references/continuous-safety-risk-evaluation/AircraftSafetyExample_AOADiscrepancy.aadl",
+      "variant_group": "continuous-safety-risk-evaluation/AircraftSafetyExample_AOADiscrepancy",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "continuous-safety-risk-evaluation_en__AircraftSafetyExample_AOAVendors_re",
+      "path": "requirements/continuous-safety-risk-evaluation_en/AircraftSafetyExample_AOAVendors_re.txt",
+      "source_path": "osate-examples/examples/continuous-safety-risk-evaluation_en/AircraftSafetyExample_AOAVendors_re.txt",
+      "sha256": "3683a9a4830b3733d4fed6a45d96b39bad12d26a903fbfcc53eeef08b0b94d6e",
+      "language": "en",
+      "reference": "references/continuous-safety-risk-evaluation/AircraftSafetyExample_AOAVendors.aadl",
+      "variant_group": "continuous-safety-risk-evaluation/AircraftSafetyExample_AOAVendors",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "continuous-safety-risk-evaluation_en__acemlib_re",
+      "path": "requirements/continuous-safety-risk-evaluation_en/acemlib_re.txt",
+      "source_path": "osate-examples/examples/continuous-safety-risk-evaluation_en/acemlib_re.txt",
+      "sha256": "1f1fedf05b0690b71f67cbee7d6bec5ea28cf7d9046b0c4162c445439d9bb1b5",
+      "language": "en",
+      "reference": "references/continuous-safety-risk-evaluation/acemlib.aadl",
+      "variant_group": "continuous-safety-risk-evaluation/acemlib",
+      "variant": "en",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "continuous-safety-risk-evaluation_re__AircraftSafetyExample_ACCAOARedundancy_re",
+      "path": "requirements/continuous-safety-risk-evaluation_re/AircraftSafetyExample_ACCAOARedundancy_re.txt",
+      "source_path": "osate-examples/examples/continuous-safety-risk-evaluation_re/AircraftSafetyExample_ACCAOARedundancy_re.txt",
+      "sha256": "43cee5bd650e68c31a890ac9f6ab4b356de7c25926a8854716c3455cf99cc2f8",
+      "language": "zh",
+      "reference": "references/continuous-safety-risk-evaluation/AircraftSafetyExample_ACCAOARedundancy.aadl",
+      "variant_group": "continuous-safety-risk-evaluation/AircraftSafetyExample_ACCAOARedundancy",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "continuous-safety-risk-evaluation_re__AircraftSafetyExample_AOADiscrepancy_re",
+      "path": "requirements/continuous-safety-risk-evaluation_re/AircraftSafetyExample_AOADiscrepancy_re.txt",
+      "source_path": "osate-examples/examples/continuous-safety-risk-evaluation_re/AircraftSafetyExample_AOADiscrepancy_re.txt",
+      "sha256": "129956b87613ed334126eeaee844a8cc5831eb13db2e90f5c1e4c5d79fe85002",
+      "language": "zh",
+      "reference": "references/continuous-safety-risk-evaluation/AircraftSafetyExample_AOADiscrepancy.aadl",
+      "variant_group": "continuous-safety-risk-evaluation/AircraftSafetyExample_AOADiscrepancy",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "continuous-safety-risk-evaluation_re__AircraftSafetyExample_AOAVendors_re",
+      "path": "requirements/continuous-safety-risk-evaluation_re/AircraftSafetyExample_AOAVendors_re.txt",
+      "source_path": "osate-examples/examples/continuous-safety-risk-evaluation_re/AircraftSafetyExample_AOAVendors_re.txt",
+      "sha256": "da45be33c7fdafc398568651d2c494bd451a9d013eaf3ee53270fdaebd880463",
+      "language": "zh",
+      "reference": "references/continuous-safety-risk-evaluation/AircraftSafetyExample_AOAVendors.aadl",
+      "variant_group": "continuous-safety-risk-evaluation/AircraftSafetyExample_AOAVendors",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "continuous-safety-risk-evaluation_re__acemlib_re",
+      "path": "requirements/continuous-safety-risk-evaluation_re/acemlib_re.txt",
+      "source_path": "osate-examples/examples/continuous-safety-risk-evaluation_re/acemlib_re.txt",
+      "sha256": "8fe879987ca6fe3a40fb4f3fa627a0b90dfcbe309687b4c3ebb1130cbf4b1cca",
+      "language": "zh",
+      "reference": "references/continuous-safety-risk-evaluation/acemlib.aadl",
+      "variant_group": "continuous-safety-risk-evaluation/acemlib",
+      "variant": "zh",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__advanced__common__WBSPS_re",
+      "path": "requirements/stepper-motor_output/advanced/common/WBSPS_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/advanced/common/WBSPS_re.txt",
+      "sha256": "80ffe3e3997dd854e407e89ddb43d087cb1671ed438416e32cb276f25bf5c709",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/common/WBSPS.aadl",
+      "variant_group": "arp4761/advanced/common/WBSPS",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__advanced__functional__WBSFunctionalErrorLib_re",
+      "path": "requirements/stepper-motor_output/advanced/functional/WBSFunctionalErrorLib_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/advanced/functional/WBSFunctionalErrorLib_re.txt",
+      "sha256": "5d256dba099e337a3103cb888b129c6fc9a5cdfdf551bf403176596b0e68e4f7",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/functional/WBSFunctionalErrorLib.aadl",
+      "variant_group": "arp4761/advanced/functional/WBSFunctionalErrorLib",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__advanced__functional__electrical_re",
+      "path": "requirements/stepper-motor_output/advanced/functional/electrical_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/advanced/functional/electrical_re.txt",
+      "sha256": "4e78c5c32d4f4d596162783d2b3598071f8451bba22872f377a781a99d528167",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/functional/electrical.aadl",
+      "variant_group": "arp4761/advanced/functional/electrical",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__advanced__functional__generic_functions_re",
+      "path": "requirements/stepper-motor_output/advanced/functional/generic_functions_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/advanced/functional/generic_functions_re.txt",
+      "sha256": "96e92b2da25e20c65e94baf7e8217ad41ba94e7ddc41a0375398ca9e04dc9b7d",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/functional/generic_functions.aadl",
+      "variant_group": "arp4761/advanced/functional/generic_functions",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__advanced__functional__hydraulic_re",
+      "path": "requirements/stepper-motor_output/advanced/functional/hydraulic_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/advanced/functional/hydraulic_re.txt",
+      "sha256": "0d96a9376c26f7ba3a759fba5fc083835cbe550296e736eecab4a26d7d0553d0",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/functional/hydraulic.aadl",
+      "variant_group": "arp4761/advanced/functional/hydraulic",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__advanced__functional__main_re",
+      "path": "requirements/stepper-motor_output/advanced/functional/main_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/advanced/functional/main_re.txt",
+      "sha256": "4c090a74858323555604d1fc06f83db4c9cbebe3e004f0a70cd63d90ffdc4e21",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/functional/main.aadl",
+      "variant_group": "arp4761/advanced/functional/main",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__advanced__functional__throttle_re",
+      "path": "requirements/stepper-motor_output/advanced/functional/throttle_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/advanced/functional/throttle_re.txt",
+      "sha256": "df1d2b1f590ae96b3037653fe8858beb46f34adc2b31937132c5ef2125e8be38",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/functional/throttle.aadl",
+      "variant_group": "arp4761/advanced/functional/throttle",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__advanced__implementation__WBSImplementationErrorLib_re",
+      "path": "requirements/stepper-motor_output/advanced/implementation/WBSImplementationErrorLib_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/advanced/implementation/WBSImplementationErrorLib_re.txt",
+      "sha256": "3f3dec917a052bc31600ef954999917a46606786f65a71d4ba287c4101165d6b",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/implementation/WBSImplementationErrorLib.aadl",
+      "variant_group": "arp4761/advanced/implementation/WBSImplementationErrorLib",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__advanced__implementation__bscu_re",
+      "path": "requirements/stepper-motor_output/advanced/implementation/bscu_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/advanced/implementation/bscu_re.txt",
+      "sha256": "347901232821f14f596cbff4c12827bc87933a9a409d15d0f5ce246683f3ff87",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/implementation/bscu.aadl",
+      "variant_group": "arp4761/advanced/implementation/bscu",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__advanced__implementation__common_re",
+      "path": "requirements/stepper-motor_output/advanced/implementation/common_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/advanced/implementation/common_re.txt",
+      "sha256": "031a67b2f1785f39228181f1a25efff857dfc8ca07ddc8742487da6aff53dd34",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/implementation/common.aadl",
+      "variant_group": "arp4761/advanced/implementation/common",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__advanced__implementation__communication_re",
+      "path": "requirements/stepper-motor_output/advanced/implementation/communication_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/advanced/implementation/communication_re.txt",
+      "sha256": "079bdb901af19b252b1c74b8cc4e3b1409232eef7cf26ee45c4a8de723b97eb7",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/implementation/communication.aadl",
+      "variant_group": "arp4761/advanced/implementation/communication",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__advanced__implementation__pedals_re",
+      "path": "requirements/stepper-motor_output/advanced/implementation/pedals_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/advanced/implementation/pedals_re.txt",
+      "sha256": "f6ddec35452a0cc44216c95e7a6caf1362fcbd7812007f70bc9aafe3ad6cc73a",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/implementation/pedals.aadl",
+      "variant_group": "arp4761/advanced/implementation/pedals",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__advanced__implementation__platform_re",
+      "path": "requirements/stepper-motor_output/advanced/implementation/platform_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/advanced/implementation/platform_re.txt",
+      "sha256": "7d5b555c42ea876c9da77faa0cc4e6abe5b1c53951ef3bff5642fe5bfededb2f",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/implementation/platform.aadl",
+      "variant_group": "arp4761/advanced/implementation/platform",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__advanced__implementation__power_re",
+      "path": "requirements/stepper-motor_output/advanced/implementation/power_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/advanced/implementation/power_re.txt",
+      "sha256": "025e74f7b443d908b3409f7f73d72eeee30026f65a5486fc12790c0c2ddc00f8",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/implementation/power.aadl",
+      "variant_group": "arp4761/advanced/implementation/power",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__advanced__implementation__pump_re",
+      "path": "requirements/stepper-motor_output/advanced/implementation/pump_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/advanced/implementation/pump_re.txt",
+      "sha256": "2c618154dfa15a4ffc58f4bf7e00b5d2a0ecfca3904dd6620d45c6e6d8d5c1c2",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/implementation/pump.aadl",
+      "variant_group": "arp4761/advanced/implementation/pump",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__advanced__implementation__valves_re",
+      "path": "requirements/stepper-motor_output/advanced/implementation/valves_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/advanced/implementation/valves_re.txt",
+      "sha256": "db77e9fb73655645b26b12e3fee8cabd1e1be8a6d6b868d637ca2fe8ec3cce7d",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/implementation/valves.aadl",
+      "variant_group": "arp4761/advanced/implementation/valves",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__advanced__implementation__wbs_re",
+      "path": "requirements/stepper-motor_output/advanced/implementation/wbs_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/advanced/implementation/wbs_re.txt",
+      "sha256": "c3eaf9383180577e845972eb0a152427b27b1b945beae2757ef024cedd53d4e1",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/implementation/wbs.aadl",
+      "variant_group": "arp4761/advanced/implementation/wbs",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__advanced__implementation__wheel_re",
+      "path": "requirements/stepper-motor_output/advanced/implementation/wheel_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/advanced/implementation/wheel_re.txt",
+      "sha256": "866373a9b63d7d8c0f9d956a0dc72201864bf738344c339edc178fb585313972",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/implementation/wheel.aadl",
+      "variant_group": "arp4761/advanced/implementation/wheel",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__advanced__integration__WBSMappingErrorLib_re",
+      "path": "requirements/stepper-motor_output/advanced/integration/WBSMappingErrorLib_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/advanced/integration/WBSMappingErrorLib_re.txt",
+      "sha256": "47e2bbbaa367a6bcf36f74cb8dffe157c5c224c12ae97f9d7b7f1926061096db",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/integration/WBSMappingErrorLib.aadl",
+      "variant_group": "arp4761/advanced/integration/WBSMappingErrorLib",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__advanced__integration__main1_re",
+      "path": "requirements/stepper-motor_output/advanced/integration/main1_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/advanced/integration/main1_re.txt",
+      "sha256": "83e315b05dadc2486c85350ad7ca2630b1a70a8ec7a7c4422a9c982c94383b90",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/integration/main.aadl",
+      "variant_group": "arp4761/advanced/integration/main",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "explicit_alias"
+    },
+    {
+      "id": "stepper-motor_output__advanced__misc__functional-initial_re",
+      "path": "requirements/stepper-motor_output/advanced/misc/functional-initial_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/advanced/misc/functional-initial_re.txt",
+      "sha256": "3f1bd897203b0e2a3b80e94504efeff3fb58142edfac23eb61a549d302e74ac3",
+      "language": "zh",
+      "reference": "references/arp4761/advanced/misc/functional-initial.aadl",
+      "variant_group": "arp4761/advanced/misc/functional-initial",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__simple__bscu_re",
+      "path": "requirements/stepper-motor_output/simple/bscu_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/simple/bscu_re.txt",
+      "sha256": "48f283a8c118b13459e71e46f92c84384c45a7ef579fd91793c4c97ec55eb6e2",
+      "language": "zh",
+      "reference": "references/arp4761/simple/bscu.aadl",
+      "variant_group": "arp4761/simple/bscu",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__simple__common_re",
+      "path": "requirements/stepper-motor_output/simple/common_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/simple/common_re.txt",
+      "sha256": "8bba501c7276cd1c09028e6b656c30398fe9149bb3985981f3b58f79be0d0933",
+      "language": "zh",
+      "reference": "references/arp4761/simple/common.aadl",
+      "variant_group": "arp4761/simple/common",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__simple__communication_re",
+      "path": "requirements/stepper-motor_output/simple/communication_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/simple/communication_re.txt",
+      "sha256": "689f4dd557fd11788ac0c13774bf8918b8b91a7092f0d27d5970382739bf252e",
+      "language": "zh",
+      "reference": "references/arp4761/simple/communication.aadl",
+      "variant_group": "arp4761/simple/communication",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__simple__error_re",
+      "path": "requirements/stepper-motor_output/simple/error_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/simple/error_re.txt",
+      "sha256": "1c6fa141005691385e93648196cce52db0a28c87a22a1ef9f60952efb86e2ec4",
+      "language": "zh",
+      "reference": "references/arp4761/simple/error.aadl",
+      "variant_group": "arp4761/simple/error",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__simple__pedals_re",
+      "path": "requirements/stepper-motor_output/simple/pedals_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/simple/pedals_re.txt",
+      "sha256": "5f433c2f001a40cbae75b591f92ed36e77830f88cea4a382d9e28cb113d3ccf2",
+      "language": "zh",
+      "reference": "references/arp4761/simple/pedals.aadl",
+      "variant_group": "arp4761/simple/pedals",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__simple__platform_re",
+      "path": "requirements/stepper-motor_output/simple/platform_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/simple/platform_re.txt",
+      "sha256": "dd2eda63aa0501edbf63e8dd47c8fc19316aa56dfb983c2ca85a91ab921a9314",
+      "language": "zh",
+      "reference": "references/arp4761/simple/platform.aadl",
+      "variant_group": "arp4761/simple/platform",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__simple__power_re",
+      "path": "requirements/stepper-motor_output/simple/power_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/simple/power_re.txt",
+      "sha256": "a292a3f06d4223576840efecc62b11293e3fd206dcba7fdcb95a893d50569a78",
+      "language": "zh",
+      "reference": "references/arp4761/simple/power.aadl",
+      "variant_group": "arp4761/simple/power",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__simple__proofs_re",
+      "path": "requirements/stepper-motor_output/simple/proofs_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/simple/proofs_re.txt",
+      "sha256": "3bb9abba14a0c1d797243fcb1a84533f8d6c0c38c256e9b0697a6bd883b7c7c8",
+      "language": "zh",
+      "reference": "references/arp4761/simple/proofs.aadl",
+      "variant_group": "arp4761/simple/proofs",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__simple__pump_re",
+      "path": "requirements/stepper-motor_output/simple/pump_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/simple/pump_re.txt",
+      "sha256": "4cfecebc7eb21efc9810a8c2bfd7580f4115ab7b75f0dd244f2d27b4f0439a94",
+      "language": "zh",
+      "reference": "references/arp4761/simple/pump.aadl",
+      "variant_group": "arp4761/simple/pump",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__simple__valves_re",
+      "path": "requirements/stepper-motor_output/simple/valves_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/simple/valves_re.txt",
+      "sha256": "7cc656a194ad697bf84ce12e341045cc8c821b3f38c3caab71a79a6e46b2d990",
+      "language": "zh",
+      "reference": "references/arp4761/simple/valves.aadl",
+      "variant_group": "arp4761/simple/valves",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__simple__wbs_re",
+      "path": "requirements/stepper-motor_output/simple/wbs_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/simple/wbs_re.txt",
+      "sha256": "8d8e1abc306472b2e0b2a929908415ea23b42dcc6870829aa9549ef1594073ce",
+      "language": "zh",
+      "reference": "references/arp4761/simple/wbs.aadl",
+      "variant_group": "arp4761/simple/wbs",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    },
+    {
+      "id": "stepper-motor_output__simple__wheel_re",
+      "path": "requirements/stepper-motor_output/simple/wheel_re.txt",
+      "source_path": "osate-examples/examples/stepper-motor_output/simple/wheel_re.txt",
+      "sha256": "0467ba957dcaf67d27580bfbe79b78bfcd6756441e1aea4ebe34cd5188617036",
+      "language": "zh",
+      "reference": "references/arp4761/simple/wheel.aadl",
+      "variant_group": "arp4761/simple/wheel",
+      "variant": "zh_stepper_motor_output",
+      "association_method": "directory_normalization_and_case_insensitive_basename"
+    }
+  ],
+  "references": [
+    {
+      "path": "references/ACVIP/DataDictionary/DataDictionary.aadl",
+      "source_path": "osate-examples/examples/ACVIP/DataDictionary/DataDictionary.aadl",
+      "sha256": "b5d72ea29c8b21082303c14cd96f971f69b3397e303fc0d07f3c07c970db200d",
+      "variant_group": "ACVIP/DataDictionary/DataDictionary",
+      "requirement_ids": [
+        "ACVIP__DataDictionary__data_re",
+        "ACVIP_en__DataDictionary__DataDictionary_re"
+      ]
+    },
+    {
+      "path": "references/ACVIP/EfectorsInc/Brake.aadl",
+      "source_path": "osate-examples/examples/ACVIP/EfectorsInc/Brake.aadl",
+      "sha256": "03299f7d40d860a6b5c1f046c1f485c7a01ab260a516dbfc28b595f4e8d0d94f",
+      "variant_group": "ACVIP/EfectorsInc/Brake",
+      "requirement_ids": [
+        "ACVIP__EfectorsInc__brake_re",
+        "ACVIP_en__EfectorsInc__Brake_re"
+      ]
+    },
+    {
+      "path": "references/ACVIP/Infrastructure/Infrastructure.aadl",
+      "source_path": "osate-examples/examples/ACVIP/Infrastructure/Infrastructure.aadl",
+      "sha256": "0e8a1a918d4ef0013feeabacde278965c650df3fed7e2cac6dbde2fac7a6a719",
+      "variant_group": "ACVIP/Infrastructure/Infrastructure",
+      "requirement_ids": [
+        "ACVIP__Infrastructure__infrastructure_re",
+        "ACVIP_en__Infrastructure__Infrastructure_re"
+      ]
+    },
+    {
+      "path": "references/ACVIP/InitialSCS.aadl",
+      "source_path": "osate-examples/examples/ACVIP/InitialSCS.aadl",
+      "sha256": "bce0d06216f11477769187aa1a0ef466611443909e4cfb4a8ac1edc22271240c",
+      "variant_group": "ACVIP/InitialSCS",
+      "requirement_ids": [
+        "ACVIP_en__InitialSCS_re"
+      ]
+    },
+    {
+      "path": "references/ACVIP/MSI/Controller.aadl",
+      "source_path": "osate-examples/examples/ACVIP/MSI/Controller.aadl",
+      "sha256": "0156a8bbf2ef1ac27ce45f251d6f43cdf8b1c1baf7fbc76fcba0414422cac4f5",
+      "variant_group": "ACVIP/MSI/Controller",
+      "requirement_ids": [
+        "ACVIP__MSI__controller_re",
+        "ACVIP_en__MSI__Controller_re"
+      ]
+    },
+    {
+      "path": "references/ACVIP/MSI/SCS.aadl",
+      "source_path": "osate-examples/examples/ACVIP/MSI/SCS.aadl",
+      "sha256": "f8face7b2144976b7a11e10a4605c4958bb4da2a0343113eca49f1fa9ff4b31f",
+      "variant_group": "ACVIP/MSI/SCS",
+      "requirement_ids": [
+        "ACVIP__MSI__scs_re",
+        "ACVIP_en__MSI__SCS_re"
+      ]
+    },
+    {
+      "path": "references/ACVIP/SensorsInc/SimpleSensor.aadl",
+      "source_path": "osate-examples/examples/ACVIP/SensorsInc/SimpleSensor.aadl",
+      "sha256": "769d90ff2f8e5d904b45a70f95e576d67e65b21c5e24bb874d714843f00ea0ef",
+      "variant_group": "ACVIP/SensorsInc/SimpleSensor",
+      "requirement_ids": [
+        "ACVIP__SensorsInc__simplesensor_re",
+        "ACVIP_en__SensorsInc__SimpleSensor_re"
+      ]
+    },
+    {
+      "path": "references/ACVIP_ALISA/SCSProject/DataModel.aadl",
+      "source_path": "osate-examples/examples/ACVIP_ALISA/SCSProject/DataModel.aadl",
+      "sha256": "bccf9638e4f5889ef648d3b035e3ece1640e64e1de437bb87511b12532ea4e73",
+      "variant_group": "ACVIP_ALISA/SCSProject/DataModel",
+      "requirement_ids": [
+        "ACVIP_ALISA__SCSProject__DataModel_re",
+        "ACVIP_ALISA_en__SCSProject__DataModel_re"
+      ]
+    },
+    {
+      "path": "references/ACVIP_ALISA/SCSProject/IntegratedSCS.aadl",
+      "source_path": "osate-examples/examples/ACVIP_ALISA/SCSProject/IntegratedSCS.aadl",
+      "sha256": "aee8678bfb4d1a6183e268109469dfc9444f9959016b9e836c9f6f5852b74260",
+      "variant_group": "ACVIP_ALISA/SCSProject/IntegratedSCS",
+      "requirement_ids": [
+        "ACVIP_ALISA__SCSProject__IntegratedSCS_re",
+        "ACVIP_ALISA_en__SCSProject__IntegratedSCS_re"
+      ]
+    },
+    {
+      "path": "references/ACVIP_ALISA/SCSProject/PhysicalParts.aadl",
+      "source_path": "osate-examples/examples/ACVIP_ALISA/SCSProject/PhysicalParts.aadl",
+      "sha256": "99749c841979e3fc3f06db3f5cbf24da0df735308dbcd776a3aa80dac7adfef4",
+      "variant_group": "ACVIP_ALISA/SCSProject/PhysicalParts",
+      "requirement_ids": [
+        "ACVIP_ALISA__SCSProject__PhysicalParts_re",
+        "ACVIP_ALISA_en__SCSProject__PhysicalParts_re"
+      ]
+    },
+    {
+      "path": "references/ACVIP_ALISA/SCSProject/SoftwareParts.aadl",
+      "source_path": "osate-examples/examples/ACVIP_ALISA/SCSProject/SoftwareParts.aadl",
+      "sha256": "f51e864686443ac3811f82de066b2513f7bef6cd93fdb8e5d38be4a499433c11",
+      "variant_group": "ACVIP_ALISA/SCSProject/SoftwareParts",
+      "requirement_ids": [
+        "ACVIP_ALISA__SCSProject__SoftwareParts_re",
+        "ACVIP_ALISA_en__SCSProject__SoftwareParts_re"
+      ]
+    },
+    {
+      "path": "references/ACVIP_ALISA/SCSProject/heat_source.aadl",
+      "source_path": "osate-examples/examples/ACVIP_ALISA/SCSProject/heat_source.aadl",
+      "sha256": "d5db69c5a67db20db6da6f2eb8a7e687180d0c0f32d0e50d20e3ea6b99d69b5b",
+      "variant_group": "ACVIP_ALISA/SCSProject/heat_source",
+      "requirement_ids": [
+        "ACVIP_ALISA__SCSProject__heat_source_re",
+        "ACVIP_ALISA_en__SCSProject__heat_source_re"
+      ]
+    },
+    {
+      "path": "references/ACVIP_ALISA/SCSProject/isoletteDataModel.aadl",
+      "source_path": "osate-examples/examples/ACVIP_ALISA/SCSProject/isoletteDataModel.aadl",
+      "sha256": "776807a4dc1e18f3eaa88b456ddf7db0f262afb9a8908d2bae72404ada398e8f",
+      "variant_group": "ACVIP_ALISA/SCSProject/isoletteDataModel",
+      "requirement_ids": [
+        "ACVIP_ALISA__SCSProject__isoletteDataModel_re",
+        "ACVIP_ALISA_en__SCSProject__isoletteDataModel_re"
+      ]
+    },
+    {
+      "path": "references/ACVIP_ALISA/SCSProject/isoletteSystem.aadl",
+      "source_path": "osate-examples/examples/ACVIP_ALISA/SCSProject/isoletteSystem.aadl",
+      "sha256": "83e2027cf42187462cd283e0601920ebb275eab3b2560882ec246adfd7d3db54",
+      "variant_group": "ACVIP_ALISA/SCSProject/isoletteSystem",
+      "requirement_ids": [
+        "ACVIP_ALISA__SCSProject__isoletteSystem_re",
+        "ACVIP_ALISA_en__SCSProject__isoletteSystem_re"
+      ]
+    },
+    {
+      "path": "references/ACVIP_ALISA/SCSProject/operator_interface.aadl",
+      "source_path": "osate-examples/examples/ACVIP_ALISA/SCSProject/operator_interface.aadl",
+      "sha256": "454a36757c4c9e1558f85bf10002b70749a9e87cfb9051a0511bf922234a84e4",
+      "variant_group": "ACVIP_ALISA/SCSProject/operator_interface",
+      "requirement_ids": [
+        "ACVIP_ALISA__SCSProject__operator_interface_re",
+        "ACVIP_ALISA_en__SCSProject__operator_interface_re"
+      ]
+    },
+    {
+      "path": "references/ACVIP_ALISA/SCSProject/temperature_sensor.aadl",
+      "source_path": "osate-examples/examples/ACVIP_ALISA/SCSProject/temperature_sensor.aadl",
+      "sha256": "889f931472fb991bf078cbe3bc0152cb9dcda0388ba20579c41ec7042153b976",
+      "variant_group": "ACVIP_ALISA/SCSProject/temperature_sensor",
+      "requirement_ids": [
+        "ACVIP_ALISA__SCSProject__temperature_sensor_re",
+        "ACVIP_ALISA_en__SCSProject__temperature_sensor_re"
+      ]
+    },
+    {
+      "path": "references/ACVIP_ALISA/SCSProject/thermostat.aadl",
+      "source_path": "osate-examples/examples/ACVIP_ALISA/SCSProject/thermostat.aadl",
+      "sha256": "e0ee2b0145404109088b555b7f3402627b3f31e25fec092e73f0e9962888cb76",
+      "variant_group": "ACVIP_ALISA/SCSProject/thermostat",
+      "requirement_ids": [
+        "ACVIP_ALISA__SCSProject__thermostat_re",
+        "ACVIP_ALISA_en__SCSProject__thermostat_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/advanced/common/WBSPS.aadl",
+      "source_path": "osate-examples/examples/arp4761/advanced/common/WBSPS.aadl",
+      "sha256": "d1c3f20421b576a8f19757fb5b5e21f2a58a80551603aebee81ed2276736f4d1",
+      "variant_group": "arp4761/advanced/common/WBSPS",
+      "requirement_ids": [
+        "arp4761__advanced_re__common__WBSPS_re",
+        "arp4761_en__advanced__common__WBSPS_re",
+        "stepper-motor_output__advanced__common__WBSPS_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/advanced/functional/WBSFunctionalErrorLib.aadl",
+      "source_path": "osate-examples/examples/arp4761/advanced/functional/WBSFunctionalErrorLib.aadl",
+      "sha256": "1ee7d0d2a6da774a9dc1cd54b167131347ad4526fd3c2a87948d81483491a45e",
+      "variant_group": "arp4761/advanced/functional/WBSFunctionalErrorLib",
+      "requirement_ids": [
+        "arp4761__advanced_re__functional__WBSFunctionalErrorLib_re",
+        "arp4761_en__advanced__functional__WBSFunctionalErrorLib_re",
+        "stepper-motor_output__advanced__functional__WBSFunctionalErrorLib_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/advanced/functional/electrical.aadl",
+      "source_path": "osate-examples/examples/arp4761/advanced/functional/electrical.aadl",
+      "sha256": "3785923ec1a1c086cf72fc4f1ad8d6c45ecb91977edb90920acc0b53f91d93d0",
+      "variant_group": "arp4761/advanced/functional/electrical",
+      "requirement_ids": [
+        "arp4761__advanced_re__functional__electrical_re",
+        "arp4761_en__advanced__functional__electrical_re",
+        "stepper-motor_output__advanced__functional__electrical_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/advanced/functional/generic_functions.aadl",
+      "source_path": "osate-examples/examples/arp4761/advanced/functional/generic_functions.aadl",
+      "sha256": "edf94e38152983d248ab4261980faf0798be225d9885fc5a4ace977f7d79cbcd",
+      "variant_group": "arp4761/advanced/functional/generic_functions",
+      "requirement_ids": [
+        "arp4761__advanced_re__functional__generic_functions_re",
+        "arp4761_en__advanced__functional__generic_functions_re",
+        "stepper-motor_output__advanced__functional__generic_functions_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/advanced/functional/hydraulic.aadl",
+      "source_path": "osate-examples/examples/arp4761/advanced/functional/hydraulic.aadl",
+      "sha256": "6118957da73812e4ba1dcd829b095096a92e1713b66d0b6d28eed28257b6a846",
+      "variant_group": "arp4761/advanced/functional/hydraulic",
+      "requirement_ids": [
+        "arp4761__advanced_re__functional__hydraulic_re",
+        "arp4761_en__advanced__functional__hydraulic_re",
+        "stepper-motor_output__advanced__functional__hydraulic_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/advanced/functional/main.aadl",
+      "source_path": "osate-examples/examples/arp4761/advanced/functional/main.aadl",
+      "sha256": "0924d3a4e996bbf7eb30e1718721984d33ca276126f48563221d785d03363cb8",
+      "variant_group": "arp4761/advanced/functional/main",
+      "requirement_ids": [
+        "arp4761__advanced_re__functional__main_re",
+        "arp4761_en__advanced__functional__main_re",
+        "stepper-motor_output__advanced__functional__main_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/advanced/functional/throttle.aadl",
+      "source_path": "osate-examples/examples/arp4761/advanced/functional/throttle.aadl",
+      "sha256": "b4780a801e3653c0005ac85c0c163ed79114f608763fe5443dc8fff6b080f014",
+      "variant_group": "arp4761/advanced/functional/throttle",
+      "requirement_ids": [
+        "arp4761__advanced_re__functional__throttle_re",
+        "arp4761_en__advanced__functional__throttle_re",
+        "stepper-motor_output__advanced__functional__throttle_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/advanced/functional/wbs/command-control.aadl",
+      "source_path": "osate-examples/examples/arp4761/advanced/functional/wbs/command-control.aadl",
+      "sha256": "a57109d1dd0d0a6c02ae32fe66ec7256091756e5501c399d323170df3b0748fd",
+      "variant_group": "arp4761/advanced/functional/wbs/command-control",
+      "requirement_ids": [
+        "arp4761__advanced_re__functional__wbs__command-control_re",
+        "arp4761_en__advanced__functional__wbs__command-control_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/advanced/functional/wbs/generic.aadl",
+      "source_path": "osate-examples/examples/arp4761/advanced/functional/wbs/generic.aadl",
+      "sha256": "51887ba001202e425b309f00338aa97b09f509395c26e94777bc806155c66fbb",
+      "variant_group": "arp4761/advanced/functional/wbs/generic",
+      "requirement_ids": [
+        "arp4761__advanced_re__functional__wbs__generic_re",
+        "arp4761_en__advanced__functional__wbs__generic_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/advanced/functional/wbs/main.aadl",
+      "source_path": "osate-examples/examples/arp4761/advanced/functional/wbs/main.aadl",
+      "sha256": "6a3da787db23cb058783d1f9d100579ea945613f7918e8678cb9e5feb455da21",
+      "variant_group": "arp4761/advanced/functional/wbs/main",
+      "requirement_ids": [
+        "arp4761__advanced_re__functional__wbs__main_re",
+        "arp4761_en__advanced__functional__wbs__main_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/advanced/implementation/WBSImplementationErrorLib.aadl",
+      "source_path": "osate-examples/examples/arp4761/advanced/implementation/WBSImplementationErrorLib.aadl",
+      "sha256": "bffed4af7ee69de8ec8e79b03d24234f371a8c2300adcf79c9f441966f9837c5",
+      "variant_group": "arp4761/advanced/implementation/WBSImplementationErrorLib",
+      "requirement_ids": [
+        "arp4761__advanced_re__implementation__WBSImplementationErrorLib_re",
+        "arp4761_en__advanced__implementation__WBSImplementationErrorLib_re",
+        "stepper-motor_output__advanced__implementation__WBSImplementationErrorLib_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/advanced/implementation/bscu.aadl",
+      "source_path": "osate-examples/examples/arp4761/advanced/implementation/bscu.aadl",
+      "sha256": "e0f67c0525a1606719de71113b9f99b1ac0b9bca3cf563f462d8eb4f772baeda",
+      "variant_group": "arp4761/advanced/implementation/bscu",
+      "requirement_ids": [
+        "arp4761__advanced_re__implementation__bscu_re",
+        "arp4761_en__advanced__implementation__bscu_re",
+        "stepper-motor_output__advanced__implementation__bscu_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/advanced/implementation/common.aadl",
+      "source_path": "osate-examples/examples/arp4761/advanced/implementation/common.aadl",
+      "sha256": "61377db72a3aca37d53fce1bad4dfd537996820ad6a050e29b12568c05999178",
+      "variant_group": "arp4761/advanced/implementation/common",
+      "requirement_ids": [
+        "arp4761__advanced_re__implementation__common_re",
+        "arp4761_en__advanced__implementation__common_re",
+        "stepper-motor_output__advanced__implementation__common_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/advanced/implementation/communication.aadl",
+      "source_path": "osate-examples/examples/arp4761/advanced/implementation/communication.aadl",
+      "sha256": "8631061e602e712bea18b0182c05025d584dd60b2433c6f68db8763d5c43b860",
+      "variant_group": "arp4761/advanced/implementation/communication",
+      "requirement_ids": [
+        "arp4761__advanced_re__implementation__communication_re",
+        "arp4761_en__advanced__implementation__communication_re",
+        "stepper-motor_output__advanced__implementation__communication_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/advanced/implementation/pedals.aadl",
+      "source_path": "osate-examples/examples/arp4761/advanced/implementation/pedals.aadl",
+      "sha256": "e4a5b48118b23f10b653a536a888dd01984dbd5286d73ea8fa22dd4e7df3b056",
+      "variant_group": "arp4761/advanced/implementation/pedals",
+      "requirement_ids": [
+        "arp4761__advanced_re__implementation__pedals_re",
+        "arp4761_en__advanced__implementation__pedals_re",
+        "stepper-motor_output__advanced__implementation__pedals_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/advanced/implementation/platform.aadl",
+      "source_path": "osate-examples/examples/arp4761/advanced/implementation/platform.aadl",
+      "sha256": "cb2e732ded3f1022fb355bdf91bd3b071124097f3e964bf8e34aea596c9f9da4",
+      "variant_group": "arp4761/advanced/implementation/platform",
+      "requirement_ids": [
+        "arp4761__advanced_re__implementation__platform_re",
+        "arp4761_en__advanced__implementation__platform_re",
+        "stepper-motor_output__advanced__implementation__platform_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/advanced/implementation/power.aadl",
+      "source_path": "osate-examples/examples/arp4761/advanced/implementation/power.aadl",
+      "sha256": "8e63a5bc19a798dc2ca43af40639bca5763f1f2d09b5f8789917d6482d180fcb",
+      "variant_group": "arp4761/advanced/implementation/power",
+      "requirement_ids": [
+        "arp4761__advanced_re__implementation__power_re",
+        "arp4761_en__advanced__implementation__power_re",
+        "stepper-motor_output__advanced__implementation__power_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/advanced/implementation/pump.aadl",
+      "source_path": "osate-examples/examples/arp4761/advanced/implementation/pump.aadl",
+      "sha256": "ea2b68d8a42161957b42f8f13135313145d97e0e375294e3a9e6014b43c47383",
+      "variant_group": "arp4761/advanced/implementation/pump",
+      "requirement_ids": [
+        "arp4761__advanced_re__implementation__pump_re",
+        "arp4761_en__advanced__implementation__pump_re",
+        "stepper-motor_output__advanced__implementation__pump_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/advanced/implementation/valves.aadl",
+      "source_path": "osate-examples/examples/arp4761/advanced/implementation/valves.aadl",
+      "sha256": "0a161c098a22f003c7c457674b4c38e4789632965dee4dd2b1a984ab24aedf0e",
+      "variant_group": "arp4761/advanced/implementation/valves",
+      "requirement_ids": [
+        "arp4761__advanced_re__implementation__valves_re",
+        "arp4761_en__advanced__implementation__valves_re",
+        "stepper-motor_output__advanced__implementation__valves_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/advanced/implementation/wbs.aadl",
+      "source_path": "osate-examples/examples/arp4761/advanced/implementation/wbs.aadl",
+      "sha256": "20092d3fcd3175e7a03a6d8de5599b15473825a6600557f90bfc2ae57f681972",
+      "variant_group": "arp4761/advanced/implementation/wbs",
+      "requirement_ids": [
+        "arp4761__advanced_re__implementation__wbs_re",
+        "arp4761_en__advanced__implementation__wbs_re",
+        "stepper-motor_output__advanced__implementation__wbs_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/advanced/implementation/wheel.aadl",
+      "source_path": "osate-examples/examples/arp4761/advanced/implementation/wheel.aadl",
+      "sha256": "77ab8a691a7faae3a703872ea3c0013645f457e80b90d4c292e5f7f2cb2ea5d4",
+      "variant_group": "arp4761/advanced/implementation/wheel",
+      "requirement_ids": [
+        "arp4761__advanced_re__implementation__wheel_re",
+        "arp4761_en__advanced__implementation__wheel_re",
+        "stepper-motor_output__advanced__implementation__wheel_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/advanced/integration/WBSMappingErrorLib.aadl",
+      "source_path": "osate-examples/examples/arp4761/advanced/integration/WBSMappingErrorLib.aadl",
+      "sha256": "82aecc1f3a976f8efdd527727df6a8fc5ead9e112e06aff57c5b27b717b8ffcb",
+      "variant_group": "arp4761/advanced/integration/WBSMappingErrorLib",
+      "requirement_ids": [
+        "arp4761__advanced_re__integration__WBSMappingErrorLib_re",
+        "arp4761_en__advanced__integration__WBSMappingErrorLib_re",
+        "stepper-motor_output__advanced__integration__WBSMappingErrorLib_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/advanced/integration/main.aadl",
+      "source_path": "osate-examples/examples/arp4761/advanced/integration/main.aadl",
+      "sha256": "a833eba233caf805cec2b24fa5e3a0c620c96db67a3c2d61cb2b5830f014f628",
+      "variant_group": "arp4761/advanced/integration/main",
+      "requirement_ids": [
+        "arp4761__advanced_re__integration__main_re",
+        "arp4761_en__advanced__integration__main_re",
+        "stepper-motor_output__advanced__integration__main1_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/advanced/misc/functional-initial.aadl",
+      "source_path": "osate-examples/examples/arp4761/advanced/misc/functional-initial.aadl",
+      "sha256": "e7fab7b53c11767550c1be4029a6373270197b5d211202f8afb1bdb9eaa5847b",
+      "variant_group": "arp4761/advanced/misc/functional-initial",
+      "requirement_ids": [
+        "arp4761__advanced_re__misc__functional-initial_re",
+        "arp4761_en__advanced__misc__functional-initial_re",
+        "stepper-motor_output__advanced__misc__functional-initial_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/simple/bscu.aadl",
+      "source_path": "osate-examples/examples/arp4761/simple/bscu.aadl",
+      "sha256": "0b865360ff4c760fa2dff9249a4a376567bd654e36c0ee25523ccaadf29df752",
+      "variant_group": "arp4761/simple/bscu",
+      "requirement_ids": [
+        "arp4761__simple_re__bscu_re",
+        "arp4761_en__simple__bscu_re",
+        "stepper-motor_output__simple__bscu_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/simple/common.aadl",
+      "source_path": "osate-examples/examples/arp4761/simple/common.aadl",
+      "sha256": "d069d7be0073d782cf23aa0129481b340baa96b2237e7edbaa1b5f6192a2f471",
+      "variant_group": "arp4761/simple/common",
+      "requirement_ids": [
+        "arp4761__simple_re__common_re",
+        "arp4761_en__simple__common_re",
+        "stepper-motor_output__simple__common_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/simple/communication.aadl",
+      "source_path": "osate-examples/examples/arp4761/simple/communication.aadl",
+      "sha256": "b09348dd36a0ba33b2ddae69f461555103354c060a484594dd3ab582ad6c06fa",
+      "variant_group": "arp4761/simple/communication",
+      "requirement_ids": [
+        "arp4761__simple_re__communication_re",
+        "arp4761_en__simple__communication_re",
+        "stepper-motor_output__simple__communication_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/simple/error.aadl",
+      "source_path": "osate-examples/examples/arp4761/simple/error.aadl",
+      "sha256": "f99bd9e73e190253924d6d51aa777dc6a5e321152d9b3f6e1966cb4325ba8b8c",
+      "variant_group": "arp4761/simple/error",
+      "requirement_ids": [
+        "arp4761__simple_re__error_re",
+        "arp4761_en__simple__error_re",
+        "stepper-motor_output__simple__error_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/simple/pedals.aadl",
+      "source_path": "osate-examples/examples/arp4761/simple/pedals.aadl",
+      "sha256": "5e1c806e5e1209df4e5d049b3fc9bdd08bb65970a2338de4bbc4574d2b5e9e4d",
+      "variant_group": "arp4761/simple/pedals",
+      "requirement_ids": [
+        "arp4761__simple_re__pedals_re",
+        "arp4761_en__simple__pedals_re",
+        "stepper-motor_output__simple__pedals_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/simple/platform.aadl",
+      "source_path": "osate-examples/examples/arp4761/simple/platform.aadl",
+      "sha256": "a4332c96127cb874d39865d5c4fe8c3c8500aa429bb5f3cb4f16cb4a569fdde7",
+      "variant_group": "arp4761/simple/platform",
+      "requirement_ids": [
+        "arp4761__simple_re__platform_re",
+        "arp4761_en__simple__platform_re",
+        "stepper-motor_output__simple__platform_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/simple/power.aadl",
+      "source_path": "osate-examples/examples/arp4761/simple/power.aadl",
+      "sha256": "70675131d06b1cc31a4619302758bef2a2ee76697dd6ed9f68b9ab4209e7936b",
+      "variant_group": "arp4761/simple/power",
+      "requirement_ids": [
+        "arp4761__simple_re__power_re",
+        "arp4761_en__simple__power_re",
+        "stepper-motor_output__simple__power_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/simple/proofs.aadl",
+      "source_path": "osate-examples/examples/arp4761/simple/proofs.aadl",
+      "sha256": "13bcbc2021afac3ecf17ead7fa6374be7aaae9ae62062674bea4edcb4f1b0ceb",
+      "variant_group": "arp4761/simple/proofs",
+      "requirement_ids": [
+        "arp4761__simple_re__proofs_re",
+        "arp4761_en__simple__proofs_re",
+        "stepper-motor_output__simple__proofs_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/simple/pump.aadl",
+      "source_path": "osate-examples/examples/arp4761/simple/pump.aadl",
+      "sha256": "aab14ed8e42d9430f29661852f559c99d82d8a2f640429165ecdc5b6769d378f",
+      "variant_group": "arp4761/simple/pump",
+      "requirement_ids": [
+        "arp4761__simple_re__pump_re",
+        "arp4761_en__simple__pump_re",
+        "stepper-motor_output__simple__pump_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/simple/valves.aadl",
+      "source_path": "osate-examples/examples/arp4761/simple/valves.aadl",
+      "sha256": "54cf81977e773efbe9d7b984ddbe0fb97a496c747cab3001ac2ed71ecd4747d7",
+      "variant_group": "arp4761/simple/valves",
+      "requirement_ids": [
+        "arp4761__simple_re__valves_re",
+        "arp4761_en__simple__valves_re",
+        "stepper-motor_output__simple__valves_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/simple/wbs.aadl",
+      "source_path": "osate-examples/examples/arp4761/simple/wbs.aadl",
+      "sha256": "3ad264d4a468240cc5b0c1a93edb30a10ccf4f92fdf72acd06b41ca0d0dc2831",
+      "variant_group": "arp4761/simple/wbs",
+      "requirement_ids": [
+        "arp4761__simple_re__wbs_re",
+        "arp4761_en__simple__wbs_re",
+        "stepper-motor_output__simple__wbs_re"
+      ]
+    },
+    {
+      "path": "references/arp4761/simple/wheel.aadl",
+      "source_path": "osate-examples/examples/arp4761/simple/wheel.aadl",
+      "sha256": "1965797bcf4be1c2e439470e76cafc766e6f0b75bf94935d8cd2809ff40c72e1",
+      "variant_group": "arp4761/simple/wheel",
+      "requirement_ids": [
+        "arp4761__simple_re__wheel_re",
+        "arp4761_en__simple__wheel_re",
+        "stepper-motor_output__simple__wheel_re"
+      ]
+    },
+    {
+      "path": "references/continuous-safety-risk-evaluation/AircraftSafetyExample_ACCAOARedundancy.aadl",
+      "source_path": "osate-examples/examples/continuous-safety-risk-evaluation/AircraftSafetyExample_ACCAOARedundancy.aadl",
+      "sha256": "50b227115907d10bedf42bf6a0d08d7f011bcb24a9fd7f7c8df081bd14530ac0",
+      "variant_group": "continuous-safety-risk-evaluation/AircraftSafetyExample_ACCAOARedundancy",
+      "requirement_ids": [
+        "continuous-safety-risk-evaluation_en__AircraftSafetyExample_ACCAOARedundancy_re",
+        "continuous-safety-risk-evaluation_re__AircraftSafetyExample_ACCAOARedundancy_re"
+      ]
+    },
+    {
+      "path": "references/continuous-safety-risk-evaluation/AircraftSafetyExample_AOADiscrepancy.aadl",
+      "source_path": "osate-examples/examples/continuous-safety-risk-evaluation/AircraftSafetyExample_AOADiscrepancy.aadl",
+      "sha256": "859e633338b43cebf35ba832ba19e0d32025e66620929beb60f8ecac543f32ae",
+      "variant_group": "continuous-safety-risk-evaluation/AircraftSafetyExample_AOADiscrepancy",
+      "requirement_ids": [
+        "continuous-safety-risk-evaluation_en__AircraftSafetyExample_AOADiscrepancy_re",
+        "continuous-safety-risk-evaluation_re__AircraftSafetyExample_AOADiscrepancy_re"
+      ]
+    },
+    {
+      "path": "references/continuous-safety-risk-evaluation/AircraftSafetyExample_AOAVendors.aadl",
+      "source_path": "osate-examples/examples/continuous-safety-risk-evaluation/AircraftSafetyExample_AOAVendors.aadl",
+      "sha256": "85428d02f288330a6c9de717bf5cd926887e4b062d7eceb2deb45f75a4076aee",
+      "variant_group": "continuous-safety-risk-evaluation/AircraftSafetyExample_AOAVendors",
+      "requirement_ids": [
+        "continuous-safety-risk-evaluation_en__AircraftSafetyExample_AOAVendors_re",
+        "continuous-safety-risk-evaluation_re__AircraftSafetyExample_AOAVendors_re"
+      ]
+    },
+    {
+      "path": "references/continuous-safety-risk-evaluation/acemlib.aadl",
+      "source_path": "osate-examples/examples/continuous-safety-risk-evaluation/acemlib.aadl",
+      "sha256": "cfd5f6d1914b625785837cda66d29ea8b71edeeaf9c5698eb4822b9ba46f7ff2",
+      "variant_group": "continuous-safety-risk-evaluation/acemlib",
+      "requirement_ids": [
+        "continuous-safety-risk-evaluation_en__acemlib_re",
+        "continuous-safety-risk-evaluation_re__acemlib_re"
+      ]
+    },
+    {
+      "path": "references/resource-budget/resourcebudgets.aadl",
+      "source_path": "osate-examples/examples/resource-budget/resourcebudgets.aadl",
+      "sha256": "f676f1d7d6d3d3a8bbe5380340164688735e48594fed5808a53bd5cc99541e11",
+      "variant_group": "resource-budget/resourcebudgets",
+      "requirement_ids": []
+    },
+    {
+      "path": "references/safety-tutorial/packages/AFGErrorLibrary.aadl",
+      "source_path": "osate-examples/examples/safety-tutorial/packages/AFGErrorLibrary.aadl",
+      "sha256": "29e25ba5660f51f614bcfaf8cf358b787d8b67beb98e6ebf9d26398835810752",
+      "variant_group": "safety-tutorial/packages/AFGErrorLibrary",
+      "requirement_ids": []
+    },
+    {
+      "path": "references/safety-tutorial/packages/AutomatedFlightGuidance.aadl",
+      "source_path": "osate-examples/examples/safety-tutorial/packages/AutomatedFlightGuidance.aadl",
+      "sha256": "4141c77f5a8e9a66d85309506c9a6031b68f0b374148c02dae9e81c4b35e77f0",
+      "variant_group": "safety-tutorial/packages/AutomatedFlightGuidance",
+      "requirement_ids": []
+    },
+    {
+      "path": "references/safety-tutorial/packages/FlightControl.aadl",
+      "source_path": "osate-examples/examples/safety-tutorial/packages/FlightControl.aadl",
+      "sha256": "ebbf8dc12a055f5869117fa14184ea346ec26e5c5bec8d47705929dc4c77d97c",
+      "variant_group": "safety-tutorial/packages/FlightControl",
+      "requirement_ids": []
+    },
+    {
+      "path": "references/safety-tutorial/packages/FlightSystem.aadl",
+      "source_path": "osate-examples/examples/safety-tutorial/packages/FlightSystem.aadl",
+      "sha256": "a5aecf0af9e2904d49c05cbde90927e6665bde6d42ce5e3b660196ccae7bf3fb",
+      "variant_group": "safety-tutorial/packages/FlightSystem",
+      "requirement_ids": []
+    },
+    {
+      "path": "references/safety-tutorial/packages/GPSErrorLibrary.aadl",
+      "source_path": "osate-examples/examples/safety-tutorial/packages/GPSErrorLibrary.aadl",
+      "sha256": "a5ea39adf3b50a501d96d251fade2d3cc419ae7c975e4d513bfa8d3236a6e682",
+      "variant_group": "safety-tutorial/packages/GPSErrorLibrary",
+      "requirement_ids": []
+    },
+    {
+      "path": "references/safety-tutorial/packages/GPSParts.aadl",
+      "source_path": "osate-examples/examples/safety-tutorial/packages/GPSParts.aadl",
+      "sha256": "a7943c99eb9e2c3f743bbe97a64712217c5d70b90213833d15ca419a1a62305a",
+      "variant_group": "safety-tutorial/packages/GPSParts",
+      "requirement_ids": []
+    },
+    {
+      "path": "references/safety-tutorial/packages/GPSSystem.aadl",
+      "source_path": "osate-examples/examples/safety-tutorial/packages/GPSSystem.aadl",
+      "sha256": "cf043bf92ef39666fa69878c3a40f2cfaeb3bcb0b2cfe5a381d0f6e49fcd844d",
+      "variant_group": "safety-tutorial/packages/GPSSystem",
+      "requirement_ids": []
+    },
+    {
+      "path": "references/safety-tutorial/packages/HardwareParts.aadl",
+      "source_path": "osate-examples/examples/safety-tutorial/packages/HardwareParts.aadl",
+      "sha256": "62b51dbe0287ed9ebf115617e7722e100bcafc28c22aa341adca1e29c225a8e8",
+      "variant_group": "safety-tutorial/packages/HardwareParts",
+      "requirement_ids": []
+    },
+    {
+      "path": "references/speed-regulation/model/devices.aadl",
+      "source_path": "osate-examples/examples/speed-regulation/model/devices.aadl",
+      "sha256": "ffb44d6c29ee80de683901e16247ba69154051bd74a36dd25f9b060c9448ba0c",
+      "variant_group": "speed-regulation/model/devices",
+      "requirement_ids": []
+    },
+    {
+      "path": "references/speed-regulation/model/error.aadl",
+      "source_path": "osate-examples/examples/speed-regulation/model/error.aadl",
+      "sha256": "017ffd44b697abbc35372f5a1ed168e20c97308521234cbc76d7edc929bf9702",
+      "variant_group": "speed-regulation/model/error",
+      "requirement_ids": []
+    },
+    {
+      "path": "references/speed-regulation/model/icd.aadl",
+      "source_path": "osate-examples/examples/speed-regulation/model/icd.aadl",
+      "sha256": "16dc2e398e2dcc9458de704c95a243a2b867fa1dd6dd149fce5c078b974415eb",
+      "variant_group": "speed-regulation/model/icd",
+      "requirement_ids": []
+    },
+    {
+      "path": "references/speed-regulation/model/integration.aadl",
+      "source_path": "osate-examples/examples/speed-regulation/model/integration.aadl",
+      "sha256": "f0c4a9c7dc614c087905b213bc84179055725f02043d3a7cb8909dc6145ffd00",
+      "variant_group": "speed-regulation/model/integration",
+      "requirement_ids": []
+    },
+    {
+      "path": "references/speed-regulation/model/platform.aadl",
+      "source_path": "osate-examples/examples/speed-regulation/model/platform.aadl",
+      "sha256": "a62c35692a4c96acca1dd1268a2ece774a67f77810c6e59f0c4acddcd263a9fe",
+      "variant_group": "speed-regulation/model/platform",
+      "requirement_ids": []
+    },
+    {
+      "path": "references/speed-regulation/model/software.aadl",
+      "source_path": "osate-examples/examples/speed-regulation/model/software.aadl",
+      "sha256": "cf1899bf7d3704f7ef06a416ff150a606811d2d5a7accd5367968bebd887d881",
+      "variant_group": "speed-regulation/model/software",
+      "requirement_ids": []
+    },
+    {
+      "path": "references/stepper-motor/Propertysets/CasePSC.aadl",
+      "source_path": "osate-examples/examples/stepper-motor/Propertysets/CasePSC.aadl",
+      "sha256": "1e39eddcb6c8afb3a2725c8634d275f0bd500a3c3da9dd2f7664e370dbb0ff89",
+      "variant_group": "stepper-motor/Propertysets/CasePSC",
+      "requirement_ids": []
+    },
+    {
+      "path": "references/stepper-motor/packages/CasePositionControl.aadl",
+      "source_path": "osate-examples/examples/stepper-motor/packages/CasePositionControl.aadl",
+      "sha256": "00bfe4db1c19fb1c71c8a73167a18c299f6880a9407664eb665c2278829d5cb9",
+      "variant_group": "stepper-motor/packages/CasePositionControl",
+      "requirement_ids": []
+    },
+    {
+      "path": "references/stepper-motor/packages/SMErrorTypes.aadl",
+      "source_path": "osate-examples/examples/stepper-motor/packages/SMErrorTypes.aadl",
+      "sha256": "d83b881e1b7323d232667f3a1c393d2d0dc4813844ba6c5147313bcfd4e21cd3",
+      "variant_group": "stepper-motor/packages/SMErrorTypes",
+      "requirement_ids": []
+    }
+  ],
+  "variant_groups": [
+    {
+      "id": "ACVIP/DataDictionary/DataDictionary",
+      "reference": "references/ACVIP/DataDictionary/DataDictionary.aadl",
+      "requirement_ids": [
+        "ACVIP__DataDictionary__data_re",
+        "ACVIP_en__DataDictionary__DataDictionary_re"
+      ]
+    },
+    {
+      "id": "ACVIP/EfectorsInc/Brake",
+      "reference": "references/ACVIP/EfectorsInc/Brake.aadl",
+      "requirement_ids": [
+        "ACVIP__EfectorsInc__brake_re",
+        "ACVIP_en__EfectorsInc__Brake_re"
+      ]
+    },
+    {
+      "id": "ACVIP/Infrastructure/Infrastructure",
+      "reference": "references/ACVIP/Infrastructure/Infrastructure.aadl",
+      "requirement_ids": [
+        "ACVIP__Infrastructure__infrastructure_re",
+        "ACVIP_en__Infrastructure__Infrastructure_re"
+      ]
+    },
+    {
+      "id": "ACVIP/InitialSCS",
+      "reference": "references/ACVIP/InitialSCS.aadl",
+      "requirement_ids": [
+        "ACVIP_en__InitialSCS_re"
+      ]
+    },
+    {
+      "id": "ACVIP/MSI/Controller",
+      "reference": "references/ACVIP/MSI/Controller.aadl",
+      "requirement_ids": [
+        "ACVIP__MSI__controller_re",
+        "ACVIP_en__MSI__Controller_re"
+      ]
+    },
+    {
+      "id": "ACVIP/MSI/SCS",
+      "reference": "references/ACVIP/MSI/SCS.aadl",
+      "requirement_ids": [
+        "ACVIP__MSI__scs_re",
+        "ACVIP_en__MSI__SCS_re"
+      ]
+    },
+    {
+      "id": "ACVIP/SensorsInc/SimpleSensor",
+      "reference": "references/ACVIP/SensorsInc/SimpleSensor.aadl",
+      "requirement_ids": [
+        "ACVIP__SensorsInc__simplesensor_re",
+        "ACVIP_en__SensorsInc__SimpleSensor_re"
+      ]
+    },
+    {
+      "id": "ACVIP_ALISA/SCSProject/DataModel",
+      "reference": "references/ACVIP_ALISA/SCSProject/DataModel.aadl",
+      "requirement_ids": [
+        "ACVIP_ALISA__SCSProject__DataModel_re",
+        "ACVIP_ALISA_en__SCSProject__DataModel_re"
+      ]
+    },
+    {
+      "id": "ACVIP_ALISA/SCSProject/IntegratedSCS",
+      "reference": "references/ACVIP_ALISA/SCSProject/IntegratedSCS.aadl",
+      "requirement_ids": [
+        "ACVIP_ALISA__SCSProject__IntegratedSCS_re",
+        "ACVIP_ALISA_en__SCSProject__IntegratedSCS_re"
+      ]
+    },
+    {
+      "id": "ACVIP_ALISA/SCSProject/PhysicalParts",
+      "reference": "references/ACVIP_ALISA/SCSProject/PhysicalParts.aadl",
+      "requirement_ids": [
+        "ACVIP_ALISA__SCSProject__PhysicalParts_re",
+        "ACVIP_ALISA_en__SCSProject__PhysicalParts_re"
+      ]
+    },
+    {
+      "id": "ACVIP_ALISA/SCSProject/SoftwareParts",
+      "reference": "references/ACVIP_ALISA/SCSProject/SoftwareParts.aadl",
+      "requirement_ids": [
+        "ACVIP_ALISA__SCSProject__SoftwareParts_re",
+        "ACVIP_ALISA_en__SCSProject__SoftwareParts_re"
+      ]
+    },
+    {
+      "id": "ACVIP_ALISA/SCSProject/heat_source",
+      "reference": "references/ACVIP_ALISA/SCSProject/heat_source.aadl",
+      "requirement_ids": [
+        "ACVIP_ALISA__SCSProject__heat_source_re",
+        "ACVIP_ALISA_en__SCSProject__heat_source_re"
+      ]
+    },
+    {
+      "id": "ACVIP_ALISA/SCSProject/isoletteDataModel",
+      "reference": "references/ACVIP_ALISA/SCSProject/isoletteDataModel.aadl",
+      "requirement_ids": [
+        "ACVIP_ALISA__SCSProject__isoletteDataModel_re",
+        "ACVIP_ALISA_en__SCSProject__isoletteDataModel_re"
+      ]
+    },
+    {
+      "id": "ACVIP_ALISA/SCSProject/isoletteSystem",
+      "reference": "references/ACVIP_ALISA/SCSProject/isoletteSystem.aadl",
+      "requirement_ids": [
+        "ACVIP_ALISA__SCSProject__isoletteSystem_re",
+        "ACVIP_ALISA_en__SCSProject__isoletteSystem_re"
+      ]
+    },
+    {
+      "id": "ACVIP_ALISA/SCSProject/operator_interface",
+      "reference": "references/ACVIP_ALISA/SCSProject/operator_interface.aadl",
+      "requirement_ids": [
+        "ACVIP_ALISA__SCSProject__operator_interface_re",
+        "ACVIP_ALISA_en__SCSProject__operator_interface_re"
+      ]
+    },
+    {
+      "id": "ACVIP_ALISA/SCSProject/temperature_sensor",
+      "reference": "references/ACVIP_ALISA/SCSProject/temperature_sensor.aadl",
+      "requirement_ids": [
+        "ACVIP_ALISA__SCSProject__temperature_sensor_re",
+        "ACVIP_ALISA_en__SCSProject__temperature_sensor_re"
+      ]
+    },
+    {
+      "id": "ACVIP_ALISA/SCSProject/thermostat",
+      "reference": "references/ACVIP_ALISA/SCSProject/thermostat.aadl",
+      "requirement_ids": [
+        "ACVIP_ALISA__SCSProject__thermostat_re",
+        "ACVIP_ALISA_en__SCSProject__thermostat_re"
+      ]
+    },
+    {
+      "id": "arp4761/advanced/common/WBSPS",
+      "reference": "references/arp4761/advanced/common/WBSPS.aadl",
+      "requirement_ids": [
+        "arp4761__advanced_re__common__WBSPS_re",
+        "arp4761_en__advanced__common__WBSPS_re",
+        "stepper-motor_output__advanced__common__WBSPS_re"
+      ]
+    },
+    {
+      "id": "arp4761/advanced/functional/WBSFunctionalErrorLib",
+      "reference": "references/arp4761/advanced/functional/WBSFunctionalErrorLib.aadl",
+      "requirement_ids": [
+        "arp4761__advanced_re__functional__WBSFunctionalErrorLib_re",
+        "arp4761_en__advanced__functional__WBSFunctionalErrorLib_re",
+        "stepper-motor_output__advanced__functional__WBSFunctionalErrorLib_re"
+      ]
+    },
+    {
+      "id": "arp4761/advanced/functional/electrical",
+      "reference": "references/arp4761/advanced/functional/electrical.aadl",
+      "requirement_ids": [
+        "arp4761__advanced_re__functional__electrical_re",
+        "arp4761_en__advanced__functional__electrical_re",
+        "stepper-motor_output__advanced__functional__electrical_re"
+      ]
+    },
+    {
+      "id": "arp4761/advanced/functional/generic_functions",
+      "reference": "references/arp4761/advanced/functional/generic_functions.aadl",
+      "requirement_ids": [
+        "arp4761__advanced_re__functional__generic_functions_re",
+        "arp4761_en__advanced__functional__generic_functions_re",
+        "stepper-motor_output__advanced__functional__generic_functions_re"
+      ]
+    },
+    {
+      "id": "arp4761/advanced/functional/hydraulic",
+      "reference": "references/arp4761/advanced/functional/hydraulic.aadl",
+      "requirement_ids": [
+        "arp4761__advanced_re__functional__hydraulic_re",
+        "arp4761_en__advanced__functional__hydraulic_re",
+        "stepper-motor_output__advanced__functional__hydraulic_re"
+      ]
+    },
+    {
+      "id": "arp4761/advanced/functional/main",
+      "reference": "references/arp4761/advanced/functional/main.aadl",
+      "requirement_ids": [
+        "arp4761__advanced_re__functional__main_re",
+        "arp4761_en__advanced__functional__main_re",
+        "stepper-motor_output__advanced__functional__main_re"
+      ]
+    },
+    {
+      "id": "arp4761/advanced/functional/throttle",
+      "reference": "references/arp4761/advanced/functional/throttle.aadl",
+      "requirement_ids": [
+        "arp4761__advanced_re__functional__throttle_re",
+        "arp4761_en__advanced__functional__throttle_re",
+        "stepper-motor_output__advanced__functional__throttle_re"
+      ]
+    },
+    {
+      "id": "arp4761/advanced/functional/wbs/command-control",
+      "reference": "references/arp4761/advanced/functional/wbs/command-control.aadl",
+      "requirement_ids": [
+        "arp4761__advanced_re__functional__wbs__command-control_re",
+        "arp4761_en__advanced__functional__wbs__command-control_re"
+      ]
+    },
+    {
+      "id": "arp4761/advanced/functional/wbs/generic",
+      "reference": "references/arp4761/advanced/functional/wbs/generic.aadl",
+      "requirement_ids": [
+        "arp4761__advanced_re__functional__wbs__generic_re",
+        "arp4761_en__advanced__functional__wbs__generic_re"
+      ]
+    },
+    {
+      "id": "arp4761/advanced/functional/wbs/main",
+      "reference": "references/arp4761/advanced/functional/wbs/main.aadl",
+      "requirement_ids": [
+        "arp4761__advanced_re__functional__wbs__main_re",
+        "arp4761_en__advanced__functional__wbs__main_re"
+      ]
+    },
+    {
+      "id": "arp4761/advanced/implementation/WBSImplementationErrorLib",
+      "reference": "references/arp4761/advanced/implementation/WBSImplementationErrorLib.aadl",
+      "requirement_ids": [
+        "arp4761__advanced_re__implementation__WBSImplementationErrorLib_re",
+        "arp4761_en__advanced__implementation__WBSImplementationErrorLib_re",
+        "stepper-motor_output__advanced__implementation__WBSImplementationErrorLib_re"
+      ]
+    },
+    {
+      "id": "arp4761/advanced/implementation/bscu",
+      "reference": "references/arp4761/advanced/implementation/bscu.aadl",
+      "requirement_ids": [
+        "arp4761__advanced_re__implementation__bscu_re",
+        "arp4761_en__advanced__implementation__bscu_re",
+        "stepper-motor_output__advanced__implementation__bscu_re"
+      ]
+    },
+    {
+      "id": "arp4761/advanced/implementation/common",
+      "reference": "references/arp4761/advanced/implementation/common.aadl",
+      "requirement_ids": [
+        "arp4761__advanced_re__implementation__common_re",
+        "arp4761_en__advanced__implementation__common_re",
+        "stepper-motor_output__advanced__implementation__common_re"
+      ]
+    },
+    {
+      "id": "arp4761/advanced/implementation/communication",
+      "reference": "references/arp4761/advanced/implementation/communication.aadl",
+      "requirement_ids": [
+        "arp4761__advanced_re__implementation__communication_re",
+        "arp4761_en__advanced__implementation__communication_re",
+        "stepper-motor_output__advanced__implementation__communication_re"
+      ]
+    },
+    {
+      "id": "arp4761/advanced/implementation/pedals",
+      "reference": "references/arp4761/advanced/implementation/pedals.aadl",
+      "requirement_ids": [
+        "arp4761__advanced_re__implementation__pedals_re",
+        "arp4761_en__advanced__implementation__pedals_re",
+        "stepper-motor_output__advanced__implementation__pedals_re"
+      ]
+    },
+    {
+      "id": "arp4761/advanced/implementation/platform",
+      "reference": "references/arp4761/advanced/implementation/platform.aadl",
+      "requirement_ids": [
+        "arp4761__advanced_re__implementation__platform_re",
+        "arp4761_en__advanced__implementation__platform_re",
+        "stepper-motor_output__advanced__implementation__platform_re"
+      ]
+    },
+    {
+      "id": "arp4761/advanced/implementation/power",
+      "reference": "references/arp4761/advanced/implementation/power.aadl",
+      "requirement_ids": [
+        "arp4761__advanced_re__implementation__power_re",
+        "arp4761_en__advanced__implementation__power_re",
+        "stepper-motor_output__advanced__implementation__power_re"
+      ]
+    },
+    {
+      "id": "arp4761/advanced/implementation/pump",
+      "reference": "references/arp4761/advanced/implementation/pump.aadl",
+      "requirement_ids": [
+        "arp4761__advanced_re__implementation__pump_re",
+        "arp4761_en__advanced__implementation__pump_re",
+        "stepper-motor_output__advanced__implementation__pump_re"
+      ]
+    },
+    {
+      "id": "arp4761/advanced/implementation/valves",
+      "reference": "references/arp4761/advanced/implementation/valves.aadl",
+      "requirement_ids": [
+        "arp4761__advanced_re__implementation__valves_re",
+        "arp4761_en__advanced__implementation__valves_re",
+        "stepper-motor_output__advanced__implementation__valves_re"
+      ]
+    },
+    {
+      "id": "arp4761/advanced/implementation/wbs",
+      "reference": "references/arp4761/advanced/implementation/wbs.aadl",
+      "requirement_ids": [
+        "arp4761__advanced_re__implementation__wbs_re",
+        "arp4761_en__advanced__implementation__wbs_re",
+        "stepper-motor_output__advanced__implementation__wbs_re"
+      ]
+    },
+    {
+      "id": "arp4761/advanced/implementation/wheel",
+      "reference": "references/arp4761/advanced/implementation/wheel.aadl",
+      "requirement_ids": [
+        "arp4761__advanced_re__implementation__wheel_re",
+        "arp4761_en__advanced__implementation__wheel_re",
+        "stepper-motor_output__advanced__implementation__wheel_re"
+      ]
+    },
+    {
+      "id": "arp4761/advanced/integration/WBSMappingErrorLib",
+      "reference": "references/arp4761/advanced/integration/WBSMappingErrorLib.aadl",
+      "requirement_ids": [
+        "arp4761__advanced_re__integration__WBSMappingErrorLib_re",
+        "arp4761_en__advanced__integration__WBSMappingErrorLib_re",
+        "stepper-motor_output__advanced__integration__WBSMappingErrorLib_re"
+      ]
+    },
+    {
+      "id": "arp4761/advanced/integration/main",
+      "reference": "references/arp4761/advanced/integration/main.aadl",
+      "requirement_ids": [
+        "arp4761__advanced_re__integration__main_re",
+        "arp4761_en__advanced__integration__main_re",
+        "stepper-motor_output__advanced__integration__main1_re"
+      ]
+    },
+    {
+      "id": "arp4761/advanced/misc/functional-initial",
+      "reference": "references/arp4761/advanced/misc/functional-initial.aadl",
+      "requirement_ids": [
+        "arp4761__advanced_re__misc__functional-initial_re",
+        "arp4761_en__advanced__misc__functional-initial_re",
+        "stepper-motor_output__advanced__misc__functional-initial_re"
+      ]
+    },
+    {
+      "id": "arp4761/simple/bscu",
+      "reference": "references/arp4761/simple/bscu.aadl",
+      "requirement_ids": [
+        "arp4761__simple_re__bscu_re",
+        "arp4761_en__simple__bscu_re",
+        "stepper-motor_output__simple__bscu_re"
+      ]
+    },
+    {
+      "id": "arp4761/simple/common",
+      "reference": "references/arp4761/simple/common.aadl",
+      "requirement_ids": [
+        "arp4761__simple_re__common_re",
+        "arp4761_en__simple__common_re",
+        "stepper-motor_output__simple__common_re"
+      ]
+    },
+    {
+      "id": "arp4761/simple/communication",
+      "reference": "references/arp4761/simple/communication.aadl",
+      "requirement_ids": [
+        "arp4761__simple_re__communication_re",
+        "arp4761_en__simple__communication_re",
+        "stepper-motor_output__simple__communication_re"
+      ]
+    },
+    {
+      "id": "arp4761/simple/error",
+      "reference": "references/arp4761/simple/error.aadl",
+      "requirement_ids": [
+        "arp4761__simple_re__error_re",
+        "arp4761_en__simple__error_re",
+        "stepper-motor_output__simple__error_re"
+      ]
+    },
+    {
+      "id": "arp4761/simple/pedals",
+      "reference": "references/arp4761/simple/pedals.aadl",
+      "requirement_ids": [
+        "arp4761__simple_re__pedals_re",
+        "arp4761_en__simple__pedals_re",
+        "stepper-motor_output__simple__pedals_re"
+      ]
+    },
+    {
+      "id": "arp4761/simple/platform",
+      "reference": "references/arp4761/simple/platform.aadl",
+      "requirement_ids": [
+        "arp4761__simple_re__platform_re",
+        "arp4761_en__simple__platform_re",
+        "stepper-motor_output__simple__platform_re"
+      ]
+    },
+    {
+      "id": "arp4761/simple/power",
+      "reference": "references/arp4761/simple/power.aadl",
+      "requirement_ids": [
+        "arp4761__simple_re__power_re",
+        "arp4761_en__simple__power_re",
+        "stepper-motor_output__simple__power_re"
+      ]
+    },
+    {
+      "id": "arp4761/simple/proofs",
+      "reference": "references/arp4761/simple/proofs.aadl",
+      "requirement_ids": [
+        "arp4761__simple_re__proofs_re",
+        "arp4761_en__simple__proofs_re",
+        "stepper-motor_output__simple__proofs_re"
+      ]
+    },
+    {
+      "id": "arp4761/simple/pump",
+      "reference": "references/arp4761/simple/pump.aadl",
+      "requirement_ids": [
+        "arp4761__simple_re__pump_re",
+        "arp4761_en__simple__pump_re",
+        "stepper-motor_output__simple__pump_re"
+      ]
+    },
+    {
+      "id": "arp4761/simple/valves",
+      "reference": "references/arp4761/simple/valves.aadl",
+      "requirement_ids": [
+        "arp4761__simple_re__valves_re",
+        "arp4761_en__simple__valves_re",
+        "stepper-motor_output__simple__valves_re"
+      ]
+    },
+    {
+      "id": "arp4761/simple/wbs",
+      "reference": "references/arp4761/simple/wbs.aadl",
+      "requirement_ids": [
+        "arp4761__simple_re__wbs_re",
+        "arp4761_en__simple__wbs_re",
+        "stepper-motor_output__simple__wbs_re"
+      ]
+    },
+    {
+      "id": "arp4761/simple/wheel",
+      "reference": "references/arp4761/simple/wheel.aadl",
+      "requirement_ids": [
+        "arp4761__simple_re__wheel_re",
+        "arp4761_en__simple__wheel_re",
+        "stepper-motor_output__simple__wheel_re"
+      ]
+    },
+    {
+      "id": "continuous-safety-risk-evaluation/AircraftSafetyExample_ACCAOARedundancy",
+      "reference": "references/continuous-safety-risk-evaluation/AircraftSafetyExample_ACCAOARedundancy.aadl",
+      "requirement_ids": [
+        "continuous-safety-risk-evaluation_en__AircraftSafetyExample_ACCAOARedundancy_re",
+        "continuous-safety-risk-evaluation_re__AircraftSafetyExample_ACCAOARedundancy_re"
+      ]
+    },
+    {
+      "id": "continuous-safety-risk-evaluation/AircraftSafetyExample_AOADiscrepancy",
+      "reference": "references/continuous-safety-risk-evaluation/AircraftSafetyExample_AOADiscrepancy.aadl",
+      "requirement_ids": [
+        "continuous-safety-risk-evaluation_en__AircraftSafetyExample_AOADiscrepancy_re",
+        "continuous-safety-risk-evaluation_re__AircraftSafetyExample_AOADiscrepancy_re"
+      ]
+    },
+    {
+      "id": "continuous-safety-risk-evaluation/AircraftSafetyExample_AOAVendors",
+      "reference": "references/continuous-safety-risk-evaluation/AircraftSafetyExample_AOAVendors.aadl",
+      "requirement_ids": [
+        "continuous-safety-risk-evaluation_en__AircraftSafetyExample_AOAVendors_re",
+        "continuous-safety-risk-evaluation_re__AircraftSafetyExample_AOAVendors_re"
+      ]
+    },
+    {
+      "id": "continuous-safety-risk-evaluation/acemlib",
+      "reference": "references/continuous-safety-risk-evaluation/acemlib.aadl",
+      "requirement_ids": [
+        "continuous-safety-risk-evaluation_en__acemlib_re",
+        "continuous-safety-risk-evaluation_re__acemlib_re"
+      ]
+    }
+  ],
+  "associations_semantically_verified": false
+}
