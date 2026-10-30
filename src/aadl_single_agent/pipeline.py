@@ -9,7 +9,7 @@ from importlib import metadata
 import json
 from pathlib import Path
 import platform
-import re
+import shutil
 import time
 from typing import Any, Callable
 import jsonschema
@@ -17,11 +17,12 @@ import jsonschema
 from .constraints import JointEngine
 from .model import ModelClient, ModelError
 from .osate import OsateRunner
+from .project import PROJECT_INSTRUCTIONS, parse_project, snapshot_context, write_project
 from .rules import RuleBundle, load_bundle
+from .semantic_types import ParseResourceError, RuleDefinitionError, SemanticReport, Status
 
 DEFAULT_TOKEN_BUDGET = 8192
 PLANNING_TOKEN_LIMIT = 2048
-GENERATION_TOKEN_LIMIT = 4096
 DEFAULT_MAX_ATTEMPTS = 3
 # Resolve legacy imports lazily: selecting an external --rules package must not
 # require loading the bundled default language at CLI import time.
@@ -52,21 +53,73 @@ def endpoint_snapshot(endpoint: Any) -> dict:
         "runtime_version", "metadata",
     )})
 
-def workflow_identity() -> str:
-    """Record executable workflow identity so saved runs remain traceable."""
+def _workflow_sources() -> str:
+    """Fingerprint the source snapshot associated with this process."""
     digest = hashlib.sha256()
     for source in sorted(Path(__file__).parent.glob("*.py")):
         digest.update(source.name.encode("utf-8") + b"\0" + source.read_bytes() + b"\0")
     return digest.hexdigest()
 
+_IMPORTED_WORKFLOW_IDENTITY = _workflow_sources()
+
+def workflow_identity() -> str:
+    """Reject mixed disk/imported revisions instead of mislabelling a run.
+
+    Python keeps imported modules in memory. Rehashing edited disk files for a
+    second run would otherwise claim that new code actually executed. Restart
+    the client after runtime edits; rule packages retain their separate hashes.
+    """
+    if _workflow_sources() != _IMPORTED_WORKFLOW_IDENTITY:
+        raise ModelError("Runtime source files changed after client startup; restart the client before another run.",
+                         error_kind="infrastructure")
+    return _IMPORTED_WORKFLOW_IDENTITY
+
 def local_versions() -> dict:
     versions = {"python": platform.python_version(), "platform": platform.platform()}
-    for package in ("aadl-single-agent", "httpx", "lark", "llguidance", "jsonschema", "PyYAML"):
+    for package in ("aadl-single-agent", "httpx", "lark", "regex", "llguidance", "jsonschema", "PyYAML"):
         try:
             versions[package] = metadata.version(package)
         except metadata.PackageNotFoundError:
             versions[package] = None
     return versions
+
+def check_instance_rules(bundle: RuleBundle, independent: dict) -> dict:
+    """Apply declared instance rules without overstating OSATE's success message.
+
+    The CLI and generation workflow share this adapter. The rule package owns
+    AADL category/consistency rules; the OSATE wrapper only verifies artifacts.
+    """
+    instance = independent.get("instance", {})
+    if instance.get("status", "not_requested") == "not_requested":
+        return {"status": "not_requested", "valid": None, "results": [], "diagnostics": [], "pending": []}
+    if independent.get("status") != "passed" or instance.get("status") != "passed":
+        return {"status": "not_run", "valid": False, "results": [], "diagnostics": [], "pending": []}
+    hook = getattr(bundle.semantics, "validate_instance", None)
+    if not callable(hook):
+        return {"status": "unsupported", "valid": False, "results": [], "pending": [],
+                "diagnostics": ["The rule bundle does not provide validate_instance for the requested instance checks"]}
+    try:
+        artifacts = instance.get("files", [])
+        if len(artifacts) != 1:
+            raise RuleDefinitionError("OSATE did not identify exactly one verified instance artifact")
+        path = Path(artifacts[0]["path"])
+        report = hook(path)
+        if not isinstance(report, SemanticReport):
+            raise RuleDefinitionError("validate_instance must return a SemanticReport")
+        if any(not isinstance(item.status, Status) for item in report.results):
+            raise RuleDefinitionError("Instance rule results must use Satisfied/Pending/Conflict statuses")
+        # SemanticReport contains a read-only mapping. Serialize its result
+        # records explicitly instead of deep-copying that mapping with asdict.
+        results = [json_value(item) for item in report.results]
+        pending = [item.message or item.rule_id for item in report.pending]
+        diagnostics = [item.message or item.rule_id for item in report.results
+                       if item.status != Status.SATISFIED]
+        valid = report.valid and not pending
+        return {"status": "passed" if valid else "failed", "valid": valid,
+                "source": str(path), "results": results, "diagnostics": diagnostics, "pending": pending,
+                "attributes": json_value(dict(report.attributes))}
+    except (RuleDefinitionError, ParseResourceError, ValueError, OSError) as exc:
+        return {"status": "error", "valid": False, "results": [], "pending": [], "diagnostics": [str(exc)]}
 
 @dataclass
 class RunResult:
@@ -102,10 +155,6 @@ def _write_json(path: Path, data: dict) -> None:
     temporary.write_text(json.dumps(json_value(data), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     temporary.replace(path)
 
-def _unwrap_code(text: str) -> str:
-    match = re.fullmatch(r"\s*```(?:aadl)?\s*\n(.*?)\n```\s*", text, re.DOTALL | re.IGNORECASE)
-    return (match.group(1) if match else text).strip() + "\n"
-
 class SingleAgent:
     def __init__(self, client: ModelClient, osate: OsateRunner | None = None,
                  engine_factory: Callable = JointEngine, bundle: RuleBundle | None = None):
@@ -116,7 +165,8 @@ class SingleAgent:
 
     def run(self, requirements: str, output_dir: str | Path, *, mode: str = "direct",
             constraints: str = "joint", token_budget: int = DEFAULT_TOKEN_BUDGET,
-            max_attempts: int = DEFAULT_MAX_ATTEMPTS) -> RunResult:
+            max_attempts: int = DEFAULT_MAX_ATTEMPTS, context=(),
+            instance_root: str | None = None) -> RunResult:
         if mode not in {"direct", "planned"} or constraints not in {"plain", "joint"}:
             raise ValueError("mode must be direct/planned and constraints must be plain/joint")
         if (type(token_budget) is not int or token_budget < 1
@@ -129,16 +179,32 @@ class SingleAgent:
         result = RunResult(status="failed", mode=mode, constraints=constraints, requirements=requirements)
         result.settings = {
             "token_budget": token_budget, "max_attempts": max_attempts,
-            "planning_token_limit": PLANNING_TOKEN_LIMIT, "generation_token_limit": GENERATION_TOKEN_LIMIT,
+            "planning_token_limit": PLANNING_TOKEN_LIMIT,
+            "context_directories": [str(Path(path).resolve()) for path in context],
+            "instance_root": instance_root, "output_unit": "project",
             "decoding": {"temperature": 0, "thinking": False, "batch_size": 1, "num_beams": 1},
         }
         result.provenance = {
             "rule_bundle": {"path": str(self.bundle.path), "profile": self.bundle.profile,
-                            "sha256": self.bundle.digest, "runtime_version": self.bundle.runtime_version},
+                            "sha256": self.bundle.digest, "runtime_version": self.bundle.runtime_version,
+                            "compiled_grammar_sha256": self.bundle.compiled_grammar_sha256,
+                            "standard": self.bundle.semantics.METADATA.get("standard"),
+                            "osate_revision": self.bundle.semantics.METADATA.get("osate_revision"),
+                            "coverage": {key: self.bundle.semantics.METADATA.get(key) for key in (
+                                "implemented_scope", "unsupported_checks", "instance_scope", "instance_unsupported_checks")}},
             "workflow_sha256": workflow_identity(), "versions": local_versions(),
         }
+        # Planning emits schema-constrained JSON. Apply the project transport
+        # requirement only after planning so the two output contracts cannot conflict.
         messages = [{"role": "system", "content": self.bundle.system_prompt},
                     {"role": "user", "content": requirements}]
+        if instance_root is not None:
+            messages[1]["content"] += ("\n\nThe project will be instantiated at the explicitly selected root "
+                                        + instance_root + ". Preserve that qualified implementation name.")
+        generation_instruction = self.bundle.generation_prompt + "\n\n" + PROJECT_INSTRUCTIONS
+        dependency_snapshot = snapshot_context(())
+        if instance_root is not None:
+            result.validation_scope = "syntax_and_static_semantics_and_osate_instantiation_checks"
         declarations = None
         phase = "preflight"
         interrupted = False
@@ -153,7 +219,8 @@ class SingleAgent:
 
         def generate(call_phase: str, limit: int, constraint):
             call = {"phase": call_phase, "max_tokens": limit, "status": "started",
-                    "messages": deepcopy(messages), "constraint": deepcopy(constraint), "started_at": _utc_now()}
+                    "messages": deepcopy(messages), "constraint": deepcopy(constraint), "started_at": _utc_now(),
+                    "context_sha256": dependency_snapshot.sha256}
             result.calls.append(call)
             save()
             call_started = time.perf_counter()
@@ -162,7 +229,8 @@ class SingleAgent:
             except ModelError as exc:
                 call.update(status="error", error=str(exc), error_kind=getattr(exc, "error_kind", "model_protocol"),
                             usage=exc.usage, finish_reason=exc.finish_reason,
-                            constraint_evidence=exc.applied_constraint)
+                            constraint_evidence=exc.applied_constraint,
+                            error_response_metadata=json_value(exc.response_metadata))
                 if exc.usage is not None:
                     charge(exc.usage)
                     if exc.usage["completion_tokens"] > limit:
@@ -198,34 +266,72 @@ class SingleAgent:
             # Otherwise false rejections would disappear from experimental evidence.
             attempt_root = root / f"attempt-{number}"
             attempt_root.mkdir()
-            candidate_path = attempt_root / "candidate.aadl"
-            candidate = _unwrap_code(text)
-            candidate_path.write_text(candidate, encoding="utf-8", newline="")
+            raw_path = attempt_root / "raw-response.txt"
+            raw_path.write_text(text, encoding="utf-8", newline="")
+            document = parse_project(text)
+            candidate_path = attempt_root / "project"
+            # No missing terminators or source bytes are invented. The parser
+            # also exposes received files from a truncated project for OSATE.
+            paths = write_project(document, candidate_path, dependency_snapshot)
             check_started = time.perf_counter()
-            # Check the same text written to disk; read_text's universal newline
-            # handling could otherwise hide an actual serialization difference.
-            checked = engine.validate(candidate)
+            rule_error = None
+            try:
+                checked = engine.validate(text)
+                valid, pending, diagnostics = checked.valid, list(checked.pending), list(checked.diagnostics)
+                issues = json_value(getattr(checked, "issues", []))
+            except (ValueError, RuleDefinitionError, ParseResourceError) as exc:
+                # A broken rule specification is not a repairable model error,
+                # but extracted sources still receive the independent check.
+                valid, pending, diagnostics, rule_error = False, [], [str(exc)], str(exc)
+                issues = []
+            diagnostics += list(document.diagnostics)
+            if not document.complete:
+                diagnostics.append("Incomplete AADL-PROJECT container; no missing source or control records were added")
             static_seconds = time.perf_counter() - check_started
             result.timing["static_check_seconds"] += static_seconds
             entry = {"attempt": number, "usage": usage, "constraint_evidence": evidence,
                      "generation_complete": generation_complete,
-                     "syntax_semantics_valid": checked.valid, "pending": list(checked.pending),
-                     "diagnostics": list(checked.diagnostics), "candidate": str(candidate_path),
+                     "syntax_semantics_valid": valid, "pending": pending,
+                     "diagnostics": diagnostics, "issues": issues, "candidate": str(candidate_path),
+                     "raw_response": str(raw_path), "rule_error": rule_error,
+                     "project_protocol": {"valid": document.valid, "complete": document.complete,
+                                          "diagnostics": list(document.diagnostics),
+                                          "files": [{"name": item.name, "complete": item.complete} for item in document.files]},
+                     "sources": [{"name": path.relative_to(candidate_path).as_posix(),
+                                  "sha256": hashlib.sha256(path.read_bytes()).hexdigest()} for path in paths],
                      "static_check_seconds": static_seconds, "accepted": False}
             result.attempts.append(entry)
             save()
             check_started = time.perf_counter()
-            independent = self.osate.check(candidate_path, attempt_root / "osate")
+            independent = (self.osate.check(candidate_path, attempt_root / "osate", instance_root=instance_root)
+                           if document.files else {"status": "not_run", "diagnostics": [],
+                                                   "reason": "No AADL source records could be extracted"})
             osate_seconds = time.perf_counter() - check_started
             result.timing["osate_seconds"] += osate_seconds
             entry.update(osate=independent, osate_seconds=osate_seconds)
             entry["diagnostics"].extend(d["message"] for d in independent.get("diagnostics", []))
-            entry["accepted"] = generation_complete and checked.valid and independent["status"] == "passed"
+            instance_check_started = time.perf_counter()
+            instance_rules = check_instance_rules(self.bundle, independent)
+            entry["local_instance_rules"] = instance_rules
+            entry["diagnostics"].extend(instance_rules["diagnostics"])
+            entry["instance_rule_seconds"] = time.perf_counter() - instance_check_started
+            result.timing["static_check_seconds"] += entry["instance_rule_seconds"]
+            entry["accepted"] = (generation_complete and document.valid and valid
+                                 and independent["status"] == "passed"
+                                 and instance_rules["status"] in {"passed", "not_requested"})
             save()
             return entry
 
         def infrastructure_failed(entry: dict) -> bool:
-            if entry["osate"]["status"] in {"passed", "failed"}:
+            if entry["rule_error"] is not None:
+                result.failure_kind, result.error = "infrastructure", "Rule evaluation failed: " + entry["rule_error"]
+                return True
+            instance_rules = entry["local_instance_rules"]
+            if instance_rules["status"] in {"unsupported", "error"}:
+                result.failure_kind = "unsupported" if instance_rules["status"] == "unsupported" else "infrastructure"
+                result.error = "Instance rule checks failed: " + "; ".join(instance_rules["diagnostics"])
+                return True
+            if entry["osate"]["status"] in {"passed", "failed", "not_run"}:
                 return False
             result.failure_kind = "infrastructure"
             result.error = "OSATE infrastructure failure: " + "; ".join(entry["diagnostics"])
@@ -233,6 +339,11 @@ class SingleAgent:
 
         try:
             self.client.bind_rules(self.bundle)
+            dependency_snapshot = snapshot_context(result.settings["context_directories"])
+            self.client.bind_context(dependency_snapshot)
+            result.provenance["context"] = dependency_snapshot.as_dict()
+            if dependency_snapshot.files:
+                messages[1]["content"] += "\n\n" + dependency_snapshot.render_prompt()
             # Resolve local infrastructure before contacting the model service;
             # a configured missing CLI cannot be repaired by model inference.
             availability = self.osate.probe()
@@ -246,6 +357,10 @@ class SingleAgent:
             endpoint = self.client.discover()
             result.model, result.backend = endpoint.model, endpoint.backend
             result.provenance["endpoint"] = endpoint_snapshot(endpoint)
+            server_limit = endpoint.metadata.get("max_new_tokens", token_budget)
+            if type(server_limit) is not int or server_limit < 1:
+                raise ModelError("Endpoint max_new_tokens must be a positive integer")
+            result.settings["server_max_new_tokens"] = server_limit
             if constraints == "joint" and "aadl_joint" not in endpoint.constraint_types:
                 result.failure_kind = "unsupported"
                 raise ModelError("Endpoint does not support aadl_joint. Use explicit plain mode for baseline testing.")
@@ -255,7 +370,7 @@ class SingleAgent:
             if mode == "planned":
                 phase = "planning"
                 messages.append({"role": "user", "content": self.bundle.planning_prompt})
-                limit = min(PLANNING_TOKEN_LIMIT, max(1, token_budget // 3))
+                limit = min(PLANNING_TOKEN_LIMIT, max(1, token_budget // 3), server_limit)
                 reply = generate("planning", limit, {"kind": "json_schema", "schema": self.bundle.planning_schema})
                 plan = json.loads(reply.text)
                 jsonschema.validate(plan, self.bundle.planning_schema)
@@ -264,10 +379,14 @@ class SingleAgent:
                 declarations = self.bundle.normalize_plan(plan)
                 result.planning = {"declarations": declarations, "usage": reply.usage, "raw": plan}
                 messages.extend([{"role": "assistant", "content": reply.text},
-                                 {"role": "user", "content": self.bundle.generation_prompt}])
-            engine = self.engine_factory(declarations=declarations, bundle=self.bundle)
+                                 {"role": "user", "content": generation_instruction}])
+            engine = self.engine_factory(declarations=declarations, bundle=self.bundle,
+                                         context=dependency_snapshot, project=True)
+            messages[0]["content"] = self.bundle.system_prompt + "\n\n" + PROJECT_INSTRUCTIONS
+            if mode == "direct":
+                messages.append({"role": "user", "content": generation_instruction})
             phase = "generation"
-            joint = {"kind": "aadl_joint", "profile": self.bundle.profile}
+            joint = {"kind": "aadl_joint", "profile": self.bundle.profile, "project": True}
             if declarations is not None:
                 joint["declarations"] = declarations
             for number in range(1, max_attempts + 1):
@@ -276,8 +395,10 @@ class SingleAgent:
                     result.failure_kind, result.error = "budget_exhausted", "The shared completion-token budget is exhausted."
                     break
                 try:
-                    reply = generate("generation", min(GENERATION_TOKEN_LIMIT, remaining), joint if constraints == "joint" else None)
+                    reply = generate("generation", min(server_limit, remaining),
+                                     joint if constraints == "joint" else {"kind": "plain", "project": True})
                 except ModelError as exc:
+                    entry = None
                     if exc.partial_text is not None:
                         entry = assess(exc.partial_text, number, exc.usage, exc.applied_constraint, generation_complete=False)
                         entry["diagnostics"].append(str(exc))
@@ -297,37 +418,53 @@ class SingleAgent:
                         break
                     if exc.partial_text:
                         messages.append({"role": "assistant", "content": exc.partial_text})
-                    cause = ("The previous response reached its output token limit before completion."
-                             if exc.error_kind == "truncated"
-                             else "The previous generation reached a semantic dead end.")
-                    messages.append({"role": "user", "content": self.bundle.generation_prompt +
+                    termination = exc.response_metadata.get("termination", {})
+                    cause = ("The previous response repeated unfinished source lines and was stopped."
+                             if termination.get("kind") == "repetition" else
+                             "The previous response reached its output token limit before completion."
+                             if exc.error_kind == "truncated" else
+                             "The previous generation reached a decoding dead end.")
+                    # Truncation/dead-end candidates received the same full
+                    # validators as normal responses. Feed those diagnostics
+                    # back too; a generic 'try again' hides the actual syntax
+                    # mistake that may have led to repetitive legal trivia.
+                    feedback = [str(exc)]
+                    if entry is not None:
+                        feedback += entry["diagnostics"] + ["Unfulfilled: " + value for value in entry["pending"]]
+                    messages.append({"role": "user", "content": generation_instruction +
                         "\n" + cause + f" There are {remaining} output tokens left in the shared budget. "
-                        "Generate a new complete model within the next response limit. "
-                        "Keep the requirements and declaration plan unchanged. Tool diagnostics:\n" + str(exc)})
+                        "Generate a new complete project within the next response limit. "
+                        "Keep the requirements and declaration plan unchanged. Tool diagnostics:\n" + "\n".join(dict.fromkeys(feedback))})
                     save()
                     continue
                 entry = assess(reply.text, number, reply.usage, reply.applied_constraint, generation_complete=True)
                 if infrastructure_failed(entry):
                     return result
                 if entry["accepted"]:
-                    accepted = root / "model.aadl"
-                    # The delivered artifact is exactly what OSATE assessed.
-                    accepted.write_bytes(Path(entry["candidate"]).read_bytes())
+                    accepted = root / "project"
+                    # Copy only the assessed source tree, including explicit
+                    # dependency snapshots. Diagnostics remain outside it.
+                    shutil.copytree(entry["candidate"], accepted)
                     result.status, result.output = "passed", str(accepted)
                     result.failure_kind = result.error = None
                     return result
-                result.failure_kind = "model_invalid"
-                result.error = "No candidate passed both the supported static checks and OSATE."
+                result.failure_kind = ("project_protocol" if not entry["project_protocol"]["valid"] else
+                                       "instantiation_failed" if (entry["osate"].get("instance", {}).get("status") == "failed"
+                                                                  or entry["local_instance_rules"]["status"] == "failed") else
+                                       "model_invalid")
+                result.error = "No complete project passed both the supported static checks and OSATE."
                 messages.extend([
                     {"role": "assistant", "content": reply.text},
-                    {"role": "user", "content": self.bundle.generation_prompt +
-                     "\nKeep the requirements and declaration plan unchanged. Correct the complete model using these tool diagnostics:\n" +
+                    {"role": "user", "content": generation_instruction +
+                     "\nKeep the requirements and declaration plan unchanged. Correct the complete project using these tool diagnostics:\n" +
                      "\n".join(entry["diagnostics"] + ["Unfulfilled: " + p for p in entry["pending"]])},
                 ])
         except ModelError as exc:
             if result.failure_kind != "unsupported":
                 result.failure_kind = getattr(exc, "error_kind", "model_protocol")
             result.error = str(exc)
+        except (RuleDefinitionError, ParseResourceError) as exc:
+            result.failure_kind, result.error = "infrastructure", "Rule evaluation failed: " + str(exc)
         except (ValueError, jsonschema.ValidationError) as exc:
             result.failure_kind = "invalid_plan" if phase == "planning" else "validation_error"
             result.error = str(exc)

@@ -1,18 +1,13 @@
-"""Load trusted, self-contained language rule packages.
-
-The runtime knows bytes, grammar captures and callables. Language categories,
-name resolution, obligations and prompts belong to the selected package. Python
-actions are deliberately trusted local code, not a sandboxed plugin format.
-"""
+"""Load the two trusted rule sources as one immutable, versioned snapshot."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from functools import lru_cache
 import hashlib
 from importlib.resources import files
+from importlib.metadata import version
 import json
 from pathlib import Path
-import re
 import sys
 from types import MappingProxyType, ModuleType
 from typing import Any
@@ -20,8 +15,10 @@ from typing import Any
 import jsonschema
 from llguidance import LLMatcher, LLTokenizer, TokenizerWrapper
 
+from .grammar import GrammarFrontend
+from .semantic_types import RuleDefinitionError
 
-RUNTIME_VERSION = "2"
+RUNTIME_VERSION = "4"
 
 
 @dataclass(frozen=True)
@@ -29,8 +26,6 @@ class PrefixState:
     text: str = ""
     complete: bool = False
     pending: tuple[str, ...] = ()
-    # Opaque checkpoints are cloned before probing. They never participate in
-    # equality, serialization, or the rule-package content fingerprint.
     checkpoint: Any = field(default=None, repr=False, compare=False)
     bundle_digest: str = ""
 
@@ -41,6 +36,7 @@ class ProbeResult:
     state: PrefixState
     reason: str = ""
     pending: tuple[str, ...] = ()
+    issues: tuple[dict, ...] = ()
 
 
 @dataclass
@@ -48,10 +44,10 @@ class ValidationReport:
     valid: bool
     diagnostics: list[str]
     pending: list[str]
+    issues: list[dict] = field(default_factory=list)
 
 
 class _Bytes:
-    """A model-free tokenizer: every UTF-8 byte is exactly one token."""
     eos_token_id = 256
     bos_token_id = None
     special_token_ids = [256]
@@ -76,131 +72,107 @@ class RuleBundle:
     system_prompt: str
     planning_prompt: str
     generation_prompt: str
-    bindings: dict
-    module: ModuleType = field(repr=False, compare=False)
+    semantics: Any = field(repr=False, compare=False)
+    frontend: GrammarFrontend = field(repr=False, compare=False)
     resources: dict[str, bytes] = field(repr=False, compare=False)
     runtime_version: str = RUNTIME_VERSION
 
-    def read_text(self, name: str) -> str:
-        # Read the immutable load-time snapshot, not a later on-disk edit. Thus
-        # advertised fingerprints identify the exact rules used by this engine.
+    @property
+    def compiled_grammar_sha256(self):
+        # Hash the compiled production/terminal IR as well as the llguidance
+        # input and compiler versions. A source-only JSON wrapper would not
+        # identify a change in EBNF expansion or regular-expression compilation.
+        payload = {
+            "llguidance": LLMatcher.grammar_from_lark(self.grammar),
+            "productions": [{"origin": str(rule.origin.name),
+                             "expansion": [(str(symbol.name), bool(symbol.is_term)) for symbol in rule.expansion],
+                             "alias": str(rule.alias) if rule.alias is not None else None}
+                            for rule in self.frontend.rules],
+            "terminals": {name: terminal.pattern.to_regexp() for name, terminal in self.frontend.terminals.items()},
+            "versions": {name: version(name) for name in ("lark", "llguidance", "regex")},
+        }
+        encoded = json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        return hashlib.sha256(encoded).hexdigest()
+
+    def read_text(self, name):
         return self.resources[name].decode("utf-8-sig")
 
-    def read_json(self, name: str):
+    def read_json(self, name):
         return json.loads(self.read_text(name))
 
-    def create_engine(self, declarations=None):
-        return getattr(self.module, self.bindings["engine_factory"])(self, declarations)
+    def create_engine(self, declarations=None, *, context=None, project=False):
+        from .attribute_runtime import AttributeEngine
+        return AttributeEngine(self, declarations, context=context, project=project)
 
     def normalize_plan(self, plan):
-        # Schema field names and their translation into semantic declarations
-        # are owned by the package, not by the generation workflow.
-        return getattr(self.module, self.bindings["plan_normalizer"])(plan)
+        return self.semantics.normalize_plan(plan)
 
     def new_matcher(self):
-        # The fixed-byte tokenizer is for local validation; inference supplies
-        # the same grammar to Outlines using the actual model tokenizer.
         return LLMatcher(byte_tokenizer(), self.grammar, log_level=0)
 
 
-def _default_path() -> Path:
+def _default_path():
     source = Path(__file__).resolve().parents[2] / "resources" / "aadl"
-    if source.is_dir():
-        return source
-    return Path(str(files("aadl_single_agent").joinpath("_resources", "aadl")))
+    return source if source.is_dir() else Path(str(files("aadl_single_agent").joinpath("_resources", "aadl")))
 
 
-def _grammar_rule_headers(grammar: str):
-    """Read llguidance rule headers without confusing literals with grammar.
-
-    The pinned parser accepts indentation, ?, ! and !? rule prefixes, and a
-    space before attributes. Strings/regular expressions can span lines and
-    contain text that resembles a production, including a capture's ']' name.
-    Mask their contents while preserving offsets, then inspect actual headers.
-    llguidance itself remains responsible for complete grammar validation.
-    """
-    masked = list(grammar)
-    index = 0
-    while index < len(grammar):
-        start = index
-        if grammar.startswith("//", index):
-            index = grammar.find("\n", index)
-            if index < 0:
-                index = len(grammar)
-        elif grammar[index] in {'"', '/'}:
-            delimiter = grammar[index]
-            index += 1
-            while index < len(grammar):
-                if grammar[index] == "\\":
-                    index += 2  # Escaped delimiters do not terminate a literal.
-                elif grammar[index] == delimiter:
-                    index += 1
-                    break
-                else:
-                    index += 1
-            index = min(index, len(grammar))
-        else:
-            index += 1
-            continue
-        for position in range(start, index):
-            if masked[position] not in "\r\n":
-                masked[position] = " "
-
-    text = "".join(masked)
-    header = re.compile(
-        r"(?m)^[ \t]*(?:!\??|\?)?([a-z_][a-z_0-9]*)[ \t]*"
-        r"(?:\[([^\]\r\n]*)\][ \t]*)?:")
-    for match in header.finditer(text):
-        name, attributes = match.group(1), match.group(2)
-        capture = re.search(r"\bcapture\b([ \t]*=)?", attributes or "")
-        if capture is None:
-            yield name, None
-        elif capture.group(1) is None:
-            yield name, name
-        else:
-            # Decode the original JSON string, not a quoted-string regex: names
-            # may legitimately contain escaped quotes or closing brackets.
-            offset = match.start(2) + capture.end()
-            alias, _ = json.JSONDecoder().raw_decode(grammar[offset:].lstrip(" \t"))
-            if not isinstance(alias, str):
-                raise ValueError(f"Capture name must be a string: {name}")
-            yield name, alias
-
-
-def _binding_check(grammar: str, bindings: dict, module: ModuleType) -> None:
-    """Fail closed when a grammar unit has no declared semantic disposition.
-
-    Captured productions must map to actions. All other lowercase productions
-    must be explicitly structural. A new construct cannot accidentally acquire
-    syntax support merely because its semantic binding was forgotten.
-    """
-    captures = {}
-    structural = set()
-    for name, capture in _grammar_rule_headers(grammar):
-        if capture is not None:
-            if capture in captures:
-                raise ValueError(f"Duplicate grammar capture: {capture}")
-            captures[capture] = name
-        else:
-            structural.add(name)
-    declared = bindings.get("captures", {})
-    if set(declared) != set(captures):
-        raise ValueError("Capture/action mismatch: "
-                         f"unbound={sorted(set(captures) - set(declared))}; "
-                         f"unknown={sorted(set(declared) - set(captures))}")
-    if set(bindings.get("structural_rules", [])) != structural:
-        raise ValueError("Every noncaptured grammar rule must be explicitly listed in structural_rules")
-    actions = list(declared.values()) + [bindings.get(key) for key in
-              ("prefix_hook", "semantic_check", "engine_factory", "plan_normalizer")]
-    for action in actions:
-        if not isinstance(action, str) or not callable(getattr(module, action, None)):
-            raise ValueError(f"Missing callable rule binding: {action}")
+def _validate_bindings(module, frontend):
+    bindings = getattr(module, "BINDINGS", None)
+    structural = getattr(module, "STRUCTURAL", None)
+    if not isinstance(bindings, dict) or not isinstance(structural, (set, frozenset, tuple, list)):
+        raise RuleDefinitionError("semantics.py must explicitly export BINDINGS and STRUCTURAL")
+    structural = set(structural)
+    if not frontend.trivia <= structural:
+        raise RuleDefinitionError("Lexical trivia must be explicitly structural, never an attributed production")
+    if structural & bindings.keys():
+        raise RuleDefinitionError("A production cannot be both semantic and structural")
+    declared = structural | bindings.keys()
+    if declared != frontend.productions:
+        raise RuleDefinitionError(f"Production bindings differ: unbound={sorted(frontend.productions-declared)}, unknown={sorted(declared-frontend.productions)}")
+    for name, fields in bindings.items():
+        if not isinstance(fields, dict):
+            raise RuleDefinitionError(f"{name}: field bindings must be a dictionary")
+        for field_name, target in fields.items():
+            targets = (target,) if isinstance(target, str) else target
+            if not isinstance(targets, (tuple, list)) or any(t not in frontend.productions | frontend.terminals.keys() for t in targets):
+                raise RuleDefinitionError(f"{name}.{field_name}: unknown grammar field target {target!r}")
+    for function in ("evaluate", "normalize_plan"):
+        if not callable(getattr(module, function, None)):
+            raise RuleDefinitionError(f"semantics.py is missing {function}()")
+    handlers = getattr(module, "HANDLERS", None)
+    constraints = getattr(module, "CONSTRAINTS", None)
+    required_attributes = getattr(module, "REQUIRED_ATTRIBUTES", None)
+    if not isinstance(handlers, dict) or not isinstance(constraints, dict):
+        raise RuleDefinitionError("semantics.py must register HANDLERS and CONSTRAINTS explicitly")
+    for key, handler in handlers.items():
+        if (not isinstance(key, tuple) or len(key) != 2
+                or key[0] not in frontend.productions | {"__project__"}
+                or not isinstance(key[1], str) or not key[1] or not callable(handler)):
+            raise RuleDefinitionError(f"Invalid production/attribute handler: {key!r}")
+    covered = {production for production, attribute in handlers}
+    if bindings.keys() - covered:
+        raise RuleDefinitionError(f"Missing semantic handlers: {sorted(bindings.keys()-covered)}")
+    # The obligation inventory is explicit in the rule package. Automatically
+    # deriving it from BINDINGS would let a new field declaration pass loading
+    # without anyone registering its required semantic computation.
+    if not isinstance(required_attributes, dict) or required_attributes.keys() != bindings.keys():
+        raise RuleDefinitionError("REQUIRED_ATTRIBUTES must explicitly cover every bound production")
+    for production, attributes in required_attributes.items():
+        if (not isinstance(attributes, (tuple, list)) or not attributes
+                or any((production, attribute) not in handlers for attribute in attributes)):
+            raise RuleDefinitionError(f"Missing required attribute handler: {production!r}: {attributes!r}")
+    if not constraints:
+        raise RuleDefinitionError("At least one semantic constraint must be registered")
+    for production, attributes in constraints.items():
+        if (not isinstance(attributes, (tuple, list)) or not attributes
+                or any((production, attribute) not in handlers for attribute in attributes)):
+            raise RuleDefinitionError(f"Missing constraint handler for {production!r}: {attributes!r}")
 
 
 def load_bundle(path: str | Path | None = None) -> RuleBundle:
     root = (Path(path) if path is not None else _default_path()).resolve()
     if not root.is_dir():
-        raise ValueError(f"Rule package directory does not exist: {root}")
+        raise ValueError(f"Rule directory does not exist: {root}")
     snapshot = {}
     for item in sorted(root.rglob("*")):
         if not item.is_file() or "__pycache__" in item.parts or item.suffix == ".pyc":
@@ -208,44 +180,36 @@ def load_bundle(path: str | Path | None = None) -> RuleBundle:
         if not item.resolve().is_relative_to(root):
             raise ValueError(f"Rule resource escapes its package: {item}")
         snapshot[item.relative_to(root).as_posix()] = item.read_bytes()
-    if "manifest.json" not in snapshot:
-        raise ValueError("Rule package requires manifest.json")
-    manifest = json.loads(snapshot["manifest.json"].decode("utf-8-sig"))
-    if str(manifest.get("runtime_version")) != RUNTIME_VERSION:
-        raise ValueError(f"Unsupported rule runtime version: {manifest.get('runtime_version')}")
-
-    def read(key):
-        name = manifest[key]
-        if name not in snapshot:
-            raise ValueError(f"Missing rule resource {key}: {name}")
-        return snapshot[name].decode("utf-8-sig")
-
+    required = {"aadl.lark", "semantics.py"}
+    if set(snapshot) != required:
+        raise RuleDefinitionError(f"Rule package requires exactly {sorted(required)}; missing={sorted(required-snapshot.keys())}, unexpected={sorted(snapshot.keys()-required)}")
     digest = hashlib.sha256()
     for name, content in sorted(snapshot.items()):
         digest.update(name.encode("utf-8") + b"\0" + content + b"\0")
     fingerprint = digest.hexdigest()
-    # Each content version gets its own module namespace; two profiles may be
-    # used in one process without sharing mutable language-specific globals.
-    module_name = "_rule_package_" + fingerprint
+    grammar = snapshot["aadl.lark"].decode("utf-8-sig")
+    # Only trusted installed/local bundles execute here. HTTP requests and
+    # generated projects cannot upload or select executable rule code.
+    module_name = "aadl_rules_" + fingerprint
     module = ModuleType(module_name)
-    module.__file__ = str(root / manifest["semantic_module"])
-    module.__path__ = [str(root)]
+    module.__file__ = str(root / "semantics.py")
     sys.modules[module_name] = module
     try:
-        exec(compile(read("semantic_module"), module.__file__, "exec"), module.__dict__)
-        grammar = read("grammar")
-        bindings = json.loads(read("bindings"))
-        schema = json.loads(read("planning_schema"))
+        exec(compile(snapshot["semantics.py"], module.__file__, "exec"), module.__dict__)
+        metadata = module.METADATA
+        if str(metadata.get("runtime_version")) != RUNTIME_VERSION:
+            raise RuleDefinitionError(f"Rule runtime must be {RUNTIME_VERSION}")
+        frontend = GrammarFrontend(grammar)
+        _validate_bindings(module, frontend)
+        frontend.bindings = MappingProxyType({name: MappingProxyType(dict(fields)) for name, fields in module.BINDINGS.items()})
+        schema = metadata["planning_schema"]
         jsonschema.Draft202012Validator.check_schema(schema)
-        _binding_check(grammar, bindings, module)
-        bundle = RuleBundle(root, manifest.get("profile", "core-v1"), fingerprint,
-                            grammar, schema, read("system_prompt"), read("planning_prompt"),
-                            read("generation_prompt"), bindings, module, MappingProxyType(snapshot))
-        # Compile immediately. A broken package must fail at loading, before
-        # a server advertises support or a model consumes any generation budget.
+        bundle = RuleBundle(root, metadata["profile"], fingerprint, grammar, schema,
+                            metadata["system_prompt"], metadata["planning_prompt"], metadata["generation_prompt"],
+                            module, frontend, MappingProxyType(snapshot))
         matcher = bundle.new_matcher()
         if matcher.is_error():
-            raise ValueError(matcher.get_error())
+            raise RuleDefinitionError(matcher.get_error())
         return bundle
     except BaseException:
         sys.modules.pop(module_name, None)

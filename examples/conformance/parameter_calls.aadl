@@ -1,0 +1,31 @@
+-- A thread boundary and two sequential calls share one data classifier.
+-- Parameter connections carry inputs into calls and results out of calls.
+package ParameterCalls
+public
+  data Sample
+  end Sample;
+
+  subprogram Step
+  features
+    input_p: in parameter Sample;
+    output_p: out parameter Sample;
+  end Step;
+
+  thread Worker
+  features
+    input_p: in data port Sample;
+    output_p: out data port Sample;
+  end Worker;
+
+  thread implementation Worker.impl
+  calls
+    main_sequence: {
+      first: subprogram Step;
+      second: subprogram Step;
+    };
+  connections
+    c1: parameter input_p -> first.input_p;
+    c2: parameter first.output_p -> second.input_p;
+    c3: parameter second.output_p -> output_p;
+  end Worker.impl;
+end ParameterCalls;

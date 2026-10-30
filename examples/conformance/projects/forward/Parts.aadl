@@ -1,0 +1,10 @@
+package Parts
+public
+  system Worker
+    features
+      input: in event port;
+      output: out event port;
+  end Worker;
+  system implementation Worker.impl
+  end Worker.impl;
+end Parts;

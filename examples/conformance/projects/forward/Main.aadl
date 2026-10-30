@@ -1,0 +1,16 @@
+package Main
+public
+  with Parts;
+  system Root
+    features
+      receive: in event port;
+      emit: out event port;
+  end Root;
+  system implementation Root.impl
+    subcomponents
+      child: system Parts::Worker.impl;
+    connections
+      ingress: port receive -> child.input;
+      egress: port child.output -> emit;
+  end Root.impl;
+end Main;

@@ -6,9 +6,13 @@ from .rules import PrefixState, ProbeResult, ValidationReport, RuleBundle, load_
 
 class JointEngine:
     """Keep the public decoding protocol stable while language rules evolve."""
-    def __init__(self, declarations=None, bundle: RuleBundle | None = None):
+    def __init__(self, declarations=None, bundle: RuleBundle | None = None, *, context=None, project=False):
         self.bundle = bundle if bundle is not None else load_bundle()
-        self._engine = self.bundle.create_engine(declarations)
+        self._engine = self.bundle.create_engine(declarations, context=context, project=project)
+
+    @property
+    def counters(self):
+        return self._engine.counters
 
     def start(self) -> PrefixState:
         return self._engine.start()

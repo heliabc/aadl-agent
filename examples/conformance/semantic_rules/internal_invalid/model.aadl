@@ -1,0 +1,1 @@
+package InternalCheck public system S features o: out event port; end S; system implementation S.i internal features tick: event; connections c: port self.ghost -> o; end S.i; end InternalCheck;

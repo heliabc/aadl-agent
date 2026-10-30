@@ -1,0 +1,6 @@
+建立一个由 Main 和 Parts 两个包组成的 AADL 工程。
+Main 包先生成，导入 Parts。Main 定义 system Root：入口 receive 为 in event port，出口 emit 为 out event port。
+Root.impl 包含一个名为 child 的 system 子组件，类型为稍后在 Parts 包中定义的 Worker.impl。
+Root.impl 中，receive 连接到 child.input，child.output 连接到 emit。
+Parts 包随后定义 system Worker：input 为 in event port，output 为 out event port，并定义空实现 Worker.impl。
+允许后定义；不要改变包、组件、端口和子组件名称。只要求声明工程检查，不要求实例化完整部署系统。

@@ -27,6 +27,7 @@ def pack(args):
     target = Path(args.archive).resolve()
     target.parent.mkdir(parents=True, exist_ok=True)
     metadata = {"action": args.action, "rule_bundle_sha256": bundle.digest,
+                "compiled_grammar_sha256": bundle.compiled_grammar_sha256,
                 "runtime_version": bundle.runtime_version, "profile": bundle.profile}
     def filtered(info):
         if any(part in {"__pycache__", ".pytest_cache", ".git", ".venv", ".runs"}
@@ -140,6 +141,8 @@ def _wait_ready(port, metadata, release):
             raise RuntimeError("Started service uses a different rule bundle.")
         if actual.get("runtime_version") != metadata["runtime_version"]:
             raise RuntimeError("Started service uses a different runtime.")
+        if actual.get("rule_bundle", {}).get("compiled_grammar_sha256") != metadata["compiled_grammar_sha256"]:
+            raise RuntimeError("Started service compiled the rule grammar differently.")
         if not {"plain", "aadl_joint", "json_schema"} <= set(actual.get("constraint_types", [])):
             raise RuntimeError("Started service is missing a required capability.")
         return actual

@@ -1,0 +1,1 @@
+package ModeCheck public system Child requires modes Standby: mode; Active: mode; end Child; system Top end Top; system implementation Top.i subcomponents c: system Child in modes (Idle => Standby, Run => Ghost); modes Idle: initial mode; Run: mode; end Top.i; end ModeCheck;

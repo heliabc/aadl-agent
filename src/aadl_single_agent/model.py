@@ -15,6 +15,7 @@ from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
 import httpx
+from .project import coerce_context
 
 
 class ModelError(RuntimeError):
@@ -25,6 +26,7 @@ class ModelError(RuntimeError):
         finish_reason: str | None = None, partial_text: str | None = None,
         retryable: bool = False, applied_constraint: dict[str, Any] | None = None,
         error_kind: str = "model_protocol",
+        response_metadata: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(message)
         # None means unknown consumption, never an assertion of zero cost.
@@ -35,6 +37,9 @@ class ModelError(RuntimeError):
         self.retryable = retryable
         self.applied_constraint = dict(applied_constraint) if applied_constraint is not None else None
         self.error_kind = error_kind
+        # Error envelopes are retained for diagnosis, not treated as verified
+        # sampling evidence or permission to retry an infrastructure failure.
+        self.response_metadata = deepcopy(response_metadata or {})
 
 
 @dataclass(frozen=True)
@@ -74,13 +79,17 @@ class ModelClient:
     """Discover a model automatically; changing the URL invalidates discovery."""
 
     def __init__(
-        self, base_url: str, timeout: float = 600,
+        self, base_url: str, timeout: float = 660,
         transport: httpx.BaseTransport | None = None,
     ) -> None:
         if timeout <= 0:
             raise ModelError("timeout must be positive.")
+        # The service's cooperative generation deadline is 600 seconds. Allow
+        # time for the worker to stop and return its measured failure snapshot.
         self._endpoint: EndpointInfo | None = None
         self._expected_rules: tuple[str, str, str] | None = None
+        self._expected_compiled: str | None = None
+        self._context = coerce_context()
         self.set_base_url(base_url)
         self._http = httpx.Client(
             timeout=timeout, transport=transport, follow_redirects=False,
@@ -109,8 +118,13 @@ class ModelClient:
     def bind_rules(self, bundle: Any) -> None:
         """Bind a trusted local bundle; the client never uploads executable rules."""
         self._expected_rules = (bundle.profile, bundle.digest, bundle.runtime_version)
+        self._expected_compiled = bundle.compiled_grammar_sha256
         if self._endpoint is not None:
             self._check_rules(self._endpoint)
+
+    def bind_context(self, snapshot=None) -> None:
+        """Freeze explicitly supplied dependency text for every call in a run."""
+        self._context = coerce_context(snapshot)
 
     def _check_rules(self, info: EndpointInfo) -> None:
         if self._expected_rules is None:
@@ -122,6 +136,8 @@ class ModelClient:
                 "Rule bundle or runtime differs from the server. Deploy the matching rule bundle first.",
                 error_kind="rule_mismatch",
             )
+        if info.metadata.get("rule_bundle", {}).get("compiled_grammar_sha256") != self._expected_compiled:
+            raise ModelError("Compiled grammar differs from the local compiler snapshot.", error_kind="rule_mismatch")
 
     def close(self) -> None:
         self._http.close()
@@ -205,8 +221,11 @@ class ModelClient:
                 or not re.fullmatch(r"[0-9a-f]{64}", str(bundle.get("sha256", "")))
                 or not isinstance(model_identity, dict) or not model_identity
                 or not isinstance(tokenizer_identity, dict) or not tokenizer_identity
-                or runtime != "2"):
+                or not isinstance(runtime, str) or not runtime):
             raise ModelError("Invalid /v1/capabilities: model/tokenizer identities, capabilities and rule bundle are required.")
+        # The bound rule bundle supplies the required runtime version. Keeping
+        # an old format number here would reject a valid new deployment before
+        # the explicit version-mismatch diagnostic below can run.
         info = EndpointInfo(self.base_url, model, set(kinds), backend, bundle["sha256"],
                             runtime, deepcopy(capabilities))
         self._check_rules(info)
@@ -226,6 +245,9 @@ class ModelClient:
         elif kind == "aadl_joint":
             if not isinstance(constraint.get("profile"), str) or not constraint["profile"]:
                 raise ModelError("aadl_joint constraint requires a profile.")
+        elif kind == "plain":
+            if set(constraint) != {"kind", "project"} or constraint.get("project") is not True:
+                raise ModelError("Explicit plain constraint requires project=true; omit constraint for raw text.")
         else:
             raise ModelError(f"Unknown constraint kind: {kind!r}.")
         constraint_hash(constraint)
@@ -248,6 +270,8 @@ class ModelClient:
         if not isinstance(data, dict):
             return {}
         metadata: dict[str, Any] = {}
+        metadata["response_metadata"] = {key: deepcopy(value) for key, value in data.items()
+                                         if key not in {"choices", "usage"}}
         try:
             metadata["usage"] = ModelClient._usage(data)
         except ModelError:
@@ -273,6 +297,12 @@ class ModelClient:
                 or evidence.get("sha256") != constraint_hash(constraint)
                 or evidence.get("applied") is not True):
             raise ModelError("Constraint evidence missing or mismatched: expected exact kind, sha256, and applied=true.")
+        if constraint.get("project"):
+            joint = constraint["kind"] == "aadl_joint"
+            if (evidence.get("transport_mask_applied") is not True
+                    or evidence.get("aadl_cfg_applied") is not joint
+                    or evidence.get("attributes_applied") is not joint):
+                raise ModelError("Transport/AADL/attribute mask evidence does not match the requested path.")
         return dict(evidence)
 
     def generate(
@@ -298,6 +328,8 @@ class ModelClient:
             "model": info.model, "messages": messages,
             "max_tokens": max_tokens, "stream": False, "temperature": 0,
             "rule_bundle_sha256": info.rule_bundle_sha256, "runtime_version": info.runtime_version,
+            "context": self._context.as_dict(), "context_sha256": self._context.sha256,
+            "compiled_grammar_sha256": self._expected_compiled,
         }
         if constraint is not None:
             payload["constraint"] = constraint
@@ -312,6 +344,10 @@ class ModelClient:
         if (data.get("rule_bundle_sha256") != info.rule_bundle_sha256
                 or data.get("runtime_version") != info.runtime_version):
             raise failure("Response rule bundle/runtime evidence is missing or mismatched.", "rule_mismatch")
+        if data.get("compiled_grammar_sha256") != self._expected_compiled:
+            raise failure("Response compiled grammar differs from this run.", "rule_mismatch")
+        if data.get("context_sha256") != self._context.sha256:
+            raise failure("Response dependency snapshot differs from this run.", "rule_mismatch")
         if data.get("model") != info.model:
             raise failure("Response model differs from the model discovered for this run.")
         for key in ("model_identity", "tokenizer_identity"):
@@ -349,10 +385,20 @@ class ModelClient:
                 raise failure(str(exc)) from exc
             if usage["completion_tokens"] > max_tokens:
                 raise failure("Server exceeded the requested completion-token budget.")
+            termination = data.get("termination")
+            message = "Generation truncated at the token limit; regenerate a complete concise model."
+            if termination is not None:
+                if (not isinstance(termination, dict) or termination.get("kind") != "repetition"
+                        or type(termination.get("repeated_lines")) is not int
+                        or termination["repeated_lines"] < 2):
+                    raise failure("Unrecognized early termination reason.")
+                message = (f"Generation stopped after {termination['repeated_lines']} repeated source lines. "
+                           "The project is unfinished; correct the cause using validator diagnostics and regenerate it.")
             raise ModelError(
-                "Generation truncated at the token limit; regenerate a complete concise model.",
+                message,
                 usage=usage, finish_reason=finish_reason, partial_text=partial["content"],
                 retryable=True, applied_constraint=evidence, error_kind="truncated",
+                response_metadata=metadata["response_metadata"],
             )
         if finish_reason == "constraint_error":
             issue = data.get("constraint_failure")
@@ -361,7 +407,7 @@ class ModelClient:
             # failures or missing proof. Only this explicit protocol permits the
             # caller to spend the remaining budget on another generation.
             if (constraint is None
-                    or constraint["kind"] != "aadl_joint"
+                    or constraint["kind"] not in {"aadl_joint", "plain"}
                     or not isinstance(issue, dict) or issue.get("code") != "dead_end"
                     or not isinstance(issue.get("message"), str) or not issue["message"].strip()
                     or not isinstance(partial, dict) or partial.get("refusal")
@@ -381,6 +427,7 @@ class ModelClient:
                 finish_reason=finish_reason, partial_text=partial["content"],
                 retryable=True, applied_constraint=evidence,
                 error_kind="decoding_dead_end",
+                response_metadata=metadata["response_metadata"],
             )
         if finish_reason != "stop":
             raise failure(f"Generation did not finish normally: {finish_reason!r}.")

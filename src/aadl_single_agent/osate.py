@@ -15,6 +15,7 @@ import re
 import shutil
 import subprocess
 import uuid
+import xml.etree.ElementTree as ET
 
 
 _DIAGNOSTIC = re.compile(
@@ -38,8 +39,8 @@ class OsateRunner:
     """Run each check in a private workspace, preserving artifacts for inspection.
 
     ``workspace`` is an output directory, not an existing OSATE workspace to take
-    over. The target and sibling ``.aadl`` files are copied to a fresh child;
-    callers should place any required companion packages beside the target.
+    over. A file is copied alone; a directory contributes every recursive AADL
+    source. Dependencies must be supplied explicitly or already be in that project.
     The timeout bounds each CLI operation. A bounded server idle timeout also
     handles startup failures before the CLI has returned a usable port.
     """
@@ -155,18 +156,49 @@ class OsateRunner:
                 diagnostics.append(_diagnostic(f"Unrecognized OSATE diagnostic output: {line}", "osate.protocol"))
         return diagnostics
 
-    def check(self, aadl_path: Path, workspace: Path) -> dict:
-        """Check a copied model with init/update barriers and owned-server cleanup."""
+    @staticmethod
+    def _instance_source(project: Path, root: str) -> Path:
+        """Locate the requested implementation; OSATE still validates its meaning.
+
+        This selector ignores strings/comments and tracks package headers. It
+        never guesses an implementation when the caller supplied no root.
+        """
+        ident = r"[A-Za-z](?:_?[A-Za-z0-9])*"
+        qualified = rf"{ident}(?:::{ident})+\.{ident}"
+        if not isinstance(root, str) or not re.fullmatch(qualified, root):
+            raise ValueError("Instance root must be a qualified implementation such as Pkg::Root.impl")
+        package, implementation = root.rsplit("::", 1)
+        events = re.compile(rf"\bpackage\s+({ident}(?:\s*::\s*{ident})*)|\bimplementation\s+({ident}\s*\.\s*{ident})", re.I)
+        matches = []
+        for source in sorted(project.rglob("*.aadl")):
+            # Preserve separation while removing lexical regions that may contain
+            # words such as 'package' or 'implementation' without declaring one.
+            text = re.sub(r'--[^\r\n]*|"(?:""|[^"])*"', " ", source.read_text(encoding="utf-8-sig"))
+            current = None
+            for event in events.finditer(text):
+                if event.group(1):
+                    current = re.sub(r"\s+", "", event.group(1)).casefold()
+                elif current == package.casefold() and re.sub(r"\s+", "", event.group(2)).casefold() == implementation.casefold():
+                    matches.append(source)
+        if len(matches) != 1:
+            raise ValueError(f"Instance root {root} must identify exactly one declaration; found {len(matches)}")
+        return matches[0]
+
+    def check(self, aadl_path: Path, workspace: Path, *, instance_root: str | None = None, context=None) -> dict:
+        """Check an isolated whole project and optionally instantiate its explicit root."""
         result = self.probe()
         if result["status"] != "passed":
             return result
         result["diagnostics"] = []
         source = Path(aadl_path).resolve()
-        if not source.is_file() or source.suffix.lower() != ".aadl":
+        sources = sorted(source.rglob("*.aadl")) if source.is_dir() else [source]
+        if (not sources or any(not item.is_file() or item.suffix.lower() != ".aadl" for item in sources)
+                or source.is_dir() and any(not item.resolve().is_relative_to(source) for item in sources)):
             result.update(status="error", diagnostics=[_diagnostic(
-                "Input must be an existing .aadl file.", "osate.input", path=str(source)
+                "Input must be an existing .aadl file or a directory containing AADL sources without escaping links.", "osate.input", path=str(source)
             )])
             return result
+        result["instance"] = {"status": "not_requested" if instance_root is None else "not_run", "root": instance_root}
         client_id = f"aadl-single-agent-{uuid.uuid4().hex}"
         run_root = Path(workspace).resolve() / f"osate-run-{uuid.uuid4().hex}"
         port = None
@@ -193,10 +225,24 @@ class OsateRunner:
             invoke(["project", "create", "model"])
             project = run_root / "model"
             project.mkdir(exist_ok=True)
-            for companion in source.parent.iterdir():
-                if companion.is_file() and companion.suffix.lower() == ".aadl":
-                    shutil.copy2(companion, project / companion.name)
-            target = project / source.name
+            copied = []
+            for item in sources:
+                relative = item.relative_to(source) if source.is_dir() else Path(item.name)
+                target = project / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(item, target)
+                copied.append(target)
+            if context is not None:
+                from .project import coerce_context
+                for item in coerce_context(context).files:
+                    target = project / item.name
+                    if target.exists():
+                        raise ValueError(f"Context conflicts with project source: {item.name}")
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_text(item.text, encoding="utf-8", newline="")
+                    copied.append(target)
+            result["sources"] = [{"path": str(item.relative_to(project)),
+                                  "sha256": hashlib.sha256(item.read_bytes()).hexdigest()} for item in copied]
             # init waits for initial diagnostics; update additionally waits for
             # the settled rebuild rather than relying on a fixed sleep interval.
             startup = invoke([
@@ -207,7 +253,7 @@ class OsateRunner:
             if not port_text.isdecimal() or not 1 <= int(port_text) <= 65535:
                 raise RuntimeError("OSATE init did not return a valid listening port.")
             port = port_text
-            for command in ([client_id, "-p", port, "update"], [client_id, "-p", port, "check", str(target)]):
+            for command in ([client_id, "-p", port, "update"], [client_id, "-p", port, "check"]):
                 completed = invoke(command)
                 for issue in self._parse_diagnostics(completed.stdout):
                     if issue not in result["diagnostics"]:
@@ -218,6 +264,46 @@ class OsateRunner:
                 result["status"] = "failed"
             else:
                 result["status"] = "passed"
+            if instance_root is not None and result["status"] == "passed":
+                instance = result["instance"]
+                try:
+                    target = self._instance_source(project, instance_root)
+                except ValueError as exc:
+                    instance.update(status="failed", diagnostics=[str(exc)])
+                    result["status"] = "failed"
+                    result["diagnostics"].append(_diagnostic(str(exc), "osate.instance_root"))
+                else:
+                    before = set(project.rglob("*.aaxl2"))
+                    completed = invoke([client_id, "-p", port, "instantiate", str(target), instance_root])
+                    output = completed.stdout.strip()
+                    instance.update(source=str(target), stdout=completed.stdout)
+                    success = re.fullmatch(r"Instantiated " + re.escape(instance_root) + r" as (\S+)", output, re.I)
+                    created = sorted(set(project.rglob("*.aaxl2")) - before)
+                    # An exit code of zero is also returned for instantiation
+                    # errors. Require an explicit success record and a matching
+                    # newly created SystemInstance, then check all diagnostics.
+                    artifact_valid = False
+                    if success and len(created) == 1:
+                        try:
+                            tree = ET.parse(created[0]).getroot()
+                            artifact_valid = (tree.tag == "{http://aadl.info/AADL/2.0/instance}SystemInstance"
+                                              and tree.attrib.get("name") == success.group(1))
+                        except (ET.ParseError, OSError):
+                            artifact_valid = False
+                    for command in ([client_id, "-p", port, "update"], [client_id, "-p", port, "check"]):
+                        checked = invoke(command)
+                        for issue in self._parse_diagnostics(checked.stdout):
+                            if issue not in result["diagnostics"]:
+                                result["diagnostics"].append(issue)
+                    instance["files"] = [{"path": str(item), "sha256": hashlib.sha256(item.read_bytes()).hexdigest()} for item in created]
+                    if not success or not artifact_valid:
+                        result["diagnostics"].append(_diagnostic(
+                            "Instantiation did not produce a verified SystemInstance: " + (output or "empty output"),
+                            "osate.instantiation"))
+                    protocol_error = any(d["rule_id"] == "osate.protocol" for d in result["diagnostics"])
+                    failed = any(d["severity"] == "error" for d in result["diagnostics"])
+                    instance["status"] = "error" if protocol_error else "failed" if failed else "passed"
+                    result["status"] = instance["status"]
         except subprocess.TimeoutExpired as exc:
             result["status"] = "error"
             result["diagnostics"].append(_diagnostic("OSATE operation timed out.", "osate.timeout"))
@@ -225,7 +311,7 @@ class OsateRunner:
             for output in (exc.stdout, exc.stderr):
                 if output:
                     logs.append(output.decode("utf-8", errors="replace") if isinstance(output, bytes) else output)
-        except (OSError, RuntimeError) as exc:
+        except (OSError, RuntimeError, ValueError) as exc:
             result["status"] = "error"
             result["diagnostics"].append(_diagnostic(str(exc), "osate.execution"))
         finally:

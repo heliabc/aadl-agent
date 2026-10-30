@@ -13,6 +13,44 @@ from dataclasses import dataclass
 from typing import Any, Iterable, Sequence
 
 
+REPEATED_LINE_LIMIT = 32
+
+
+def repetition_stop_configuration() -> dict:
+    return {"threshold": REPEATED_LINE_LIMIT, "unit": "completed_nonempty_lines",
+            "comparison": "exact", "whitespace_only_lines_count": True,
+            "scope": ["plain", "aadl_joint", "json_schema"]}
+
+
+class RepeatedLineDetector:
+    """A generation stop heuristic, independent of token legality or ranking.
+
+    Only LF-terminated lines count. Original spaces and a CR in CRLF remain in
+    the compared content; no AADL or container text is rewritten. An empty line
+    resets the run, while whitespace-only and framing '|' lines are nonempty.
+    Recompute from the exact decoded prefix so tokenizer rewrites are safe too.
+    """
+
+    def __init__(self):
+        self.termination: dict | None = None
+
+    def observe(self, text: str) -> bool:
+        previous, count = None, 0
+        for index, line in enumerate(text.split("\n")[:-1]):
+            if line in ("", "\r"):
+                previous, count = None, 0
+                continue
+            count = count + 1 if line == previous else 1
+            previous = line
+            if count >= REPEATED_LINE_LIMIT:
+                self.termination = {"kind": "repetition", "repeated_lines": count,
+                    "threshold": REPEATED_LINE_LIMIT, "line": line,
+                    "completed_line_index": index + 1, "comparison": "exact"}
+                return True
+        self.termination = None
+        return False
+
+
 class ConstrainedDecodingError(RuntimeError):
     """No supported legal next token exists, or generation changed its history."""
 
@@ -59,6 +97,7 @@ class TokenBridge:
         self.candidates_tested = 0
         self.rejections = 0
         self._proposal: TokenTrial | None = None
+        self.deadline: float | None = None
 
     def decode(self, token_ids: Sequence[int]) -> tuple[str, bytes, bytes]:
         # Use the SAME llguidance byte tokenizer as the CFG mask. Strict UTF-8
@@ -137,6 +176,10 @@ class TokenBridge:
         last_reason = "No candidate scores are available"
         attempted = False
         for token_id in ranked_token_ids:
+            # A full-ranking search can itself be slow. A wall-time deadline is
+            # infrastructure cancellation, never a top-k cutoff or a dead end.
+            if self.deadline is not None and time.monotonic() >= self.deadline:
+                raise TimeoutError("Generation deadline reached during candidate search")
             attempted = True
             self.candidates_tested += 1
             trial = self.probe_token(int(token_id))
@@ -179,13 +222,14 @@ class JointLogitsProcessor:
 
     def __init__(self, engine: Any, tokenizer: Any, prompt_token_ids: Sequence[int],
                  eos_token_ids: Iterable[int], *, syntax_processor: Any,
-                 byte_tokenizer: Any = None, num_beams: int = 1):
+                 byte_tokenizer: Any = None, num_beams: int = 1, mask_role: str = "aadl"):
         if num_beams != 1:
             raise ValueError("Only num_beams=1 is supported")
         self.prompt_token_ids = tuple(int(t) for t in prompt_token_ids)
         if not callable(syntax_processor):
             raise ValueError("A real CFG logits processor is required")
         self.syntax_processor = syntax_processor
+        self.mask_role = mask_role
         byte_tokenizer = byte_tokenizer if byte_tokenizer is not None else getattr(syntax_processor, "llg_tokenizer", None)
         self.bridge = TokenBridge(engine, tokenizer, eos_token_ids, byte_tokenizer=byte_tokenizer)
         self.steps = 0
@@ -194,15 +238,32 @@ class JointLogitsProcessor:
         self.semantic_filter_seconds = 0.0
         self.synchronization_seconds = 0.0
         self._last_generated_length: int | None = None
+        # None means no backend history has been observed. This is separate
+        # from bridge.token_ids: synchronizing an actual token can itself raise
+        # a parser/resource error before the bridge commits it.
+        self.selected_token_ids: tuple[int, ...] | None = None
+        # Preserve the final attempted mask step, including a dead end. Null
+        # counts mean that stage was not reached; they must not imply zero.
+        self.last_step: dict[str, int | None] | None = None
 
     def evidence(self) -> dict:
         """Measured counters, including a final failed step when one occurred."""
-        return {"mask_steps": self.steps, "syntax_mask_steps": self.syntax_mask_steps,
+        evidence = {"mask_steps": self.steps, "syntax_mask_steps": self.syntax_mask_steps if self.mask_role == "aadl" else 0,
+                "transport_mask_steps": self.syntax_mask_steps if self.mask_role == "transport" else 0,
                 "semantic_candidates_tested": self.bridge.candidates_tested,
                 "semantic_rejections": self.bridge.rejections,
                 "syntax_mask_seconds": self.syntax_mask_seconds,
                 "semantic_filter_seconds": self.semantic_filter_seconds,
                 "synchronization_seconds": self.synchronization_seconds}
+        evidence["last_step"] = dict(self.last_step) if self.last_step is not None else None
+        counters = getattr(self.bridge.engine, "counters", {})
+        evidence.update(counters)
+        if self.mask_role == "transport":
+            # Envelope rejections and CFG rejections are not semantic rejections.
+            evidence["candidate_rejections"] = self.bridge.rejections
+            evidence["semantic_rejections"] = counters.get("attribute_conflicts", 0)
+            evidence["semantic_candidates_tested"] = counters.get("semantic_evaluations", 0)
+        return evidence
 
     def __call__(self, input_ids: Any, scores: Any) -> Any:
         if len(input_ids.shape) != 2 or input_ids.shape[0] != 1 or scores.shape[0] != 1:
@@ -212,14 +273,23 @@ class JointLogitsProcessor:
         if actual[:prefix_size] != self.prompt_token_ids:
             raise ConstrainedDecodingError("Inference backend changed the prompt")
         generated_length = len(actual) - prefix_size
+        self.last_step = {"generated_length": generated_length,
+                          "raw_finite_count": None, "syntax_finite_count": None}
         expected_length = 0 if self._last_generated_length is None else self._last_generated_length + 1
         if generated_length != expected_length:
             raise ConstrainedDecodingError("CFG state requires exactly one new selected token per greedy step")
+        selected = actual[prefix_size:]
+        if self.selected_token_ids is not None and selected[:len(self.selected_token_ids)] != self.selected_token_ids:
+            raise ConstrainedDecodingError("Inference backend replaced selected token history")
+        self.selected_token_ids = selected
         started = time.perf_counter()
-        self.bridge.synchronize(actual[prefix_size:])
-        self.synchronization_seconds += time.perf_counter() - started
+        try:
+            self.bridge.synchronize(selected)
+        finally:
+            self.synchronization_seconds += time.perf_counter() - started
         self._last_generated_length = generated_length
         raw_values = scores[0].tolist()
+        self.last_step["raw_finite_count"] = sum(math.isfinite(float(value)) for value in raw_values)
         if not any(math.isfinite(float(value)) for value in raw_values):
             raise ConstrainedDecodingError("No finite candidate token scores are available")
         started = time.perf_counter()
@@ -231,6 +301,7 @@ class JointLogitsProcessor:
             # This transfer also waits for an asynchronous GPU mask to complete,
             # so the recorded wall time includes its execution, not just dispatch.
             values = syntax_scores[0].tolist()
+            self.last_step["syntax_finite_count"] = sum(math.isfinite(float(value)) for value in values)
             for matcher in getattr(self.syntax_processor, "ll_matchers", []):
                 if error := matcher.get_error():
                     raise ConstrainedDecodingError(f"llguidance matcher failed: {error}")

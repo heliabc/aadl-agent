@@ -1,0 +1,1 @@
+package ArrayCheck public system Child features o: out event port; end Child; system Top end Top; system implementation Top.i subcomponents c: system Child [2]; properties Data_Size => 8 Bytes applies to c[3].o; end Top.i; end ArrayCheck;

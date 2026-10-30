@@ -1,0 +1,1 @@
+package Proto public data D end D; system T prototypes Item: data; end T; system Root end Root; system implementation Root.i subcomponents t: system T(Item => data D); end Root.i; end Proto;

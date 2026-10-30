@@ -1,0 +1,1 @@
+package BindingCheck public processor CPU end CPU; thread T properties Compute_Execution_Time => 1 ms .. 2 ms in binding (CPU); end T; end BindingCheck;
