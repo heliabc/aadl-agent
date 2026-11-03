@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "entry_id": "data-size-units",
+  "example": 1,
+  "validated_at_utc": "2026-11-03T07:08:25.188227+00:00",
+  "scope": "syntax_and_supported_static_semantics",
+  "local_rule_sha256": "6ebf6629a001a4a1e3fabd9137b86a4ea7d3406a96f596ff87415bee3127790e",
+  "source_files_sha256": {
+    "StorageExample.aadl": "ef017a28ca736b13f8c9e5a38f74d657af9d4bf0be914a9b91b4441ba7f4ce2f"
+  },
+  "local": {
+    "valid": true,
+    "pending": [],
+    "diagnostics": []
+  },
+  "osate": {
+    "status": "passed",
+    "version": "0.3.0",
+    "binary_provenance": [
+      {
+        "file": "osate-cli.jar",
+        "sha256": "169f943de2f046c05ea9a5e0a540a2c9aa575e5a9dbcf637e3de9a71c639e549"
+      },
+      {
+        "file": "org.osate.xtext.aadl2_9.1.0.v20260928-1804.jar",
+        "sha256": "8d695f12a402b568ccc4b9cd2996fa5ccf521184fe3f1879a36109c88ec085e6"
+      },
+      {
+        "file": "osate-workspace-server-0.3.0.jar",
+        "sha256": "bf02f4aa3ebf3d581acc63ead929f9bcedb2df23aed4317967b38d964c14df3d"
+      }
+    ],
+    "diagnostics": [
+      {
+        "severity": "warning",
+        "message": "Memory_Properties in 'with' clause of public package section is a predeclared property set and is not needed.",
+        "path": "StorageExample.aadl",
+        "line": 3,
+        "rule_id": "osate.diagnostic"
+      }
+    ]
+  },
+  "workspaces_retained": false,
+  "source_text_location": "Parent knowledge-corpus example files; SHA256 verified before and after checking.",
+  "model_inference_performed": false
+}

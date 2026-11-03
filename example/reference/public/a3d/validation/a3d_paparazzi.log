@@ -1,0 +1,36 @@
+CORE
+osate-cli 0.3.0
+Created D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\model\.project
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\session-home"
+53149
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\session-home"
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\model\m000.aadl:7:8: warning: paparazzi_hard in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\model\m000.aadl:92:31: error: Couldn't resolve reference to BusFeatureClassifier 'paparazzi_hard::SPI'.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\model\m002.aadl:8:8: warning: paparazzi_hard in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\model\m002.aadl:20:35: error: Couldn't resolve reference to BusFeatureClassifier 'paparazzi_hard::SPI'.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\model\m003.aadl:7:8: warning: paparazzi_hard in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\model\m003.aadl:59:31: error: Couldn't resolve reference to BusFeatureClassifier 'paparazzi_hard::SPI'.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\model\m005.aadl:8:8: warning: paparazzi_hard in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\model\m005.aadl:18:35: error: Couldn't resolve reference to BusFeatureClassifier 'paparazzi_hard::SPI'.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\model\m009.aadl:62:31: warning: Expected feature 'SPI_Con' to have classifier 'paparazzi_hard::SPI'
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\model\m009.aadl:63:31: warning: Expected feature 'SPI_Con' to have classifier 'paparazzi_hard::SPI'
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\session-home"
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\model\m000.aadl:7:8: warning: paparazzi_hard in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\model\m000.aadl:92:31: error: Couldn't resolve reference to BusFeatureClassifier 'paparazzi_hard::SPI'.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\model\m002.aadl:8:8: warning: paparazzi_hard in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\model\m002.aadl:20:35: error: Couldn't resolve reference to BusFeatureClassifier 'paparazzi_hard::SPI'.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\model\m003.aadl:7:8: warning: paparazzi_hard in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\model\m003.aadl:59:31: error: Couldn't resolve reference to BusFeatureClassifier 'paparazzi_hard::SPI'.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\model\m005.aadl:8:8: warning: paparazzi_hard in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\model\m005.aadl:18:35: error: Couldn't resolve reference to BusFeatureClassifier 'paparazzi_hard::SPI'.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\model\m009.aadl:62:31: warning: Expected feature 'SPI_Con' to have classifier 'paparazzi_hard::SPI'
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\model\m009.aadl:63:31: warning: Expected feature 'SPI_Con' to have classifier 'paparazzi_hard::SPI'
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\session-home"
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\e649db1b\r\osate-run-d36b41d57770498fb35ff9ebcad33523\session-home"
+paparazzi_system::paparazzi.basic_archi
+
+paparazzi_system::paparazzi.PnP_tasks_interruptions
+
+paparazzi_system::paparazzi.PP_tasks_interruptions
+
+paparazzi_system::paparazzi.PP_tasks_AP_interruptions

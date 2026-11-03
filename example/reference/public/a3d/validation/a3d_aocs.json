@@ -1,0 +1,291 @@
+{
+  "case_id": "a3d_aocs",
+  "validated_at_utc": "2026-11-03T05:01:44.582772+00:00",
+  "validator_script_sha256": "1024ae005d269341f77822846c397dfd96bc4efa5a291ab3b567b4d17d55acf1",
+  "environment_sha256": "80a8c3d8467a0c4ec2afdf9e32c1d07d73f8bc02ee390093bd6beadcaf0f8acf",
+  "environment_file": "environment-80a8c3d8467a.json",
+  "roots": [
+    {
+      "root": "AOCS::AOCS_Subsystem.impl",
+      "role": "primary_architecture",
+      "status": "not_run",
+      "reason": "Core syntax/linking check did not pass.",
+      "prerequisite_status": "failed"
+    }
+  ],
+  "proof": {
+    "status": "not_run",
+    "reason": "No annex theorem prover was invoked."
+  },
+  "selection": {
+    "primary_directory": "aadlib/examples/aocs",
+    "dependency_pool": "aadlib",
+    "preserved_primary_aadl_count": 4,
+    "selected_count": 8,
+    "excluded_builtin_copies": [
+      {
+        "path": "aadlib\\src\\property_set\\arp4761.aadl",
+        "sha256": "cd040ef467653cdcd2eb86eeaa0a8989c2d3f14d9601591eea79a8ac1719c2ed",
+        "reason": "provided_by_osate_distribution",
+        "declarations": [
+          "arp4761"
+        ]
+      },
+      {
+        "path": "aadlib\\src\\property_set\\milstd882.aadl",
+        "sha256": "892f5714d5696e53e85e2038f8aa5ee07ffe54c6d091f68ede0dac23049cb318",
+        "reason": "provided_by_osate_distribution",
+        "declarations": [
+          "milstd882"
+        ]
+      }
+    ],
+    "static_unresolved_names": [
+      "deployment"
+    ],
+    "selection_issues": [],
+    "builtin_dependencies": [
+      {
+        "declaration": "data_model",
+        "jar": "org.osate.contribution.sei_2.2.2.v20260928-1804.jar",
+        "resource": "resources/properties/Data_Model.aadl",
+        "sha256": "1cf3b7beaeb27dd84458dd091be9d98413805b756164673ef4148af2f5e47ec7"
+      }
+    ],
+    "note": "Static namespace closure selects files; OSATE diagnostics are authoritative for linking."
+  },
+  "sources": [
+    {
+      "path": "aadlib\\examples\\aocs\\aocs.aadl",
+      "sha256": "c956cbfcc06d42ee436c1b32214dfefc27bc3e09aef04ca9d0293a36cf30800e",
+      "size": 10050,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "aocs"
+      ],
+      "annexes": [],
+      "staged_path": "m000.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\aocs\\dataaocs.aadl",
+      "sha256": "9870e6c061a731bca132eac88f4f3bc8331923494a4868209229620f9aca41f0",
+      "size": 2512,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "dataaocs"
+      ],
+      "annexes": [],
+      "staged_path": "m001.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\aocs\\hardware_aocs.aadl",
+      "sha256": "8b63a6f5170765126a08b7c47c8d31c93021d880901975cd2a5dda4fbec785a0",
+      "size": 4074,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "hardware_aocs"
+      ],
+      "annexes": [],
+      "staged_path": "m002.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\aocs\\software_aocs.aadl",
+      "sha256": "3857bfd42580ce73fb323161f90ace018183d3eca847f1fba6abf275640a4815",
+      "size": 7254,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "software_aocs"
+      ],
+      "annexes": [],
+      "staged_path": "m003.aadl"
+    },
+    {
+      "path": "aadlib\\src\\aadl\\buses\\buses-dma.aadl",
+      "sha256": "85a50458d97f42ce50bd7bb0f6b04b43c05921469dda1f8e1a11d0e5a05e77d2",
+      "size": 119,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "buses::dma"
+      ],
+      "annexes": [],
+      "staged_path": "m004.aadl"
+    },
+    {
+      "path": "aadlib\\src\\aadl\\buses\\buses-obdh.aadl",
+      "sha256": "ee5424076d4ae1828643d22c2843cad845490a92deba80e4eb7ed7672ef7acca",
+      "size": 143,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "buses::obdh"
+      ],
+      "annexes": [],
+      "staged_path": "m005.aadl"
+    },
+    {
+      "path": "aadlib\\src\\aadl\\processors\\processors.aadl",
+      "sha256": "5e8a6db3d6297d241d30d46f1873503dcb1dcbf0fc510ab8cd5e929b171c11ac",
+      "size": 1891,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "processors"
+      ],
+      "annexes": [],
+      "staged_path": "m006.aadl"
+    },
+    {
+      "path": "aadlib\\src\\property_set\\processor_properties.aadl",
+      "sha256": "0abf62e81f90c17805ed48af3debc2515621c05638ca1cbc30763ef5036830a1",
+      "size": 1521,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "processor_properties"
+      ],
+      "annexes": [],
+      "staged_path": "m007.aadl"
+    }
+  ],
+  "annexes": [],
+  "interpretation": "Core syntax/linking and requested instantiation only. Unsupported annex bodies remain unchanged and may be accepted by the default parser; acceptance is not annex validation or proof.",
+  "staging": {
+    "directory": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\s",
+    "source_bytes_preserved": true
+  },
+  "core": {
+    "status": "failed",
+    "diagnostics": [
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to ModelUnit 'Deployment'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl",
+        "line": 6,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/src/aadl/processors/processors.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl",
+        "line": 19,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/src/aadl/processors/processors.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'Native'. For classifier references use classifier( <ref> ).",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl",
+        "line": 19,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/src/aadl/processors/processors.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl",
+        "line": 33,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/src/aadl/processors/processors.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'LEON_ORK'. For classifier references use classifier( <ref> ).",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl",
+        "line": 33,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/src/aadl/processors/processors.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl",
+        "line": 69,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/src/aadl/processors/processors.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'VxWorks'. For classifier references use classifier( <ref> ).",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl",
+        "line": 69,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/src/aadl/processors/processors.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl",
+        "line": 74,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/src/aadl/processors/processors.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'VxWorks'. For classifier references use classifier( <ref> ).",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl",
+        "line": 74,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/src/aadl/processors/processors.aadl"
+      }
+    ],
+    "version": "0.3.0",
+    "stdout": "osate-cli 0.3.0\nCreated D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\.project\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\session-home\"\n55032\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\session-home\"\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl:6:6: error: Couldn't resolve reference to ModelUnit 'Deployment'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl:19:5: error: Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl:19:39: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'Native'. For classifier references use classifier( <ref> ).\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl:33:3: error: Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl:33:36: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'LEON_ORK'. For classifier references use classifier( <ref> ).\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl:69:5: error: Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl:69:39: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'VxWorks'. For classifier references use classifier( <ref> ).\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl:74:5: error: Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl:74:39: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'VxWorks'. For classifier references use classifier( <ref> ).\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\session-home\"\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl:6:6: error: Couldn't resolve reference to ModelUnit 'Deployment'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl:19:5: error: Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl:19:39: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'Native'. For classifier references use classifier( <ref> ).\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl:33:3: error: Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl:33:36: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'LEON_ORK'. For classifier references use classifier( <ref> ).\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl:69:5: error: Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl:69:39: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'VxWorks'. For classifier references use classifier( <ref> ).\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl:74:5: error: Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\model\\m006.aadl:74:39: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'VxWorks'. For classifier references use classifier( <ref> ).\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\session-home\"\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89\\session-home\"",
+    "executable": "D:\\AADL-multi-agent\\aadl-research\\.tools\\osate-cli-0.3.0\\bin\\osate-cli.bat",
+    "binary_provenance": [
+      {
+        "file": "osate-cli.jar",
+        "sha256": "169f943de2f046c05ea9a5e0a540a2c9aa575e5a9dbcf637e3de9a71c639e549"
+      },
+      {
+        "file": "org.osate.xtext.aadl2_9.1.0.v20260928-1804.jar",
+        "sha256": "8d695f12a402b568ccc4b9cd2996fa5ccf521184fe3f1879a36109c88ec085e6"
+      },
+      {
+        "file": "osate-workspace-server-0.3.0.jar",
+        "sha256": "bf02f4aa3ebf3d581acc63ead929f9bcedb2df23aed4317967b38d964c14df3d"
+      }
+    ],
+    "instance": {
+      "status": "not_requested",
+      "root": null
+    },
+    "workspace": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\01fcd0d6\\r\\osate-run-bda37c6173154fe18da3c4499dfb5b89",
+    "sources": [
+      {
+        "path": "m000.aadl",
+        "sha256": "c956cbfcc06d42ee436c1b32214dfefc27bc3e09aef04ca9d0293a36cf30800e"
+      },
+      {
+        "path": "m001.aadl",
+        "sha256": "9870e6c061a731bca132eac88f4f3bc8331923494a4868209229620f9aca41f0"
+      },
+      {
+        "path": "m002.aadl",
+        "sha256": "8b63a6f5170765126a08b7c47c8d31c93021d880901975cd2a5dda4fbec785a0"
+      },
+      {
+        "path": "m003.aadl",
+        "sha256": "3857bfd42580ce73fb323161f90ace018183d3eca847f1fba6abf275640a4815"
+      },
+      {
+        "path": "m004.aadl",
+        "sha256": "85a50458d97f42ce50bd7bb0f6b04b43c05921469dda1f8e1a11d0e5a05e77d2"
+      },
+      {
+        "path": "m005.aadl",
+        "sha256": "ee5424076d4ae1828643d22c2843cad845490a92deba80e4eb7ed7672ef7acca"
+      },
+      {
+        "path": "m006.aadl",
+        "sha256": "5e8a6db3d6297d241d30d46f1873503dcb1dcbf0fc510ab8cd5e929b171c11ac"
+      },
+      {
+        "path": "m007.aadl",
+        "sha256": "0abf62e81f90c17805ed48af3debc2515621c05638ca1cbc30763ef5036830a1"
+      }
+    ]
+  },
+  "original_sources_unchanged": true,
+  "working_artifacts": {
+    "workspaces_retained": false,
+    "reason": "Temporary reference-validation workspaces removed during repository cleanup; source bytes and diagnostics remain preserved."
+  }
+}

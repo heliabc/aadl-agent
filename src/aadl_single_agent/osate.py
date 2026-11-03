@@ -15,6 +15,7 @@ import re
 import shutil
 import subprocess
 import uuid
+from urllib.parse import unquote, urlsplit
 import xml.etree.ElementTree as ET
 
 
@@ -33,6 +34,59 @@ _INSTALL_HELP = (
 
 def _diagnostic(message: str, rule_id: str, *, path: str | None = None) -> dict:
     return {"severity": "error", "message": message, "path": path, "line": None, "rule_id": rule_id}
+
+
+def verify_instance_artifact(artifact: Path, *, source: Path, requested_root: str,
+                             expected_name: str, expected_sha256: str | None = None) -> dict:
+    """Verify one received OSATE artifact without changing its validation verdict.
+
+    OSATE can serialize the root directly or wrap it with referenced data
+    classifiers in ``xmi:XMI``. Both forms must identify the same requested
+    implementation in the same source file. The caller separately verifies the
+    CLI success response, newly created file set, diagnostics, and cleanup.
+    """
+    result = {"status": "failed", "requested_root": requested_root,
+              "instance_name": expected_name, "path": str(artifact)}
+    try:
+        raw = Path(artifact).read_bytes()
+        result["sha256"] = hashlib.sha256(raw).hexdigest()
+        if expected_sha256 is not None and result["sha256"] != expected_sha256:
+            return {**result, "reason": "artifact_hash_mismatch"}
+        document = ET.fromstring(raw)
+        instance_tag = "{http://aadl.info/AADL/2.0/instance}SystemInstance"
+        if document.tag == instance_tag:
+            instance, representation = document, "SystemInstance"
+        elif document.tag == "{http://www.omg.org/XMI}XMI":
+            instances = document.findall(instance_tag)
+            if len(instances) != 1:
+                return {**result, "reason": "xmi_requires_one_system_instance"}
+            instance, representation = instances[0], "xmi:XMI"
+        else:
+            return {**result, "reason": "unsupported_artifact_root"}
+        result["representation"] = representation
+        if instance.get("name") != expected_name:
+            return {**result, "reason": "instance_name_mismatch"}
+        expected_fragment = requested_root.replace("::", ".").casefold()
+        references = {}
+        for tag in ("classifier", "componentImplementation"):
+            nodes = instance.findall(tag)
+            if len(nodes) != 1:
+                return {**result, "reason": "missing_or_ambiguous_" + tag}
+            href = nodes[0].get("href", "")
+            uri = urlsplit(href)
+            # These are references into the isolated source tree, not URLs to
+            # fetch. Reject schemes/authorities and compare resolved file identity
+            # so a matching fragment in an unrelated file cannot establish success.
+            if (uri.scheme or uri.netloc or uri.query or not uri.path
+                    or unquote(uri.fragment).casefold() != expected_fragment):
+                return {**result, "reason": "invalid_" + tag + "_reference"}
+            referenced = (Path(artifact).parent / unquote(uri.path)).resolve()
+            if referenced != Path(source).resolve():
+                return {**result, "reason": tag + "_source_mismatch"}
+            references[tag] = href
+        return {**result, "status": "passed", "classifier_references": references}
+    except (ET.ParseError, OSError, ValueError) as exc:
+        return {**result, "reason": "unreadable_artifact", "detail": str(exc)}
 
 
 class OsateRunner:
@@ -282,21 +336,25 @@ class OsateRunner:
                     # An exit code of zero is also returned for instantiation
                     # errors. Require an explicit success record and a matching
                     # newly created SystemInstance, then check all diagnostics.
-                    artifact_valid = False
-                    if success and len(created) == 1:
-                        try:
-                            tree = ET.parse(created[0]).getroot()
-                            artifact_valid = (tree.tag == "{http://aadl.info/AADL/2.0/instance}SystemInstance"
-                                              and tree.attrib.get("name") == success.group(1))
-                        except (ET.ParseError, OSError):
-                            artifact_valid = False
                     for command in ([client_id, "-p", port, "update"], [client_id, "-p", port, "check"]):
                         checked = invoke(command)
                         for issue in self._parse_diagnostics(checked.stdout):
                             if issue not in result["diagnostics"]:
                                 result["diagnostics"].append(issue)
-                    instance["files"] = [{"path": str(item), "sha256": hashlib.sha256(item.read_bytes()).hexdigest()} for item in created]
-                    if not success or not artifact_valid:
+                    # Verify the settled artifact, not a different file created
+                    # during the post-instantiation rebuild. The recorded hash
+                    # and the XML identity must describe the same bytes.
+                    settled = sorted(set(project.rglob("*.aaxl2")) - before)
+                    safe_files = all(item.resolve().is_relative_to(project.resolve()) for item in settled)
+                    instance["files"] = ([{"path": str(item), "sha256": hashlib.sha256(item.read_bytes()).hexdigest()}
+                                           for item in settled] if safe_files else [])
+                    verification = {"status": "failed", "reason": "success_response_or_new_artifact_missing"}
+                    if success and safe_files and len(settled) == 1 and settled == created:
+                        verification = verify_instance_artifact(
+                            settled[0], source=target, requested_root=instance_root,
+                            expected_name=success.group(1), expected_sha256=instance["files"][0]["sha256"])
+                    instance["artifact_verification"] = verification
+                    if verification["status"] != "passed":
                         result["diagnostics"].append(_diagnostic(
                             "Instantiation did not produce a verified SystemInstance: " + (output or "empty output"),
                             "osate.instantiation"))

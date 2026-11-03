@@ -1,0 +1,3330 @@
+{
+  "case_id": "a3d_smaccm_phase2",
+  "validated_at_utc": "2026-11-03T05:00:46.474251+00:00",
+  "validator_script_sha256": "1024ae005d269341f77822846c397dfd96bc4efa5a291ab3b567b4d17d55acf1",
+  "environment_sha256": "80a8c3d8467a0c4ec2afdf9e32c1d07d73f8bc02ee390093bd6beadcaf0f8acf",
+  "environment_file": "environment-80a8c3d8467a.json",
+  "roots": [
+    {
+      "root": "UAS::UAS.Impl",
+      "role": "primary_architecture",
+      "status": "not_run",
+      "reason": "Core syntax/linking check did not pass.",
+      "prerequisite_status": "failed"
+    },
+    {
+      "root": "Mission_Software::Software.Impl",
+      "role": "additional_entry_or_variant",
+      "status": "not_run",
+      "reason": "Core syntax/linking check did not pass.",
+      "prerequisite_status": "failed"
+    }
+  ],
+  "proof": {
+    "status": "not_run",
+    "reason": "No annex theorem prover was invoked."
+  },
+  "selection": {
+    "primary_directory": "smaccm/models/SmaccmPhase2",
+    "dependency_pool": "smaccm/models/SmaccmPhase2",
+    "preserved_primary_aadl_count": 142,
+    "selected_count": 142,
+    "excluded_builtin_copies": [],
+    "static_unresolved_names": [],
+    "selection_issues": [],
+    "builtin_dependencies": [
+      {
+        "declaration": "base_types",
+        "jar": "org.osate.contribution.sei_2.2.2.v20260928-1804.jar",
+        "resource": "resources/packages/Base_Types.aadl",
+        "sha256": "43c21ff9d7557da762fd4fbb1ecbe3d5cd2bece20e6aa898c46ec33ca72add46"
+      },
+      {
+        "declaration": "data_model",
+        "jar": "org.osate.contribution.sei_2.2.2.v20260928-1804.jar",
+        "resource": "resources/properties/Data_Model.aadl",
+        "sha256": "1cf3b7beaeb27dd84458dd091be9d98413805b756164673ef4148af2f5e47ec7"
+      },
+      {
+        "declaration": "timing_properties",
+        "jar": "org.osate.aadl2.contrib_2.2.2.v20260928-1804.jar",
+        "resource": "resources/properties/Predeclared_Property_Sets/Timing_Properties.aadl",
+        "sha256": "4ab7569d3d82783d4d6c53367dd9fbf675e0cb112ce561afe60984489dfe9ed9"
+      }
+    ],
+    "note": "Static namespace closure selects files; OSATE diagnostics are authoritative for linking."
+  },
+  "sources": [
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\AGREE\\AGREE_Arming_Logic.aadl",
+      "sha256": "1c531023b734b48ebb842d58c5cdbe6193cef79f0a83b04601fabe1917e05a4a",
+      "size": 381,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "agree_arming_logic"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m000.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\AGREE\\Agree_Nodes.aadl",
+      "sha256": "50c45fcd151eb95968cf147bee627b7572780ce83b163db35ef9f85389ff62ec",
+      "size": 3189,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "agree_nodes"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m001.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\AGREE_PID.aadl",
+      "sha256": "86708f0b04ffa6e55550e64f8a31f0389d1baae3b2106af6d901478aeaaf3406",
+      "size": 1805,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "agree_pid"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m002.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\CORTEX.aadl",
+      "sha256": "e427aa4757dc6582865863d130cddbea09df7277e5ae33fb737be4d27ce74131",
+      "size": 1968,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "cortex"
+      ],
+      "annexes": [],
+      "staged_path": "m003.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\alt_control_dbg_type.aadl",
+      "sha256": "028733bffa966cc85bea4b26a03d4976fbc93c4d554afadf749aa8da0620b508",
+      "size": 860,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "alt_control_dbg_type"
+      ],
+      "annexes": [],
+      "staged_path": "m004.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\att_control_dbg_type.aadl",
+      "sha256": "96ec516539bc560c013311fdd16f5cccb8118fe130b925deab6bf441d6ec7dfe",
+      "size": 432,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "att_control_dbg_type"
+      ],
+      "annexes": [],
+      "staged_path": "m005.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\control_law_request_type.aadl",
+      "sha256": "b4e7db78785fe709a5b07cfb0d3ba0c39f7e7635e2301eee87166817b03b5c65",
+      "size": 1108,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "control_law_request_type"
+      ],
+      "annexes": [],
+      "staged_path": "m006.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\control_law_type.aadl",
+      "sha256": "3c3310ebc8378c8eb55a02ace29f90d5b42b590c6a41d7be8b92f75f7094accc",
+      "size": 592,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "control_law_type"
+      ],
+      "annexes": [],
+      "staged_path": "m007.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\control_pid.aadl",
+      "sha256": "2285ae38aeaabccb78eb4965fcb590fc81eb4ac1e7b314d9ce7717fe06745600",
+      "size": 870,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "control_pid"
+      ],
+      "annexes": [],
+      "staged_path": "m008.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\controloutput_type.aadl",
+      "sha256": "e2c3ca09eb9a060c9fa2a55850b4b89a553d3b037c537b4bd368ca7af11fb646",
+      "size": 556,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "controloutput_type"
+      ],
+      "annexes": [],
+      "staged_path": "m009.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\data_rate.aadl",
+      "sha256": "52dcf45f5324bdd77014c73dccf96df2ce9c10409da85ece3714602834defe79",
+      "size": 412,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "data_rate"
+      ],
+      "annexes": [],
+      "staged_path": "m010.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\DATATYPES.aadl",
+      "sha256": "6d3ad81b298af0c1b3c7ee6fa54c60b4b6973412ba9c26ec1ece7e6f12402970",
+      "size": 2415,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "datatypes"
+      ],
+      "annexes": [],
+      "staged_path": "m011.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\flightmode_type.aadl",
+      "sha256": "5b971846c9b3652d0967ebb966164b49dd314b09cf08e466444707930806748f",
+      "size": 397,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "flightmode_type"
+      ],
+      "annexes": [],
+      "staged_path": "m012.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\gcs_msgs.aadl",
+      "sha256": "4e87d39231210b4c94d73035c72c062f6db58925609a245bbf11cfe11ccc28f4",
+      "size": 1195,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "gcs_msgs"
+      ],
+      "annexes": [],
+      "staged_path": "m013.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\gcsstream_timing.aadl",
+      "sha256": "a76e04d4f48938058308d89d728f8ec1189a233430bade18acd144197f9ed0af",
+      "size": 1639,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "gcsstream_timing"
+      ],
+      "annexes": [],
+      "staged_path": "m014.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\gps_type.aadl",
+      "sha256": "4f230b63c221bb2eb917ec1ce7fed675622fde64b77fd12988c15c6095a5fb3c",
+      "size": 732,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "gps_type"
+      ],
+      "annexes": [],
+      "staged_path": "m015.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\HW_CONFIG.aadl",
+      "sha256": "a17a34343dc70d2d80d662abf82dc7411bda27a9f54807177791434b93a64643",
+      "size": 95,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "hw_config"
+      ],
+      "annexes": [],
+      "staged_path": "m016.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\hxstream_state_module.aadl",
+      "sha256": "22be987162b06d765b835b60f9bfc38e7acb387184626e6f9cf96356306b0968",
+      "size": 507,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "hxstream_state_module"
+      ],
+      "annexes": [],
+      "staged_path": "m017.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\IVORY.aadl",
+      "sha256": "671f34e26198e313100f85da8525f1c33ea1de79d18cbbc86633be6f5f02e1ed",
+      "size": 3227,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "ivory"
+      ],
+      "annexes": [],
+      "staged_path": "m018.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\IVORY_TYPES.aadl",
+      "sha256": "2bfbd45f6d1fb6efc3bf48f33061914f7fd87c8b95d655cb5f5b1af759b7fead",
+      "size": 340,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "ivory_types"
+      ],
+      "annexes": [],
+      "staged_path": "m019.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_alt_ctl_debug_msg.aadl",
+      "sha256": "23f005db4cffbeadc805f673b64ef2fafa6e469cab2272380ee0df58c7a90627",
+      "size": 878,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_alt_ctl_debug_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m020.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_att_ctl_debug_msg.aadl",
+      "sha256": "f66344c895cc27d4fe9494ef4793699f29a4ef8bb8f914af4bbaf8f0b7513ee8",
+      "size": 453,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_att_ctl_debug_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m021.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_attitude_msg.aadl",
+      "sha256": "df570e7495228364bc40c53de7e421990775072088a70fb872315437fd056327",
+      "size": 607,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_attitude_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m022.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_attitude_quaternion_msg.aadl",
+      "sha256": "16da3457cc6296a08826ea56691bef24cc57ebf50eb48328774723079c4e1bcf",
+      "size": 700,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_attitude_quaternion_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m023.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_auth_key_msg.aadl",
+      "sha256": "1fa6def551c81ca6ae257ddc7cd2dbeb4a7a112e53ae579b63bac3c215541cfc",
+      "size": 414,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_auth_key_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m024.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_battery_status_msg.aadl",
+      "sha256": "baf49afedb0570b6b6a4687cfd6a453468593340af06db4f5df0a7e1fc331612",
+      "size": 821,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_battery_status_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m025.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_change_operator_control_ack_msg.aadl",
+      "sha256": "ebd151b0e8198a5a2b01a07c46ae8e9a69496db02ad5fa108a5c4fed63022d5a",
+      "size": 586,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_change_operator_control_ack_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m026.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_change_operator_control_msg.aadl",
+      "sha256": "3d0b820087d0e7747fcf79c569aa7c8a2e4fc105ee472bdc275561d42406f1c0",
+      "size": 651,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_change_operator_control_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m027.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_command_ack_msg.aadl",
+      "sha256": "505c781fd1ab6adb47a31c202dee601e5e4846b072ab1908407dac9c4b0800b6",
+      "size": 437,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_command_ack_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m028.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_command_long_msg.aadl",
+      "sha256": "d78d5b3bc4e7fc64a9b7445a19f6e4524bc3f4ba751a8c29a6d4019db4b1d069",
+      "size": 809,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_command_long_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m029.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_data16_msg.aadl",
+      "sha256": "74361d2f214cce540a435f208e444015bf8701d891f0ea1bba06f023312f5191",
+      "size": 491,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_data16_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m030.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_data32_msg.aadl",
+      "sha256": "3f4702ca3682ef8d5c82f4e7ad72aca8d56addcee42788d021f28640262cb052",
+      "size": 491,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_data32_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m031.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_data64_msg.aadl",
+      "sha256": "9672ed5ec7df65f7bffc43a906ea4e364276bfc765f02c94c066885d1e0037f5",
+      "size": 491,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_data64_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m032.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_data_stream_msg.aadl",
+      "sha256": "e32a37aa381620bda86b0eb7f8a05ae65e3c2f99c62c532d366f703f377666bb",
+      "size": 487,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_data_stream_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m033.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_debug_msg.aadl",
+      "sha256": "745bb59041b3a744f20d7e73e6dac2daf06836f5676b9873f10a2ed073751161",
+      "size": 439,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_debug_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m034.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_debug_vect_msg.aadl",
+      "sha256": "dda7aa77cb53784ccbfd68f2458d6b23a8e2ad6bb533a185d3d68886ba1e2609",
+      "size": 569,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_debug_vect_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m035.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_gcs_radio_msg.aadl",
+      "sha256": "a88904b7852137e8637af1a6c198964a3d108e8d549cd5ad4defc3560e8ee9b5",
+      "size": 635,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_gcs_radio_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m036.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_global_position_int_msg.aadl",
+      "sha256": "54729d23c90d0d3163aa61c6e567e1bbfd25b476fe270d697bd5e67f4f3a9054",
+      "size": 767,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_global_position_int_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m037.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_global_position_setpoint_int_msg.aadl",
+      "sha256": "0cbf01d189e75627aa0af555910dfe7b965122f34c9798f117b139063cb24723",
+      "size": 677,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_global_position_setpoint_int_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m038.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_global_vision_position_estimate_msg.aadl",
+      "sha256": "b9f81f19192fa19bb81b2bf7af5dd5cc388955d3142478e58913c54888910a06",
+      "size": 713,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_global_vision_position_estimate_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m039.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_gps_global_origin_msg.aadl",
+      "sha256": "66ffb3156658d779d352b095a9386759a4b41cf06d931b266df452fc8bd8da51",
+      "size": 520,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_gps_global_origin_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m040.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_gps_raw_int_msg.aadl",
+      "sha256": "480252c35e9c4e3b124429729b1f2110ffb78da1be1612ecbe9610d82a9f4e10",
+      "size": 772,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_gps_raw_int_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m041.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_heartbeat_msg.aadl",
+      "sha256": "05d2968efd70d02ea7510f907c68fe998d68cf9021e62d03d298be332df8edbe",
+      "size": 620,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_heartbeat_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m042.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_highres_imu_msg.aadl",
+      "sha256": "d0bfd28d7ecb23407bf7ac2f5e9006ecd2809ee07658a58cf8340c4d0039f1ee",
+      "size": 938,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_highres_imu_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m043.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_hil_controls_msg.aadl",
+      "sha256": "d3d4f64f81d42dce89cd6e5a5c214ab3f7d178a5d4f5857fc3cc4f7d1169daa2",
+      "size": 797,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_hil_controls_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m044.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_hil_rc_inputs_raw_msg.aadl",
+      "sha256": "92cbfab472a65a45dbf05e8b96a042acec7d9927246e1b4417878e19bb0c4bbc",
+      "size": 1028,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_hil_rc_inputs_raw_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m045.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_hil_state_msg.aadl",
+      "sha256": "c9e2a9ed050006ecfc9dca6809bba605513a6ac0f325f899f224563f5872a2c7",
+      "size": 961,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_hil_state_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m046.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_local_position_ned_msg.aadl",
+      "sha256": "7b08e5e79f0cfe4d350330e57ed9ff992dd9a257b2650e314651523be8db4d08",
+      "size": 637,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_local_position_ned_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m047.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_local_position_ned_system_global_offset_msg.aadl",
+      "sha256": "a81eaabb87217c3ac0638a14082fc545739911de906ed67418cbede8cc146bed",
+      "size": 769,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_local_position_ned_system_global_offset_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m048.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_local_position_setpoint_msg.aadl",
+      "sha256": "7a673a1fba3d4320cb21d0a0229f648f883a200169a1de2203feddd196795679",
+      "size": 605,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_local_position_setpoint_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m049.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_manual_control_msg.aadl",
+      "sha256": "87e503a3d42c3e3f3299bc5b1bd1e0b3dd41959fdd0bbff96567de23641fb764",
+      "size": 603,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_manual_control_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m050.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_manual_setpoint_msg.aadl",
+      "sha256": "1aba58404cfc34c82eba2568fd3d7ab86d04c71ea9bad33ff00ee23b96496c94",
+      "size": 671,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_manual_setpoint_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m051.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_memory_vect_msg.aadl",
+      "sha256": "c7598bd35d4844efdb5d3cd8e8f6b88830800fd33839b1bcd9bb3d764a8eaed3",
+      "size": 568,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_memory_vect_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m052.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_mission_ack_msg.aadl",
+      "sha256": "4b6a82d767de8f04fa808bad6c1c9d734389cc49196522562c021fc2749daa5b",
+      "size": 504,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_mission_ack_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m053.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_mission_clear_all_msg.aadl",
+      "sha256": "cf53b3fb096f654875ca507a59d1a64e013262d519fb29f8676c87c8aa48c25f",
+      "size": 488,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_mission_clear_all_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m054.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_mission_count_msg.aadl",
+      "sha256": "8ac87cb3f95c4e4b67e7312be99c599fe895bc736fae46c0b04f23d5f59cf3ff",
+      "size": 506,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_mission_count_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m055.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_mission_current_msg.aadl",
+      "sha256": "5aa2f1043309c364f707b39b8c85bdafb60e3c2dd7b52a96f32a5f5a7e9e1208",
+      "size": 431,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_mission_current_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m056.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_mission_item_msg.aadl",
+      "sha256": "0d96c53ceded84bf00df5b9dff55bb05ac62171f71788c4240e87737a9f2af2a",
+      "size": 931,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_mission_item_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m057.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_mission_item_reached_msg.aadl",
+      "sha256": "019a0de63a59c7ca6cc54f573e91d19a624cd8eba5605ff53f3534effd5b39a6",
+      "size": 466,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_mission_item_reached_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m058.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_mission_request_list_msg.aadl",
+      "sha256": "ce8db3a34ae2b081446899d7695ffddab67c0a3b5411a88251475f374ed695f2",
+      "size": 506,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_mission_request_list_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m059.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_mission_request_msg.aadl",
+      "sha256": "7c2132a40a27c47118a19ff219849fe6598699cf78a20c9628456f3898a6e952",
+      "size": 532,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_mission_request_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m060.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_mission_request_partial_list_msg.aadl",
+      "sha256": "19562d3b07dc88d49d0c0ee089437eb599a1d72923c2427534764066c81fe159",
+      "size": 646,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_mission_request_partial_list_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m061.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_mission_set_current_msg.aadl",
+      "sha256": "bc89b1898301e6d35f190db4c0319b7d0a43a2733be205d690544b3400ed08d1",
+      "size": 560,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_mission_set_current_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m062.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_mission_write_partial_list_msg.aadl",
+      "sha256": "faa7601add0672a187f8f4444e479b25bbd0febc203b6d2679d47ab623cb632a",
+      "size": 634,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_mission_write_partial_list_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m063.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_named_value_float_msg.aadl",
+      "sha256": "d97c6e9bc189c0039dcd70d9de5f1d629794c808039cfcda02fb46c862dbec58",
+      "size": 554,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_named_value_float_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m064.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_named_value_int_msg.aadl",
+      "sha256": "b8969331748cfbf19160da6bebc2cf3c005e41a2ffb12f239a063971a20accdc",
+      "size": 547,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_named_value_int_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m065.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_nav_controller_output_msg.aadl",
+      "sha256": "5a99b73574be2fefec42b7f213d41037d5104960de473b7e5b15e7727482bf3b",
+      "size": 755,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_nav_controller_output_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m066.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_omnidirectional_flow_msg.aadl",
+      "sha256": "217ec95a2e9d0bc820c42c192df3d57488b253170553180ea35ca831f8361b28",
+      "size": 731,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_omnidirectional_flow_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m067.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_optical_flow_msg.aadl",
+      "sha256": "2f49e1d278ff3f3e1d9b280c3e41432e99bd1119c274dcc93943e96852c27add",
+      "size": 709,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_optical_flow_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m068.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_param_request_list_msg.aadl",
+      "sha256": "dfcf178a458108583911f2cc57125243d1992033e6b2072dd64994d162b39ba9",
+      "size": 494,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_param_request_list_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m069.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_param_request_read_msg.aadl",
+      "sha256": "ba115cbbaa8cc070268aa57b6ab6534db4605ca3aec6efd9f8de2ab938da540a",
+      "size": 627,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_param_request_read_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m070.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_param_set_msg.aadl",
+      "sha256": "dfa31bf8306622842c904f659fa52153f9a69bd902d0664f90fa6c19010edf60",
+      "size": 614,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_param_set_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m071.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_param_value_msg.aadl",
+      "sha256": "36f9b898843eb3bf73d6d5ad63f740780f2986d0ec481314ff167617d090ba7c",
+      "size": 621,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_param_value_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m072.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_ping_msg.aadl",
+      "sha256": "81f69b39a6610e6cac7ca816284984408cec480ba62be96a087d1a4d417077be",
+      "size": 501,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_ping_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m073.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_radio_msg.aadl",
+      "sha256": "c8608ec577fdea61e93eb512a8e70b7f5873570174aeca87ea00951dc6cd917b",
+      "size": 611,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_radio_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m074.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_raw_imu_msg.aadl",
+      "sha256": "939f847b9bd245a411d0ad020d840f37fd92811350f03212963c545e85a291fb",
+      "size": 736,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_raw_imu_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m075.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_raw_pressure_msg.aadl",
+      "sha256": "2949cad1c08fd0a039c8b3a70f10f227b30b7a87b3fd79e6e4f4ba30d0363ddb",
+      "size": 589,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_raw_pressure_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m076.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_rc_channels_override_msg.aadl",
+      "sha256": "789529b00ad6d59f8a042c76d84380b5452241c22dafc6f6896ceee0960017c6",
+      "size": 874,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_rc_channels_override_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m077.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_rc_channels_raw_msg.aadl",
+      "sha256": "8444a5be4c6d3212de9c0a55c92dc973e68f31b01e9432803daad2029a4d1801",
+      "size": 873,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_rc_channels_raw_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m078.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_rc_channels_scaled_msg.aadl",
+      "sha256": "d81f634882cad13fe405969df6b69deffa9d97357d153901bd6cc8f71c8b3659",
+      "size": 907,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_rc_channels_scaled_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m079.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_receive_state.aadl",
+      "sha256": "515e8f0b059b6d09d3250ffbdadf5ff279340987cfb070bce0cda3eed915fd8e",
+      "size": 787,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_receive_state"
+      ],
+      "annexes": [],
+      "staged_path": "m080.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_request_data_stream_msg.aadl",
+      "sha256": "ab3e4cb18dcffbaa1bcfeba03f8315e46dc601eb3ff37c6d5b92dde8cd4d1b23",
+      "size": 648,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_request_data_stream_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m081.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_roll_pitch_yaw_rates_thrust_setpoint_msg.aadl",
+      "sha256": "bbdedb5046b68d3c6e941e7e872cec1ea5e9f63e1da5a477a41d70ee147f07e9",
+      "size": 707,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_roll_pitch_yaw_rates_thrust_setpoint_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m082.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_roll_pitch_yaw_speed_thrust_setpoint_msg.aadl",
+      "sha256": "b3c251621dbf8bd7d28e014f6ea71201644db5c9b1a7c05ff4c7c1a46f8cc681",
+      "size": 710,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_roll_pitch_yaw_speed_thrust_setpoint_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m083.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_roll_pitch_yaw_thrust_setpoint_msg.aadl",
+      "sha256": "ca1cbf36952f59ea1920cfc69ffe67064b172faddaf78743223519a8bad4266b",
+      "size": 656,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_roll_pitch_yaw_thrust_setpoint_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m084.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_safety_allowed_area_msg.aadl",
+      "sha256": "8a2cb27dba11c5a1cb9a5ecd40e127ac6be0c21419a284d4f61b7a66ce508e15",
+      "size": 644,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_safety_allowed_area_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m085.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_safety_set_allowed_area_msg.aadl",
+      "sha256": "be19b863fcd500fdc0a111f1d373bb6388161f9980a3e1b786f685de986889c7",
+      "size": 769,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_safety_set_allowed_area_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m086.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_scaled_imu_msg.aadl",
+      "sha256": "e04da35dc27275f11ab4ef83a1efa7cdb0e6dd24fe8296c04c952fc6f487969c",
+      "size": 757,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_scaled_imu_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m087.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_scaled_pressure_msg.aadl",
+      "sha256": "e8d0566c4614a1b276ba938ec184d6893b0ac636f700befdac665ad688b552b2",
+      "size": 552,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_scaled_pressure_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m088.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_servo_output_raw_msg.aadl",
+      "sha256": "32587acde7a5137767b3b0f5b82609c4f64821cb99a87d3f3c61ba6e30d841e1",
+      "size": 844,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_servo_output_raw_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m089.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_set_global_position_setpoint_int_msg.aadl",
+      "sha256": "cca7d3ac70958ab1537e49f381db2c3b8879f4ad4ff732cc3f34ef33878b8d6f",
+      "size": 701,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_set_global_position_setpoint_int_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m090.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_set_gps_global_origin_msg.aadl",
+      "sha256": "e8d7d96eb53042e71dc1f7193dfd9410afa8d562f32a7b7a04bdca51cee8f4d2",
+      "size": 593,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_set_gps_global_origin_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m091.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_set_local_position_setpoint_msg.aadl",
+      "sha256": "c8cd1e1e9569c5e0c938316b6142a96290312e11d69639f714ee5d24aa3c6ecb",
+      "size": 730,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_set_local_position_setpoint_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m092.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_set_mode_msg.aadl",
+      "sha256": "5271ee9931f09bd046d86fed8ce037dda58d4e11ee0264e6407e0ddead39f0ae",
+      "size": 475,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_set_mode_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m093.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_set_quad_motors_setpoint_msg.aadl",
+      "sha256": "f0e032b4eb81e7dacd95630fd7a5ba78362fd20e8f4ec8ba56596042260d1d83",
+      "size": 680,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_set_quad_motors_setpoint_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m094.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_set_quad_swarm_led_roll_pitch_yaw_thrust_msg.aadl",
+      "sha256": "e4229e14334d1af7d28cfe096f91e79fe2f709b821410cc752b725f387ec9636",
+      "size": 1070,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_set_quad_swarm_led_roll_pitch_yaw_thrust_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m095.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_set_quad_swarm_roll_pitch_yaw_thrust_msg.aadl",
+      "sha256": "5fa98ac596e0180dc27e85536ad55a361b2b30f7f0be592de7e523be6a930337",
+      "size": 851,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_set_quad_swarm_roll_pitch_yaw_thrust_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m096.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_set_roll_pitch_yaw_speed_thrust_msg.aadl",
+      "sha256": "4240c0beb052ea82ee8bd02ebf5880313ce2d9b45a14319fbd68caa1b3a6d721",
+      "size": 732,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_set_roll_pitch_yaw_speed_thrust_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m097.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_set_roll_pitch_yaw_thrust_msg.aadl",
+      "sha256": "aaf1e7fbed7d15832caa54d3e8af990be3aced2c19a693e76bdbba21030d607f",
+      "size": 678,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_set_roll_pitch_yaw_thrust_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m098.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_setpoint_6dof_msg.aadl",
+      "sha256": "8bb35ecab709b0902fcfe0ccdacd4b52558ad6d95c923743cda46680c75abc4a",
+      "size": 634,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_setpoint_6dof_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m099.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_setpoint_8dof_msg.aadl",
+      "sha256": "c29135edcd463f7f41487323d7c916aa80f6537a334047aa36f7352bbc9e835d",
+      "size": 692,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_setpoint_8dof_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m100.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_state_correction_msg.aadl",
+      "sha256": "1d1770b0e223493c3b4c0bf2b03dd3f21218fdfc5ef600fb2312637c59280026",
+      "size": 708,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_state_correction_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m101.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_statustext_msg.aadl",
+      "sha256": "e88b45c054eff27b630dfc7c9a6e479f43902abfeb1b59c9b403bcc519bb1d42",
+      "size": 471,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_statustext_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m102.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_sys_status_msg.aadl",
+      "sha256": "6a8d2504f94e87a1f624f2b9289c2cbb504e393aaa56605d452e0c80175024af",
+      "size": 1043,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_sys_status_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m103.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_system_time_msg.aadl",
+      "sha256": "7450ef99b7b25e75ac5edf4ebc3861ab0956b0a8aff2bc82884d57b7c8f61bbd",
+      "size": 451,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_system_time_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m104.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_veh_commsec_msg.aadl",
+      "sha256": "2e90aed934e5fb124fefbdab426b15b020b9e9b291e57111da844df1f53c6b55",
+      "size": 530,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_veh_commsec_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m105.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_vehicle_radio_msg.aadl",
+      "sha256": "a8a1bef9722417f64b9ec2cb190ed0d492a2f4c41eae532bc376b68858ab2bd6",
+      "size": 659,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_vehicle_radio_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m106.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_vfr_hud_msg.aadl",
+      "sha256": "7ddecdcae0579962dba480ce418b2c0ba720031e863e0774d89e14d2c6397a48",
+      "size": 566,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_vfr_hud_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m107.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_vicon_position_estimate_msg.aadl",
+      "sha256": "cbc8c7a0f4559a056289070289fede5efd05967382c7dd1fb7233a8ea31d45d9",
+      "size": 665,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_vicon_position_estimate_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m108.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_vision_position_estimate_msg.aadl",
+      "sha256": "385595373e448254ee4d4a505246985d3d29ebb6adb9d083796bdc9095a0be0e",
+      "size": 671,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_vision_position_estimate_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m109.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlink_vision_speed_estimate_msg.aadl",
+      "sha256": "0e58e3f67983c3ad2a8c9beaa5a12509a65ca419f62ceeed5321475dcdbb5fcf",
+      "size": 548,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlink_vision_speed_estimate_msg"
+      ],
+      "annexes": [],
+      "staged_path": "m110.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\mavlinkSendModule.aadl",
+      "sha256": "6ffa14c8afd6a87dc171f857d72ebabbeefd6c838fa4ac2a9d8b5c85436daf65",
+      "size": 462,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mavlinksendmodule"
+      ],
+      "annexes": [],
+      "staged_path": "m111.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\maybe_float_type.aadl",
+      "sha256": "28ca5257673765b2e8cc8600d332f10184d986efd26e04187b26957ff8dfd728",
+      "size": 401,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "maybe_float_type"
+      ],
+      "annexes": [],
+      "staged_path": "m112.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\motors_type.aadl",
+      "sha256": "424a886a6b9685f6bd1e17e7672e7497ffea064f2dbdc417a6773934d95e7f0e",
+      "size": 452,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "motors_type"
+      ],
+      "annexes": [],
+      "staged_path": "m113.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\optflow_type.aadl",
+      "sha256": "3c2a8a0f1dae4f9aa858e8f5b887a754bb567715dbe67bbcd88bc1f192d01077",
+      "size": 610,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "optflow_type"
+      ],
+      "annexes": [],
+      "staged_path": "m114.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\param_tower.aadl",
+      "sha256": "0372e11bf401684355a89fe4d98ea79902dc084b4101c64caf6564fd784e5d1f",
+      "size": 840,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "param_tower"
+      ],
+      "annexes": [],
+      "staged_path": "m115.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\radio_info_type.aadl",
+      "sha256": "f74f24c2a77956092da293ed5354e2c72721fd8771d3d325faeb9c5153ba7a69",
+      "size": 591,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "radio_info_type"
+      ],
+      "annexes": [],
+      "staged_path": "m116.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\radio_stat_type.aadl",
+      "sha256": "000fc271284954a4ac107b637c95685325741ed1467e19b0514bf66ce36185b6",
+      "size": 883,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "radio_stat_type"
+      ],
+      "annexes": [],
+      "staged_path": "m117.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\sensors_type.aadl",
+      "sha256": "56b079ccbb892aded0ac80a23c84f2f1da817988eab3f262cba8663f84d8cac7",
+      "size": 818,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "sensors_type"
+      ],
+      "annexes": [],
+      "staged_path": "m118.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\SMACCM.aadl",
+      "sha256": "7afccef5e73ecb4daf6302c94bd2d10ba6c404db9efa75c9d5de4efda0351412",
+      "size": 522,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "smaccm"
+      ],
+      "annexes": [],
+      "staged_path": "m119.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\Static_Analysis.aadl",
+      "sha256": "90ba97a2a8ac0e570ef8aef21287c266fc5cecefece4d6e5f0d1bc69a6e27809",
+      "size": 238,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "static_analysis"
+      ],
+      "annexes": [],
+      "staged_path": "m120.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\TowerArrays.aadl",
+      "sha256": "65389b7cd24d99ad1477a746004789caf8003e8c43eb62574b09842daa0612c5",
+      "size": 4916,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "towerarrays"
+      ],
+      "annexes": [],
+      "staged_path": "m121.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\userinput_decode.aadl",
+      "sha256": "2113fb67a7578f277bd39b9a8ba744366a4a2fc06358f85bf698919b4d7ff404",
+      "size": 716,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "userinput_decode"
+      ],
+      "annexes": [],
+      "staged_path": "m122.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\dataTypes\\userinput_type.aadl",
+      "sha256": "09c5c06f967dce6b4e80afe543a3bc2a49ac5a2c40b20f5320be226c73fa0be8",
+      "size": 566,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "userinput_type"
+      ],
+      "annexes": [],
+      "staged_path": "m123.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\FeatureGroups.aadl",
+      "sha256": "9576466290a4acd93a28f7ded05a11d8db396a27ef944418a37b697963fda0e5",
+      "size": 997,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "featuregroups"
+      ],
+      "annexes": [],
+      "staged_path": "m124.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\ODROID_XU.aadl",
+      "sha256": "5a0d7655388e2214d9669bc499b7b3fe4d86c6b715f1c3b3bb5120722e281c66",
+      "size": 867,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "odroid_xu"
+      ],
+      "annexes": [],
+      "staged_path": "m125.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\propertySets\\SMACCM_SYS.aadl",
+      "sha256": "b4092b566b0e8f7d37dc7e8254409bbfa27af2f98ac26df7d3d420af87c991c4",
+      "size": 429,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "smaccm_sys"
+      ],
+      "annexes": [],
+      "staged_path": "m126.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\PX4FMU.aadl",
+      "sha256": "01b5ce7b06b37e878cd95ca27af4192165d1bb483d83417d1977ea09f9bfcc84",
+      "size": 3492,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "px4fmu"
+      ],
+      "annexes": [],
+      "staged_path": "m127.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\PX4IOAR.aadl",
+      "sha256": "6ff0067eb1cc4605580f4dce39fe123ba63092b82387f230342fb0be695ad6ab",
+      "size": 3240,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "px4ioar"
+      ],
+      "annexes": [],
+      "staged_path": "m128.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\SMACCM_DATA.aadl",
+      "sha256": "2262f9f45bf079da9711ac0b6615443df8103e2e92b5f91299aca1315ca2143a",
+      "size": 6138,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "smaccm_data"
+      ],
+      "annexes": [],
+      "staged_path": "m129.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\software\\Commsec.aadl",
+      "sha256": "ac1a4ff410d09a46032b580a40dce85de49e6b38387af433f5deed9fe25d2467",
+      "size": 3713,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "commsec"
+      ],
+      "annexes": [],
+      "staged_path": "m130.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\software\\Control.aadl",
+      "sha256": "73a9824a9f0c1dc9436e41048dd5fd952aa21e62e72876dfac7b6216b03e7de0",
+      "size": 5408,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "control"
+      ],
+      "annexes": [],
+      "staged_path": "m131.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\software\\Copter_Software.aadl",
+      "sha256": "6cc46e2c185107d5e3aed74aec8d2e650d64b88d48e550834572759b4a5108f4",
+      "size": 14790,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "copter_software"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m132.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\software\\Datalink.aadl",
+      "sha256": "39469bc1be2370653c5c3a88ce4102ff5d765124e8ba8ae92bc1725911fe2309",
+      "size": 2403,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "datalink"
+      ],
+      "annexes": [],
+      "staged_path": "m133.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\software\\GCS.aadl",
+      "sha256": "284252f9f2be7c0c7b10734d55600b4eeeea20dc01ffc20b1b57de045e26388d",
+      "size": 10672,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "gcs"
+      ],
+      "annexes": [],
+      "staged_path": "m134.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\software\\Mission_Software.aadl",
+      "sha256": "66d9a90f4ddd6aeca1c2ca9268aaf983142606cf2ea63b61a9916bd7265e4605",
+      "size": 5419,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "mission_software"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m135.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\software\\Sensors.aadl",
+      "sha256": "ee37d5319be39cce6e9e138ddb9e2f80025ec5addc6c819789512b670312a4fd",
+      "size": 3742,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "sensors"
+      ],
+      "annexes": [],
+      "staged_path": "m136.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\software\\UARTS.aadl",
+      "sha256": "93ec5d02bb5ae951de512da0ffa2600fda2c3e4c00c526df3bdb101b2cf24371",
+      "size": 4906,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "uarts"
+      ],
+      "annexes": [],
+      "staged_path": "m137.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\software\\UserInput.aadl",
+      "sha256": "2105667795abe6233a34a94fe9f8467055a1cd5c5ef2d0acd4686a7805cdb95f",
+      "size": 21276,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "userinput"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m138.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\UAS.aadl",
+      "sha256": "50913499f370523d08446e8dca8216c83c92ea4726f24de5fd93d9c46f44734f",
+      "size": 1495,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "uas"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m139.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\UAV.aadl",
+      "sha256": "a4e59ecbf2cf543c7073a446e2dd467bb3b1632714bd6e1324a87844f473bd7b",
+      "size": 2802,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "uav"
+      ],
+      "annexes": [],
+      "staged_path": "m140.aadl"
+    },
+    {
+      "path": "smaccm\\models\\SmaccmPhase2\\packages\\XU_DAUGHTER_BOARD.aadl",
+      "sha256": "74d680a8e08078b9b8e8a4c8a76db14850bc86c6d013d3b49d0d4c1e34a75a34",
+      "size": 1849,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "xu_daughter_board"
+      ],
+      "annexes": [],
+      "staged_path": "m141.aadl"
+    }
+  ],
+  "annexes": [
+    {
+      "name": "agree",
+      "parser_status": "unsupported",
+      "semantic_validation": "not_run",
+      "proof_status": "not_run"
+    }
+  ],
+  "interpretation": "Core syntax/linking and requested instantiation only. Unsupported annex bodies remain unchanged and may be accepted by the default parser; acceptance is not annex validation or proof.",
+  "staging": {
+    "directory": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\s",
+    "source_bytes_preserved": true
+  },
+  "core": {
+    "status": "failed",
+    "diagnostics": [
+      {
+        "severity": "warning",
+        "message": "Data_Model in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m013.aadl",
+        "line": 4,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/dataTypes/gcs_msgs.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "DATATYPES in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl",
+        "line": 4,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/dataTypes/IVORY.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Duplicate value assignments to property Period",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl",
+        "line": 44,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/dataTypes/IVORY.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Duplicate value assignments to property Dispatch_Protocol",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl",
+        "line": 47,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/dataTypes/IVORY.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Duplicate value assignments to property Dispatch_Protocol",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl",
+        "line": 53,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/dataTypes/IVORY.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Duplicate value assignments to property Period",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl",
+        "line": 54,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/dataTypes/IVORY.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Duplicate value assignments to property Period",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl",
+        "line": 88,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/dataTypes/IVORY.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Duplicate value assignments to property Dispatch_Protocol",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl",
+        "line": 91,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/dataTypes/IVORY.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Duplicate value assignments to property Dispatch_Protocol",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl",
+        "line": 97,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/dataTypes/IVORY.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Duplicate value assignments to property Period",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl",
+        "line": 98,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/dataTypes/IVORY.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Data_Model in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m019.aadl",
+        "line": 3,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/dataTypes/IVORY_TYPES.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Base_Types in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m024.aadl",
+        "line": 5,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/dataTypes/mavlink_auth_key_msg.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Base_Types in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m124.aadl",
+        "line": 12,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/FeatureGroups.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl",
+        "line": 12,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4FMU.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Expected feature 'i2c2_bus' to have classifier 'CORTEX::AHB_Bus_Matrix'",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl",
+        "line": 32,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4FMU.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Expected feature 'bus_access' to have classifier 'CORTEX::AHB_Bus_Matrix'",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl",
+        "line": 33,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4FMU.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Expected feature 'bus_access' to have classifier 'CORTEX::AHB_Bus_Matrix'",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl",
+        "line": 42,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4FMU.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Expected feature 'bus_access' to have classifier 'CORTEX::AHB_Bus_Matrix'",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl",
+        "line": 43,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4FMU.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Expected feature 'bus_access' to have classifier 'CORTEX::AHB_Bus_Matrix'",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl",
+        "line": 45,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4FMU.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Expected feature 'bus_access' to have classifier 'CORTEX::AHB_Bus_Matrix'",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl",
+        "line": 47,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4FMU.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "'motion_data' and 'motion_data' have incompatible classifiers.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl",
+        "line": 48,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4FMU.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Expected feature 'usart1' to have classifier 'CORTEX::AHB_Bus_Matrix'",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl",
+        "line": 51,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4FMU.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Expected feature 'usart2' to have classifier 'CORTEX::AHB_Bus_Matrix'",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl",
+        "line": 52,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4FMU.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Expected feature 'ppm' to have classifier 'CORTEX::AHB_Bus_Matrix'",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl",
+        "line": 53,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4FMU.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Expected feature 'alarm' to have classifier 'CORTEX::AHB_Bus_Matrix'",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl",
+        "line": 54,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4FMU.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl",
+        "line": 70,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4FMU.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl",
+        "line": 75,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4FMU.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl",
+        "line": 81,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4FMU.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl",
+        "line": 87,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4FMU.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl",
+        "line": 110,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4FMU.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl",
+        "line": 115,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4FMU.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl",
+        "line": 116,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4FMU.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl",
+        "line": 117,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4FMU.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl",
+        "line": 118,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4FMU.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "UAS in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl",
+        "line": 3,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4IOAR.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "CORTEX in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl",
+        "line": 7,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4IOAR.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'UAS::RF_Spectrum.RF_2_4GHz'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl",
+        "line": 16,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4IOAR.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'UAS::RF_Spectrum.RF_915MHz'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl",
+        "line": 17,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4IOAR.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "'commands_internal' and 'flight_control_commands' have incompatible classifiers.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl",
+        "line": 47,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4IOAR.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl",
+        "line": 71,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4IOAR.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl",
+        "line": 80,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4IOAR.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'UAS::RF_Spectrum.RF_2_4GHz'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl",
+        "line": 81,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4IOAR.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl",
+        "line": 88,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4IOAR.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'UAS::RF_Spectrum.RF_915Mhz'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl",
+        "line": 89,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/PX4IOAR.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "mavlink_rc_channels_override_msg in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m129.aadl",
+        "line": 13,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/SMACCM_DATA.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "control_law_request_type in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m129.aadl",
+        "line": 14,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/SMACCM_DATA.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "mavlink_hil_state_msg in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m129.aadl",
+        "line": 15,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/SMACCM_DATA.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "radio_info_type in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m129.aadl",
+        "line": 16,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/SMACCM_DATA.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Header does not apply to commsec_info_src",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m130.aadl",
+        "line": 79,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Commsec.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Text does not apply to commsec_info_src",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m130.aadl",
+        "line": 80,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Commsec.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Base_Types in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl",
+        "line": 3,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Control.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "TowerArrays in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl",
+        "line": 4,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Control.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "gcsstream_timing in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl",
+        "line": 5,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Control.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "mavlink_veh_commsec_msg in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl",
+        "line": 6,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Control.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "radio_stat_type in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl",
+        "line": 9,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Control.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "motors_type in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl",
+        "line": 10,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Control.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "gps_type in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl",
+        "line": 12,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Control.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "mavlink_rc_channels_override_msg in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl",
+        "line": 15,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Control.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "control_law_request_type in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl",
+        "line": 16,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Control.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "mavlink_hil_state_msg in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl",
+        "line": 17,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Control.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Header does not apply to proxyData",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl",
+        "line": 66,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Control.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Text does not apply to proxyData",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl",
+        "line": 67,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Control.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Header does not apply to att_control_dbg",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl",
+        "line": 87,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Control.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Text does not apply to att_control_dbg",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl",
+        "line": 88,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Control.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Header does not apply to alt_control_dbg",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl",
+        "line": 92,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Control.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Text does not apply to alt_control_dbg",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl",
+        "line": 93,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Control.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Header does not apply to sensors",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl",
+        "line": 100,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Control.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Text does not apply to sensors",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl",
+        "line": 101,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Control.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property Memory_Properties::Access_Right does not apply to userinput",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl",
+        "line": 104,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Control.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property Memory_Properties::Access_Right does not apply to control_law",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl",
+        "line": 109,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Control.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "TowerArrays in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl",
+        "line": 5,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "gcsstream_timing in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl",
+        "line": 6,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "mavlink_veh_commsec_msg in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl",
+        "line": 7,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "att_control_dbg_type in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl",
+        "line": 8,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "alt_control_dbg_type in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl",
+        "line": 9,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "radio_stat_type in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl",
+        "line": 10,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "sensors_type in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl",
+        "line": 14,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "mavlink_hil_state_msg in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl",
+        "line": 18,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "radio_info_type in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl",
+        "line": 19,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "userinput_type in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl",
+        "line": 20,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "GCS in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl",
+        "line": 25,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Commsec in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl",
+        "line": 26,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Datalink in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl",
+        "line": 27,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "FeatureGroups in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl",
+        "line": 28,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Header does not apply to proxyData",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl",
+        "line": 100,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Text does not apply to proxyData",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl",
+        "line": 101,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Header does not apply to proxyData",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl",
+        "line": 121,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Text does not apply to proxyData",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl",
+        "line": 122,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property Memory_Properties::Access_Right does not apply to controllaw",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl",
+        "line": 147,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Header does not apply to controllaw",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl",
+        "line": 257,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Text does not apply to controllaw",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl",
+        "line": 258,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Value must be between 0 and 512",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m133.aadl",
+        "line": 13,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Datalink.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Value must be between 0 and 512",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m133.aadl",
+        "line": 40,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Datalink.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Header does not apply to commsecInfo",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl",
+        "line": 108,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/GCS.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Text does not apply to commsecInfo",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl",
+        "line": 109,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/GCS.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Header does not apply to att_control",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl",
+        "line": 113,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/GCS.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Text does not apply to att_control",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl",
+        "line": 114,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/GCS.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Header does not apply to alt_control",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl",
+        "line": 118,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/GCS.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Text does not apply to alt_control",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl",
+        "line": 119,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/GCS.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Header does not apply to radio",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl",
+        "line": 123,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/GCS.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Text does not apply to radio",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl",
+        "line": 124,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/GCS.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Header does not apply to motors",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl",
+        "line": 128,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/GCS.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Text does not apply to motors",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl",
+        "line": 129,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/GCS.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Header does not apply to control",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl",
+        "line": 133,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/GCS.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Text does not apply to control",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl",
+        "line": 134,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/GCS.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Header does not apply to position",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl",
+        "line": 138,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/GCS.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Text does not apply to position",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl",
+        "line": 139,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/GCS.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Header does not apply to sensors",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl",
+        "line": 143,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/GCS.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Text does not apply to sensors",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl",
+        "line": 144,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/GCS.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Header does not apply to controllaw",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl",
+        "line": 148,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/GCS.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Text does not apply to controllaw",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl",
+        "line": 149,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/GCS.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Header does not apply to proxyData",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl",
+        "line": 215,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/GCS.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Text does not apply to proxyData",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl",
+        "line": 216,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/GCS.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "UAV in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m135.aadl",
+        "line": 3,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Mission_Software.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Base_Types in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m135.aadl",
+        "line": 4,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Mission_Software.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "UserInput in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m135.aadl",
+        "line": 5,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Mission_Software.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "control_law_type in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m135.aadl",
+        "line": 13,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Mission_Software.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Header does not apply to sensors",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m136.aadl",
+        "line": 56,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Sensors.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Text does not apply to sensors",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m136.aadl",
+        "line": 57,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/Sensors.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Value must be between 0 and 512",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m137.aadl",
+        "line": 45,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/UARTS.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Value must be between 0 and 512",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m137.aadl",
+        "line": 50,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/UARTS.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Value must be between 0 and 512",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m137.aadl",
+        "line": 72,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/UARTS.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Value must be between 0 and 512",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m137.aadl",
+        "line": 77,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/UARTS.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Illegal connection: Cannot directly connect two features of the containing component.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m138.aadl",
+        "line": 106,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/UserInput.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Illegal connection: Cannot directly connect two features of the containing component.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m138.aadl",
+        "line": 107,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/UserInput.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Header does not apply to proxyData",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m138.aadl",
+        "line": 181,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/UserInput.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Text does not apply to proxyData",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m138.aadl",
+        "line": 182,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/UserInput.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Header does not apply to proxyData",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m138.aadl",
+        "line": 203,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/UserInput.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Property SMACCM_SYS::CommPrim_Source_Text does not apply to proxyData",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m138.aadl",
+        "line": 204,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/software/UserInput.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Expected feature 'radio_access_915Mhz' to have classifier 'UAS::RF_Spectrum.RF_915MHz'",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m139.aadl",
+        "line": 22,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/UAS.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Expected feature 'radio_access_2_4Ghz' to have classifier 'UAS::RF_Spectrum.RF_2_4GHz'",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m139.aadl",
+        "line": 23,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/UAS.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "UAS in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m140.aadl",
+        "line": 3,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/UAV.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'UAS::RF_Spectrum.RF_915MHz'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m140.aadl",
+        "line": 15,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/UAV.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'UAS::RF_Spectrum.RF_2_4GHz'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m140.aadl",
+        "line": 16,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/UAV.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Illegal connection: Cannot directly connect two features of the containing component.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m141.aadl",
+        "line": 23,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/SmaccmPhase2/packages/XU_DAUGHTER_BOARD.aadl"
+      }
+    ],
+    "version": "0.3.0",
+    "stdout": "osate-cli 0.3.0\nCreated D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\.project\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\session-home\"\n61200\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\session-home\"\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m013.aadl:4:8: warning: Data_Model in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl:4:8: warning: DATATYPES in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl:44:7: error: Duplicate value assignments to property Period\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl:47:7: error: Duplicate value assignments to property Dispatch_Protocol\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl:53:4: error: Duplicate value assignments to property Dispatch_Protocol\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl:54:4: error: Duplicate value assignments to property Period\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl:88:7: error: Duplicate value assignments to property Period\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl:91:7: error: Duplicate value assignments to property Dispatch_Protocol\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl:97:4: error: Duplicate value assignments to property Dispatch_Protocol\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl:98:4: error: Duplicate value assignments to property Period\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m019.aadl:3:8: warning: Data_Model in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m024.aadl:5:8: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m124.aadl:12:8: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:12:37: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:32:37: warning: Expected feature 'i2c2_bus' to have classifier 'CORTEX::AHB_Bus_Matrix'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:33:25: warning: Expected feature 'bus_access' to have classifier 'CORTEX::AHB_Bus_Matrix'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:42:25: warning: Expected feature 'bus_access' to have classifier 'CORTEX::AHB_Bus_Matrix'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:43:25: warning: Expected feature 'bus_access' to have classifier 'CORTEX::AHB_Bus_Matrix'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:45:26: warning: Expected feature 'bus_access' to have classifier 'CORTEX::AHB_Bus_Matrix'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:47:26: warning: Expected feature 'bus_access' to have classifier 'CORTEX::AHB_Bus_Matrix'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:48:7: error: 'motion_data' and 'motion_data' have incompatible classifiers.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:51:26: warning: Expected feature 'usart1' to have classifier 'CORTEX::AHB_Bus_Matrix'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:52:26: warning: Expected feature 'usart2' to have classifier 'CORTEX::AHB_Bus_Matrix'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:53:26: warning: Expected feature 'ppm' to have classifier 'CORTEX::AHB_Bus_Matrix'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:54:26: warning: Expected feature 'alarm' to have classifier 'CORTEX::AHB_Bus_Matrix'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:70:39: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:75:39: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:81:39: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:87:39: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:110:39: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:115:35: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:116:35: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:117:32: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:118:34: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl:3:8: warning: UAS in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl:7:8: warning: CORTEX in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl:16:37: error: Couldn't resolve reference to BusFeatureClassifier 'UAS::RF_Spectrum.RF_2_4GHz'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl:17:39: error: Couldn't resolve reference to BusFeatureClassifier 'UAS::RF_Spectrum.RF_915MHz'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl:47:7: error: 'commands_internal' and 'flight_control_commands' have incompatible classifiers.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl:71:39: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl:80:32: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl:81:36: error: Couldn't resolve reference to BusFeatureClassifier 'UAS::RF_Spectrum.RF_2_4GHz'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl:88:34: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl:89:36: error: Couldn't resolve reference to BusFeatureClassifier 'UAS::RF_Spectrum.RF_915Mhz'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m129.aadl:13:8: warning: mavlink_rc_channels_override_msg in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m129.aadl:14:8: warning: control_law_request_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m129.aadl:15:8: warning: mavlink_hil_state_msg in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m129.aadl:16:8: warning: radio_info_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m130.aadl:79:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to commsec_info_src\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m130.aadl:80:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to commsec_info_src\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:3:8: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:4:8: warning: TowerArrays in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:5:8: warning: gcsstream_timing in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:6:8: warning: mavlink_veh_commsec_msg in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:9:8: warning: radio_stat_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:10:8: warning: motors_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:12:8: warning: gps_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:15:8: warning: mavlink_rc_channels_override_msg in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:16:8: warning: control_law_request_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:17:8: warning: mavlink_hil_state_msg in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:66:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to proxyData\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:67:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to proxyData\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:87:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to att_control_dbg\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:88:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to att_control_dbg\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:92:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to alt_control_dbg\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:93:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to alt_control_dbg\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:100:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to sensors\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:101:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to sensors\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:104:7: error: Property Memory_Properties::Access_Right does not apply to userinput\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:109:7: error: Property Memory_Properties::Access_Right does not apply to control_law\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:5:8: warning: TowerArrays in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:6:8: warning: gcsstream_timing in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:7:8: warning: mavlink_veh_commsec_msg in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:8:8: warning: att_control_dbg_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:9:8: warning: alt_control_dbg_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:10:8: warning: radio_stat_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:14:8: warning: sensors_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:18:8: warning: mavlink_hil_state_msg in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:19:8: warning: radio_info_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:20:8: warning: userinput_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:25:8: warning: GCS in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:26:8: warning: Commsec in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:27:8: warning: Datalink in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:28:8: warning: FeatureGroups in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:100:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to proxyData\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:101:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to proxyData\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:121:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to proxyData\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:122:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to proxyData\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:147:7: error: Property Memory_Properties::Access_Right does not apply to controllaw\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:257:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to controllaw\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:258:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to controllaw\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m133.aadl:13:21: error: Value must be between 0 and 512\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m133.aadl:40:21: error: Value must be between 0 and 512\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:108:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to commsecInfo\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:109:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to commsecInfo\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:113:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to att_control\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:114:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to att_control\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:118:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to alt_control\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:119:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to alt_control\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:123:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to radio\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:124:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to radio\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:128:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to motors\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:129:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to motors\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:133:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to control\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:134:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to control\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:138:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to position\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:139:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to position\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:143:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to sensors\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:144:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to sensors\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:148:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to controllaw\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:149:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to controllaw\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:215:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to proxyData\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:216:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to proxyData\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m135.aadl:3:8: warning: UAV in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m135.aadl:4:8: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m135.aadl:5:8: warning: UserInput in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m135.aadl:13:8: warning: control_law_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m136.aadl:56:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to sensors\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m136.aadl:57:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to sensors\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m137.aadl:45:21: error: Value must be between 0 and 512\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m137.aadl:50:21: error: Value must be between 0 and 512\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m137.aadl:72:21: error: Value must be between 0 and 512\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m137.aadl:77:21: error: Value must be between 0 and 512\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m138.aadl:106:5: error: Illegal connection: Cannot directly connect two features of the containing component.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m138.aadl:107:5: error: Illegal connection: Cannot directly connect two features of the containing component.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m138.aadl:181:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to proxyData\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m138.aadl:182:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to proxyData\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m138.aadl:203:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to proxyData\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m138.aadl:204:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to proxyData\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m139.aadl:22:25: warning: Expected feature 'radio_access_915Mhz' to have classifier 'UAS::RF_Spectrum.RF_915MHz'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m139.aadl:23:25: warning: Expected feature 'radio_access_2_4Ghz' to have classifier 'UAS::RF_Spectrum.RF_2_4GHz'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m140.aadl:3:8: warning: UAS in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m140.aadl:15:48: error: Couldn't resolve reference to BusFeatureClassifier 'UAS::RF_Spectrum.RF_915MHz'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m140.aadl:16:48: error: Couldn't resolve reference to BusFeatureClassifier 'UAS::RF_Spectrum.RF_2_4GHz'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m141.aadl:23:5: error: Illegal connection: Cannot directly connect two features of the containing component.\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\session-home\"\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m013.aadl:4:8: warning: Data_Model in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl:4:8: warning: DATATYPES in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl:44:7: error: Duplicate value assignments to property Period\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl:47:7: error: Duplicate value assignments to property Dispatch_Protocol\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl:53:4: error: Duplicate value assignments to property Dispatch_Protocol\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl:54:4: error: Duplicate value assignments to property Period\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl:88:7: error: Duplicate value assignments to property Period\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl:91:7: error: Duplicate value assignments to property Dispatch_Protocol\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl:97:4: error: Duplicate value assignments to property Dispatch_Protocol\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m018.aadl:98:4: error: Duplicate value assignments to property Period\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m019.aadl:3:8: warning: Data_Model in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m024.aadl:5:8: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m124.aadl:12:8: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:12:37: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:32:37: warning: Expected feature 'i2c2_bus' to have classifier 'CORTEX::AHB_Bus_Matrix'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:33:25: warning: Expected feature 'bus_access' to have classifier 'CORTEX::AHB_Bus_Matrix'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:42:25: warning: Expected feature 'bus_access' to have classifier 'CORTEX::AHB_Bus_Matrix'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:43:25: warning: Expected feature 'bus_access' to have classifier 'CORTEX::AHB_Bus_Matrix'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:45:26: warning: Expected feature 'bus_access' to have classifier 'CORTEX::AHB_Bus_Matrix'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:47:26: warning: Expected feature 'bus_access' to have classifier 'CORTEX::AHB_Bus_Matrix'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:48:7: error: 'motion_data' and 'motion_data' have incompatible classifiers.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:51:26: warning: Expected feature 'usart1' to have classifier 'CORTEX::AHB_Bus_Matrix'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:52:26: warning: Expected feature 'usart2' to have classifier 'CORTEX::AHB_Bus_Matrix'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:53:26: warning: Expected feature 'ppm' to have classifier 'CORTEX::AHB_Bus_Matrix'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:54:26: warning: Expected feature 'alarm' to have classifier 'CORTEX::AHB_Bus_Matrix'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:70:39: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:75:39: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:81:39: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:87:39: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:110:39: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:115:35: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:116:35: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:117:32: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m127.aadl:118:34: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl:3:8: warning: UAS in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl:7:8: warning: CORTEX in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl:16:37: error: Couldn't resolve reference to BusFeatureClassifier 'UAS::RF_Spectrum.RF_2_4GHz'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl:17:39: error: Couldn't resolve reference to BusFeatureClassifier 'UAS::RF_Spectrum.RF_915MHz'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl:47:7: error: 'commands_internal' and 'flight_control_commands' have incompatible classifiers.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl:71:39: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl:80:32: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl:81:36: error: Couldn't resolve reference to BusFeatureClassifier 'UAS::RF_Spectrum.RF_2_4GHz'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl:88:34: error: Couldn't resolve reference to BusFeatureClassifier 'CORTEX::AHB_Bus_Matrix'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m128.aadl:89:36: error: Couldn't resolve reference to BusFeatureClassifier 'UAS::RF_Spectrum.RF_915Mhz'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m129.aadl:13:8: warning: mavlink_rc_channels_override_msg in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m129.aadl:14:8: warning: control_law_request_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m129.aadl:15:8: warning: mavlink_hil_state_msg in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m129.aadl:16:8: warning: radio_info_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m130.aadl:79:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to commsec_info_src\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m130.aadl:80:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to commsec_info_src\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:3:8: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:4:8: warning: TowerArrays in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:5:8: warning: gcsstream_timing in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:6:8: warning: mavlink_veh_commsec_msg in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:9:8: warning: radio_stat_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:10:8: warning: motors_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:12:8: warning: gps_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:15:8: warning: mavlink_rc_channels_override_msg in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:16:8: warning: control_law_request_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:17:8: warning: mavlink_hil_state_msg in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:66:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to proxyData\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:67:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to proxyData\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:87:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to att_control_dbg\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:88:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to att_control_dbg\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:92:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to alt_control_dbg\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:93:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to alt_control_dbg\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:100:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to sensors\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:101:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to sensors\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:104:7: error: Property Memory_Properties::Access_Right does not apply to userinput\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m131.aadl:109:7: error: Property Memory_Properties::Access_Right does not apply to control_law\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:5:8: warning: TowerArrays in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:6:8: warning: gcsstream_timing in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:7:8: warning: mavlink_veh_commsec_msg in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:8:8: warning: att_control_dbg_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:9:8: warning: alt_control_dbg_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:10:8: warning: radio_stat_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:14:8: warning: sensors_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:18:8: warning: mavlink_hil_state_msg in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:19:8: warning: radio_info_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:20:8: warning: userinput_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:25:8: warning: GCS in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:26:8: warning: Commsec in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:27:8: warning: Datalink in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:28:8: warning: FeatureGroups in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:100:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to proxyData\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:101:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to proxyData\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:121:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to proxyData\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:122:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to proxyData\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:147:7: error: Property Memory_Properties::Access_Right does not apply to controllaw\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:257:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to controllaw\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m132.aadl:258:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to controllaw\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m133.aadl:13:21: error: Value must be between 0 and 512\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m133.aadl:40:21: error: Value must be between 0 and 512\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:108:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to commsecInfo\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:109:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to commsecInfo\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:113:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to att_control\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:114:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to att_control\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:118:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to alt_control\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:119:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to alt_control\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:123:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to radio\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:124:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to radio\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:128:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to motors\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:129:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to motors\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:133:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to control\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:134:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to control\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:138:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to position\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:139:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to position\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:143:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to sensors\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:144:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to sensors\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:148:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to controllaw\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:149:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to controllaw\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:215:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to proxyData\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m134.aadl:216:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to proxyData\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m135.aadl:3:8: warning: UAV in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m135.aadl:4:8: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m135.aadl:5:8: warning: UserInput in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m135.aadl:13:8: warning: control_law_type in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m136.aadl:56:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to sensors\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m136.aadl:57:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to sensors\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m137.aadl:45:21: error: Value must be between 0 and 512\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m137.aadl:50:21: error: Value must be between 0 and 512\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m137.aadl:72:21: error: Value must be between 0 and 512\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m137.aadl:77:21: error: Value must be between 0 and 512\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m138.aadl:106:5: error: Illegal connection: Cannot directly connect two features of the containing component.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m138.aadl:107:5: error: Illegal connection: Cannot directly connect two features of the containing component.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m138.aadl:181:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to proxyData\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m138.aadl:182:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to proxyData\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m138.aadl:203:7: error: Property SMACCM_SYS::CommPrim_Source_Header does not apply to proxyData\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m138.aadl:204:7: error: Property SMACCM_SYS::CommPrim_Source_Text does not apply to proxyData\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m139.aadl:22:25: warning: Expected feature 'radio_access_915Mhz' to have classifier 'UAS::RF_Spectrum.RF_915MHz'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m139.aadl:23:25: warning: Expected feature 'radio_access_2_4Ghz' to have classifier 'UAS::RF_Spectrum.RF_2_4GHz'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m140.aadl:3:8: warning: UAS in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m140.aadl:15:48: error: Couldn't resolve reference to BusFeatureClassifier 'UAS::RF_Spectrum.RF_915MHz'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m140.aadl:16:48: error: Couldn't resolve reference to BusFeatureClassifier 'UAS::RF_Spectrum.RF_2_4GHz'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\model\\m141.aadl:23:5: error: Illegal connection: Cannot directly connect two features of the containing component.\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\session-home\"\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c\\session-home\"",
+    "executable": "D:\\AADL-multi-agent\\aadl-research\\.tools\\osate-cli-0.3.0\\bin\\osate-cli.bat",
+    "binary_provenance": [
+      {
+        "file": "osate-cli.jar",
+        "sha256": "169f943de2f046c05ea9a5e0a540a2c9aa575e5a9dbcf637e3de9a71c639e549"
+      },
+      {
+        "file": "org.osate.xtext.aadl2_9.1.0.v20260928-1804.jar",
+        "sha256": "8d695f12a402b568ccc4b9cd2996fa5ccf521184fe3f1879a36109c88ec085e6"
+      },
+      {
+        "file": "osate-workspace-server-0.3.0.jar",
+        "sha256": "bf02f4aa3ebf3d581acc63ead929f9bcedb2df23aed4317967b38d964c14df3d"
+      }
+    ],
+    "instance": {
+      "status": "not_requested",
+      "root": null
+    },
+    "workspace": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\fc3a85f6\\r\\osate-run-2d4fec656aea4fd488c55cfcfc7ac27c",
+    "sources": [
+      {
+        "path": "m000.aadl",
+        "sha256": "1c531023b734b48ebb842d58c5cdbe6193cef79f0a83b04601fabe1917e05a4a"
+      },
+      {
+        "path": "m001.aadl",
+        "sha256": "50c45fcd151eb95968cf147bee627b7572780ce83b163db35ef9f85389ff62ec"
+      },
+      {
+        "path": "m002.aadl",
+        "sha256": "86708f0b04ffa6e55550e64f8a31f0389d1baae3b2106af6d901478aeaaf3406"
+      },
+      {
+        "path": "m003.aadl",
+        "sha256": "e427aa4757dc6582865863d130cddbea09df7277e5ae33fb737be4d27ce74131"
+      },
+      {
+        "path": "m004.aadl",
+        "sha256": "028733bffa966cc85bea4b26a03d4976fbc93c4d554afadf749aa8da0620b508"
+      },
+      {
+        "path": "m005.aadl",
+        "sha256": "96ec516539bc560c013311fdd16f5cccb8118fe130b925deab6bf441d6ec7dfe"
+      },
+      {
+        "path": "m006.aadl",
+        "sha256": "b4e7db78785fe709a5b07cfb0d3ba0c39f7e7635e2301eee87166817b03b5c65"
+      },
+      {
+        "path": "m007.aadl",
+        "sha256": "3c3310ebc8378c8eb55a02ace29f90d5b42b590c6a41d7be8b92f75f7094accc"
+      },
+      {
+        "path": "m008.aadl",
+        "sha256": "2285ae38aeaabccb78eb4965fcb590fc81eb4ac1e7b314d9ce7717fe06745600"
+      },
+      {
+        "path": "m009.aadl",
+        "sha256": "e2c3ca09eb9a060c9fa2a55850b4b89a553d3b037c537b4bd368ca7af11fb646"
+      },
+      {
+        "path": "m010.aadl",
+        "sha256": "52dcf45f5324bdd77014c73dccf96df2ce9c10409da85ece3714602834defe79"
+      },
+      {
+        "path": "m011.aadl",
+        "sha256": "6d3ad81b298af0c1b3c7ee6fa54c60b4b6973412ba9c26ec1ece7e6f12402970"
+      },
+      {
+        "path": "m012.aadl",
+        "sha256": "5b971846c9b3652d0967ebb966164b49dd314b09cf08e466444707930806748f"
+      },
+      {
+        "path": "m013.aadl",
+        "sha256": "4e87d39231210b4c94d73035c72c062f6db58925609a245bbf11cfe11ccc28f4"
+      },
+      {
+        "path": "m014.aadl",
+        "sha256": "a76e04d4f48938058308d89d728f8ec1189a233430bade18acd144197f9ed0af"
+      },
+      {
+        "path": "m015.aadl",
+        "sha256": "4f230b63c221bb2eb917ec1ce7fed675622fde64b77fd12988c15c6095a5fb3c"
+      },
+      {
+        "path": "m016.aadl",
+        "sha256": "a17a34343dc70d2d80d662abf82dc7411bda27a9f54807177791434b93a64643"
+      },
+      {
+        "path": "m017.aadl",
+        "sha256": "22be987162b06d765b835b60f9bfc38e7acb387184626e6f9cf96356306b0968"
+      },
+      {
+        "path": "m018.aadl",
+        "sha256": "671f34e26198e313100f85da8525f1c33ea1de79d18cbbc86633be6f5f02e1ed"
+      },
+      {
+        "path": "m019.aadl",
+        "sha256": "2bfbd45f6d1fb6efc3bf48f33061914f7fd87c8b95d655cb5f5b1af759b7fead"
+      },
+      {
+        "path": "m020.aadl",
+        "sha256": "23f005db4cffbeadc805f673b64ef2fafa6e469cab2272380ee0df58c7a90627"
+      },
+      {
+        "path": "m021.aadl",
+        "sha256": "f66344c895cc27d4fe9494ef4793699f29a4ef8bb8f914af4bbaf8f0b7513ee8"
+      },
+      {
+        "path": "m022.aadl",
+        "sha256": "df570e7495228364bc40c53de7e421990775072088a70fb872315437fd056327"
+      },
+      {
+        "path": "m023.aadl",
+        "sha256": "16da3457cc6296a08826ea56691bef24cc57ebf50eb48328774723079c4e1bcf"
+      },
+      {
+        "path": "m024.aadl",
+        "sha256": "1fa6def551c81ca6ae257ddc7cd2dbeb4a7a112e53ae579b63bac3c215541cfc"
+      },
+      {
+        "path": "m025.aadl",
+        "sha256": "baf49afedb0570b6b6a4687cfd6a453468593340af06db4f5df0a7e1fc331612"
+      },
+      {
+        "path": "m026.aadl",
+        "sha256": "ebd151b0e8198a5a2b01a07c46ae8e9a69496db02ad5fa108a5c4fed63022d5a"
+      },
+      {
+        "path": "m027.aadl",
+        "sha256": "3d0b820087d0e7747fcf79c569aa7c8a2e4fc105ee472bdc275561d42406f1c0"
+      },
+      {
+        "path": "m028.aadl",
+        "sha256": "505c781fd1ab6adb47a31c202dee601e5e4846b072ab1908407dac9c4b0800b6"
+      },
+      {
+        "path": "m029.aadl",
+        "sha256": "d78d5b3bc4e7fc64a9b7445a19f6e4524bc3f4ba751a8c29a6d4019db4b1d069"
+      },
+      {
+        "path": "m030.aadl",
+        "sha256": "74361d2f214cce540a435f208e444015bf8701d891f0ea1bba06f023312f5191"
+      },
+      {
+        "path": "m031.aadl",
+        "sha256": "3f4702ca3682ef8d5c82f4e7ad72aca8d56addcee42788d021f28640262cb052"
+      },
+      {
+        "path": "m032.aadl",
+        "sha256": "9672ed5ec7df65f7bffc43a906ea4e364276bfc765f02c94c066885d1e0037f5"
+      },
+      {
+        "path": "m033.aadl",
+        "sha256": "e32a37aa381620bda86b0eb7f8a05ae65e3c2f99c62c532d366f703f377666bb"
+      },
+      {
+        "path": "m034.aadl",
+        "sha256": "745bb59041b3a744f20d7e73e6dac2daf06836f5676b9873f10a2ed073751161"
+      },
+      {
+        "path": "m035.aadl",
+        "sha256": "dda7aa77cb53784ccbfd68f2458d6b23a8e2ad6bb533a185d3d68886ba1e2609"
+      },
+      {
+        "path": "m036.aadl",
+        "sha256": "a88904b7852137e8637af1a6c198964a3d108e8d549cd5ad4defc3560e8ee9b5"
+      },
+      {
+        "path": "m037.aadl",
+        "sha256": "54729d23c90d0d3163aa61c6e567e1bbfd25b476fe270d697bd5e67f4f3a9054"
+      },
+      {
+        "path": "m038.aadl",
+        "sha256": "0cbf01d189e75627aa0af555910dfe7b965122f34c9798f117b139063cb24723"
+      },
+      {
+        "path": "m039.aadl",
+        "sha256": "b9f81f19192fa19bb81b2bf7af5dd5cc388955d3142478e58913c54888910a06"
+      },
+      {
+        "path": "m040.aadl",
+        "sha256": "66ffb3156658d779d352b095a9386759a4b41cf06d931b266df452fc8bd8da51"
+      },
+      {
+        "path": "m041.aadl",
+        "sha256": "480252c35e9c4e3b124429729b1f2110ffb78da1be1612ecbe9610d82a9f4e10"
+      },
+      {
+        "path": "m042.aadl",
+        "sha256": "05d2968efd70d02ea7510f907c68fe998d68cf9021e62d03d298be332df8edbe"
+      },
+      {
+        "path": "m043.aadl",
+        "sha256": "d0bfd28d7ecb23407bf7ac2f5e9006ecd2809ee07658a58cf8340c4d0039f1ee"
+      },
+      {
+        "path": "m044.aadl",
+        "sha256": "d3d4f64f81d42dce89cd6e5a5c214ab3f7d178a5d4f5857fc3cc4f7d1169daa2"
+      },
+      {
+        "path": "m045.aadl",
+        "sha256": "92cbfab472a65a45dbf05e8b96a042acec7d9927246e1b4417878e19bb0c4bbc"
+      },
+      {
+        "path": "m046.aadl",
+        "sha256": "c9e2a9ed050006ecfc9dca6809bba605513a6ac0f325f899f224563f5872a2c7"
+      },
+      {
+        "path": "m047.aadl",
+        "sha256": "7b08e5e79f0cfe4d350330e57ed9ff992dd9a257b2650e314651523be8db4d08"
+      },
+      {
+        "path": "m048.aadl",
+        "sha256": "a81eaabb87217c3ac0638a14082fc545739911de906ed67418cbede8cc146bed"
+      },
+      {
+        "path": "m049.aadl",
+        "sha256": "7a673a1fba3d4320cb21d0a0229f648f883a200169a1de2203feddd196795679"
+      },
+      {
+        "path": "m050.aadl",
+        "sha256": "87e503a3d42c3e3f3299bc5b1bd1e0b3dd41959fdd0bbff96567de23641fb764"
+      },
+      {
+        "path": "m051.aadl",
+        "sha256": "1aba58404cfc34c82eba2568fd3d7ab86d04c71ea9bad33ff00ee23b96496c94"
+      },
+      {
+        "path": "m052.aadl",
+        "sha256": "c7598bd35d4844efdb5d3cd8e8f6b88830800fd33839b1bcd9bb3d764a8eaed3"
+      },
+      {
+        "path": "m053.aadl",
+        "sha256": "4b6a82d767de8f04fa808bad6c1c9d734389cc49196522562c021fc2749daa5b"
+      },
+      {
+        "path": "m054.aadl",
+        "sha256": "cf53b3fb096f654875ca507a59d1a64e013262d519fb29f8676c87c8aa48c25f"
+      },
+      {
+        "path": "m055.aadl",
+        "sha256": "8ac87cb3f95c4e4b67e7312be99c599fe895bc736fae46c0b04f23d5f59cf3ff"
+      },
+      {
+        "path": "m056.aadl",
+        "sha256": "5aa2f1043309c364f707b39b8c85bdafb60e3c2dd7b52a96f32a5f5a7e9e1208"
+      },
+      {
+        "path": "m057.aadl",
+        "sha256": "0d96c53ceded84bf00df5b9dff55bb05ac62171f71788c4240e87737a9f2af2a"
+      },
+      {
+        "path": "m058.aadl",
+        "sha256": "019a0de63a59c7ca6cc54f573e91d19a624cd8eba5605ff53f3534effd5b39a6"
+      },
+      {
+        "path": "m059.aadl",
+        "sha256": "ce8db3a34ae2b081446899d7695ffddab67c0a3b5411a88251475f374ed695f2"
+      },
+      {
+        "path": "m060.aadl",
+        "sha256": "7c2132a40a27c47118a19ff219849fe6598699cf78a20c9628456f3898a6e952"
+      },
+      {
+        "path": "m061.aadl",
+        "sha256": "19562d3b07dc88d49d0c0ee089437eb599a1d72923c2427534764066c81fe159"
+      },
+      {
+        "path": "m062.aadl",
+        "sha256": "bc89b1898301e6d35f190db4c0319b7d0a43a2733be205d690544b3400ed08d1"
+      },
+      {
+        "path": "m063.aadl",
+        "sha256": "faa7601add0672a187f8f4444e479b25bbd0febc203b6d2679d47ab623cb632a"
+      },
+      {
+        "path": "m064.aadl",
+        "sha256": "d97c6e9bc189c0039dcd70d9de5f1d629794c808039cfcda02fb46c862dbec58"
+      },
+      {
+        "path": "m065.aadl",
+        "sha256": "b8969331748cfbf19160da6bebc2cf3c005e41a2ffb12f239a063971a20accdc"
+      },
+      {
+        "path": "m066.aadl",
+        "sha256": "5a99b73574be2fefec42b7f213d41037d5104960de473b7e5b15e7727482bf3b"
+      },
+      {
+        "path": "m067.aadl",
+        "sha256": "217ec95a2e9d0bc820c42c192df3d57488b253170553180ea35ca831f8361b28"
+      },
+      {
+        "path": "m068.aadl",
+        "sha256": "2f49e1d278ff3f3e1d9b280c3e41432e99bd1119c274dcc93943e96852c27add"
+      },
+      {
+        "path": "m069.aadl",
+        "sha256": "dfcf178a458108583911f2cc57125243d1992033e6b2072dd64994d162b39ba9"
+      },
+      {
+        "path": "m070.aadl",
+        "sha256": "ba115cbbaa8cc070268aa57b6ab6534db4605ca3aec6efd9f8de2ab938da540a"
+      },
+      {
+        "path": "m071.aadl",
+        "sha256": "dfa31bf8306622842c904f659fa52153f9a69bd902d0664f90fa6c19010edf60"
+      },
+      {
+        "path": "m072.aadl",
+        "sha256": "36f9b898843eb3bf73d6d5ad63f740780f2986d0ec481314ff167617d090ba7c"
+      },
+      {
+        "path": "m073.aadl",
+        "sha256": "81f69b39a6610e6cac7ca816284984408cec480ba62be96a087d1a4d417077be"
+      },
+      {
+        "path": "m074.aadl",
+        "sha256": "c8608ec577fdea61e93eb512a8e70b7f5873570174aeca87ea00951dc6cd917b"
+      },
+      {
+        "path": "m075.aadl",
+        "sha256": "939f847b9bd245a411d0ad020d840f37fd92811350f03212963c545e85a291fb"
+      },
+      {
+        "path": "m076.aadl",
+        "sha256": "2949cad1c08fd0a039c8b3a70f10f227b30b7a87b3fd79e6e4f4ba30d0363ddb"
+      },
+      {
+        "path": "m077.aadl",
+        "sha256": "789529b00ad6d59f8a042c76d84380b5452241c22dafc6f6896ceee0960017c6"
+      },
+      {
+        "path": "m078.aadl",
+        "sha256": "8444a5be4c6d3212de9c0a55c92dc973e68f31b01e9432803daad2029a4d1801"
+      },
+      {
+        "path": "m079.aadl",
+        "sha256": "d81f634882cad13fe405969df6b69deffa9d97357d153901bd6cc8f71c8b3659"
+      },
+      {
+        "path": "m080.aadl",
+        "sha256": "515e8f0b059b6d09d3250ffbdadf5ff279340987cfb070bce0cda3eed915fd8e"
+      },
+      {
+        "path": "m081.aadl",
+        "sha256": "ab3e4cb18dcffbaa1bcfeba03f8315e46dc601eb3ff37c6d5b92dde8cd4d1b23"
+      },
+      {
+        "path": "m082.aadl",
+        "sha256": "bbdedb5046b68d3c6e941e7e872cec1ea5e9f63e1da5a477a41d70ee147f07e9"
+      },
+      {
+        "path": "m083.aadl",
+        "sha256": "b3c251621dbf8bd7d28e014f6ea71201644db5c9b1a7c05ff4c7c1a46f8cc681"
+      },
+      {
+        "path": "m084.aadl",
+        "sha256": "ca1cbf36952f59ea1920cfc69ffe67064b172faddaf78743223519a8bad4266b"
+      },
+      {
+        "path": "m085.aadl",
+        "sha256": "8a2cb27dba11c5a1cb9a5ecd40e127ac6be0c21419a284d4f61b7a66ce508e15"
+      },
+      {
+        "path": "m086.aadl",
+        "sha256": "be19b863fcd500fdc0a111f1d373bb6388161f9980a3e1b786f685de986889c7"
+      },
+      {
+        "path": "m087.aadl",
+        "sha256": "e04da35dc27275f11ab4ef83a1efa7cdb0e6dd24fe8296c04c952fc6f487969c"
+      },
+      {
+        "path": "m088.aadl",
+        "sha256": "e8d0566c4614a1b276ba938ec184d6893b0ac636f700befdac665ad688b552b2"
+      },
+      {
+        "path": "m089.aadl",
+        "sha256": "32587acde7a5137767b3b0f5b82609c4f64821cb99a87d3f3c61ba6e30d841e1"
+      },
+      {
+        "path": "m090.aadl",
+        "sha256": "cca7d3ac70958ab1537e49f381db2c3b8879f4ad4ff732cc3f34ef33878b8d6f"
+      },
+      {
+        "path": "m091.aadl",
+        "sha256": "e8d7d96eb53042e71dc1f7193dfd9410afa8d562f32a7b7a04bdca51cee8f4d2"
+      },
+      {
+        "path": "m092.aadl",
+        "sha256": "c8cd1e1e9569c5e0c938316b6142a96290312e11d69639f714ee5d24aa3c6ecb"
+      },
+      {
+        "path": "m093.aadl",
+        "sha256": "5271ee9931f09bd046d86fed8ce037dda58d4e11ee0264e6407e0ddead39f0ae"
+      },
+      {
+        "path": "m094.aadl",
+        "sha256": "f0e032b4eb81e7dacd95630fd7a5ba78362fd20e8f4ec8ba56596042260d1d83"
+      },
+      {
+        "path": "m095.aadl",
+        "sha256": "e4229e14334d1af7d28cfe096f91e79fe2f709b821410cc752b725f387ec9636"
+      },
+      {
+        "path": "m096.aadl",
+        "sha256": "5fa98ac596e0180dc27e85536ad55a361b2b30f7f0be592de7e523be6a930337"
+      },
+      {
+        "path": "m097.aadl",
+        "sha256": "4240c0beb052ea82ee8bd02ebf5880313ce2d9b45a14319fbd68caa1b3a6d721"
+      },
+      {
+        "path": "m098.aadl",
+        "sha256": "aaf1e7fbed7d15832caa54d3e8af990be3aced2c19a693e76bdbba21030d607f"
+      },
+      {
+        "path": "m099.aadl",
+        "sha256": "8bb35ecab709b0902fcfe0ccdacd4b52558ad6d95c923743cda46680c75abc4a"
+      },
+      {
+        "path": "m100.aadl",
+        "sha256": "c29135edcd463f7f41487323d7c916aa80f6537a334047aa36f7352bbc9e835d"
+      },
+      {
+        "path": "m101.aadl",
+        "sha256": "1d1770b0e223493c3b4c0bf2b03dd3f21218fdfc5ef600fb2312637c59280026"
+      },
+      {
+        "path": "m102.aadl",
+        "sha256": "e88b45c054eff27b630dfc7c9a6e479f43902abfeb1b59c9b403bcc519bb1d42"
+      },
+      {
+        "path": "m103.aadl",
+        "sha256": "6a8d2504f94e87a1f624f2b9289c2cbb504e393aaa56605d452e0c80175024af"
+      },
+      {
+        "path": "m104.aadl",
+        "sha256": "7450ef99b7b25e75ac5edf4ebc3861ab0956b0a8aff2bc82884d57b7c8f61bbd"
+      },
+      {
+        "path": "m105.aadl",
+        "sha256": "2e90aed934e5fb124fefbdab426b15b020b9e9b291e57111da844df1f53c6b55"
+      },
+      {
+        "path": "m106.aadl",
+        "sha256": "a8a1bef9722417f64b9ec2cb190ed0d492a2f4c41eae532bc376b68858ab2bd6"
+      },
+      {
+        "path": "m107.aadl",
+        "sha256": "7ddecdcae0579962dba480ce418b2c0ba720031e863e0774d89e14d2c6397a48"
+      },
+      {
+        "path": "m108.aadl",
+        "sha256": "cbc8c7a0f4559a056289070289fede5efd05967382c7dd1fb7233a8ea31d45d9"
+      },
+      {
+        "path": "m109.aadl",
+        "sha256": "385595373e448254ee4d4a505246985d3d29ebb6adb9d083796bdc9095a0be0e"
+      },
+      {
+        "path": "m110.aadl",
+        "sha256": "0e58e3f67983c3ad2a8c9beaa5a12509a65ca419f62ceeed5321475dcdbb5fcf"
+      },
+      {
+        "path": "m111.aadl",
+        "sha256": "6ffa14c8afd6a87dc171f857d72ebabbeefd6c838fa4ac2a9d8b5c85436daf65"
+      },
+      {
+        "path": "m112.aadl",
+        "sha256": "28ca5257673765b2e8cc8600d332f10184d986efd26e04187b26957ff8dfd728"
+      },
+      {
+        "path": "m113.aadl",
+        "sha256": "424a886a6b9685f6bd1e17e7672e7497ffea064f2dbdc417a6773934d95e7f0e"
+      },
+      {
+        "path": "m114.aadl",
+        "sha256": "3c2a8a0f1dae4f9aa858e8f5b887a754bb567715dbe67bbcd88bc1f192d01077"
+      },
+      {
+        "path": "m115.aadl",
+        "sha256": "0372e11bf401684355a89fe4d98ea79902dc084b4101c64caf6564fd784e5d1f"
+      },
+      {
+        "path": "m116.aadl",
+        "sha256": "f74f24c2a77956092da293ed5354e2c72721fd8771d3d325faeb9c5153ba7a69"
+      },
+      {
+        "path": "m117.aadl",
+        "sha256": "000fc271284954a4ac107b637c95685325741ed1467e19b0514bf66ce36185b6"
+      },
+      {
+        "path": "m118.aadl",
+        "sha256": "56b079ccbb892aded0ac80a23c84f2f1da817988eab3f262cba8663f84d8cac7"
+      },
+      {
+        "path": "m119.aadl",
+        "sha256": "7afccef5e73ecb4daf6302c94bd2d10ba6c404db9efa75c9d5de4efda0351412"
+      },
+      {
+        "path": "m120.aadl",
+        "sha256": "90ba97a2a8ac0e570ef8aef21287c266fc5cecefece4d6e5f0d1bc69a6e27809"
+      },
+      {
+        "path": "m121.aadl",
+        "sha256": "65389b7cd24d99ad1477a746004789caf8003e8c43eb62574b09842daa0612c5"
+      },
+      {
+        "path": "m122.aadl",
+        "sha256": "2113fb67a7578f277bd39b9a8ba744366a4a2fc06358f85bf698919b4d7ff404"
+      },
+      {
+        "path": "m123.aadl",
+        "sha256": "09c5c06f967dce6b4e80afe543a3bc2a49ac5a2c40b20f5320be226c73fa0be8"
+      },
+      {
+        "path": "m124.aadl",
+        "sha256": "9576466290a4acd93a28f7ded05a11d8db396a27ef944418a37b697963fda0e5"
+      },
+      {
+        "path": "m125.aadl",
+        "sha256": "5a0d7655388e2214d9669bc499b7b3fe4d86c6b715f1c3b3bb5120722e281c66"
+      },
+      {
+        "path": "m126.aadl",
+        "sha256": "b4092b566b0e8f7d37dc7e8254409bbfa27af2f98ac26df7d3d420af87c991c4"
+      },
+      {
+        "path": "m127.aadl",
+        "sha256": "01b5ce7b06b37e878cd95ca27af4192165d1bb483d83417d1977ea09f9bfcc84"
+      },
+      {
+        "path": "m128.aadl",
+        "sha256": "6ff0067eb1cc4605580f4dce39fe123ba63092b82387f230342fb0be695ad6ab"
+      },
+      {
+        "path": "m129.aadl",
+        "sha256": "2262f9f45bf079da9711ac0b6615443df8103e2e92b5f91299aca1315ca2143a"
+      },
+      {
+        "path": "m130.aadl",
+        "sha256": "ac1a4ff410d09a46032b580a40dce85de49e6b38387af433f5deed9fe25d2467"
+      },
+      {
+        "path": "m131.aadl",
+        "sha256": "73a9824a9f0c1dc9436e41048dd5fd952aa21e62e72876dfac7b6216b03e7de0"
+      },
+      {
+        "path": "m132.aadl",
+        "sha256": "6cc46e2c185107d5e3aed74aec8d2e650d64b88d48e550834572759b4a5108f4"
+      },
+      {
+        "path": "m133.aadl",
+        "sha256": "39469bc1be2370653c5c3a88ce4102ff5d765124e8ba8ae92bc1725911fe2309"
+      },
+      {
+        "path": "m134.aadl",
+        "sha256": "284252f9f2be7c0c7b10734d55600b4eeeea20dc01ffc20b1b57de045e26388d"
+      },
+      {
+        "path": "m135.aadl",
+        "sha256": "66d9a90f4ddd6aeca1c2ca9268aaf983142606cf2ea63b61a9916bd7265e4605"
+      },
+      {
+        "path": "m136.aadl",
+        "sha256": "ee37d5319be39cce6e9e138ddb9e2f80025ec5addc6c819789512b670312a4fd"
+      },
+      {
+        "path": "m137.aadl",
+        "sha256": "93ec5d02bb5ae951de512da0ffa2600fda2c3e4c00c526df3bdb101b2cf24371"
+      },
+      {
+        "path": "m138.aadl",
+        "sha256": "2105667795abe6233a34a94fe9f8467055a1cd5c5ef2d0acd4686a7805cdb95f"
+      },
+      {
+        "path": "m139.aadl",
+        "sha256": "50913499f370523d08446e8dca8216c83c92ea4726f24de5fd93d9c46f44734f"
+      },
+      {
+        "path": "m140.aadl",
+        "sha256": "a4e59ecbf2cf543c7073a446e2dd467bb3b1632714bd6e1324a87844f473bd7b"
+      },
+      {
+        "path": "m141.aadl",
+        "sha256": "74d680a8e08078b9b8e8a4c8a76db14850bc86c6d013d3b49d0d4c1e34a75a34"
+      }
+    ]
+  },
+  "original_sources_unchanged": true,
+  "working_artifacts": {
+    "workspaces_retained": false,
+    "reason": "Temporary reference-validation workspaces removed during repository cleanup; source bytes and diagnostics remain preserved."
+  }
+}

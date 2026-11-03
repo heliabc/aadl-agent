@@ -20,6 +20,9 @@ class JointEngine:
     def probe(self, state: PrefixState, piece: str) -> ProbeResult:
         return self._engine.probe(state, piece)
 
+    def probe_pending_bytes(self, state: PrefixState, pending: bytes) -> ProbeResult:
+        return self._engine.probe_pending_bytes(state, pending)
+
     def commit(self, state: PrefixState, piece: str) -> PrefixState:
         # Keeping an allowed probe's returned state is equivalent to commit.
         # Neither path mutates the supplied checkpoint on rejected candidates.

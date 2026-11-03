@@ -1,0 +1,105 @@
+CORE
+osate-cli 0.3.0
+Created D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-e81ed2dded544e629f3a6a8f74962030\model\.project
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-e81ed2dded544e629f3a6a8f74962030\session-home"
+58404
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-e81ed2dded544e629f3a6a8f74962030\session-home"
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-e81ed2dded544e629f3a6a8f74962030\model\m003.aadl:7:8: warning: Base_Types in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-e81ed2dded544e629f3a6a8f74962030\model\m009.aadl:3:8: warning: DATA_TYPES in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-e81ed2dded544e629f3a6a8f74962030\model\m017.aadl:3:9: warning: Base_Types in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-e81ed2dded544e629f3a6a8f74962030\model\m028.aadl:3:7: warning: OSAS_S_100 in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-e81ed2dded544e629f3a6a8f74962030\model\m028.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-e81ed2dded544e629f3a6a8f74962030\model\m029.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-e81ed2dded544e629f3a6a8f74962030\model\m029.aadl:5:7: warning: OCCURRED in 'with' clause of public package section is not used.
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-e81ed2dded544e629f3a6a8f74962030\session-home"
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-e81ed2dded544e629f3a6a8f74962030\model\m003.aadl:7:8: warning: Base_Types in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-e81ed2dded544e629f3a6a8f74962030\model\m009.aadl:3:8: warning: DATA_TYPES in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-e81ed2dded544e629f3a6a8f74962030\model\m017.aadl:3:9: warning: Base_Types in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-e81ed2dded544e629f3a6a8f74962030\model\m028.aadl:3:7: warning: OSAS_S_100 in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-e81ed2dded544e629f3a6a8f74962030\model\m028.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-e81ed2dded544e629f3a6a8f74962030\model\m029.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-e81ed2dded544e629f3a6a8f74962030\model\m029.aadl:5:7: warning: OCCURRED in 'with' clause of public package section is not used.
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-e81ed2dded544e629f3a6a8f74962030\session-home"
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-e81ed2dded544e629f3a6a8f74962030\session-home"
+FCS::FCS.impl
+osate-cli 0.3.0
+Created D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\.project
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\session-home"
+62276
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\session-home"
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m003.aadl:7:8: warning: Base_Types in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m009.aadl:3:8: warning: DATA_TYPES in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m017.aadl:3:9: warning: Base_Types in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m028.aadl:3:7: warning: OSAS_S_100 in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m028.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m029.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m029.aadl:5:7: warning: OCCURRED in 'with' clause of public package section is not used.
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\session-home"
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m003.aadl:7:8: warning: Base_Types in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m009.aadl:3:8: warning: DATA_TYPES in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m017.aadl:3:9: warning: Base_Types in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m028.aadl:3:7: warning: OSAS_S_100 in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m028.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m029.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m029.aadl:5:7: warning: OCCURRED in 'with' clause of public package section is not used.
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\session-home"
+Instantiated FCS::FCS.impl as FCS_impl_Instance
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\session-home"
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m003.aadl:7:8: warning: Base_Types in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m009.aadl:3:8: warning: DATA_TYPES in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m017.aadl:3:9: warning: Base_Types in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m028.aadl:3:7: warning: OSAS_S_100 in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m028.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m029.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m029.aadl:5:7: warning: OCCURRED in 'with' clause of public package section is not used.
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\session-home"
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m003.aadl:7:8: warning: Base_Types in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m009.aadl:3:8: warning: DATA_TYPES in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m017.aadl:3:9: warning: Base_Types in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m028.aadl:3:7: warning: OSAS_S_100 in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m028.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m029.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\model\m029.aadl:5:7: warning: OCCURRED in 'with' clause of public package section is not used.
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\session-home"
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-45ca62c64a7a41bc9cec791516196df2\session-home"
+ISAS_RC_Dual_Channel_Inputs::ISAS_RC_Dual_Channel_Inputs.impl
+osate-cli 0.3.0
+Created D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\.project
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\session-home"
+54759
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\session-home"
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m003.aadl:7:8: warning: Base_Types in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m009.aadl:3:8: warning: DATA_TYPES in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m017.aadl:3:9: warning: Base_Types in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m028.aadl:3:7: warning: OSAS_S_100 in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m028.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m029.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m029.aadl:5:7: warning: OCCURRED in 'with' clause of public package section is not used.
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\session-home"
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m003.aadl:7:8: warning: Base_Types in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m009.aadl:3:8: warning: DATA_TYPES in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m017.aadl:3:9: warning: Base_Types in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m028.aadl:3:7: warning: OSAS_S_100 in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m028.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m029.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m029.aadl:5:7: warning: OCCURRED in 'with' clause of public package section is not used.
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\session-home"
+Instantiated ISAS_RC_Dual_Channel_Inputs::ISAS_RC_Dual_Channel_Inputs.impl as ISAS_RC_Dual_Channel_Inputs_impl_Instance
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\session-home"
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m003.aadl:7:8: warning: Base_Types in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m009.aadl:3:8: warning: DATA_TYPES in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m017.aadl:3:9: warning: Base_Types in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m028.aadl:3:7: warning: OSAS_S_100 in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m028.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m029.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m029.aadl:5:7: warning: OCCURRED in 'with' clause of public package section is not used.
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\session-home"
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m003.aadl:7:8: warning: Base_Types in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m009.aadl:3:8: warning: DATA_TYPES in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m017.aadl:3:9: warning: Base_Types in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m028.aadl:3:7: warning: OSAS_S_100 in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m028.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m029.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\model\m029.aadl:5:7: warning: OCCURRED in 'with' clause of public package section is not used.
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\session-home"
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\21c76aef\r\osate-run-06248e1249a44aa3b632926bd9382e8a\session-home"

@@ -1,0 +1,863 @@
+{
+  "package": "D:\\AADL-multi-agent\\aadl-research\\.tools\\osate-cli-0.3.0",
+  "plugins": [
+    {
+      "file": "bcpg_1.82.0.jar",
+      "sha256": "376e8562fe056ca0ebe9544eb40ac3e4aa8879e143f007fe6474210607b6647e"
+    },
+    {
+      "file": "bcprov_1.82.0.jar",
+      "sha256": "14cde2fdfaa8890480a8e5b67aceef0c90f96682c1e23c133bafdc9e0b3255ce"
+    },
+    {
+      "file": "bcutil_1.82.0.jar",
+      "sha256": "4420691958ad1c0ba275a6d6d8a6317adbdbdc9277055b6a72aa89c88cda8c7d"
+    },
+    {
+      "file": "com.github.weisj.jsvg_2.0.0.jar",
+      "sha256": "81fc9ada579fc3f4924ec35f904c043de13ee8fba280322e638c7092006f1b52"
+    },
+    {
+      "file": "com.google.gson_2.13.2.jar",
+      "sha256": "dd0ce1b55a3ed2080cb70f9c655850cda86c206862310009dcb5e5c95265a5e0"
+    },
+    {
+      "file": "com.google.guava.failureaccess_1.0.3.jar",
+      "sha256": "cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb"
+    },
+    {
+      "file": "com.google.guava_33.5.0.jre.jar",
+      "sha256": "1e301f0c52ac248b0b14fdc3d12283c77252d4d6f48521d572e7d8c4c2cc4ac7"
+    },
+    {
+      "file": "com.google.inject_7.0.0.jar",
+      "sha256": "de5b0e359bd7b03ca42806b368846efd95484380fe05ae2a4ea71bc338c59c00"
+    },
+    {
+      "file": "com.ibm.icu_78.1.0.jar",
+      "sha256": "bbb70d3be23110d7295823eee0c2e896ac3b619b3c0f26168f65eb972df51d2a"
+    },
+    {
+      "file": "com.sun.jna.platform_5.18.1.jar",
+      "sha256": "ad14c1b1ec4f43d396231219dfa635ebf828f738eac9f890ea1bc07795892d9a"
+    },
+    {
+      "file": "com.sun.jna_5.18.1.v20251001-0800.jar",
+      "sha256": "db89e4a3c622d97f2f4e1bdda2f243adad8f19edde83a29185d12675b8d00c15"
+    },
+    {
+      "file": "io.github.classgraph.classgraph_4.8.184.jar",
+      "sha256": "6e564e29cec95a392268a609f09071d56199383d906ac70e91753a7998d1a3e8"
+    },
+    {
+      "file": "jakarta.annotation-api_2.1.1.jar",
+      "sha256": "5f65fdaf424eee2b55e1d882ba9bb376be93fb09b37b808be6e22e8851c909fe"
+    },
+    {
+      "file": "jakarta.inject.jakarta.inject-api_2.0.1.jar",
+      "sha256": "f7dc98062fccf14126abb751b64fab12c312566e8cbdc8483598bffcea93af7c"
+    },
+    {
+      "file": "org.antlr.runtime_3.2.0.v20230929-1400.jar",
+      "sha256": "f923dfc650a0a7b37d310318d17782e04e130eacddd57a7970d0d9bf1fb6c134"
+    },
+    {
+      "file": "org.aopalliance_1.0.0.v20230720-0728.jar",
+      "sha256": "a913679a3b5d90ea059c91c3b938ce150e7981259d96d6982cffe54b4d46c224"
+    },
+    {
+      "file": "org.apache.ant_1.10.15.v20240901-1000.jar",
+      "sha256": "d8112124b3818cedecdaa138f4145923a961462b734dc3dd341b3598204ccb95"
+    },
+    {
+      "file": "org.apache.batik.constants_1.19.0.v20250506-1400.jar",
+      "sha256": "1ce105622817adae80482a6778795877046c1b306bc7af89edc0e66318d79a48"
+    },
+    {
+      "file": "org.apache.batik.css_1.19.0.v20250506-1400.jar",
+      "sha256": "721996fcdbacb8eb8d915e0fbc60a2261690a9be232eac1ed7e3a9dd410235c3"
+    },
+    {
+      "file": "org.apache.batik.i18n_1.19.0.v20250506-1400.jar",
+      "sha256": "2dd97b77cfe59c5a45d708047a6f73ca917523278b75c29f653d28f7cf92c403"
+    },
+    {
+      "file": "org.apache.batik.util_1.19.0.v20250506-1400.jar",
+      "sha256": "b17539d2367359affcebdf268d5bc79fa457d0e21153a365d86924b73f3df640"
+    },
+    {
+      "file": "org.apache.commons.commons-collections4_4.5.0.jar",
+      "sha256": "00f93263c267be201b8ae521b44a7137271b16688435340bf629db1bac0a5845"
+    },
+    {
+      "file": "org.apache.commons.commons-io_2.21.0.jar",
+      "sha256": "7d643a2afea8b058b762aa6fb90e5b256f6c729739f8b3784c3370ddc609e88d"
+    },
+    {
+      "file": "org.apache.commons.commons-logging_1.3.5.jar",
+      "sha256": "6d7a744e4027649fbb50895df9497d109f98c766a637062fe8d2eabbb3140ba4"
+    },
+    {
+      "file": "org.apache.commons.lang3_3.20.0.jar",
+      "sha256": "69e5c9fa35da7a51a5fd2099dfe56a2d8d32cf233e2f6d770e796146440263f4"
+    },
+    {
+      "file": "org.apache.commons.logging_1.2.0.jar",
+      "sha256": "daddea1ea0be0f56978ab3006b8ac92834afeefbd9b7e4e6316fca57df0fa636"
+    },
+    {
+      "file": "org.apache.commons.text_1.14.0.jar",
+      "sha256": "121fce2282910c8f0c3ba793a5436b31beb710423cbe2d574a3fb7a73c508e92"
+    },
+    {
+      "file": "org.apache.felix.scr_2.2.14.jar",
+      "sha256": "0bc6d63a5e6c3110e5da637b296d5ade217ffe3f7aae33690f0b96d90c5d83e8"
+    },
+    {
+      "file": "org.apache.log4j_1.2.26.jar",
+      "sha256": "a7e86ae144541d04d24d1b7123d7425415477d50f387bb868e5c955aeaedd96f"
+    },
+    {
+      "file": "org.apache.xmlgraphics_2.11.0.v20250506-1400.jar",
+      "sha256": "645e84de533baf344793635617d8cb36464ffd6d6dda36117971d9110c3f00a2"
+    },
+    {
+      "file": "org.commonmark.ext-gfm-tables_0.27.0.jar",
+      "sha256": "c69d1a97d1fdc9c22f9c4d903aff42cc2e037aeba11dba44cc7cc7f0c191fa1c"
+    },
+    {
+      "file": "org.commonmark_0.27.0.jar",
+      "sha256": "7a5a1a6e848e729fd7f85309f39e777af949848a914e559caeb7f64baef6e63e"
+    },
+    {
+      "file": "org.eclipse.acceleo.annotations_8.1.2.jar",
+      "sha256": "fee95367ae3fb53e381d182cfe5f14cd9c518623b4e57f0f5433ab61391889f1"
+    },
+    {
+      "file": "org.eclipse.acceleo.query_8.1.2.jar",
+      "sha256": "1fddf0ae522463117b52a7202aaca1dfefd0e0e829310b9ec65412021938e104"
+    },
+    {
+      "file": "org.eclipse.compare.core_3.8.800.v20250718-1505.jar",
+      "sha256": "23e48bcc7e6b4d94b5fe686af8ddce4a31ac5ca04aedbaa768ce324c09528438"
+    },
+    {
+      "file": "org.eclipse.compare_3.11.600.v20251105-1253.jar",
+      "sha256": "8c0c7a4a8cab35aeb777d3614ccb66c7f6394dc1854c1cb9b1423dff61f5ad3d"
+    },
+    {
+      "file": "org.eclipse.core.commands_3.12.500.v20251103-0733.jar",
+      "sha256": "44713362e55ed28e6db5d2c31bf67524fef087645a44dc3239dac60ece017cb9"
+    },
+    {
+      "file": "org.eclipse.core.contenttype_3.9.800.v20251105-1620.jar",
+      "sha256": "e0c2db96600d519ce36a75f9b7c971afd2870d2d059eee4bf2436d9b33aa0b8d"
+    },
+    {
+      "file": "org.eclipse.core.databinding.observable_1.13.500.v20251103-0735.jar",
+      "sha256": "2a801e18f4a4ebcf28b4376ab13c04205cfaf5c085f436c8bde89ba09da50950"
+    },
+    {
+      "file": "org.eclipse.core.databinding.property_1.10.500.v20250916-0931.jar",
+      "sha256": "3e2e4fbea4e4fc7c8842812a7ffc89fb03d95bfcdb858fcff5ffb7cb1f517e07"
+    },
+    {
+      "file": "org.eclipse.core.databinding_1.13.700.v20251023-1511.jar",
+      "sha256": "475f541642752e9e27868571c1de2186b223b6e369e11fb0a51ff17372093186"
+    },
+    {
+      "file": "org.eclipse.core.expressions_3.9.500.v20250608-0434.jar",
+      "sha256": "8444b5de90c9b4ab528c8ea5c341c7e872d0dbe8241ab79085551086d96e7c9e"
+    },
+    {
+      "file": "org.eclipse.core.filebuffers_3.8.500.v20251103-0746.jar",
+      "sha256": "082c8bf6c2f1267b6af71e59f36ca1bb17afb3b3d3a18b2bd30b3659d8a38cea"
+    },
+    {
+      "file": "org.eclipse.core.filesystem_1.11.400.v20251107-0507.jar",
+      "sha256": "6f70b95d14b90ec57b94c5e3dba7e1d189679cf9a4bc4526e9c91beed7d6a0ef"
+    },
+    {
+      "file": "org.eclipse.core.jobs_3.15.700.v20250725-1147.jar",
+      "sha256": "37015179a7b9b90d16cb92f4b1be6083a1a6dad25428fa8f6b89626f0cc2da79"
+    },
+    {
+      "file": "org.eclipse.core.net_1.5.800.v20250613-1119.jar",
+      "sha256": "affa7fb069aec31dac284d3bd6379cc469d8e48813cfbad05666d47629646bbc"
+    },
+    {
+      "file": "org.eclipse.core.resources_3.23.100.v20251106-1705.jar",
+      "sha256": "fa21146a5033ac8d53a55f7df68d952ceb68b1097d9986aa9b799872ff608574"
+    },
+    {
+      "file": "org.eclipse.core.runtime_3.34.100.v20251111-1421.jar",
+      "sha256": "181180916a2bfe4da2c06e8c7c305586bc6bb6f14c87845c0562d20edf688890"
+    },
+    {
+      "file": "org.eclipse.core.variables_3.6.700.v20250913-1442.jar",
+      "sha256": "dd33a48fb6e349c4dbd25124db0acb486bb705ba9735cf42b28355e309c1eb8c"
+    },
+    {
+      "file": "org.eclipse.debug.core_3.23.200.v20251107-0507.jar",
+      "sha256": "b565e8dea240564d94ad8d5cb64aa9e1e796192739d5aee9fa0af816b7fa03b1"
+    },
+    {
+      "file": "org.eclipse.draw2d_3.21.0.202512020742.jar",
+      "sha256": "3e6dc904937c0b3c05216d80558e304787beb6fd2916cfca0e87b3f56727402b"
+    },
+    {
+      "file": "org.eclipse.e4.core.commands_1.1.700.v20250916-0927.jar",
+      "sha256": "84316b0c73169e402b477c4e21ced08b98a00c0380575cbd5bb499bdf318dac5"
+    },
+    {
+      "file": "org.eclipse.e4.core.contexts_1.13.200.v20250609-0437.jar",
+      "sha256": "93bb71c523a35346e68087102628e1114ab2e0bbe332e92eafdac98f7e09f4bc"
+    },
+    {
+      "file": "org.eclipse.e4.core.di.annotations_1.8.400.v20240413-1529.jar",
+      "sha256": "6e4cdb6c9c46b328294d42f4be7891cf4e338a08c2c710f242e31f8ca55f38ac"
+    },
+    {
+      "file": "org.eclipse.e4.core.di.extensions.supplier_0.17.900.v20250609-0432.jar",
+      "sha256": "5e9c91d07a20c63eecc169827fd60db588c5ee62578322c319e5194b1611ee68"
+    },
+    {
+      "file": "org.eclipse.e4.core.di.extensions_0.18.300.v20240413-1529.jar",
+      "sha256": "aeed59c938c1593cb7ec0e76f077ab34c84c75378158a7ad17be48370938503d"
+    },
+    {
+      "file": "org.eclipse.e4.core.di_1.9.700.v20250609-0907.jar",
+      "sha256": "f785ef7963586779e6d3c5af10900bf9a243e95b24b472a1e2d53c9386ce6c96"
+    },
+    {
+      "file": "org.eclipse.e4.core.services_2.5.300.v20251112-1253.jar",
+      "sha256": "8ca023fb83ab02889641e71bbad3066172c240fce98b92d91a994bd87fb82251"
+    },
+    {
+      "file": "org.eclipse.e4.emf.xpath_0.6.100.v20251103-0738.jar",
+      "sha256": "24fdd65815c10731c4fab75f1ba4c19a9e414b9d4f6fa24796dc68a997e42ad8"
+    },
+    {
+      "file": "org.eclipse.emf.codegen.ecore_2.44.0.v20251025-0946.jar",
+      "sha256": "d062384378d98ad58b92d873973dfcdec7c0af99a160b6e16fc2acb607564c0a"
+    },
+    {
+      "file": "org.eclipse.emf.codegen_2.27.0.v20250910-1205.jar",
+      "sha256": "5520f4e5cf59caa921dfde4d519d7ff3286503578ff8f405e2d018bbecf2a292"
+    },
+    {
+      "file": "org.eclipse.emf.common_2.44.0.v20251025-0946.jar",
+      "sha256": "a35436f2811295603bbc56f752e967339f7ca842b45df910a79700453277b97a"
+    },
+    {
+      "file": "org.eclipse.emf.ecore.change_2.17.0.v20250910-1205.jar",
+      "sha256": "3ae6fa9991fc38bb75b649624ce4a9e304eb685c288d0ea680d8eb15705da7ff"
+    },
+    {
+      "file": "org.eclipse.emf.ecore.edit_2.15.0.v20250910-1205.jar",
+      "sha256": "cb65bdc6150a24d0aec2ab20e8c10cade811a0903ac65ff1a99c26ef0cce8fb9"
+    },
+    {
+      "file": "org.eclipse.emf.ecore.editor_2.19.0.v20250910-1205.jar",
+      "sha256": "92b3722602a400b4986b47645920706de66e8b87db2c5b1357edd52380b674e4"
+    },
+    {
+      "file": "org.eclipse.emf.ecore.xmi_2.39.0.v20250910-1205.jar",
+      "sha256": "c3d1e847f168e5a2602449b8afd67527a45959a94e259a1b1cbc705ad290e245"
+    },
+    {
+      "file": "org.eclipse.emf.ecore_2.41.0.v20251025-0946.jar",
+      "sha256": "c2473ebf30c2e8daf446638913257b8c3f5219a35318f3679c234482dd23228b"
+    },
+    {
+      "file": "org.eclipse.emf.edit_2.23.0.v20250910-1205.jar",
+      "sha256": "6596e62fb49a07f41666fa31ecd9be8cadc0e8620e811629feca86375a30e0dc"
+    },
+    {
+      "file": "org.eclipse.emf.mapping.ecore2xml_2.13.0.v20250910-1205.jar",
+      "sha256": "ce9e881be3e2ad5b16acb06f071113ee7e5a0d957385148663189f7194dbde5b"
+    },
+    {
+      "file": "org.eclipse.emf.transaction_1.10.0.202510231413.jar",
+      "sha256": "1be55a8a23325071451a8b062c3b1fffb37867b2dc78438a1ca9d27622e56b76"
+    },
+    {
+      "file": "org.eclipse.emf.validation_1.9.0.202510230804.jar",
+      "sha256": "dae7294138e2a5090e19c128e0173f8c84932c3f26abe399368b4874bc72a3b3"
+    },
+    {
+      "file": "org.eclipse.emf.workspace_1.6.0.202510231413.jar",
+      "sha256": "fb8809232543113596dd51c06ccc1024900a391cf6c831da8fb2df5e662adec8"
+    },
+    {
+      "file": "org.eclipse.emf_2.9.0.v20230211-1150.jar",
+      "sha256": "ce5d550879a62aa8423de953898cb2a03fadca551d929b9dbd9e7f2aef6e2738"
+    },
+    {
+      "file": "org.eclipse.equinox.app_1.7.500.v20250629-0337.jar",
+      "sha256": "19f2e3611347db6433a48a62187c9f6bd46886d0d56836697dafffe985ea93ef"
+    },
+    {
+      "file": "org.eclipse.equinox.bidi_1.5.400.v20250715-0436.jar",
+      "sha256": "78599009dc5a0f02881406798d7e07e25ac222930a985757bca61632867c7abe"
+    },
+    {
+      "file": "org.eclipse.equinox.common_3.20.300.v20251111-0312.jar",
+      "sha256": "855d239af29ddb1d2248d378697c095be62efb9a5b3c1bb26d31f7b97a8e16ae"
+    },
+    {
+      "file": "org.eclipse.equinox.event_1.7.300.v20250518-0609.jar",
+      "sha256": "a95ed37b7f1c340b4bef599bdc011a3c51b0489a4e1fc11abd62856e49c22fd9"
+    },
+    {
+      "file": "org.eclipse.equinox.p2.artifact.repository_1.5.800.v20250620-1926.jar",
+      "sha256": "9febc15398ab1c9fe7353c062380bae55bc31fc9f3622a073618e43dc83623ff"
+    },
+    {
+      "file": "org.eclipse.equinox.p2.core_2.13.200.v20251111-1620.jar",
+      "sha256": "0e93b220fc96b4cca7a93be9f0f57ef61fb8d46865b87a5163093a062c97c6bb"
+    },
+    {
+      "file": "org.eclipse.equinox.p2.engine_2.11.0.v20251111-1028.jar",
+      "sha256": "96957228e0f0a08bbcb62106c7a1d2df357bffd60e2be34249161683e8abd5d2"
+    },
+    {
+      "file": "org.eclipse.equinox.p2.jarprocessor_1.3.600.v20250517-0338.jar",
+      "sha256": "7a84d2b85f080db7a074fdf4b4d4a2b067762b32e6adef78c06c695be5cba859"
+    },
+    {
+      "file": "org.eclipse.equinox.p2.metadata.repository_1.5.700.v20250720-0955.jar",
+      "sha256": "58423792e79fffb9ef99b7f692b3e4410aee81a52363895d6b87982572750b9e"
+    },
+    {
+      "file": "org.eclipse.equinox.p2.metadata_2.9.600.v20251108-0408.jar",
+      "sha256": "686536f7368917e80ff4e5547ea242b8e382e68155244ae442baf5db0f137f86"
+    },
+    {
+      "file": "org.eclipse.equinox.p2.repository_2.9.600.v20251118-0500.jar",
+      "sha256": "544e158a9c68cd094b993876e5e2934ad2c2b4a54d19685d3b26ea21b905e031"
+    },
+    {
+      "file": "org.eclipse.equinox.preferences_3.12.100.v20251111-0704.jar",
+      "sha256": "fd04e81a28ab32b6bb073286eb293c44b760176fcf1e35ef15614d62df820f86"
+    },
+    {
+      "file": "org.eclipse.equinox.registry_3.12.600.v20250906-0651.jar",
+      "sha256": "4f8cd72681446b598390a8c24ee9b9996f6e4c5fabed022b50bd26f6f5a0bf6c"
+    },
+    {
+      "file": "org.eclipse.equinox.security_1.4.700.v20250622-1644.jar",
+      "sha256": "91b74719f9c1a130193407808fe5daab3b92431efbf30b8f886f1ff5e97f468f"
+    },
+    {
+      "file": "org.eclipse.lsp4j.jsonrpc_0.24.0.v20250131-1745.jar",
+      "sha256": "7721572e849d4f359b46ede55d5604b982ff498d0d92ebc70e18029f59823c08"
+    },
+    {
+      "file": "org.eclipse.lsp4j_0.24.0.v20250131-1745.jar",
+      "sha256": "2caea31ffa2abd13c6f5d13489be071ad08f108eae83a34473ac72d96cf72922"
+    },
+    {
+      "file": "org.eclipse.ltk.core.refactoring_3.15.100.v20251023-1358.jar",
+      "sha256": "b0ef5545ab8916461eb8d424d779de489605a561e6adf425b94d1e67d35a10f4"
+    },
+    {
+      "file": "org.eclipse.orbit.xml-apis-ext_1.0.0.v20240917-0534.jar",
+      "sha256": "c30467f4ca0a27727cc922e437cb90f7156c6c703868e90a24d0ef0fd29cd176"
+    },
+    {
+      "file": "org.eclipse.osgi_3.24.0.v20251126-0427.jar",
+      "sha256": "789454014c150f2adf681cd80f8ecf49817d93ed790f3659b362dca07ade87b8"
+    },
+    {
+      "file": "org.eclipse.search.core_3.16.600.v20250920-0652.jar",
+      "sha256": "1c19e510fe4ced275ef97479e6ac45936377def7fea4f9178c812f7f6f597f24"
+    },
+    {
+      "file": "org.eclipse.search_3.17.400.v20251107-0917.jar",
+      "sha256": "486da4aa0a1616a88d503a2aaeb1c9b6bbe004c31a4b8015b1865934e95e1bf2"
+    },
+    {
+      "file": "org.eclipse.team.core_3.10.900.v20251104-0924.jar",
+      "sha256": "06ec13e4368a3a34e233cfacb479a8fe9c31d28d879a5e775f34ab3a93bbb66f"
+    },
+    {
+      "file": "org.eclipse.text_3.14.500.v20251103-0730.jar",
+      "sha256": "1b6758522917f7cf0b7a7aa42bfefed5dbbae862899adab4fe3bed5536dc78ca"
+    },
+    {
+      "file": "org.eclipse.uml2.codegen.ecore_2.5.2.v20221116-1811.jar",
+      "sha256": "815adab40629adc2c03377734a10cb08d2bb4a8a75071b9a71c99e480fe841e4"
+    },
+    {
+      "file": "org.eclipse.uml2.common.edit_2.5.0.v20221116-1811.jar",
+      "sha256": "c7bb91344e0381f410e2d0a57901297e088eeb21182dd945c20f32540d7e272a"
+    },
+    {
+      "file": "org.eclipse.uml2.common_2.5.0.v20221116-1811.jar",
+      "sha256": "f69dc6416c0bc9832291ad79d24aa35d209a8f1e203a9e3e863643c69810fe7e"
+    },
+    {
+      "file": "org.eclipse.uml2.types_2.5.0.v20221116-1811.jar",
+      "sha256": "920f5b5d0370da5c633225baaae7fe34a5553d7e682d587966ab0da019be51dd"
+    },
+    {
+      "file": "org.eclipse.uml2.uml.edit_5.5.0.v20221116-1811.jar",
+      "sha256": "89142f85ebc590c9577d28657f6ee9d72de1925c818d9fdcbcac1891d27a9ca8"
+    },
+    {
+      "file": "org.eclipse.uml2.uml_5.5.0.v20221116-1811.jar",
+      "sha256": "b570e1eddcd69f3bf3844f290e75cdabd6dc00c94de61ba9a323e14d36647065"
+    },
+    {
+      "file": "org.eclipse.urischeme_1.3.600.v20251023-1158.jar",
+      "sha256": "ad7c2eaab28f9424a471085c51b38d6971176fab1def11eb60e99cd1ad178f84"
+    },
+    {
+      "file": "org.eclipse.xtend.lib.macro_2.41.0.v20251124-0739.jar",
+      "sha256": "1b1b36dff6a6c1ecc06a76bfc2fc9bf3127e5359fad14aa5670894c65d1d5f42"
+    },
+    {
+      "file": "org.eclipse.xtend.lib_2.41.0.v20251124-0739.jar",
+      "sha256": "71633020e0ffd798fde80577591f2c1b1842d414a8acf6eae05991d68c9abef7"
+    },
+    {
+      "file": "org.eclipse.xtext.builder_2.41.0.v20251124-0739.jar",
+      "sha256": "8737d8a31f7d84a92df8b16938174ed3a096fa4c48c3bbe8574a536b8fbbb1d2"
+    },
+    {
+      "file": "org.eclipse.xtext.common.types.edit_2.41.0.v20251124-0739.jar",
+      "sha256": "d3959598d1713c79ca8c5f08a4307f450ca67df9fb6d3b345de4d55710f821c3"
+    },
+    {
+      "file": "org.eclipse.xtext.common.types_2.41.0.v20251124-0739.jar",
+      "sha256": "ee9d812cf4e81850539092463c1638789a0fac72a4ddb87328de10c5fac84f2e"
+    },
+    {
+      "file": "org.eclipse.xtext.ide_2.41.0.v20251124-0739.jar",
+      "sha256": "57e0415ec69c30ab8b757cda1ff210798cc30f470ab490c2c668d62a82fac4c4"
+    },
+    {
+      "file": "org.eclipse.xtext.smap_2.41.0.v20251124-0739.jar",
+      "sha256": "419e1a6b8586fb948d12f20ccaa43a75fb12d1a0ccd40143fecf0a662ba74dcd"
+    },
+    {
+      "file": "org.eclipse.xtext.util_2.41.0.v20251124-0739.jar",
+      "sha256": "fcedcaacc23a6819eae01b7dbbc8fd6c63eed1685b355147a6844b5874d815f3"
+    },
+    {
+      "file": "org.eclipse.xtext.xbase.lib_2.41.0.v20251124-0739.jar",
+      "sha256": "c06b502f4fda81bfaa0447f9cc216d437aed28b9b287c68d2508465a659d40e7"
+    },
+    {
+      "file": "org.eclipse.xtext_2.41.0.v20251124-0739.jar",
+      "sha256": "9f75cb4995bd699af1a10dcccf0b55f7a4ccceab95e35007df35e39d915fe092"
+    },
+    {
+      "file": "org.jgrapht_1.5.1.v20260928-1804.jar",
+      "sha256": "bd923721f5e43752b6a8140a10ac3434fec037425eb78b8b4d60889db80a798f"
+    },
+    {
+      "file": "org.objectweb.asm_9.9.0.jar",
+      "sha256": "03d99a74ad1ee5c71334ef67437f4ef4fe3488caa7c96d8645abc73c8e2017d4"
+    },
+    {
+      "file": "org.osate.aadl.ls_0.3.0.jar",
+      "sha256": "be2b13feca00ed7c19c662f84b3e58c2fa548e175318c2e868e4e5b4c441907b"
+    },
+    {
+      "file": "org.osate.aadl2.contrib_2.2.2.v20260928-1804.jar",
+      "sha256": "bd35a6cde4335b98997d621f404a6df8e81ca6e4d8e342f6cb99b28fecb364ec"
+    },
+    {
+      "file": "org.osate.aadl2.edit_7.0.0.v20260928-1804.jar",
+      "sha256": "e142260d4f5567ebcc92a71f143c836498a11d6ce9132d6d2e4db040d701b92c"
+    },
+    {
+      "file": "org.osate.aadl2.errormodel.analysis_1.3.0.v20260928-1804.jar",
+      "sha256": "66d78f9c66d8873a320b8a07277e4a40a181e26231665cc5440cd60cdc403c2f"
+    },
+    {
+      "file": "org.osate.aadl2.errormodel.contrib_1.0.12.v20260928-1804.jar",
+      "sha256": "a3cda5c956adddbad64c265320a21af6b62f1d4d2fdd57d827e3cd4077dffac7"
+    },
+    {
+      "file": "org.osate.aadl2.errormodel.faulttree.design_1.3.0.v20260928-1804.jar",
+      "sha256": "1be784916b18779d8d0badcf55f03973c0d694d06e0911596794ea82844c7ad1"
+    },
+    {
+      "file": "org.osate.aadl2.errormodel.faulttree.edit_9.0.0.v20260928-1804.jar",
+      "sha256": "b0f7f8d5d42b80d0e9d6d77f06865cc537e813514f303cb975cf0b97c88dfb8e"
+    },
+    {
+      "file": "org.osate.aadl2.errormodel.faulttree.generation_1.3.0.v20260928-1804.jar",
+      "sha256": "f889d3181a8769c917067b9847668359890056795a7a31d92914028958a62e2b"
+    },
+    {
+      "file": "org.osate.aadl2.errormodel.faulttree_9.0.0.v20260928-1804.jar",
+      "sha256": "775fcfee74158124848c074555dceb06f3907a2432a382de7994fc90bc197697"
+    },
+    {
+      "file": "org.osate.aadl2.errormodel.instance_5.0.0.v20260928-1804.jar",
+      "sha256": "03ae4346ebce872268cc5343e2b1f42bd95b6a7326b16d01b810d72e05471a44"
+    },
+    {
+      "file": "org.osate.aadl2.errormodel.propagationgraph_9.0.0.v20260928-1804.jar",
+      "sha256": "df7a13128d828ac4809523083ea992427ef650ce6c1a2edf8b835d6deae14ed5"
+    },
+    {
+      "file": "org.osate.aadl2.instance.textual.ide_2.0.0.v20260928-1804.jar",
+      "sha256": "275cae7e9a997fa87ab9ebe1f671ecaa7d53149d29b2d5b4717a3d41808abb62"
+    },
+    {
+      "file": "org.osate.aadl2.instance.textual_4.0.0.v20260928-1804.jar",
+      "sha256": "8193bab5a2f962ef23b52f6128749026b42e49d3b7015dac1f5f9b5f26b26d53"
+    },
+    {
+      "file": "org.osate.aadl2.instantiation_4.0.0.v20260928-1804.jar",
+      "sha256": "147186bca15844dad9cdb1b5abb7a207336a38efef6823c1e9724ed4b4193331"
+    },
+    {
+      "file": "org.osate.aadl2.modelsupport_9.0.0.v20260928-1804.jar",
+      "sha256": "3b67a0c4b5bf8ec5cbce4a2373fbae385672e0ca3a015b82d50ad12e82d0c543"
+    },
+    {
+      "file": "org.osate.aadl2_7.0.0.v20260928-1804.jar",
+      "sha256": "515251be9a711dc218e5e82b75e2bd0287f63de54cf445d6410ca11f785ba971"
+    },
+    {
+      "file": "org.osate.analysis.architecture_3.1.3.v20260928-1804.jar",
+      "sha256": "983b254d5cd117fd096a21f88bb67f24f3dc1a498566cf2c87f9c94944d9b24d"
+    },
+    {
+      "file": "org.osate.analysis.binpacking_3.1.2.v20260928-1804.jar",
+      "sha256": "f926a73f3b65c370be8ab273470521a774050b5d1fdfe86e5838ae4ec420907b"
+    },
+    {
+      "file": "org.osate.analysis.flows_6.0.1.v20260928-1804.jar",
+      "sha256": "cbaaf6523aa53daa832d3dfc216117715db6ac66464c81b47e9da8e3afd297d7"
+    },
+    {
+      "file": "org.osate.analysis.model_1.2.1.v20260928-1804.jar",
+      "sha256": "cfe6a034ff458b50fa40f858b3f83861df5ed7f677d7a79d79cbb5880674c959"
+    },
+    {
+      "file": "org.osate.analysis.modes_2.0.0.v20260928-1804.jar",
+      "sha256": "7c721c34d61e476cb2f6d9a1459b27f438dba81b14f8c5a8521d227612a385cc"
+    },
+    {
+      "file": "org.osate.analysis.reporting_1.0.1.v20260928-1804.jar",
+      "sha256": "7df3ac68f58766cb57438de557bab75a3a610d976a64a923055d52685408913e"
+    },
+    {
+      "file": "org.osate.analysis.resource.budgets_5.0.1.v20260928-1804.jar",
+      "sha256": "15b0372227ecdefa9151f301eb43a9508b05a2292b505af382520d3047e4e224"
+    },
+    {
+      "file": "org.osate.analysis.resource.management_4.2.2.v20260928-1804.jar",
+      "sha256": "6b5af814c1aae1b2e8318e66994f7c1a9b2c832bf7d85759d85dd597f527c133"
+    },
+    {
+      "file": "org.osate.annexsupport_5.0.0.v20260928-1804.jar",
+      "sha256": "4759d2f7891e69c15d8136cb553dec0a5f7ff4d56c06d00ba48197648a2c1c74"
+    },
+    {
+      "file": "org.osate.ba.contrib_1.1.0.v20260928-1804.jar",
+      "sha256": "e8b6c8daae972cdf0d820797f0bea6743412e96045ce31a62596a2461ac90652"
+    },
+    {
+      "file": "org.osate.ba.edit_8.0.0.v20260928-1804.jar",
+      "sha256": "be7635c1b0635b312a8702d0f9775b6bc63623957b2dbf16bb9b0b5e0c6fe4d8"
+    },
+    {
+      "file": "org.osate.ba_9.0.0.v20260928-1804.jar",
+      "sha256": "eff39d13e314e8126638395a3ec6e4cea329f0e885c33cdb17416c625cfb31f1"
+    },
+    {
+      "file": "org.osate.codegen.checker_1.2.2.v20260928-1804.jar",
+      "sha256": "9c1d6e9a04cc83942a69cc435ddf1d793cb7cb7f00a661ec6942c7dd07ef05a8"
+    },
+    {
+      "file": "org.osate.contribution.sei_2.2.2.v20260928-1804.jar",
+      "sha256": "324fa6607b7718220d5a34d9cbe36b6685167724e94b6ec071b2f7daee5fd34e"
+    },
+    {
+      "file": "org.osate.core_5.1.1.v20260928-1804.jar",
+      "sha256": "9cc7264dda980287246a75ba3691fc530b097c38ee9370fcb1356eda2efc2e21"
+    },
+    {
+      "file": "org.osate.importer.simulink_1.2.2.v20260928-1804.jar",
+      "sha256": "b8d9cc9a53d733f355eb2db1cd753cfad9353026206d54ad6a7bd57079422e55"
+    },
+    {
+      "file": "org.osate.importer_3.0.1.v20260928-1804.jar",
+      "sha256": "437ec1ecd33484427ac855c8a2364c46f53ea6fc63bd28dc59d8535ee37e0768"
+    },
+    {
+      "file": "org.osate.modelstats_1.2.2.v20260928-1804.jar",
+      "sha256": "6c24a0e31ebdb3aeddd3eaf48790ae26acab53c5905af3b02f15ee7fef7aa265"
+    },
+    {
+      "file": "org.osate.pluginsupport_7.3.0.v20260928-1804.jar",
+      "sha256": "d86e5f0cc8e1af3c0d5d2c3298b25ff4f3c4709c918ef5881b40f9fae3e39884"
+    },
+    {
+      "file": "org.osate.resolute_1.0.5.v20260928-1804.jar",
+      "sha256": "7197601a8c78331264785a3657a58e5e488050ce0c5f6af4def45dce294e4a9f"
+    },
+    {
+      "file": "org.osate.results_3.2.2.v20260928-1804.jar",
+      "sha256": "c46a1837140f3ec6ea5f44a0c8664d147e4c8bacae12a7ffda9d652c327c29cb"
+    },
+    {
+      "file": "org.osate.slicer_0.1.6.v20260928-1804.jar",
+      "sha256": "4672d25c3a30e7844d67b2edd08cbfdee3eaa5a2fe17b822ecba7fbce89d3650"
+    },
+    {
+      "file": "org.osate.utils_3.0.0.v20260928-1804.jar",
+      "sha256": "b5df1bdad0c815a7f89791a71b79c4a717a2dbc7f332ef84aa3ae6cd4d206983"
+    },
+    {
+      "file": "org.osate.workspace_4.1.3.v20260928-1804.jar",
+      "sha256": "97da64ec67765324f7d019e721eab614f004cf9f8beec11f59832aff596ba6df"
+    },
+    {
+      "file": "org.osate.xtext.aadl2.ba.edit_1.0.0.v20260928-1804.jar",
+      "sha256": "bcd8a75eb04a91c2e2e40cadfaa62403d4cbba3b40c9a09b0fbe800461c4cad4"
+    },
+    {
+      "file": "org.osate.xtext.aadl2.ba.ide_1.0.0.v20260928-1804.jar",
+      "sha256": "05522b4e803dbc1162535fed1e31425dfe17a4f3c01056d41d32e2a000251780"
+    },
+    {
+      "file": "org.osate.xtext.aadl2.ba.ui_1.0.0.v20260928-1804.jar",
+      "sha256": "989c5b7098d58bcb4c372dbcde1f258361eeec9b238c0fdd5fdd8c2e3c8ce367"
+    },
+    {
+      "file": "org.osate.xtext.aadl2.ba_1.0.1.v20260928-1804.jar",
+      "sha256": "cf4005e4ce2e0518c9b2a8c7a7cb31e04534c52c3cc0ad90d87462294b4c85ad"
+    },
+    {
+      "file": "org.osate.xtext.aadl2.errormodel.edit_1.2.0.v20260928-1804.jar",
+      "sha256": "986a93bafbcf099aaae192cfdc7912bca4de8b95cbb094e51263dba0c679973b"
+    },
+    {
+      "file": "org.osate.xtext.aadl2.errormodel.ide_2.0.0.v20260928-1804.jar",
+      "sha256": "1b80ceb1141b8cb2566b266eaf5f5eeb2f1b50eda02a30ec93b8cdde17ffff98"
+    },
+    {
+      "file": "org.osate.xtext.aadl2.errormodel_8.0.1.v20260928-1804.jar",
+      "sha256": "99f19bbd63a3b117311cbadc004f98c6ce08e2993547c171d0d2a16406201ff4"
+    },
+    {
+      "file": "org.osate.xtext.aadl2.ide_2.1.0.v20260928-1804.jar",
+      "sha256": "16a19882377710dd7dd4eb62100e15e060e7c04022dfb922a41918f71353c583"
+    },
+    {
+      "file": "org.osate.xtext.aadl2.properties.ide_2.0.0.v20260928-1804.jar",
+      "sha256": "8295f263ff274b8c7157dcc7847654b57202f98e3bdd1a3fb8269be1e8077438"
+    },
+    {
+      "file": "org.osate.xtext.aadl2.properties_4.0.1.v20260928-1804.jar",
+      "sha256": "5da7c2a2db536a54897d02e5f0a88ff2a993c66798ea12448116e3727cb8fab6"
+    },
+    {
+      "file": "org.osate.xtext.aadl2_9.1.0.v20260928-1804.jar",
+      "sha256": "8d695f12a402b568ccc4b9cd2996fa5ccf521184fe3f1879a36109c88ec085e6"
+    },
+    {
+      "file": "org.osgi.service.component_1.5.1.202212101352.jar",
+      "sha256": "0653852deab5c6f6e9c84e3aa8f72e72b9ce7dfaf7a6431f3d80f6f9d7a433ad"
+    },
+    {
+      "file": "org.osgi.service.event_1.4.1.202109301733.jar",
+      "sha256": "9f11c68980dbd931850f3f27fc7c35e1d710ecc728fe872bd6d786cd7e4b7b5e"
+    },
+    {
+      "file": "org.osgi.service.prefs_1.1.2.202109301733.jar",
+      "sha256": "43c7c870710e363405d422da653cce0d798a4537f76e4930f79bceadd3a55345"
+    },
+    {
+      "file": "org.osgi.util.function_1.2.0.202109301733.jar",
+      "sha256": "208819c7c71690c15a6bb8b187474e7f9d0147946b680182a62b9f222ae014ec"
+    },
+    {
+      "file": "org.osgi.util.promise_1.3.0.202212101352.jar",
+      "sha256": "7053c57e7d7d88fec6b90979a3af125e1d2bb847268a328a2f1ed65ad0a4c185"
+    },
+    {
+      "file": "org.tukaani.xz_1.11.0.jar",
+      "sha256": "0a4077f6aeae2865532a564807af8d30c26acc6f63b7928d93bd7ab1f2190449"
+    },
+    {
+      "file": "osate-workspace-server-0.3.0.jar",
+      "sha256": "bf02f4aa3ebf3d581acc63ead929f9bcedb2df23aed4317967b38d964c14df3d"
+    }
+  ],
+  "annex_parser_registrations": [
+    {
+      "name": "*",
+      "jar": "org.osate.annexsupport_5.0.0.v20260928-1804.jar",
+      "class": "org.osate.annexsupport.DefaultAnnexParser"
+    },
+    {
+      "name": "behavior_specification",
+      "jar": "org.osate.xtext.aadl2.ba_1.0.1.v20260928-1804.jar",
+      "class": "org.osate.xtext.aadl2.ba.parsing.BehaviorAnnexAnnexParser"
+    },
+    {
+      "name": "EMV2",
+      "jar": "org.osate.xtext.aadl2.errormodel_8.0.1.v20260928-1804.jar",
+      "class": "org.osate.xtext.aadl2.errormodel.parsing.EMV2AnnexParser"
+    }
+  ],
+  "contributed_library_resources": [
+    {
+      "declaration": "communication_properties",
+      "jar": "org.osate.aadl2.contrib_2.2.2.v20260928-1804.jar",
+      "resource": "resources/properties/Predeclared_Property_Sets/Communication_Properties.aadl",
+      "sha256": "481c5abc35e7bfa319ee6df74cfaf2e851b38b5892224b3559e54300969ae254"
+    },
+    {
+      "declaration": "aadl_project",
+      "jar": "org.osate.aadl2.contrib_2.2.2.v20260928-1804.jar",
+      "resource": "resources/properties/Predeclared_Property_Sets/AADL_Project.aadl",
+      "sha256": "1004879a6c65329b85f5e80f97519c27bbbb71725d771a7477e6fcffb95eabb5"
+    },
+    {
+      "declaration": "thread_properties",
+      "jar": "org.osate.aadl2.contrib_2.2.2.v20260928-1804.jar",
+      "resource": "resources/properties/Predeclared_Property_Sets/Thread_Properties.aadl",
+      "sha256": "268a891a54468fab6da8963421ff45369979119f74926acb1d55933224049519"
+    },
+    {
+      "declaration": "programming_properties",
+      "jar": "org.osate.aadl2.contrib_2.2.2.v20260928-1804.jar",
+      "resource": "resources/properties/Predeclared_Property_Sets/Programming_Properties.aadl",
+      "sha256": "3a9061044b2fdb21f8ffc5c42c94eb7e064eb0ddcbd0c91c723c2a3a5dd9d89e"
+    },
+    {
+      "declaration": "deployment_properties",
+      "jar": "org.osate.aadl2.contrib_2.2.2.v20260928-1804.jar",
+      "resource": "resources/properties/Predeclared_Property_Sets/Deployment_Properties.aadl",
+      "sha256": "71102540bf2dcead0e4a02598997ba32ede55a393bbbfac1c1c4e37af306895c"
+    },
+    {
+      "declaration": "memory_properties",
+      "jar": "org.osate.aadl2.contrib_2.2.2.v20260928-1804.jar",
+      "resource": "resources/properties/Predeclared_Property_Sets/Memory_Properties.aadl",
+      "sha256": "285a87ed3c3e97f9a183627850bae70f54abbb8c3d0b9645d94b0716894ab159"
+    },
+    {
+      "declaration": "modeling_properties",
+      "jar": "org.osate.aadl2.contrib_2.2.2.v20260928-1804.jar",
+      "resource": "resources/properties/Predeclared_Property_Sets/Modeling_Properties.aadl",
+      "sha256": "165dff7c2e097324a3e3bcd6840b7b30d3568893385335c9c54d874fb79d39ee"
+    },
+    {
+      "declaration": "timing_properties",
+      "jar": "org.osate.aadl2.contrib_2.2.2.v20260928-1804.jar",
+      "resource": "resources/properties/Predeclared_Property_Sets/Timing_Properties.aadl",
+      "sha256": "4ab7569d3d82783d4d6c53367dd9fbf675e0cb112ce561afe60984489dfe9ed9"
+    },
+    {
+      "declaration": "emv2",
+      "jar": "org.osate.aadl2.errormodel.contrib_1.0.12.v20260928-1804.jar",
+      "resource": "resources/properties/EMV2.aadl",
+      "sha256": "53fc03a823761bdffbcc9f9b3ef7adccbf4860cbfc12c18671b581208120ff19"
+    },
+    {
+      "declaration": "arp4761",
+      "jar": "org.osate.aadl2.errormodel.contrib_1.0.12.v20260928-1804.jar",
+      "resource": "resources/properties/ARP4761.aadl",
+      "sha256": "975b8403c0e029a90ac508431b5d31b9944eba4e3571509b84a5eb9a74b06ba8"
+    },
+    {
+      "declaration": "milstd882",
+      "jar": "org.osate.aadl2.errormodel.contrib_1.0.12.v20260928-1804.jar",
+      "resource": "resources/properties/MILSTD882.aadl",
+      "sha256": "1d425526ec585193909eba93809994f17e31a70c287850b28dcb43699af64946"
+    },
+    {
+      "declaration": "errorlibrary",
+      "jar": "org.osate.aadl2.errormodel.contrib_1.0.12.v20260928-1804.jar",
+      "resource": "resources/packages/ErrorLibrary.aadl",
+      "sha256": "8c2231c4e5279b37428df2b6c3520f3f3197db05cd47e419561577772e5738ef"
+    },
+    {
+      "declaration": "behavior_properties",
+      "jar": "org.osate.ba.contrib_1.1.0.v20260928-1804.jar",
+      "resource": "resources/properties/behavior_properties.aadl",
+      "sha256": "b4c43491d23ac798f3eb5b718cd88ac9c775fc10becfa2725b468d2128033b3d"
+    },
+    {
+      "declaration": "physical",
+      "jar": "org.osate.contribution.sei_2.2.2.v20260928-1804.jar",
+      "resource": "resources/properties/Physical.aadl",
+      "sha256": "652fb6369e410a76eb68c1c0585151c2a84400449791678b4ae7a732c9b22941"
+    },
+    {
+      "declaration": "code_generation_properties",
+      "jar": "org.osate.contribution.sei_2.2.2.v20260928-1804.jar",
+      "resource": "resources/properties/Code_Generation_Properties.aadl",
+      "sha256": "8bc9e93f9781d896ca1f7c10038e55df7e6f272c295cd266a67c0a5cab5abc84"
+    },
+    {
+      "declaration": "sei",
+      "jar": "org.osate.contribution.sei_2.2.2.v20260928-1804.jar",
+      "resource": "resources/properties/SEI.aadl",
+      "sha256": "4669abec269eb6feb826c247a376511cfac0990cebe8cab4c9c51545a6baad11"
+    },
+    {
+      "declaration": "arinc429",
+      "jar": "org.osate.contribution.sei_2.2.2.v20260928-1804.jar",
+      "resource": "resources/properties/ARINC429.aadl",
+      "sha256": "ba37b0af5f05ac8e662aaf784b2ec87be05845d4f6e4ab0eff977ca74f726c79"
+    },
+    {
+      "declaration": "arinc653",
+      "jar": "org.osate.contribution.sei_2.2.2.v20260928-1804.jar",
+      "resource": "resources/properties/ARINC653.aadl",
+      "sha256": "b155351264fe9a5ffb1579367670d487f997d33770c4cdadf9c578efb8fab3fe"
+    },
+    {
+      "declaration": "data_model",
+      "jar": "org.osate.contribution.sei_2.2.2.v20260928-1804.jar",
+      "resource": "resources/properties/Data_Model.aadl",
+      "sha256": "1cf3b7beaeb27dd84458dd091be9d98413805b756164673ef4148af2f5e47ec7"
+    },
+    {
+      "declaration": "physicalresources",
+      "jar": "org.osate.contribution.sei_2.2.2.v20260928-1804.jar",
+      "resource": "resources/packages/PhysicalResources.aadl",
+      "sha256": "24fac865fc253832c846ebbee39351f565276cdc1a4fb3582965f55f8182d831"
+    },
+    {
+      "declaration": "base_types",
+      "jar": "org.osate.contribution.sei_2.2.2.v20260928-1804.jar",
+      "resource": "resources/packages/Base_Types.aadl",
+      "sha256": "43c21ff9d7557da762fd4fbb1ecbe3d5cd2bece20e6aa898c46ec33ca72add46"
+    }
+  ],
+  "probe": {
+    "status": "passed",
+    "diagnostics": [],
+    "version": "0.3.0",
+    "stdout": "osate-cli 0.3.0\n",
+    "executable": "D:\\AADL-multi-agent\\aadl-research\\.tools\\osate-cli-0.3.0\\bin\\osate-cli.bat",
+    "binary_provenance": [
+      {
+        "file": "osate-cli.jar",
+        "sha256": "169f943de2f046c05ea9a5e0a540a2c9aa575e5a9dbcf637e3de9a71c639e549"
+      },
+      {
+        "file": "org.osate.xtext.aadl2_9.1.0.v20260928-1804.jar",
+        "sha256": "8d695f12a402b568ccc4b9cd2996fa5ccf521184fe3f1879a36109c88ec085e6"
+      },
+      {
+        "file": "osate-workspace-server-0.3.0.jar",
+        "sha256": "bf02f4aa3ebf3d581acc63ead929f9bcedb2df23aed4317967b38d964c14df3d"
+      }
+    ]
+  }
+}

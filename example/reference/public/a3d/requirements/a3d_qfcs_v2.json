@@ -1,0 +1,762 @@
+{
+  "case_id": "a3d_qfcs_v2",
+  "title": "QFCS V2 derived architectural example requirements",
+  "independent_evaluation_eligible": false,
+  "source_repository": "smaccm/smaccm",
+  "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+  "coverage": [
+    "Four-FCC architecture and nested ISAS/OSAS/CLAW structure",
+    "Redundant typed inputs, 21-field actuator interface and local data paths",
+    "Embedded author requirements for input health checks, fault latching and output monitoring",
+    "Behavioral abstraction and bounds; no concrete processor, bus, memory or scheduling deployment is supplied upstream"
+  ],
+  "original_requirement_status": "Partial author-written natural-language requirements exist as source comments and selected examples occur in the authors' 2015 paper. No complete independent requirements baseline linked to this exact commit has been located. This curated architecture-wide set is derived and cannot be an independent evaluation oracle.",
+  "limitations": [
+    "OSATE core and instance checks do not validate AGREE semantics. The local CLI has no AGREE parser; no contract was proved in this task.",
+    "The 2015 paper describes the same FCS/FCC/ISAS/OSAS/CLAW study, but no paper-to-commit identity or exhaustive requirement correspondence is established.",
+    "FCS.aadl:101-108 routes all eight SOV outputs from FCC1. FCS.aadl:54-94 contains no top-level EGI-to-FCC connections. These are recorded as unresolved source issues and are not adopted as intended redundancy requirements.",
+    "CLAW has no selected-sensor inputs, its implementation is empty, and several OSAS failure/status inputs are not supplied by local FCC connections. The model is a contract abstraction, not a complete flight-control implementation.",
+    "OSAS-S-180 and OSAS-S-250 are marked THIS UNREAL in OSAS.aadl:71,80. The nominal gain helper maps valid counts 0,1,2,3 to 4,2,4/3,1, whereas FCS validity accounting can produce 0..4; these semantics and failure-rule priority require review and are not prescribed as a corrected gain-selection requirement.",
+    "ISAS-S-220 (mismatched dual fallback) and ISAS-S-260 (quad selection table) are excluded from normative draft requirements: the paper explicitly discusses contradictions and missing equality cases. No correction is guessed.",
+    "EGI fallback fields and comparison parameters are marked TBD in the source. Dimensionless 0..50 ranges and 5.0 tolerances are example parameters, not certified aircraft limits.",
+    "Requirements restated from source prose may not exactly match their AGREE formalization. In particular EGI validity and FCC-reset assumptions are not supplied as implemented interfaces.",
+    "No concrete hardware allocation, physical CCDL network, scheduling period, engineering-unit dictionary, control-law algorithm or avionics certification claim is reconstructed.",
+    "The local-CCDL-failure gain=1 rule is kept only as an excluded source observation because it can conflict with zero output for a latched actuator failure. No priority is invented.",
+    "OSAS_S_110 counter reset is unresolved: source prose says a fault clearing within five frames resets it, while the helper checks four consecutive fault-free frames. This draft does not prescribe either reset condition."
+  ],
+  "source_search_evidence": [
+    {
+      "url": "https://github.com/smaccm/smaccm/tree/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2",
+      "finding": "Fixed recursive tree and all 38 local AADL files reviewed. Requirement prose is embedded in AADL, with helper packages under *_REQS; this subtree has no standalone original requirements document.",
+      "license": "Repository BSD-3-Clause; preserve source copyright/license."
+    },
+    {
+      "url": "https://loonwerks.com/publications/pdf/backes2015nfm.pdf",
+      "title": "Requirements Analysis of a Quad-Redundant Flight Control System",
+      "authors": "John Backes, Darren Cofer, Steven Miller, Michael W. Whalen",
+      "year": 2015,
+      "pages": "5-10 architecture and selected English requirements; 11-13 known requirement errors",
+      "finding": "Primary author paper corroborates hierarchy and selected source requirement IDs; exact imported commit not identified. Used as provenance and limitation evidence, not wholesale requirements text.",
+      "license": "No explicit redistribution permission verified for this author-hosted PDF; link only, no formal full-text import."
+    },
+    {
+      "url": "https://arxiv.org/abs/1502.02605v1",
+      "title": "Verifying the Safety of a Flight-Critical System",
+      "pages": "1-4",
+      "finding": "Followed reference 10 of the QFCS paper. This primary study explains requirements elicitation for TCM guidance/control models, not a complete version-matched QFCS_V2 baseline; no autopilot requirements were transferred.",
+      "license": "arXiv record links https://creativecommons.org/publicdomain/certification/1.0/us/; formal copy not needed."
+    }
+  ],
+  "requirements": [
+    {
+      "id": "QFCS-DR-001",
+      "text": "Represent the flight-control architecture as one FCS system containing four peer instances, FCC1, FCC2, FCC3 and FCC4, of the same FCC implementation. The reference root is FCS::FCS.impl.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/FCS.aadl",
+          "line_start": 47,
+          "line_end": 52,
+          "sha256": "e52aeadce090abefb3cd7a04f43aed4b2fda705772e380122e8cf01cb70b4361",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/FCS.aadl#L47-L52",
+          "span_sha256": "6ef6ca6f350c3104da9570642f15153c0d051bfc4233902cf4c1191d184e78aa"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "QFCS-DR-002",
+      "text": "Decompose each FCC into exactly three system subcomponents: an input-signal analysis and selection component ISAS, an output-signal analysis and selection component OSAS, and an abstract control-law component CLAW.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/FCC.aadl",
+          "line_start": 111,
+          "line_end": 115,
+          "sha256": "153ccc26f7811fb22e9b844c8ba23938f65767372f00935afe24831a5ff125de",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/FCC.aadl#L111-L115",
+          "span_sha256": "72786caaccddd30b49c528261856aa2197f8c81a1282650222a2a56fe5e2d24b"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "QFCS-DR-003",
+      "text": "Expose nine sensor-input groups at the FCS and FCC interfaces: quad-redundant elevators, ailerons, rudders, flaps, spoilers, stabilizers and EGI; dual-redundant angle of attack and air data. Use typed AADL data ports and retain the distinction between each redundant group and its selected single-channel value.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/FCS.aadl",
+          "line_start": 6,
+          "line_end": 17,
+          "sha256": "e52aeadce090abefb3cd7a04f43aed4b2fda705772e380122e8cf01cb70b4361",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/FCS.aadl#L6-L17",
+          "span_sha256": "fe2b23f10b4b0566ec3f6fc8597ebf26fab7d3db65c6b8355777509bfe67a7c1"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/FCC.aadl",
+          "line_start": 8,
+          "line_end": 38,
+          "sha256": "153ccc26f7811fb22e9b844c8ba23938f65767372f00935afe24831a5ff125de",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/FCC.aadl#L8-L38",
+          "span_sha256": "d95b776764290856f61387306f8a7a74b91c45d62100a92afc0b09cf7fef6a5a"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "QFCS-DR-004",
+      "text": "Represent each elevator sample with ELLOB, ELLIB, ELROB and ELRIB; each aileron sample with AILL and AILR; each rudder sample with RUDU and RUDL; each flap sample with FLLOB, FLLIB, FLROB and FLRIB; each spoiler sample with SPLOB, SPLIB, SPROB and SPRIB; and each stabilizer sample with VAL. Values are floating-point, and every sample also carries an integer TIME_STAMP.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/DATA_TYPES.aadl",
+          "line_start": 10,
+          "line_end": 20,
+          "sha256": "4a15d13696f346cec764753001155cef72056e88932af1998885d660c18a6458",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/DATA_TYPES.aadl#L10-L20",
+          "span_sha256": "a10acf661bc4d57ba514ab05491296add5f61214c0ff626c6930f6135c7c6cec"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/DATA_TYPES.aadl",
+          "line_start": 49,
+          "line_end": 59,
+          "sha256": "4a15d13696f346cec764753001155cef72056e88932af1998885d660c18a6458",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/DATA_TYPES.aadl#L49-L59",
+          "span_sha256": "c8e25e76803886bd134f0ddda78f57facf91b9ddb28491ff3628dc7913ae4490"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/DATA_TYPES.aadl",
+          "line_start": 88,
+          "line_end": 141,
+          "sha256": "4a15d13696f346cec764753001155cef72056e88932af1998885d660c18a6458",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/DATA_TYPES.aadl#L88-L141",
+          "span_sha256": "06fe1319f2e511936a62ed72f6b555c283a07630f1bf3c2e80c116483f5d51b1"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/DATA_TYPES.aadl",
+          "line_start": 193,
+          "line_end": 211,
+          "sha256": "4a15d13696f346cec764753001155cef72056e88932af1998885d660c18a6458",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/DATA_TYPES.aadl#L193-L211",
+          "span_sha256": "98f467f3cd94544db06f0698aebf232d0733209d76b0b9f56b8f9409c61dcf87"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "QFCS-DR-005",
+      "text": "Represent each angle-of-attack sample by floating-point AOA plus an integer timestamp, and each air-data sample by floating-point TAT, TotPres, Pres and Temp plus an integer timestamp; provide two samples in each redundant group.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/DATA_TYPES.aadl",
+          "line_start": 154,
+          "line_end": 191,
+          "sha256": "4a15d13696f346cec764753001155cef72056e88932af1998885d660c18a6458",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/DATA_TYPES.aadl#L154-L191",
+          "span_sha256": "8cbb0795b6f16f42c4f53fe369eaf0df25339b72e0008128ae0d7a59095827f4"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "QFCS-DR-006",
+      "text": "Retain the EGI abstraction as four records carrying PHI, THETA, PSI, PB, QB, RB, NX, NY, NZ, VN, VE, HDOT, LAT, LON, ALT, GAMLNS, GS, VGOT, XTACC, FPACCEL and HDD as floating-point values with an integer timestamp. Its AOA, TAT, TotPres, Pres and Temp fallback fields are provisional model abstractions, not confirmed aircraft-interface fields.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/DATA_TYPES.aadl",
+          "line_start": 213,
+          "line_end": 257,
+          "sha256": "4a15d13696f346cec764753001155cef72056e88932af1998885d660c18a6458",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/DATA_TYPES.aadl#L213-L257",
+          "span_sha256": "428eb87334a0b5892cc7208ee4f4979d1aa2d1a65cb249b30f2673d22a4a1333"
+        }
+      ],
+      "note": "The source explicitly marks the five fallback fields TBD; this requirement preserves that qualification."
+    },
+    {
+      "id": "QFCS-DR-007",
+      "text": "Provide four actuator-return input bundles and four actuator-command output bundles at FCS. Route return bundle i to FCC i and route FCC i's command bundle to output i, for i = 1..4. Retain eight Boolean SOV output bundles at the FCS interface, two bundles per named channel; the disputed upstream SOV routing is not prescribed here.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/FCS.aadl",
+          "line_start": 19,
+          "line_end": 38,
+          "sha256": "e52aeadce090abefb3cd7a04f43aed4b2fda705772e380122e8cf01cb70b4361",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/FCS.aadl#L19-L38",
+          "span_sha256": "ec8aab6ee640538498a71d1556ca9295584b86551617395bc6ff1893a7d36aef"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/FCS.aadl",
+          "line_start": 91,
+          "line_end": 108,
+          "sha256": "e52aeadce090abefb3cd7a04f43aed4b2fda705772e380122e8cf01cb70b4361",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/FCS.aadl#L91-L108",
+          "span_sha256": "f91aa0ca5ce53d2b67e70bf6505c633d8bb20e1fae9637c247ab0683e653d091"
+        }
+      ],
+      "note": "All eight upstream SOV connections currently originate at FCC1; that wiring is recorded as a limitation, not adopted as a desired channel assignment."
+    },
+    {
+      "id": "QFCS-DR-008",
+      "text": "Use a common 21-field actuator schema: THROTL, THROTR, ELLOB, ELLIB, ELROB, ELRIB, AILL, AILR, RUDUP, RUDLO, SPLLIB, SPLLOB, SPLRIB, SPLROB, FLAPLI, FLAPLO, FLAPRI, FLAPRO, GEAR, BRAKE and STEER. Command/return values are floating-point; corresponding validity counts are integer; corresponding fault and SOV records are Boolean.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/DATA_TYPES.aadl",
+          "line_start": 375,
+          "line_end": 457,
+          "sha256": "4a15d13696f346cec764753001155cef72056e88932af1998885d660c18a6458",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/DATA_TYPES.aadl#L375-L457",
+          "span_sha256": "ed60f98367a0de00af5c55be48ef04f3c167130f418676f3212eaa6699433ec2"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "QFCS-DR-009",
+      "text": "Within each FCC, route the nine sensor groups to ISAS and expose ISAS selected values and fault flags through the corresponding FCC outputs. Route the FCC actuator return and validity-count inputs to OSAS, and route CLAW actuator commands to OSAS command inputs.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/FCC.aadl",
+          "line_start": 121,
+          "line_end": 160,
+          "sha256": "153ccc26f7811fb22e9b844c8ba23938f65767372f00935afe24831a5ff125de",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/FCC.aadl#L121-L160",
+          "span_sha256": "b9780c8785e24b11f0da3a20f38cd8158fbf140adc4abf89bc8bd863cc5ba863"
+        }
+      ],
+      "note": "This states local FCC wiring only; FCS-level EGI distribution and ISAS-to-CLAW functional coupling are incomplete in the imported model."
+    },
+    {
+      "id": "QFCS-DR-010",
+      "text": "Expose OSAS output commands, actuator-failure flags and two SOV bundles through the FCC. Keep OSAS inputs for actuator returns, ISAS/CLAW failure indications, CCDL failure counts, a CCDL frame counter, CCDL failure status, validity counts and OSAS failure status distinct from command values.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/OSAS.aadl",
+          "line_start": 6,
+          "line_end": 25,
+          "sha256": "e0ba632a90ab5bbb21ac4fd7cad00875b067e924672a67b80a08d5098f9f042c",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/OSAS.aadl#L6-L25",
+          "span_sha256": "abb96c193923ec40ec167108338fc07b36fdf678e5002194da771c913ff82568"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/FCC.aadl",
+          "line_start": 134,
+          "line_end": 160,
+          "sha256": "153ccc26f7811fb22e9b844c8ba23938f65767372f00935afe24831a5ff125de",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/FCC.aadl#L134-L160",
+          "span_sha256": "c1f24bff51b876a5aa02c5422f466f05f495d28eef90a42490a8dd2c97120578"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "QFCS-DR-011",
+      "text": "Represent cross-channel validity accounting explicitly in the behavioral abstraction: use a shared per-actuator validity-count record, constrain all four FCC validity-count inputs to that record, and relate the counts to the four FCC actuator-failure records. This is an AGREE abstraction of CCDL behavior, not a physical communication-bus deployment.",
+      "origin_kind": "embedded_contract",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/FCS.aadl",
+          "line_start": 110,
+          "line_end": 123,
+          "sha256": "e52aeadce090abefb3cd7a04f43aed4b2fda705772e380122e8cf01cb70b4361",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/FCS.aadl#L110-L123",
+          "span_sha256": "fa77793bf152075b31e852b574d2495115232fece7b2c028f0c3f452867e665e"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/FCS_REQS/FCS_RC1.aadl",
+          "line_start": 67,
+          "line_end": 85,
+          "sha256": "df06b89fc307509bad9a4ece8819cb8544465556aa67f8d8880a1370101bab6e",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/FCS_REQS/FCS_RC1.aadl#L67-L85",
+          "span_sha256": "4aaf9c4af991329c2c2cc5d45c619112be7f2f6e087c460f1584f0271cc72688"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "QFCS-DR-012",
+      "text": "For each of the 21 actuator fields, specify an FCS contract requiring the arithmetic mean of the four FCC command values to remain in the example's inclusive range 0.0 to 50.0. These dimensionless example bounds do not specify aircraft engineering units.",
+      "origin_kind": "embedded_contract",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/FCS.aadl",
+          "line_start": 40,
+          "line_end": 43,
+          "sha256": "e52aeadce090abefb3cd7a04f43aed4b2fda705772e380122e8cf01cb70b4361",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/FCS.aadl#L40-L43",
+          "span_sha256": "32d8e3e88aba430b952605de44eb9287484843262f634ac3155186c85eb87d9e"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/FCS_REQS/FCS_RC1.aadl",
+          "line_start": 5,
+          "line_end": 65,
+          "sha256": "df06b89fc307509bad9a4ece8819cb8544465556aa67f8d8880a1370101bab6e",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/FCS_REQS/FCS_RC1.aadl#L5-L65",
+          "span_sha256": "a192bfab1d89aec4d2124a1a5af445485fe562dd6cbf0ca35e4f2c13a026bebe"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/AGREE_CONSTANTS.aadl",
+          "line_start": 138,
+          "line_end": 180,
+          "sha256": "466bd1dd37b826a5e1718b1e2a04ff5240d4fe2222bdff008d016de00d7da147",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/AGREE_CONSTANTS.aadl#L138-L180",
+          "span_sha256": "5238d843af34d86f4094adb3a8dba643fa200d41c64940fd67843890fd44eef4"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "QFCS-DR-013",
+      "text": "Specify an abstract CLAW component with one actuator-command output bundle and a contract bounding each of its 21 command values between 0.0 and 50.0 inclusive. Do not infer a control-law algorithm or selected-sensor input interface from this abstraction.",
+      "origin_kind": "embedded_contract",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/CCDL.aadl",
+          "line_start": 1,
+          "line_end": 39,
+          "sha256": "6f51c9ae399f038d2091942bbd1810bc5bcf59a22ebc02cc2011a8c2c0fcb2fc",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/CCDL.aadl#L1-L39",
+          "span_sha256": "199429361aabc5c948e91920081e67d40c41afe828c5a47808fa9dc12cb79ad2"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/AGREE_CONSTANTS.aadl",
+          "line_start": 138,
+          "line_end": 180,
+          "sha256": "466bd1dd37b826a5e1718b1e2a04ff5240d4fe2222bdff008d016de00d7da147",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/AGREE_CONSTANTS.aadl#L138-L180",
+          "span_sha256": "5238d843af34d86f4094adb3a8dba643fa200d41c64940fd67843890fd44eef4"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "QFCS-DR-014",
+      "text": "Check whether dual and quad sensor inputs have updated since the previous sample frame. Maintain this stale-data assessment separately from range and inter-channel comparisons.",
+      "origin_kind": "author_requirement",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/ISAS.aadl",
+          "line_start": 131,
+          "line_end": 141,
+          "sha256": "e0663ebd41376e2d26d3e05ec94330b74822cfef9c7d3d1784393ed0f3461d62",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/ISAS.aadl#L131-L141",
+          "span_sha256": "a090dde997095de1553d5fb9091c36c66dc448b285c2366905860b9604369eaa"
+        }
+      ],
+      "note": "Paraphrase of author-written source comments; the single-channel sentence is not generalized into an implemented single-channel ISAS path.",
+      "source_context": "model_embedded_author_prose"
+    },
+    {
+      "id": "QFCS-DR-015",
+      "text": "For the eight checked sensor groups (elevators, ailerons, rudders, flaps, spoilers, stabilizers, angle of attack and air data), assess dual and quad digital input values against their operational ranges, separately from stale-data status. In this illustrative model, the configured lower and upper sensor bounds are 0.0 and 50.0; these are modeling parameters, not measured aircraft limits.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/ISAS.aadl",
+          "line_start": 143,
+          "line_end": 149,
+          "sha256": "e0663ebd41376e2d26d3e05ec94330b74822cfef9c7d3d1784393ed0f3461d62",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/ISAS.aadl#L143-L149",
+          "span_sha256": "c3b696bedc904163d07db35e6b73b3dd8734e218ef66541ca055f3eb03eb4a7d"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/AGREE_CONSTANTS.aadl",
+          "line_start": 57,
+          "line_end": 136,
+          "sha256": "466bd1dd37b826a5e1718b1e2a04ff5240d4fe2222bdff008d016de00d7da147",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/AGREE_CONSTANTS.aadl#L57-L136",
+          "span_sha256": "0bd9549750f2331b3ecb72a82b83966649ba02fb4067a877e5c1ad039ed028d2"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/ISAS.aadl",
+          "line_start": 137,
+          "line_end": 167,
+          "sha256": "e0663ebd41376e2d26d3e05ec94330b74822cfef9c7d3d1784393ed0f3461d62",
+          "note": "The eight checked input groups exclude the EGI input itself.",
+          "span_sha256": "c7692722757c79a935847f8705732acf4b812c11cf7ddef4e4138433fb13b6bc",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/ISAS.aadl#L137-L167"
+        }
+      ],
+      "note": "EGI is a separate fallback source, not a ninth input passed to these stale/range/peer-comparison checks. Declared EGI constants do not establish EGI self-health checking.",
+      "basis_kinds": [
+        "author_requirement",
+        "embedded_contract"
+      ]
+    },
+    {
+      "id": "QFCS-DR-016",
+      "text": "For the eight checked sensor groups (elevators, ailerons, rudders, flaps, spoilers, stabilizers, angle of attack and air data), compare the two channels of each dual input and compare each quad channel with peer channels using signal-specific tolerances. The example configures tolerance magnitudes as 0.1 times the corresponding upper range bound, yielding 5.0 for bounds of 50.0; EGI-specific tolerances retain their provisional status.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/ISAS.aadl",
+          "line_start": 151,
+          "line_end": 167,
+          "sha256": "e0663ebd41376e2d26d3e05ec94330b74822cfef9c7d3d1784393ed0f3461d62",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/ISAS.aadl#L151-L167",
+          "span_sha256": "78d795f68fb305236fa7ed4ebd503954ea2f302bed7606928e1f94af85145655"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/AGREE_CONSTANTS.aadl",
+          "line_start": 6,
+          "line_end": 55,
+          "sha256": "466bd1dd37b826a5e1718b1e2a04ff5240d4fe2222bdff008d016de00d7da147",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/AGREE_CONSTANTS.aadl#L6-L55",
+          "span_sha256": "fccad8bbfafe46fdd207c0f684b331ccfe29627facc351dfdad5f30d9282ad1f"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/ISAS.aadl",
+          "line_start": 137,
+          "line_end": 167,
+          "sha256": "e0663ebd41376e2d26d3e05ec94330b74822cfef9c7d3d1784393ed0f3461d62",
+          "note": "The eight checked input groups exclude the EGI input itself.",
+          "span_sha256": "c7692722757c79a935847f8705732acf4b812c11cf7ddef4e4138433fb13b6bc",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/ISAS.aadl#L137-L167"
+        }
+      ],
+      "note": "EGI is a separate fallback source, not a ninth input passed to these stale/range/peer-comparison checks. Declared EGI constants do not establish EGI self-health checking.",
+      "basis_kinds": [
+        "author_requirement",
+        "embedded_contract"
+      ]
+    },
+    {
+      "id": "QFCS-DR-017",
+      "text": "Select a healthy dual input by averaging its two signal values, subject to the component's health and tolerance checks.",
+      "origin_kind": "author_requirement",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/ISAS.aadl",
+          "line_start": 172,
+          "line_end": 176,
+          "sha256": "e0663ebd41376e2d26d3e05ec94330b74822cfef9c7d3d1784393ed0f3461d62",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/ISAS.aadl#L172-L176",
+          "span_sha256": "3bb4b3e94a94b60c73b109ab306191e741d7d4a2d36b2605fecfa3e6def84847"
+        }
+      ],
+      "note": "",
+      "source_context": "model_embedded_author_prose"
+    },
+    {
+      "id": "QFCS-DR-018",
+      "text": "When one channel of a dual input is stale or outside its range, compare the remaining channel with the selected equivalent EGI parameter using the applicable EGI-comparison tolerance.",
+      "origin_kind": "author_requirement",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/ISAS.aadl",
+          "line_start": 178,
+          "line_end": 185,
+          "sha256": "e0663ebd41376e2d26d3e05ec94330b74822cfef9c7d3d1784393ed0f3461d62",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/ISAS.aadl#L178-L185",
+          "span_sha256": "5d6f87afdc31d26335be7796efc779e8d00bef1d531f6445382c4afc0250224c"
+        }
+      ],
+      "note": "",
+      "source_context": "model_embedded_author_prose"
+    },
+    {
+      "id": "QFCS-DR-019",
+      "text": "When exactly one channel of a dual input is declared faulty, specify the selected value as the average of the remaining channel and the corresponding selected EGI value. This is the recorded source requirement, conditional on an available meaningful EGI fallback.",
+      "origin_kind": "author_requirement",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/ISAS.aadl",
+          "line_start": 187,
+          "line_end": 192,
+          "sha256": "e0663ebd41376e2d26d3e05ec94330b74822cfef9c7d3d1784393ed0f3461d62",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/ISAS.aadl#L187-L192",
+          "span_sha256": "88b7e7ac565738eb228c1b940c480a1dbddeaaa3ba33558045fed82646bc172a"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/ISAS_REQS/ISAS_S_200.aadl",
+          "line_start": 5,
+          "line_end": 33,
+          "sha256": "301f3ab90cd05bb43b25ac8f1a49b64d589a972ba8d7a824bbb385e9aa0ce686",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/ISAS_REQS/ISAS_S_200.aadl#L5-L33",
+          "span_sha256": "0e64ce404a37ffaef8ed144a7074d051e88fa0e2b51e78a5f6592783583e9c4a"
+        }
+      ],
+      "note": "Upstream EGI availability and validity assumptions are incomplete; no end-to-end satisfaction claim is made.",
+      "source_context": "model_embedded_author_prose"
+    },
+    {
+      "id": "QFCS-DR-020",
+      "text": "When both channels of a dual input are faulty and the corresponding EGI data is valid, use the selected equivalent EGI value as the dual-input selection.",
+      "origin_kind": "author_requirement",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/ISAS.aadl",
+          "line_start": 194,
+          "line_end": 199,
+          "sha256": "e0663ebd41376e2d26d3e05ec94330b74822cfef9c7d3d1784393ed0f3461d62",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/ISAS.aadl#L194-L199",
+          "span_sha256": "c00c99745245d8a2090b845acd7a6580c245a089ec846f76094224d415303a50"
+        }
+      ],
+      "note": "This is the author's natural-language condition; it is not a claim that the current AGREE helper encodes every stated precondition.",
+      "source_context": "model_embedded_author_prose"
+    },
+    {
+      "id": "QFCS-DR-021",
+      "text": "Latch a sensor signal fault after it persists for five consecutive frames, and retain the failed indication until FCC reset, as stated by the embedded ISAS-S-240 requirement.",
+      "origin_kind": "author_requirement",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/ISAS.aadl",
+          "line_start": 220,
+          "line_end": 230,
+          "sha256": "e0663ebd41376e2d26d3e05ec94330b74822cfef9c7d3d1784393ed0f3461d62",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/ISAS.aadl#L220-L230",
+          "span_sha256": "7396d0aec66b1374e80ad92a079593893b8736def25befc9ea1e07e8b6cf4f40"
+        }
+      ],
+      "note": "The reset is part of the author's prose; no concrete reset port or reset implementation is invented.",
+      "source_context": "model_embedded_author_prose"
+    },
+    {
+      "id": "QFCS-DR-022",
+      "text": "For each actuator, compare the returned command with the previous-frame command using a 2.5 percent tolerance, and increment that actuator's fault counter when the comparison fails.",
+      "origin_kind": "author_requirement",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/OSAS.aadl",
+          "line_start": 33,
+          "line_end": 41,
+          "sha256": "e0ba632a90ab5bbb21ac4fd7cad00875b067e924672a67b80a08d5098f9f042c",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/OSAS.aadl#L33-L41",
+          "span_sha256": "e0c762ea353758180f83a44819516f4c70d9dffa3700eacdd54476ffb8077f8c"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/OSAS_REQS/OSAS_S_100.aadl",
+          "line_start": 4,
+          "line_end": 9,
+          "sha256": "c29be7b6a2c94e0ce936eb3c2b46ca0ee7a51e7d251271696b886cfdd72fcf87",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/OSAS_REQS/OSAS_S_100.aadl#L4-L9",
+          "span_sha256": "1908c32b2243e0e7c26fb81426140030ef3f41fe45c4126294d0f99717b99fdc"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/OSAS_REQS/OSAS_S_110.aadl",
+          "line_start": 9,
+          "line_end": 65,
+          "sha256": "c0d64164cb6fbcd8d560078572867fbebbf2ab276008d7d6bac2a84835a2cb7a",
+          "note": "Author counter-reset prose and executable helper differ; only comparison and increment are retained as requirements.",
+          "span_sha256": "241bdafdde6905aa6af874a53ab761af18d2440451ab3f5993abc6ba9cc15cba",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/OSAS_REQS/OSAS_S_110.aadl#L9-L65"
+        }
+      ],
+      "note": "Counter-reset behavior is deliberately unspecified: the author comment says clear if the fault clears within five frames, whereas the helper requires at least four consecutive fault-free frames. The two descriptions are not silently reconciled.",
+      "source_context": "model_embedded_author_prose"
+    },
+    {
+      "id": "QFCS-DR-023",
+      "text": "Latch an actuator-command failure after five consecutive faulty frames. The failure remains latched in the corresponding OSAS failure contract; a command that is latched failed is required to be zero.",
+      "origin_kind": "embedded_contract",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/OSAS.aadl",
+          "line_start": 43,
+          "line_end": 52,
+          "sha256": "e0ba632a90ab5bbb21ac4fd7cad00875b067e924672a67b80a08d5098f9f042c",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/OSAS.aadl#L43-L52",
+          "span_sha256": "9d621d994a7a1c041a3a20a5d1ea139e010c2600570457d2fc9675f869cf49bf"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/FCC.aadl",
+          "line_start": 77,
+          "line_end": 102,
+          "sha256": "153ccc26f7811fb22e9b844c8ba23938f65767372f00935afe24831a5ff125de",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/FCC.aadl#L77-L102",
+          "span_sha256": "780a012a711b0a1e20dbbaf362d67d2be83f06bba834ea23de52ae9cb899f83f"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/OSAS_REQS/OSAS_S_120.aadl",
+          "line_start": 16,
+          "line_end": 51,
+          "sha256": "473a41194b0042e8d2ed5f7f7f04c67a3d7247b6debaa09d64088607620ff000",
+          "note": "OSAS helper covers all 21 fields, including FLAPRO; FCC's separate latch list is incomplete.",
+          "span_sha256": "7fba0d824dcb12b86c326dec713cc1fc71dcae6e7d99208e7e545106f09d95dc",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/OSAS_REQS/OSAS_S_120.aadl#L16-L51"
+        }
+      ],
+      "note": "",
+      "basis_kinds": [
+        "author_requirement",
+        "embedded_contract"
+      ]
+    },
+    {
+      "id": "QFCS-DR-024",
+      "text": "After initialization, detect a local CCDL failure when its frame counter does not advance by exactly one from the preceding frame.",
+      "origin_kind": "embedded_contract",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/OSAS.aadl",
+          "line_start": 54,
+          "line_end": 60,
+          "sha256": "e0ba632a90ab5bbb21ac4fd7cad00875b067e924672a67b80a08d5098f9f042c",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/OSAS.aadl#L54-L60",
+          "span_sha256": "27bdef42196a6182b25e3c49a4b7e84c99f52cc42211723fa346b2ad76629e16"
+        }
+      ],
+      "note": "",
+      "basis_kinds": [
+        "author_requirement",
+        "embedded_contract"
+      ]
+    },
+    {
+      "id": "QFCS-DR-026",
+      "text": "Represent OSAS gain application for the explicitly enumerated gains: output equals input for gain 1.0, twice input for 2.0, four-thirds input for 4.0/3.0, and four times input for 4.0; for other gain values the recorded helper requires output zero. Selection of a gain remains subject to unresolved contract interactions.",
+      "origin_kind": "embedded_contract",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/OSAS_REQS/OSAS_S_190.aadl",
+          "line_start": 36,
+          "line_end": 54,
+          "sha256": "5d19cedfb105dcf9db6d75b1cf21202b96ccf002fe2be39161b13cbf4c2cdcfa",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/OSAS_REQS/OSAS_S_190.aadl#L36-L54",
+          "span_sha256": "7aae2fa69e1e77ed55eebaf7b282b944f478ff6d8efc8fd6c5835e6861417539"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "QFCS-DR-027",
+      "text": "Preserve the two SOV output records and their separate failure inputs at OSAS so shutdown behavior can be represented without collapsing it into actuator magnitude. Do not treat the current all-FCC1 top-level SOV routing or the unverified SOV contract as an independently validated safety mechanism.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/OSAS.aadl",
+          "line_start": 10,
+          "line_end": 18,
+          "sha256": "e0ba632a90ab5bbb21ac4fd7cad00875b067e924672a67b80a08d5098f9f042c",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/OSAS.aadl#L10-L18",
+          "span_sha256": "086f26a1d26db0b7c81de5460cae4052c098a6fff7ba818ce28f257de05483bb"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/OSAS.aadl",
+          "line_start": 83,
+          "line_end": 84,
+          "sha256": "e0ba632a90ab5bbb21ac4fd7cad00875b067e924672a67b80a08d5098f9f042c",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/OSAS.aadl#L83-L84",
+          "span_sha256": "5464dc67012dd8efcb626d8d77bb024ee823bbabd82166591941cd36e9b2821e"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/FCS.aadl",
+          "line_start": 101,
+          "line_end": 108,
+          "sha256": "e52aeadce090abefb3cd7a04f43aed4b2fda705772e380122e8cf01cb70b4361",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/FCS.aadl#L101-L108",
+          "span_sha256": "304fe362cc86ff643afe23214c8e5ceaf7aeb15794b3ba3bd20f45cb089bd17d"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "QFCS-DR-028",
+      "text": "At FCS level, distribute the eight explicitly connected sensor groups to all four FCCs: elevators, ailerons, rudders, spoilers, flaps, angle of attack, air data and stabilizers. Preserve this fan-out without inventing a deployed sensor bus. EGI distribution is an unresolved source gap, not an instruction to leave a production sensor path disconnected.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/FCS.aadl",
+          "line_start": 54,
+          "line_end": 89,
+          "sha256": "e52aeadce090abefb3cd7a04f43aed4b2fda705772e380122e8cf01cb70b4361",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/FCS.aadl#L54-L89",
+          "span_sha256": "cc47737c67f2de259749141f981d66222b7a9d25ea9b7f79fe7936b33885a42a"
+        }
+      ],
+      "note": ""
+    }
+  ],
+  "schema_version": 1,
+  "requirement_origin": "derived_example",
+  "is_gold_reference": false,
+  "root_classifiers": [
+    "FCS::FCS.impl"
+  ],
+  "author_requirement_meaning": "Paraphrased author prose embedded in source models; not an independent original specification.",
+  "curation_method": "AI-assisted architecture reconstruction with line-level source review; no claim of complete functional coverage or contract proof.",
+  "excluded_source_statements": [
+    {
+      "id": "QFCS-DR-025",
+      "text": "Record the local-CCDL-failure requirement that actuator-command gain is 1.0. This rule must be reviewed together with OSAS/CLAW failure rules before claiming a consistent combined contract; conflicting conditions are not resolved by this draft.",
+      "origin_kind": "author_requirement",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/OSAS.aadl",
+          "line_start": 62,
+          "line_end": 65,
+          "sha256": "e0ba632a90ab5bbb21ac4fd7cad00875b067e924672a67b80a08d5098f9f042c",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/OSAS.aadl#L62-L65",
+          "span_sha256": "e66088485c25a2faad595fdb81fc4600b37b46c7a5c1374854764870e614aba7"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/OSAS.aadl",
+          "line_start": 67,
+          "line_end": 80,
+          "sha256": "e0ba632a90ab5bbb21ac4fd7cad00875b067e924672a67b80a08d5098f9f042c",
+          "note": "",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/QFCS_V2/packages/OSAS.aadl#L67-L80",
+          "span_sha256": "08e38f3d3ea24462d5eb50c0cfb8b90bd112a456b7ef7c67e0fa924432813770"
+        }
+      ],
+      "note": "An author requirement is preserved with its unresolved interaction, not promoted to a verified contract.",
+      "disposition": "source_observation_excluded_from_normative_requirements",
+      "reason": "If CCDL fails while an actuator is latched failed and CLAW command is 10, gain 1 plus the gain helper requires output 10, while the latched-failure rule requires 0. Rule priority is not established.",
+      "source_context": "model_embedded_author_prose"
+    }
+  ]
+}

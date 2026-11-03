@@ -1,0 +1,541 @@
+{
+  "case_id": "a3d_fms",
+  "validated_at_utc": "2026-11-03T05:01:59.951726+00:00",
+  "validator_script_sha256": "1024ae005d269341f77822846c397dfd96bc4efa5a291ab3b567b4d17d55acf1",
+  "environment_sha256": "80a8c3d8467a0c4ec2afdf9e32c1d07d73f8bc02ee390093bd6beadcaf0f8acf",
+  "environment_file": "environment-80a8c3d8467a.json",
+  "roots": [
+    {
+      "root": "fms::fms.impl",
+      "role": "primary_architecture",
+      "status": "not_run",
+      "reason": "Core syntax/linking check did not pass.",
+      "prerequisite_status": "failed"
+    }
+  ],
+  "proof": {
+    "status": "not_run",
+    "reason": "No annex theorem prover was invoked."
+  },
+  "selection": {
+    "primary_directory": "aadlib/examples/fms",
+    "dependency_pool": "aadlib",
+    "preserved_primary_aadl_count": 9,
+    "selected_count": 14,
+    "excluded_builtin_copies": [
+      {
+        "path": "aadlib\\src\\property_set\\arp4761.aadl",
+        "sha256": "cd040ef467653cdcd2eb86eeaa0a8989c2d3f14d9601591eea79a8ac1719c2ed",
+        "reason": "provided_by_osate_distribution",
+        "declarations": [
+          "arp4761"
+        ]
+      },
+      {
+        "path": "aadlib\\src\\property_set\\milstd882.aadl",
+        "sha256": "892f5714d5696e53e85e2038f8aa5ee07ffe54c6d091f68ede0dac23049cb318",
+        "reason": "provided_by_osate_distribution",
+        "declarations": [
+          "milstd882"
+        ]
+      }
+    ],
+    "static_unresolved_names": [
+      "deployment"
+    ],
+    "selection_issues": [],
+    "builtin_dependencies": [
+      {
+        "declaration": "arinc653",
+        "jar": "org.osate.contribution.sei_2.2.2.v20260928-1804.jar",
+        "resource": "resources/properties/ARINC653.aadl",
+        "sha256": "b155351264fe9a5ffb1579367670d487f997d33770c4cdadf9c578efb8fab3fe"
+      }
+    ],
+    "note": "Static namespace closure selects files; OSATE diagnostics are authoritative for linking."
+  },
+  "sources": [
+    {
+      "path": "aadlib\\examples\\fms\\afdx_properties.aadl",
+      "sha256": "269c413f5c4057995430821fd8de6e0535eeef66b1d090ba7f6c6b446bf195e5",
+      "size": 623,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "afdx_properties"
+      ],
+      "annexes": [],
+      "staged_path": "m000.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\fms\\datatype.aadl",
+      "sha256": "7c5e8ddc8424c011a7643db99ecd644f69675669698083ca1409ae601a754fef",
+      "size": 730,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "datatype"
+      ],
+      "annexes": [],
+      "staged_path": "m001.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\fms\\fms.aadl",
+      "sha256": "424ba3e3b5c0d6dd1046e396e1234825b00511b1d747f7d6f0eacf36d57ae43f",
+      "size": 5063,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "fms"
+      ],
+      "annexes": [
+        "paths_specification",
+        "real_specification"
+      ],
+      "staged_path": "m002.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\fms\\fms_hardware.aadl",
+      "sha256": "006a43e5b11cfa98e904673e4f880860cc7311f638d0b07d4a930953d403c4f8",
+      "size": 5386,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "fms_hardware"
+      ],
+      "annexes": [],
+      "staged_path": "m003.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\fms\\m1_software.aadl",
+      "sha256": "81d296caba577976edd0ed260211ebc7f5ec0fce17b98503a24a6ce3ed672fed",
+      "size": 2550,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "m1_software"
+      ],
+      "annexes": [],
+      "staged_path": "m004.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\fms\\m2_software.aadl",
+      "sha256": "cb791a3c1ed73e1455c9fdcbe68aeabcfd11f470b0e0137d32b0e5b04fc55649",
+      "size": 2524,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "m2_software"
+      ],
+      "annexes": [],
+      "staged_path": "m005.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\fms\\m3_software.aadl",
+      "sha256": "3174e4195a85bee03503faeaae6197ae42c3b9c706c7f7da45e6bd66e44ec336",
+      "size": 1407,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "m3_software"
+      ],
+      "annexes": [],
+      "staged_path": "m006.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\fms\\m4_software.aadl",
+      "sha256": "a7fefd1485db245b3decf4fd11bc704aa8437462a87adc8a8e7f35b5c292d7c3",
+      "size": 1811,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "m4_software"
+      ],
+      "annexes": [],
+      "staged_path": "m007.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\fms\\subsystem.aadl",
+      "sha256": "5332f3a1d79901e85b26060e122e14c06c965e831616baaf02f9e3e5920091ff",
+      "size": 6774,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "subsystem"
+      ],
+      "annexes": [],
+      "staged_path": "m008.aadl"
+    },
+    {
+      "path": "aadlib\\src\\aadl\\buses\\buses-can.aadl",
+      "sha256": "1436020509e2ea4392e48667b5f381cedfe929d1be35090dc0005feb0ad10a0e",
+      "size": 235,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "buses::can"
+      ],
+      "annexes": [],
+      "staged_path": "m009.aadl"
+    },
+    {
+      "path": "aadlib\\src\\aadl\\memories.aadl",
+      "sha256": "a6d1d41a5c4b0a9f24da20db214078bd1d61ed492dce6dd496f9d50a98a4d4ed",
+      "size": 1023,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "memories"
+      ],
+      "annexes": [],
+      "staged_path": "m010.aadl"
+    },
+    {
+      "path": "aadlib\\src\\aadl\\processors\\processors.aadl",
+      "sha256": "5e8a6db3d6297d241d30d46f1873503dcb1dcbf0fc510ab8cd5e929b171c11ac",
+      "size": 1891,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "processors"
+      ],
+      "annexes": [],
+      "staged_path": "m011.aadl"
+    },
+    {
+      "path": "aadlib\\src\\property_set\\bus_properties.aadl",
+      "sha256": "9876918495d06e6866943da12dadf500aba87d9443ad16d9d77151ed8df11c86",
+      "size": 914,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "bus_properties"
+      ],
+      "annexes": [],
+      "staged_path": "m012.aadl"
+    },
+    {
+      "path": "aadlib\\src\\property_set\\processor_properties.aadl",
+      "sha256": "0abf62e81f90c17805ed48af3debc2515621c05638ca1cbc30763ef5036830a1",
+      "size": 1521,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "processor_properties"
+      ],
+      "annexes": [],
+      "staged_path": "m013.aadl"
+    }
+  ],
+  "annexes": [
+    {
+      "name": "paths_specification",
+      "parser_status": "unsupported",
+      "semantic_validation": "not_run",
+      "proof_status": "not_run"
+    },
+    {
+      "name": "real_specification",
+      "parser_status": "unsupported",
+      "semantic_validation": "not_run",
+      "proof_status": "not_run"
+    }
+  ],
+  "interpretation": "Core syntax/linking and requested instantiation only. Unsupported annex bodies remain unchanged and may be accepted by the default parser; acceptance is not annex validation or proof.",
+  "staging": {
+    "directory": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\s",
+    "source_bytes_preserved": true
+  },
+  "core": {
+    "status": "failed",
+    "diagnostics": [
+      {
+        "severity": "warning",
+        "message": "Expected feature 'can_access' to have classifier 'fms_hardware::can'",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl",
+        "line": 43,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/fms/fms.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Expected feature 'can_access' to have classifier 'fms_hardware::can'",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl",
+        "line": 44,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/fms/fms.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Expected feature 'can_keyboard_access' to have classifier 'fms_hardware::can'",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl",
+        "line": 45,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/fms/fms.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Expected feature 'can_display_access' to have classifier 'fms_hardware::can'",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl",
+        "line": 46,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/fms/fms.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Expected feature 'afdx_access' to have classifier 'fms_hardware::physical_afdx_link.impl'",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl",
+        "line": 47,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/fms/fms.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Expected feature 'afdx_access' to have classifier 'fms_hardware::physical_afdx_link.impl'",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl",
+        "line": 48,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/fms/fms.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Expected feature 'afdx_access' to have classifier 'fms_hardware::physical_afdx_link.impl'",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl",
+        "line": 49,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/fms/fms.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Expected feature 'afdx_access' to have classifier 'fms_hardware::physical_afdx_link.impl'",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl",
+        "line": 50,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/fms/fms.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Expected feature 'afdx_access' to have classifier 'fms_hardware::physical_afdx_link.impl'",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl",
+        "line": 51,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/fms/fms.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::can'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl",
+        "line": 19,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/fms/subsystem.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::can'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl",
+        "line": 29,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/fms/subsystem.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::physical_afdx_link.impl'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl",
+        "line": 37,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/fms/subsystem.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::can'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl",
+        "line": 53,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/fms/subsystem.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::can'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl",
+        "line": 54,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/fms/subsystem.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::physical_afdx_link.impl'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl",
+        "line": 55,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/fms/subsystem.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::physical_afdx_link.impl'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl",
+        "line": 100,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/fms/subsystem.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::physical_afdx_link.impl'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl",
+        "line": 144,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/fms/subsystem.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::physical_afdx_link.impl'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl",
+        "line": 176,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/fms/subsystem.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to ModelUnit 'Deployment'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl",
+        "line": 6,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/src/aadl/processors/processors.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl",
+        "line": 19,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/src/aadl/processors/processors.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'Native'. For classifier references use classifier( <ref> ).",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl",
+        "line": 19,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/src/aadl/processors/processors.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl",
+        "line": 33,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/src/aadl/processors/processors.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'LEON_ORK'. For classifier references use classifier( <ref> ).",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl",
+        "line": 33,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/src/aadl/processors/processors.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl",
+        "line": 69,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/src/aadl/processors/processors.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'VxWorks'. For classifier references use classifier( <ref> ).",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl",
+        "line": 69,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/src/aadl/processors/processors.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl",
+        "line": 74,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/src/aadl/processors/processors.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'VxWorks'. For classifier references use classifier( <ref> ).",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl",
+        "line": 74,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/src/aadl/processors/processors.aadl"
+      }
+    ],
+    "version": "0.3.0",
+    "stdout": "osate-cli 0.3.0\nCreated D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\.project\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\session-home\"\n53711\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\session-home\"\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl:43:48: warning: Expected feature 'can_access' to have classifier 'fms_hardware::can'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl:44:47: warning: Expected feature 'can_access' to have classifier 'fms_hardware::can'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl:45:55: warning: Expected feature 'can_keyboard_access' to have classifier 'fms_hardware::can'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl:46:54: warning: Expected feature 'can_display_access' to have classifier 'fms_hardware::can'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl:47:53: warning: Expected feature 'afdx_access' to have classifier 'fms_hardware::physical_afdx_link.impl'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl:48:53: warning: Expected feature 'afdx_access' to have classifier 'fms_hardware::physical_afdx_link.impl'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl:49:53: warning: Expected feature 'afdx_access' to have classifier 'fms_hardware::physical_afdx_link.impl'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl:50:53: warning: Expected feature 'afdx_access' to have classifier 'fms_hardware::physical_afdx_link.impl'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl:51:56: warning: Expected feature 'afdx_access' to have classifier 'fms_hardware::physical_afdx_link.impl'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl:19:35: error: Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::can'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl:29:36: error: Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::can'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl:37:37: error: Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::physical_afdx_link.impl'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl:53:44: error: Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::can'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl:54:43: error: Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::can'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl:55:37: error: Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::physical_afdx_link.impl'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl:100:37: error: Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::physical_afdx_link.impl'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl:144:37: error: Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::physical_afdx_link.impl'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl:176:37: error: Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::physical_afdx_link.impl'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl:6:6: error: Couldn't resolve reference to ModelUnit 'Deployment'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl:19:5: error: Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl:19:39: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'Native'. For classifier references use classifier( <ref> ).\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl:33:3: error: Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl:33:36: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'LEON_ORK'. For classifier references use classifier( <ref> ).\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl:69:5: error: Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl:69:39: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'VxWorks'. For classifier references use classifier( <ref> ).\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl:74:5: error: Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl:74:39: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'VxWorks'. For classifier references use classifier( <ref> ).\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\session-home\"\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl:43:48: warning: Expected feature 'can_access' to have classifier 'fms_hardware::can'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl:44:47: warning: Expected feature 'can_access' to have classifier 'fms_hardware::can'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl:45:55: warning: Expected feature 'can_keyboard_access' to have classifier 'fms_hardware::can'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl:46:54: warning: Expected feature 'can_display_access' to have classifier 'fms_hardware::can'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl:47:53: warning: Expected feature 'afdx_access' to have classifier 'fms_hardware::physical_afdx_link.impl'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl:48:53: warning: Expected feature 'afdx_access' to have classifier 'fms_hardware::physical_afdx_link.impl'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl:49:53: warning: Expected feature 'afdx_access' to have classifier 'fms_hardware::physical_afdx_link.impl'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl:50:53: warning: Expected feature 'afdx_access' to have classifier 'fms_hardware::physical_afdx_link.impl'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m002.aadl:51:56: warning: Expected feature 'afdx_access' to have classifier 'fms_hardware::physical_afdx_link.impl'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl:19:35: error: Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::can'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl:29:36: error: Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::can'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl:37:37: error: Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::physical_afdx_link.impl'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl:53:44: error: Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::can'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl:54:43: error: Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::can'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl:55:37: error: Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::physical_afdx_link.impl'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl:100:37: error: Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::physical_afdx_link.impl'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl:144:37: error: Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::physical_afdx_link.impl'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m008.aadl:176:37: error: Couldn't resolve reference to BusFeatureClassifier 'fms_hardware::physical_afdx_link.impl'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl:6:6: error: Couldn't resolve reference to ModelUnit 'Deployment'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl:19:5: error: Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl:19:39: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'Native'. For classifier references use classifier( <ref> ).\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl:33:3: error: Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl:33:36: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'LEON_ORK'. For classifier references use classifier( <ref> ).\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl:69:5: error: Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl:69:39: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'VxWorks'. For classifier references use classifier( <ref> ).\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl:74:5: error: Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\model\\m011.aadl:74:39: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'VxWorks'. For classifier references use classifier( <ref> ).\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\session-home\"\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5\\session-home\"",
+    "executable": "D:\\AADL-multi-agent\\aadl-research\\.tools\\osate-cli-0.3.0\\bin\\osate-cli.bat",
+    "binary_provenance": [
+      {
+        "file": "osate-cli.jar",
+        "sha256": "169f943de2f046c05ea9a5e0a540a2c9aa575e5a9dbcf637e3de9a71c639e549"
+      },
+      {
+        "file": "org.osate.xtext.aadl2_9.1.0.v20260928-1804.jar",
+        "sha256": "8d695f12a402b568ccc4b9cd2996fa5ccf521184fe3f1879a36109c88ec085e6"
+      },
+      {
+        "file": "osate-workspace-server-0.3.0.jar",
+        "sha256": "bf02f4aa3ebf3d581acc63ead929f9bcedb2df23aed4317967b38d964c14df3d"
+      }
+    ],
+    "instance": {
+      "status": "not_requested",
+      "root": null
+    },
+    "workspace": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\a76fbfbd\\r\\osate-run-e634aef520324aa3b036f14feefaa5f5",
+    "sources": [
+      {
+        "path": "m000.aadl",
+        "sha256": "269c413f5c4057995430821fd8de6e0535eeef66b1d090ba7f6c6b446bf195e5"
+      },
+      {
+        "path": "m001.aadl",
+        "sha256": "7c5e8ddc8424c011a7643db99ecd644f69675669698083ca1409ae601a754fef"
+      },
+      {
+        "path": "m002.aadl",
+        "sha256": "424ba3e3b5c0d6dd1046e396e1234825b00511b1d747f7d6f0eacf36d57ae43f"
+      },
+      {
+        "path": "m003.aadl",
+        "sha256": "006a43e5b11cfa98e904673e4f880860cc7311f638d0b07d4a930953d403c4f8"
+      },
+      {
+        "path": "m004.aadl",
+        "sha256": "81d296caba577976edd0ed260211ebc7f5ec0fce17b98503a24a6ce3ed672fed"
+      },
+      {
+        "path": "m005.aadl",
+        "sha256": "cb791a3c1ed73e1455c9fdcbe68aeabcfd11f470b0e0137d32b0e5b04fc55649"
+      },
+      {
+        "path": "m006.aadl",
+        "sha256": "3174e4195a85bee03503faeaae6197ae42c3b9c706c7f7da45e6bd66e44ec336"
+      },
+      {
+        "path": "m007.aadl",
+        "sha256": "a7fefd1485db245b3decf4fd11bc704aa8437462a87adc8a8e7f35b5c292d7c3"
+      },
+      {
+        "path": "m008.aadl",
+        "sha256": "5332f3a1d79901e85b26060e122e14c06c965e831616baaf02f9e3e5920091ff"
+      },
+      {
+        "path": "m009.aadl",
+        "sha256": "1436020509e2ea4392e48667b5f381cedfe929d1be35090dc0005feb0ad10a0e"
+      },
+      {
+        "path": "m010.aadl",
+        "sha256": "a6d1d41a5c4b0a9f24da20db214078bd1d61ed492dce6dd496f9d50a98a4d4ed"
+      },
+      {
+        "path": "m011.aadl",
+        "sha256": "5e8a6db3d6297d241d30d46f1873503dcb1dcbf0fc510ab8cd5e929b171c11ac"
+      },
+      {
+        "path": "m012.aadl",
+        "sha256": "9876918495d06e6866943da12dadf500aba87d9443ad16d9d77151ed8df11c86"
+      },
+      {
+        "path": "m013.aadl",
+        "sha256": "0abf62e81f90c17805ed48af3debc2515621c05638ca1cbc30763ef5036830a1"
+      }
+    ]
+  },
+  "original_sources_unchanged": true,
+  "working_artifacts": {
+    "workspaces_retained": false,
+    "reason": "Temporary reference-validation workspaces removed during repository cleanup; source bytes and diagnostics remain preserved."
+  }
+}

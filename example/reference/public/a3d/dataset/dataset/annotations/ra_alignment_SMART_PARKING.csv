@@ -1,0 +1,243 @@
+AADL_model,component_name,normalized_name,category,ports,ra_component
+AadlProjects_vtv_transOperator_impl_1,SYSTEM,system,system,"[""dvr_inf"", ""op_disp"", ""op_in"", ""alarm""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,parkmgmtsys,parkmgmtsys,system,"[""vehicle_paymt_req"", ""conn_vehicle_data"", ""parking_info"", ""park_mgmt_appl_info"", ""driver_info""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,parkmgmt,parkmgmt,system,"[""occupancy"", ""park_spaces""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,dynparklot,dynparklot,process,"[""occupancy""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,park_lot_occupancy,park lot occupancy,thread,"[""park_occupancy""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,detectveh,detectveh,process,[],Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,manageparkreserv,manageparkreserv,process,"[""park_spaces""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,park_lot_spaces,park lot spaces,thread,"[""spaces""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,parkelecpaymt,parkelecpaymt,system,"[""pay_req"", ""capacity_update""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,billdriver,billdriver,process,"[""pay_req""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,parking_cost,parking cost,thread,"[""pay_req""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,updateparkdata,updateparkdata,process,"[""capacity_update""]",Data_Management_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,spaces,spaces,thread,"[""capacity_update""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,roadsideequip,roadsideequip,system,"[""personal_loca"", ""vehicle_paymt_req"", ""park_mgmt_appl_info"", ""conn_vehicle_data"", ""park_avail"", ""veh_paymt_req"", ""veh_paymt_update""]",Presentation_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,RSEparkmgmt,rseparkmgmt,system,"[""personal_loca"", ""vehicle_paymt_req"", ""conn_vehicle_data"", ""park_avail"", ""veh_paymt_req""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,vehdata,vehdata,process,"[""personal_loca"", ""vehicle_paymt_req"", ""veh_paymt_req""]",Data_Management_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,loc_identity,loc identity,thread,"[""personal_loca""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,veh_paymt,veh paymt,thread,"[""vehicle_paymt_req"", ""veh_paymt_req""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,Rsideparkcomm,rsideparkcomm,process,"[""conn_vehicle_data"", ""park_avail""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,transinfoctr,transinfoctr,system,"[""traveler_req"", ""traveler_src_update"", ""parking_info"", ""interactv_travle_info""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,TICInteractvTravInfo,ticinteractv trav info,system,"[""traveler_req"", ""interactv_travle_info""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,trav_profiles,trav profiles,process,"[""traveler_req"", ""interactv_travle_info""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,trav_info,trav info,thread,"[""traveler_req"", ""interactv_travle_info""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,TICDataColl,ticdata coll,system,"[""traveler_src_update""]",Data_Management_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,misctravinfo,misctravinfo,process,"[""traveler_src_update""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,traff_data_trav,traff data trav,thread,"[""traveler_src_update""]",Data_Management_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,trafficdata,trafficdata,process,[],Data_Management_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,pricedata,pricedata,process,[],Data_Management_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,vehicleobe,vehicleobe,system,"[""traveler_info"", ""driver_ip"", ""park_avail"", ""pers_info"", ""vehicle_paymt_req"", ""vehicle_paymt_update"", ""vehicle_loca_motion""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,vehbasesafe,vehbasesafe,system,"[""to_veh"", ""guide_req"", ""guidance"", ""loca_identity"", ""pers_info""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,communicationremote,communicationremote,process,"[""to_veh""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,deviceidentity,deviceidentity,thread,"[""to_veh""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,driverguidanceinterface,driverguidanceinterface,process,"[""guide_req"", ""guidance""]",Business_Logic_Layer/Presentation_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,fromdriver,fromdriver,thread,"[""guide_req""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,confirmation,confirmation,thread,"[""guidance""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,vehiclelocationdata,vehiclelocationdata,process,"[""loca_identity""]",Business_Logic_Layer/Data_Management_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,vehicleloc,vehicleloc,thread,"[""loca_identity""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,driverinformationinterface,driverinformationinterface,process,"[""pers_info""]",Business_Logic_Layer/Presentation_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,persidentity,persidentity,thread,"[""pers_info""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,communicationsupport,communicationsupport,system,[],Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,vehiclesecurecommunication,vehiclesecurecommunication,process,[],Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,parkingsystem,parkingsystem,system,[],Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,paymentdeviceinterface,paymentdeviceinterface,process,[],Presentation_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,roadsideinforeception,roadsideinforeception,system,[],Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,vehiclelocdata,vehiclelocdata,process,[],Business_Logic_Layer/Data_Management_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,vehiclenavmapdatabase,vehiclenavmapdatabase,process,[],Business_Logic_Layer/Data_Management_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,driverpersonalreq,driverpersonalreq,process,[],Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,driver,driver,system,"[""driver_info"", ""driver_ip"", ""req_service"", ""driver_up"", ""paymt_txn_status""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,persinfodev,persinfodev,system,"[""local_travlr_info"", ""interactv_travle_info"", ""personal_loca"", ""transit_user_info"", ""traveler_req"", ""traveler_src_update""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,persInteractvTravInfo,pers interactv trav info,system,"[""interactv_travle_info"", ""traveler_req"", ""traveler_src_update""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,personal_info,personal info,process,"[""interactv_travle_info"", ""traveler_req"", ""traveler_src_update""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,info_thread,info thread,thread,"[""interactv_travle_info"", ""traveler_req"", ""traveler_src_update""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,personallocmanagement,personallocmanagement,system,"[""personal_loca""]",Business_Logic_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,travnavmapdatabase,travnavmapdatabase,process,"[""personal_loca""]",Business_Logic_Layer/Data_Management_Layer
+AadlProjects_smartparking_SmartParkingSystem_impl_1,driverloc,driverloc,thread,"[""personal_loca""]",Business_Logic_Layer
+AADL-SmartParkingApplication_InformationServiceProvider_ISP_impl_1,sub_hw_bus,sub hw bus,bus,[],Data_Management_Layer
+AADL-SmartParkingApplication_InformationServiceProvider_ISP_impl_1,sub_TIC,sub tic,processor,"[""bus_access""]",Business_Logic_Layer
+AADL-SmartParkingApplication_InformationServiceProvider_ISP_impl_1,collection,collection,memory,[],Data_Management_Layer
+AadlProjects_smartparking_roadsideinforeception_impl_1,vehiclelocdata,vehiclelocdata,process,[],Business_Logic_Layer/Data_Management_Layer
+AadlProjects_smartparking_roadsideinforeception_impl_1,vehiclenavmapdatabase,vehiclenavmapdatabase,process,[],Business_Logic_Layer/Data_Management_Layer
+AadlProjects_smartparking_roadsideinforeception_impl_1,driverpersonalreq,driverpersonalreq,process,[],Business_Logic_Layer
+ParkingProject_parking_system_parking_simple_1,VME,vme,bus,[],Data_Management_Layer
+ParkingProject_parking_system_parking_simple_1,camera_in,camera in,device,"[""plates_data"", ""recognise_plates"", ""plates_data_event"", ""VME""]",Data_Management_Layer
+ParkingProject_parking_system_parking_simple_1,camera_out,camera out,device,"[""plates_data"", ""recognise_plates"", ""plates_data_event"", ""VME""]",Data_Management_Layer
+ParkingProject_parking_system_parking_simple_1,gate_in,gate in,device,"[""open_gate"", ""close_gate""]",Data_Management_Layer
+ParkingProject_parking_system_parking_simple_1,gate_out,gate out,device,"[""open_gate"", ""close_gate""]",Data_Management_Layer
+ParkingProject_parking_system_parking_simple_1,inductive_loop_in,inductive loop in,device,"[""car_on_loop""]",Data_Management_Layer
+ParkingProject_parking_system_parking_simple_1,inductive_loop_out,inductive loop out,device,"[""car_on_loop""]",Data_Management_Layer
+ParkingProject_parking_system_parking_simple_1,gate_loop_in,gate loop in,device,"[""car_on_loop""]",Data_Management_Layer
+ParkingProject_parking_system_parking_simple_1,gate_loop_out,gate loop out,device,"[""car_on_loop""]",Data_Management_Layer
+ParkingProject_parking_system_parking_simple_1,check_out,check out,device,"[""parking_price"", ""parking_paid"", ""VME""]",Data_Management_Layer
+ParkingProject_parking_system_parking_simple_1,board,board,device,"[""open_slots"", ""VME""]",Data_Management_Layer
+ParkingProject_parking_system_parking_simple_1,parking_slot1,parking slot1,device,"[""car_in"", ""car_out""]",Business_Logic_Layer
+ParkingProject_parking_system_parking_simple_1,parking_slot2,parking slot2,device,"[""car_in"", ""car_out""]",Business_Logic_Layer
+ParkingProject_parking_system_parking_simple_1,parking_slot3,parking slot3,device,"[""car_in"", ""car_out""]",Business_Logic_Layer
+ParkingProject_parking_system_parking_simple_1,RAM,ram,memory,"[""VME""]",Data_Management_Layer
+ParkingProject_parking_system_parking_simple_1,main,main,process,"[""plates_data_in"", ""plates_data_out"", ""parking_price"", ""open_slots"", ""open_gate_in"", ""open_gate_out"", ""car_on_loop_in"", ""car_on_loop_out"", ""recognise_plates_in"", ""recognise_plates_out"", ""parking_paid"", ""car_on_gate_loop_in"", ""car_on_gate_loop_out"", ""close_gate_in"", ""close_gate_out"", ""car_in"", ""car_out"", ""plates_data_in_event"", ""plates_data_event""]",Business_Logic_Layer
+ParkingProject_parking_system_parking_simple_1,inductive_loop_in_thread,inductive loop in thread,thread,"[""car_on_loop"", ""recognize_plates_in""]",Business_Logic_Layer
+ParkingProject_parking_system_parking_simple_1,plates_data_thread,plates data thread,thread,"[""plates_data_in"", ""plates_data_in_event"", ""open_gate_in""]",Data_Management_Layer
+ParkingProject_parking_system_parking_simple_1,car_passed_entry_thread,car passed entry thread,thread,"[""car_on_loop"", ""close_gate""]",Business_Logic_Layer
+ParkingProject_parking_system_parking_simple_1,car_parked_thread,car parked thread,thread,"[""slots_number"", ""car_parked""]",Business_Logic_Layer
+ParkingProject_parking_system_parking_simple_1,car_moved_thread,car moved thread,thread,"[""slots_number"", ""car_moved""]",Business_Logic_Layer
+ParkingProject_parking_system_parking_simple_1,inductive_loop_out_thread,inductive loop out thread,thread,"[""car_on_loop"", ""recognize_plates_out""]",Business_Logic_Layer
+ParkingProject_parking_system_parking_simple_1,calculate_price,calculate price,thread,"[""plate_number"", ""calculated_price"", ""plate_number_event""]",Business_Logic_Layer
+ParkingProject_parking_system_parking_simple_1,open_gate_out_thread,open gate out thread,thread,"[""parking_paid"", ""open_gate_out""]",Business_Logic_Layer
+ParkingProject_parking_system_parking_simple_1,car_passed_exit_thread,car passed exit thread,thread,"[""car_on_loop"", ""close_gate""]",Business_Logic_Layer
+ParkingProject_parking_system_parking_simple_1,cpu,cpu,processor,"[""VME""]",Data_Management_Layer
+AadlProjects_vtv_VehicleTransitSystem_impl_1,transitVehicleDatabus,transit vehicle databus,bus,"[""host_status"", ""coll_inf"", ""pla_ctrl"", ""chg_ctrl""]",Business_Logic_Layer/Data_Management_Layer
+AadlProjects_vtv_VehicleTransitSystem_impl_1,RoadsideEquip,roadside equip,device,"[""vloc_e""]",Presentation_Layer
+AadlProjects_vtv_VehicleTransitSystem_impl_1,itsroadequip,itsroadequip,device,"[""dvr_inf""]",Presentation_Layer
+AadlProjects_vtv_VehicleTransitSystem_impl_1,transvobe,transvobe,system,"[""bus_access"", ""host_status"", ""coll_inf"", ""op_disp"", ""op_in"", ""rvloc"", ""vloc"", ""alarm"", ""pla_ctrl"", ""chg_ctrl"", ""p"", ""l""]",Business_Logic_Layer
+AadlProjects_vtv_VehicleTransitSystem_impl_1,transv2vsafety,transv2vsafety,process,"[""host_status"", ""coll_inf"", ""op_disp"", ""op_in"", ""rvloc"", ""vloc"", ""alarm"", ""pla_ctrl"", ""chg_ctrl"", ""p"", ""l""]",Business_Logic_Layer
+AadlProjects_vtv_VehicleTransitSystem_impl_1,status,status,thread,"[""host_status"", ""coll_inf"", ""alarm"", ""p"", ""l""]",Business_Logic_Layer
+AadlProjects_vtv_VehicleTransitSystem_impl_1,op_ctrl,op ctrl,thread,"[""op_disp"", ""op_in"", ""dp"", ""dl""]",Business_Logic_Layer
+AadlProjects_vtv_VehicleTransitSystem_impl_1,loc_ctrl,loc ctrl,thread,"[""rvloc"", ""vloc""]",Business_Logic_Layer
+AadlProjects_vtv_VehicleTransitSystem_impl_1,thp,thp,thread,"[""datin"", ""datout""]",Business_Logic_Layer
+AadlProjects_vtv_VehicleTransitSystem_impl_1,thl,thl,thread,"[""datin"", ""datout""]",Business_Logic_Layer
+AadlProjects_vtv_VehicleTransitSystem_impl_1,remoteVehicleOBE,remote vehicle obe,system,"[""rvloc"", ""vloc"", ""vloc_e""]",Business_Logic_Layer
+AadlProjects_vtv_VehicleTransitSystem_impl_1,transOperator,trans operator,system,"[""dvr_inf"", ""op_disp"", ""op_in"", ""alarm""]",Business_Logic_Layer
+AADL-SmartParkingApplication_RSE_RSEOwner_impl_1,RSE_ElectricChargeSupportProvider,rse electric charge support provider,process,"[""RSE_ECSP_data_in"", ""RSE_ECSP_data_out""]",Business_Logic_Layer
+AADL-SmartParkingApplication_RSE_RSEOwner_impl_1,RSE_WorkzoneSafetyProvider,rse workzone safety provider,process,"[""RSE_WSP_data_in"", ""RSE_WSP_data_out""]",Business_Logic_Layer
+AADL-SmartParkingApplication_RSE_RSEOwner_impl_1,RSE_TravelInformationCommunicationProvider,rse travel information communication provider,process,"[""RSE_TICP_data_in"", ""RSE_TICP_data_out""]",Business_Logic_Layer
+AADL-SmartParkingApplication_RSE_RSEOwner_impl_1,RSE_TrafficMeteringProvider,rse traffic metering provider,process,"[""RSE_TMP_data_in"", ""RSE_TMP_data_out""]",Business_Logic_Layer
+AADL-SmartParkingApplication_RSE_RSEOwner_impl_1,RSE_SpeedManagementProvider,rse speed management provider,process,"[""RSE_SMP_data_in"", ""RSE_SMP_data_out""]",Business_Logic_Layer
+AadlProjects_vtv_remoteVehicleOBE_impl_1,SYSTEM,system,system,"[""rvloc"", ""vloc"", ""vloc_e""]",Business_Logic_Layer
+AadlProjects_smartparking_roadsideequip_impl_1,SYSTEM,system,system,"[""personal_loca"", ""vehicle_paymt_req"", ""park_mgmt_appl_info"", ""conn_vehicle_data"", ""park_avail"", ""veh_paymt_req"", ""veh_paymt_update""]",Business_Logic_Layer
+AadlProjects_smartparking_roadsideequip_impl_1,RSEparkmgmt,rseparkmgmt,system,"[""personal_loca"", ""vehicle_paymt_req"", ""conn_vehicle_data"", ""park_avail"", ""veh_paymt_req""]",Business_Logic_Layer
+AadlProjects_smartparking_roadsideequip_impl_1,vehdata,vehdata,process,"[""personal_loca"", ""vehicle_paymt_req"", ""veh_paymt_req""]",Data_Management_Layer
+AadlProjects_smartparking_roadsideequip_impl_1,loc_identity,loc identity,thread,"[""personal_loca""]",Business_Logic_Layer
+AadlProjects_smartparking_roadsideequip_impl_1,veh_paymt,veh paymt,thread,"[""vehicle_paymt_req"", ""veh_paymt_req""]",Business_Logic_Layer
+AadlProjects_smartparking_roadsideequip_impl_1,Rsideparkcomm,rsideparkcomm,process,"[""conn_vehicle_data"", ""park_avail""]",Business_Logic_Layer
+AadlProjects_smartparking_TICDataColl_impl_1,SYSTEM,system,system,"[""traveler_src_update""]",Business_Logic_Layer
+AadlProjects_smartparking_TICDataColl_impl_1,misctravinfo,misctravinfo,process,"[""traveler_src_update""]",Business_Logic_Layer
+AadlProjects_smartparking_TICDataColl_impl_1,traff_data_trav,traff data trav,thread,"[""traveler_src_update""]",Data_Management_Layer
+AadlProjects_smartparking_TICDataColl_impl_1,trafficdata,trafficdata,process,[],Data_Management_Layer
+AadlProjects_smartparking_TICDataColl_impl_1,pricedata,pricedata,process,[],Data_Management_Layer
+AadlProjects_smartparking_driver_impl_1,SYSTEM,system,system,"[""driver_info"", ""driver_ip"", ""req_service"", ""driver_up"", ""paymt_txn_status""]",Business_Logic_Layer
+AADL-Architecture-of-Smart-Parking-_SmartParkingSystem_tispSys_impl_1,SYSTEM,system,system,"[""signal_in"", ""signal2_in"", ""signal3_in""]",Business_Logic_Layer
+AADL-Architecture-of-Smart-Parking-_SmartParkingSystem_tispSys_impl_1,sub_driver,sub driver,,"[""DriverInfo_input"", ""DriverOut""]",Business_Logic_Layer
+AADL-Architecture-of-Smart-Parking-_SmartParkingSystem_tispSys_impl_1,sub_hardwareComm,sub hardware comm,bus,[],Data_Management_Layer
+AADL-Architecture-of-Smart-Parking-_SmartParkingSystem_tispSys_impl_1,sub_vehicleOBE,sub vehicle obe,device,"[""signal_out"", ""parking_data_received""]",Business_Logic_Layer
+AADL-Architecture-of-Smart-Parking-_SmartParkingSystem_tispSys_impl_1,sub_roadsideOBE,sub roadside obe,device,"[""signal_out"", ""parking_data_received""]",Data_Management_Layer
+AADL-Architecture-of-Smart-Parking-_SmartParkingSystem_tispSys_impl_1,sub_parkingManager,sub parking manager,process,"[""signal_out"", ""signal_in""]",Business_Logic_Layer
+AADL-Architecture-of-Smart-Parking-_SmartParkingSystem_tispSys_impl_1,sub_RSE_ElectricChargeSupportProvider,sub rse electric charge support provider,process,"[""RSE_ECSP_data_in"", ""RSE_ECSP_data_out""]",Business_Logic_Layer
+AADL-Architecture-of-Smart-Parking-_SmartParkingSystem_tispSys_impl_1,sub_RSE_WorkzoneSafetyProvider,sub rse workzone safety provider,process,"[""RSE_WSP_data_in"", ""RSE_WSP_data_out""]",Business_Logic_Layer
+AADL-Architecture-of-Smart-Parking-_SmartParkingSystem_tispSys_impl_1,sub_RSE_TravelInformationCommunicationProvider,sub rse travel information communication provider,process,"[""RSE_TICP_data_in"", ""RSE_TICP_data_out""]",Business_Logic_Layer
+AADL-Architecture-of-Smart-Parking-_SmartParkingSystem_tispSys_impl_1,sub_RSE_TrafficMeteringProvider,sub rse traffic metering provider,process,"[""RSE_TMP_data_in"", ""RSE_TMP_data_out""]",Business_Logic_Layer
+AADL-Architecture-of-Smart-Parking-_SmartParkingSystem_tispSys_impl_1,sub_RSE_SpeedManagementProvider,sub rse speed management provider,process,"[""RSE_SMP_data_in"", ""RSE_SMP_data_out""]",Business_Logic_Layer
+AADL-Architecture-of-Smart-Parking-_SmartParkingSystem_tispSys_impl_1,sub_TIC,sub tic,processor,"[""bus_access""]",Data_Management_Layer
+AADL-Architecture-of-Smart-Parking-_SmartParkingSystem_tispSys_impl_1,collection,collection,memory,[],Data_Management_Layer
+AadlProjects_smartparking_vehbasesafe_impl_1,SYSTEM,system,system,"[""to_veh"", ""guide_req"", ""guidance"", ""loca_identity"", ""pers_info""]",Business_Logic_Layer
+AadlProjects_smartparking_vehbasesafe_impl_1,communicationremote,communicationremote,process,"[""to_veh""]",Business_Logic_Layer
+AadlProjects_smartparking_vehbasesafe_impl_1,deviceidentity,deviceidentity,thread,"[""to_veh""]",Business_Logic_Layer
+AadlProjects_smartparking_vehbasesafe_impl_1,driverguidanceinterface,driverguidanceinterface,process,"[""guide_req"", ""guidance""]",Business_Logic_Layer/Presentation_Layer
+AadlProjects_smartparking_vehbasesafe_impl_1,fromdriver,fromdriver,thread,"[""guide_req""]",Business_Logic_Layer
+AadlProjects_smartparking_vehbasesafe_impl_1,confirmation,confirmation,thread,"[""guidance""]",Business_Logic_Layer
+AadlProjects_smartparking_vehbasesafe_impl_1,vehiclelocationdata,vehiclelocationdata,process,"[""loca_identity""]",Business_Logic_Layer/Data_Management_Layer
+AadlProjects_smartparking_vehbasesafe_impl_1,vehicleloc,vehicleloc,thread,"[""loca_identity""]",Business_Logic_Layer
+AadlProjects_smartparking_vehbasesafe_impl_1,driverinformationinterface,driverinformationinterface,process,"[""pers_info""]",Business_Logic_Layer/Presentation_Layer
+AadlProjects_smartparking_vehbasesafe_impl_1,persidentity,persidentity,thread,"[""pers_info""]",Business_Logic_Layer
+AadlProjects_smartparking_parkelecpaymt_impl_1,SYSTEM,system,system,"[""pay_req"", ""capacity_update""]",Business_Logic_Layer
+AadlProjects_smartparking_parkelecpaymt_impl_1,billdriver,billdriver,process,"[""pay_req""]",Business_Logic_Layer
+AadlProjects_smartparking_parkelecpaymt_impl_1,parking_cost,parking cost,thread,"[""pay_req""]",Business_Logic_Layer
+AadlProjects_smartparking_parkelecpaymt_impl_1,updateparkdata,updateparkdata,process,"[""capacity_update""]",Data_Management_Layer
+AadlProjects_smartparking_parkelecpaymt_impl_1,spaces,spaces,thread,"[""capacity_update""]",Business_Logic_Layer
+AadlProjects_vtv_transvobe_impl_1,SYSTEM,system,system,"[""bus_access"", ""host_status"", ""coll_inf"", ""op_disp"", ""op_in"", ""rvloc"", ""vloc"", ""alarm"", ""pla_ctrl"", ""chg_ctrl"", ""p"", ""l""]",Business_Logic_Layer
+AadlProjects_vtv_transvobe_impl_1,transv2vsafety,transv2vsafety,process,"[""host_status"", ""coll_inf"", ""op_disp"", ""op_in"", ""rvloc"", ""vloc"", ""alarm"", ""pla_ctrl"", ""chg_ctrl"", ""p"", ""l""]",Business_Logic_Layer
+AadlProjects_vtv_transvobe_impl_1,status,status,thread,"[""host_status"", ""coll_inf"", ""alarm"", ""p"", ""l""]",Business_Logic_Layer
+AadlProjects_vtv_transvobe_impl_1,op_ctrl,op ctrl,thread,"[""op_disp"", ""op_in"", ""dp"", ""dl""]",Business_Logic_Layer
+AadlProjects_vtv_transvobe_impl_1,loc_ctrl,loc ctrl,thread,"[""rvloc"", ""vloc""]",Business_Logic_Layer
+AadlProjects_vtv_transvobe_impl_1,thp,thp,thread,"[""datin"", ""datout""]",Business_Logic_Layer
+AadlProjects_vtv_transvobe_impl_1,thl,thl,thread,"[""datin"", ""datout""]",Business_Logic_Layer
+AadlProjects_smartparking_communicationsupport_impl_1,vehiclesecurecommunication,vehiclesecurecommunication,process,[],Business_Logic_Layer
+AadlProjects_smartparking_personallocmanagement_impl_1,SYSTEM,system,system,"[""personal_loca""]",Business_Logic_Layer
+AadlProjects_smartparking_personallocmanagement_impl_1,travnavmapdatabase,travnavmapdatabase,process,"[""personal_loca""]",Business_Logic_Layer/Data_Management_Layer
+AadlProjects_smartparking_personallocmanagement_impl_1,driverloc,driverloc,thread,"[""personal_loca""]",Business_Logic_Layer
+AadlProjects_smartparking_TICInteractvTravInfo_impl_1,SYSTEM,system,system,"[""traveler_req"", ""interactv_travle_info""]",Business_Logic_Layer
+AadlProjects_smartparking_TICInteractvTravInfo_impl_1,trav_profiles,trav profiles,process,"[""traveler_req"", ""interactv_travle_info""]",Business_Logic_Layer
+AadlProjects_smartparking_TICInteractvTravInfo_impl_1,trav_info,trav info,thread,"[""traveler_req"", ""interactv_travle_info""]",Business_Logic_Layer
+AadlProjects_smartparking_vehicleobe_impl_1,SYSTEM,system,system,"[""traveler_info"", ""driver_ip"", ""park_avail"", ""pers_info"", ""vehicle_paymt_req"", ""vehicle_paymt_update"", ""vehicle_loca_motion""]",Business_Logic_Layer
+AadlProjects_smartparking_vehicleobe_impl_1,vehbasesafe,vehbasesafe,system,"[""to_veh"", ""guide_req"", ""guidance"", ""loca_identity"", ""pers_info""]",Business_Logic_Layer
+AadlProjects_smartparking_vehicleobe_impl_1,communicationremote,communicationremote,process,"[""to_veh""]",Business_Logic_Layer
+AadlProjects_smartparking_vehicleobe_impl_1,deviceidentity,deviceidentity,thread,"[""to_veh""]",Business_Logic_Layer
+AadlProjects_smartparking_vehicleobe_impl_1,driverguidanceinterface,driverguidanceinterface,process,"[""guide_req"", ""guidance""]",Business_Logic_Layer/Presentation_Layer
+AadlProjects_smartparking_vehicleobe_impl_1,fromdriver,fromdriver,thread,"[""guide_req""]",Business_Logic_Layer
+AadlProjects_smartparking_vehicleobe_impl_1,confirmation,confirmation,thread,"[""guidance""]",Business_Logic_Layer
+AadlProjects_smartparking_vehicleobe_impl_1,vehiclelocationdata,vehiclelocationdata,process,"[""loca_identity""]",Business_Logic_Layer/Data_Management_Layer
+AadlProjects_smartparking_vehicleobe_impl_1,vehicleloc,vehicleloc,thread,"[""loca_identity""]",Business_Logic_Layer
+AadlProjects_smartparking_vehicleobe_impl_1,driverinformationinterface,driverinformationinterface,process,"[""pers_info""]",Business_Logic_Layer/Presentation_Layer
+AadlProjects_smartparking_vehicleobe_impl_1,persidentity,persidentity,thread,"[""pers_info""]",Business_Logic_Layer
+AadlProjects_smartparking_vehicleobe_impl_1,communicationsupport,communicationsupport,system,[],Business_Logic_Layer
+AadlProjects_smartparking_vehicleobe_impl_1,vehiclesecurecommunication,vehiclesecurecommunication,process,[],Business_Logic_Layer
+AadlProjects_smartparking_vehicleobe_impl_1,parkingsystem,parkingsystem,system,[],Business_Logic_Layer
+AadlProjects_smartparking_vehicleobe_impl_1,paymentdeviceinterface,paymentdeviceinterface,process,[],Presentation_Layer
+AadlProjects_smartparking_vehicleobe_impl_1,roadsideinforeception,roadsideinforeception,system,[],Business_Logic_Layer
+AadlProjects_smartparking_vehicleobe_impl_1,vehiclelocdata,vehiclelocdata,process,[],Business_Logic_Layer/Data_Management_Layer
+AadlProjects_smartparking_vehicleobe_impl_1,vehiclenavmapdatabase,vehiclenavmapdatabase,process,[],Business_Logic_Layer/Data_Management_Layer
+AadlProjects_smartparking_vehicleobe_impl_1,driverpersonalreq,driverpersonalreq,process,[],Business_Logic_Layer
+AadlProjects_smartparking_persInteractvTravInfo_impl_1,SYSTEM,system,system,"[""interactv_travle_info"", ""traveler_req"", ""traveler_src_update""]",Business_Logic_Layer
+AadlProjects_smartparking_persInteractvTravInfo_impl_1,personal_info,personal info,process,"[""interactv_travle_info"", ""traveler_req"", ""traveler_src_update""]",Business_Logic_Layer
+AadlProjects_smartparking_persInteractvTravInfo_impl_1,info_thread,info thread,thread,"[""interactv_travle_info"", ""traveler_req"", ""traveler_src_update""]",Business_Logic_Layer
+AadlProjects_smartparking_transinfoctr_impl_1,SYSTEM,system,system,"[""traveler_req"", ""traveler_src_update"", ""parking_info"", ""interactv_travle_info""]",Business_Logic_Layer
+AadlProjects_smartparking_transinfoctr_impl_1,TICInteractvTravInfo,ticinteractv trav info,system,"[""traveler_req"", ""interactv_travle_info""]",Business_Logic_Layer
+AadlProjects_smartparking_transinfoctr_impl_1,trav_profiles,trav profiles,process,"[""traveler_req"", ""interactv_travle_info""]",Business_Logic_Layer
+AadlProjects_smartparking_transinfoctr_impl_1,trav_info,trav info,thread,"[""traveler_req"", ""interactv_travle_info""]",Business_Logic_Layer
+AadlProjects_smartparking_transinfoctr_impl_1,TICDataColl,ticdata coll,system,"[""traveler_src_update""]",Data_Management_Layer
+AadlProjects_smartparking_transinfoctr_impl_1,misctravinfo,misctravinfo,process,"[""traveler_src_update""]",Business_Logic_Layer
+AadlProjects_smartparking_transinfoctr_impl_1,traff_data_trav,traff data trav,thread,"[""traveler_src_update""]",Data_Management_Layer
+AadlProjects_smartparking_transinfoctr_impl_1,trafficdata,trafficdata,process,[],Data_Management_Layer
+AadlProjects_smartparking_transinfoctr_impl_1,pricedata,pricedata,process,[],Data_Management_Layer
+AADL-Architecture-of-Smart-Parking-_InformationServiceProvider_ISP_impl_1,sub_hw_bus,sub hw bus,bus,[],Data_Management_Layer
+AADL-Architecture-of-Smart-Parking-_InformationServiceProvider_ISP_impl_1,sub_TIC,sub tic,processor,"[""bus_access""]",Business_Logic_Layer
+AADL-Architecture-of-Smart-Parking-_InformationServiceProvider_ISP_impl_1,collection,collection,memory,[],Data_Management_Layer
+AadlProjects_smartparking_parkingsystem_impl_1,paymentdeviceinterface,paymentdeviceinterface,process,[],Business_Logic_Layer/Presentation_Layer
+AADL-SmartParkingApplication_SmartParkingSystem_tispSys_impl_1,SYSTEM,system,system,"[""signal_in"", ""signal2_in"", ""signal3_in""]",Business_Logic_Layer
+AADL-SmartParkingApplication_SmartParkingSystem_tispSys_impl_1,sub_driver,sub driver,,"[""DriverInfo_input"", ""DriverOut""]",Business_Logic_Layer
+AADL-SmartParkingApplication_SmartParkingSystem_tispSys_impl_1,sub_hardwareComm,sub hardware comm,bus,[],Data_Management_Layer
+AADL-SmartParkingApplication_SmartParkingSystem_tispSys_impl_1,sub_vehicleOBE,sub vehicle obe,device,"[""signal_out"", ""parking_data_received""]",Business_Logic_Layer
+AADL-SmartParkingApplication_SmartParkingSystem_tispSys_impl_1,sub_roadsideOBE,sub roadside obe,device,"[""signal_out"", ""parking_data_received""]",Data_Management_Layer
+AADL-SmartParkingApplication_SmartParkingSystem_tispSys_impl_1,sub_parkingManager,sub parking manager,process,"[""signal_out"", ""signal_in""]",Business_Logic_Layer
+AADL-SmartParkingApplication_SmartParkingSystem_tispSys_impl_1,sub_RSE_ElectricChargeSupportProvider,sub rse electric charge support provider,process,"[""RSE_ECSP_data_in"", ""RSE_ECSP_data_out""]",Business_Logic_Layer
+AADL-SmartParkingApplication_SmartParkingSystem_tispSys_impl_1,sub_RSE_WorkzoneSafetyProvider,sub rse workzone safety provider,process,"[""RSE_WSP_data_in"", ""RSE_WSP_data_out""]",Business_Logic_Layer
+AADL-SmartParkingApplication_SmartParkingSystem_tispSys_impl_1,sub_RSE_TravelInformationCommunicationProvider,sub rse travel information communication provider,process,"[""RSE_TICP_data_in"", ""RSE_TICP_data_out""]",Business_Logic_Layer
+AADL-SmartParkingApplication_SmartParkingSystem_tispSys_impl_1,sub_RSE_TrafficMeteringProvider,sub rse traffic metering provider,process,"[""RSE_TMP_data_in"", ""RSE_TMP_data_out""]",Business_Logic_Layer
+AADL-SmartParkingApplication_SmartParkingSystem_tispSys_impl_1,sub_RSE_SpeedManagementProvider,sub rse speed management provider,process,"[""RSE_SMP_data_in"", ""RSE_SMP_data_out""]",Business_Logic_Layer
+AADL-SmartParkingApplication_SmartParkingSystem_tispSys_impl_1,sub_TIC,sub tic,processor,"[""bus_access""]",Data_Management_Layer
+AADL-SmartParkingApplication_SmartParkingSystem_tispSys_impl_1,collection,collection,memory,[],Data_Management_Layer
+AadlProjects_smartparking_persinfodev_impl_1,SYSTEM,system,system,"[""local_travlr_info"", ""interactv_travle_info"", ""personal_loca"", ""transit_user_info"", ""traveler_req"", ""traveler_src_update""]",Business_Logic_Layer
+AadlProjects_smartparking_persinfodev_impl_1,persInteractvTravInfo,pers interactv trav info,system,"[""interactv_travle_info"", ""traveler_req"", ""traveler_src_update""]",Business_Logic_Layer
+AadlProjects_smartparking_persinfodev_impl_1,personal_info,personal info,process,"[""interactv_travle_info"", ""traveler_req"", ""traveler_src_update""]",Business_Logic_Layer
+AadlProjects_smartparking_persinfodev_impl_1,info_thread,info thread,thread,"[""interactv_travle_info"", ""traveler_req"", ""traveler_src_update""]",Business_Logic_Layer
+AadlProjects_smartparking_persinfodev_impl_1,personallocmanagement,personallocmanagement,system,"[""personal_loca""]",Business_Logic_Layer
+AadlProjects_smartparking_persinfodev_impl_1,travnavmapdatabase,travnavmapdatabase,process,"[""personal_loca""]",Business_Logic_Layer/Data_Management_Layer
+AadlProjects_smartparking_persinfodev_impl_1,driverloc,driverloc,thread,"[""personal_loca""]",Business_Logic_Layer
+AadlProjects_smartparking_RSEparkmgmt_impl_1,SYSTEM,system,system,"[""personal_loca"", ""vehicle_paymt_req"", ""conn_vehicle_data"", ""park_avail"", ""veh_paymt_req""]",Business_Logic_Layer
+AadlProjects_smartparking_RSEparkmgmt_impl_1,vehdata,vehdata,process,"[""personal_loca"", ""vehicle_paymt_req"", ""veh_paymt_req""]",Data_Management_Layer
+AadlProjects_smartparking_RSEparkmgmt_impl_1,loc_identity,loc identity,thread,"[""personal_loca""]",Business_Logic_Layer
+AadlProjects_smartparking_RSEparkmgmt_impl_1,veh_paymt,veh paymt,thread,"[""vehicle_paymt_req"", ""veh_paymt_req""]",Business_Logic_Layer
+AadlProjects_smartparking_RSEparkmgmt_impl_1,Rsideparkcomm,rsideparkcomm,process,"[""conn_vehicle_data"", ""park_avail""]",Business_Logic_Layer
+AadlProjects_smartparking_parkmgmt_impl_1,SYSTEM,system,system,"[""occupancy"", ""park_spaces""]",Business_Logic_Layer
+AadlProjects_smartparking_parkmgmt_impl_1,dynparklot,dynparklot,process,"[""occupancy""]",Business_Logic_Layer
+AadlProjects_smartparking_parkmgmt_impl_1,park_lot_occupancy,park lot occupancy,thread,"[""park_occupancy""]",Business_Logic_Layer
+AadlProjects_smartparking_parkmgmt_impl_1,detectveh,detectveh,process,[],Business_Logic_Layer
+AadlProjects_smartparking_parkmgmt_impl_1,manageparkreserv,manageparkreserv,process,"[""park_spaces""]",Business_Logic_Layer
+AadlProjects_smartparking_parkmgmt_impl_1,park_lot_spaces,park lot spaces,thread,"[""spaces""]",Business_Logic_Layer
+AadlProjects_smartparking_parkmgmtsys_impl_1,SYSTEM,system,system,"[""vehicle_paymt_req"", ""conn_vehicle_data"", ""parking_info"", ""park_mgmt_appl_info"", ""driver_info""]",Business_Logic_Layer
+AadlProjects_smartparking_parkmgmtsys_impl_1,parkmgmt,parkmgmt,system,"[""occupancy"", ""park_spaces""]",Business_Logic_Layer
+AadlProjects_smartparking_parkmgmtsys_impl_1,dynparklot,dynparklot,process,"[""occupancy""]",Business_Logic_Layer
+AadlProjects_smartparking_parkmgmtsys_impl_1,park_lot_occupancy,park lot occupancy,thread,"[""park_occupancy""]",Business_Logic_Layer
+AadlProjects_smartparking_parkmgmtsys_impl_1,detectveh,detectveh,process,[],Business_Logic_Layer
+AadlProjects_smartparking_parkmgmtsys_impl_1,manageparkreserv,manageparkreserv,process,"[""park_spaces""]",Business_Logic_Layer
+AadlProjects_smartparking_parkmgmtsys_impl_1,park_lot_spaces,park lot spaces,thread,"[""spaces""]",Business_Logic_Layer
+AadlProjects_smartparking_parkmgmtsys_impl_1,parkelecpaymt,parkelecpaymt,system,"[""pay_req"", ""capacity_update""]",Business_Logic_Layer
+AadlProjects_smartparking_parkmgmtsys_impl_1,billdriver,billdriver,process,"[""pay_req""]",Business_Logic_Layer
+AadlProjects_smartparking_parkmgmtsys_impl_1,parking_cost,parking cost,thread,"[""pay_req""]",Business_Logic_Layer
+AadlProjects_smartparking_parkmgmtsys_impl_1,updateparkdata,updateparkdata,process,"[""capacity_update""]",Data_Management_Layer
+AadlProjects_smartparking_parkmgmtsys_impl_1,spaces,spaces,thread,"[""capacity_update""]",Business_Logic_Layer
+AADL-Architecture-of-Smart-Parking-_RSE_RSEOwner_impl_1,RSE_ElectricChargeSupportProvider,rse electric charge support provider,process,"[""RSE_ECSP_data_in"", ""RSE_ECSP_data_out""]",Business_Logic_Layer
+AADL-Architecture-of-Smart-Parking-_RSE_RSEOwner_impl_1,RSE_WorkzoneSafetyProvider,rse workzone safety provider,process,"[""RSE_WSP_data_in"", ""RSE_WSP_data_out""]",Business_Logic_Layer
+AADL-Architecture-of-Smart-Parking-_RSE_RSEOwner_impl_1,RSE_TravelInformationCommunicationProvider,rse travel information communication provider,process,"[""RSE_TICP_data_in"", ""RSE_TICP_data_out""]",Business_Logic_Layer
+AADL-Architecture-of-Smart-Parking-_RSE_RSEOwner_impl_1,RSE_TrafficMeteringProvider,rse traffic metering provider,process,"[""RSE_TMP_data_in"", ""RSE_TMP_data_out""]",Business_Logic_Layer
+AADL-Architecture-of-Smart-Parking-_RSE_RSEOwner_impl_1,RSE_SpeedManagementProvider,rse speed management provider,process,"[""RSE_SMP_data_in"", ""RSE_SMP_data_out""]",Business_Logic_Layer

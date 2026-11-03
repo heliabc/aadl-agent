@@ -1,0 +1,1214 @@
+{
+  "case_id": "a3d_aps",
+  "title": "Autonomous Passenger Ship Communication Architecture — Derived Example Requirements",
+  "independent_evaluation_eligible": false,
+  "source_repository": "ahmed-amro/APS-Communication_Architecture",
+  "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+  "source_license": "GPL-3.0 (repository LICENSE); retain source attribution and applicable license obligations for redistribution. The paper licenses are separate.",
+  "purpose": "English generation input for an ecosystem-level architectural example based on the fixed source snapshot. These statements are curated paraphrases, not an independent specification or proof of implemented behavior.",
+  "coverage": [
+    "All ten ecosystem participants and their active communication paths",
+    "APS and RCC decomposition, redundant communication network, sensor aggregation and actuator interfaces",
+    "Author-stated embedded functional/security properties and emergency-button requirement C-X-2"
+  ],
+  "limitations": [
+    "Selected scope is Overall::APSCommunicationArchitecture.impl and its selected source components, not every alternative implementation among the 43 A3D instances.",
+    "The source has mixed abstraction levels, commented connections, empty implementations and inconsistent flow directions. Duplicate connections and suspected direction errors are not elevated into requirements.",
+    "No new deadlines, bandwidth values, failover detection policy, controller state-transition behavior or implementation-level security algorithm is invented. Stated failover/support properties are requirements, not proof of successful analysis.",
+    "Properties mentioning shore-sensor data do not establish direct APS-to-SSS or RCC-to-SSS connections; those connections are commented out in the fixed source.",
+    "Navigation GNSS/IMU units share one RTK-UHF unit; the requirements do not claim full independence or single-fault tolerance of the resulting sensing chain.",
+    "Source README warns that the repository may not reflect the latest architecture.",
+    "No published-paper text or full PDF is redistributed in this draft.",
+    "These are boundary flow declarations and author-stated receive intent. ECT.aadl connects its internal emergency module's wireless port outward to RadioCommunication, but does not establish the corresponding inbound path from the ECT boundary to that module. End-to-end reception is not claimed."
+  ],
+  "original_requirement_status": {
+    "status": "prior_author_requirements_paper_identified_not_fully_retrieved; embedded_author_requirements_available",
+    "independent_of_model": false,
+    "explanation": "The prior paper is distinct from the architecture, but this draft is sourced from the fixed model and its embedded requirement properties. All embedded author statements remain model-associated and unsuitable as independent evaluation inputs."
+  },
+  "source_search_evidence": [
+    {
+      "source": "fixed repository README and complete tree",
+      "url": "https://github.com/ahmed-amro/APS-Communication_Architecture/tree/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+      "finding": "README lines 30-34 explicitly states that additional implementation requirements are embedded as properties; no standalone system-requirements document is present in the selected engineering files. RPNMI/TRA are separate research artifacts."
+    },
+    {
+      "source": "Connect and Protect: Requirements for Maritime Autonomous Surface Ship in Urban Passenger Transportation",
+      "url": "https://doi.org/10.1007/978-3-030-42048-2_5",
+      "repository_record": "https://nva.sikt.no/registration/0198cc81a81c-ef016c11-68da-4a50-b039-53651e5530d1",
+      "finding": "Prior author requirements paper identified; cached public text describes C-X-2 emergency push-button communications, and APS.aadl line 1375 cites C-X-2. Full PDF bytes/page rendering were not retrieved after repository migration, so no statement in this draft is extracted solely from that paper.",
+      "independent_document_exists": true,
+      "license_metadata": "COPYRIGHT-ACT / General Terms of Use; not a blanket redistribution license",
+      "full_text_included": false,
+      "cache_metadata_sha256": "6c4cdea8b787500127629c5ab043375efa1849ac6f5b65700e8480e97fc953fc"
+    },
+    {
+      "source": "Communication architecture for autonomous passenger ship",
+      "url": "https://doi.org/10.1177/1748006X211002546",
+      "repository_record": "https://nva.sikt.no/registration/0198cc5f4076-c0349eb8-a02b-4cc4-83ac-ed13bb838617",
+      "finding": "Author architecture paper identified as related context; publisher abstract reports satisfaction of pre-established requirements. No full-text extraction used.",
+      "license_metadata": "NVA accepted-version artifact Amro.pdf is marked CC-BY-NC-ND-4.0",
+      "full_text_included": false
+    },
+    {
+      "source": "RPNMI strategy comparison requirements matrix",
+      "url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/RPNMI/Strategy_Comparison_Algorithm/Strategies/APS-Requirements.csv",
+      "finding": "Inspected through GitHub connector and cached raw bytes; matrix of mitigation names and 0/1 values, not a self-contained natural-language system architecture specification. Excluded from derived system requirements.",
+      "sha256": "07a70bb2a3d13f23b244f518ef1b13a419bf39969ec959d4a79fa825da642cda"
+    }
+  ],
+  "requirements": [
+    {
+      "id": "APS-REQ-001",
+      "text": "The architecture shall represent an autonomous passenger ship (APS), a remote control center (RCC), an emergency control team (ECT), a shore sensor system (SSS), other ships, traffic information services (TIS), stakeholders, a cloud service, a mobile 5G network, and an aids-to-navigation service as separate system-level participants.",
+      "origin_kind": "model_derived",
+      "category": "architecture",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/Overall.aadl",
+          "line_start": 8,
+          "line_end": 52,
+          "sha256": "479b55d7545758d495634c9abf35521e9ecca425858afcc066bf9ad4bcbc982c",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/Overall.aadl#L8-L52",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Ten active top-level subcomponent declarations.",
+          "span_sha256": "3b173913a6870d4eed430184e43339b23e7910aefebf2af9ded8d5fdab02085f"
+        }
+      ]
+    },
+    {
+      "id": "APS-REQ-002",
+      "text": "The APS shall support voyage management, condition detection and analysis, safe-speed operation, maneuvering, docking, alert management, and location advertisement.",
+      "origin_kind": "author_requirement",
+      "category": "function",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/Overall.aadl",
+          "line_start": 10,
+          "line_end": 13,
+          "sha256": "479b55d7545758d495634c9abf35521e9ecca425858afcc066bf9ad4bcbc982c",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/Overall.aadl#L10-L13",
+          "evidence_kind": "embedded_author_requirement",
+          "independent_of_model": false,
+          "explanation": "Author-stated functional requirement property, embedded in the architecture rather than an independent specification.",
+          "span_sha256": "2df0430c0cbb3f0cc3ab8dc56e20fe5e38cc15b2e11f580b5721cb4e1f1f52ae"
+        }
+      ],
+      "source_context": "model_embedded_author_prose"
+    },
+    {
+      "id": "APS-REQ-003",
+      "text": "The RCC shall support remote monitoring, remote operation, condition analysis, and autonomous ship controller (ASC) updates. The ECT shall support emergency intervention and emergency control of the APS.",
+      "origin_kind": "author_requirement",
+      "category": "function",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/Overall.aadl",
+          "line_start": 14,
+          "line_end": 21,
+          "sha256": "479b55d7545758d495634c9abf35521e9ecca425858afcc066bf9ad4bcbc982c",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/Overall.aadl#L14-L21",
+          "evidence_kind": "embedded_author_requirement",
+          "independent_of_model": false,
+          "explanation": "Functional allocations explicitly recorded by the author.",
+          "span_sha256": "3f503a925833815a61c2c9b6a8e4218dc11da31537afadbd1d41673ffa0c3313"
+        }
+      ],
+      "source_context": "model_embedded_author_prose"
+    },
+    {
+      "id": "APS-REQ-004",
+      "text": "The shore participant shall support docking, charging, and passenger embarkation and disembarkation; TIS shall support traffic management; the other-ship participant shall support collision avoidance; and the stakeholder participant shall provide stakeholder communication.",
+      "origin_kind": "author_requirement",
+      "category": "context",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/Overall.aadl",
+          "line_start": 22,
+          "line_end": 37,
+          "sha256": "479b55d7545758d495634c9abf35521e9ecca425858afcc066bf9ad4bcbc982c",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/Overall.aadl#L22-L37",
+          "evidence_kind": "embedded_author_requirement",
+          "independent_of_model": false,
+          "explanation": "Context-level functional allocations; these do not specify detailed control algorithms.",
+          "span_sha256": "e80fe7f67f71b599be7049f7c079cb8bc182778cf57fda7595a882c3a7ba8a2a"
+        }
+      ],
+      "source_context": "model_embedded_author_prose"
+    },
+    {
+      "id": "APS-REQ-005",
+      "text": "The APS boundary shall expose bidirectional data interfaces for Internet access, AIS traffic, direct RCC communication, and emergency radio communication; input data interfaces for UHF position correction and GNSS signals; and an output event interface for mobile emergency notification.",
+      "origin_kind": "model_derived",
+      "category": "interface",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 10,
+          "line_end": 19,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L10-L19",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Seven active APS features and their directions.",
+          "span_sha256": "16d093f9dea8d206711ccc0a0966f9904a57175bf260bde6c161ebcb93a7d85f"
+        }
+      ]
+    },
+    {
+      "id": "APS-REQ-006",
+      "text": "The ecosystem shall provide a direct bidirectional APS-to-RCC link, a separate APS-to-RCC AIS link, bidirectional APS and RCC links to the mobile 5G network, and bidirectional AIS links connecting both APS and RCC to other ships and TIS.",
+      "origin_kind": "model_derived",
+      "category": "interface",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/Overall.aadl",
+          "line_start": 53,
+          "line_end": 65,
+          "sha256": "479b55d7545758d495634c9abf35521e9ecca425858afcc066bf9ad4bcbc982c",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/Overall.aadl#L53-L65",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Active top-level communication connections; commented shore direct links are excluded.",
+          "span_sha256": "dc950742ee31c2d77959faf44a6f33a69273b5b5324645252540165f650116e4"
+        }
+      ]
+    },
+    {
+      "id": "APS-REQ-007",
+      "text": "Navigation, safety, machinery, and power information from the APS shall have declared flows to the RCC over the direct link and to the cloud over the mobile network. The RCC shall also have declared receive flows for these four information classes through the mobile-network and cloud routes.",
+      "origin_kind": "model_derived",
+      "category": "flow",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/Overall.aadl",
+          "line_start": 75,
+          "line_end": 94,
+          "sha256": "479b55d7545758d495634c9abf35521e9ecca425858afcc066bf9ad4bcbc982c",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/Overall.aadl#L75-L94",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Named end-to-end information flows through direct and mobile routes.",
+          "span_sha256": "7e7f59f3caa31fea6090ae96aa1cdd5364a1a0f6756897e62c05673fb7a1d4a7"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/Overall.aadl",
+          "line_start": 112,
+          "line_end": 116,
+          "sha256": "479b55d7545758d495634c9abf35521e9ecca425858afcc066bf9ad4bcbc982c",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/Overall.aadl#L112-L116",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Cloud-to-RCC flows for the same four information classes.",
+          "span_sha256": "31fd48e0fea4fc6ef23c30461c3feb86a5b0be22ae3899d401cfc9346f893e8e"
+        }
+      ]
+    },
+    {
+      "id": "APS-REQ-008",
+      "text": "At the ecosystem system boundaries, declare emergency radio flows for navigation, safety, machinery and power information from APS to ECT and for emergency commands from ECT to APS. Declare a separate one-way mobile-event path for the APS emergency signal to ECT.",
+      "origin_kind": "model_derived",
+      "category": "flow",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/Overall.aadl",
+          "line_start": 97,
+          "line_end": 103,
+          "sha256": "479b55d7545758d495634c9abf35521e9ecca425858afcc066bf9ad4bcbc982c",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/Overall.aadl#L97-L103",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Emergency data/command flows and separate event flow.",
+          "span_sha256": "12f6189ffb743213110e1da4e1cf9d513a5c4ef0f411ff85a2eecf3a211e2ef8"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/Overall.aadl",
+          "line_start": 59,
+          "line_end": 71,
+          "sha256": "479b55d7545758d495634c9abf35521e9ecca425858afcc066bf9ad4bcbc982c",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/Overall.aadl#L59-L71",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Radio and mobile event connections are separate.",
+          "span_sha256": "3514634b7ac2f7b7a08eedb11876b08bb89fe718dd34162da694637fb3423663"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/ECT.aadl",
+          "line_start": 24,
+          "line_end": 35,
+          "sha256": "e23704dcc88ba0e87b049cd31da3e57e6b1e5a011a6baf7e0c907e2a754d4bc4",
+          "note": "The receive property is assigned but the internal wireless connection is directed outward.",
+          "span_sha256": "18123e9f92b7252ad685f3fc5322de5b1769bd07b533b61371f533342ea005f6",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/ECT.aadl#L24-L35"
+        }
+      ],
+      "note": "These are boundary flow declarations and author-stated receive intent. ECT.aadl connects its internal emergency module's wireless port outward to RadioCommunication, but does not establish the corresponding inbound path from the ECT boundary to that module. End-to-end reception is not claimed."
+    },
+    {
+      "id": "APS-REQ-009",
+      "text": "The cloud service shall authenticate and associate APS and RCC participants, facilitate stakeholder communication, and support online data backup. The mobile network shall provide quality-of-service support.",
+      "origin_kind": "author_requirement",
+      "category": "function",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/Overall.aadl",
+          "line_start": 38,
+          "line_end": 48,
+          "sha256": "479b55d7545758d495634c9abf35521e9ecca425858afcc066bf9ad4bcbc982c",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/Overall.aadl#L38-L48",
+          "evidence_kind": "embedded_author_requirement",
+          "independent_of_model": false,
+          "explanation": "Author-stated cloud and mobile-network functional properties.",
+          "span_sha256": "ba1216b6bf5a3b9d07076ec4d914ac184185355b2ac72f0a48d8d23c4b4c2a4c"
+        }
+      ],
+      "source_context": "model_embedded_author_prose"
+    },
+    {
+      "id": "APS-REQ-010",
+      "text": "The cloud shall have a bidirectional Internet connection to stakeholders and to the mobile network; the shore sensor system shall connect to that mobile network. Stakeholders shall be able to request cloud access and receive management information from the cloud.",
+      "origin_kind": "model_derived",
+      "category": "interface",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/Overall.aadl",
+          "line_start": 67,
+          "line_end": 73,
+          "sha256": "479b55d7545758d495634c9abf35521e9ecca425858afcc066bf9ad4bcbc982c",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/Overall.aadl#L67-L73",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Active Internet and shore network connections.",
+          "span_sha256": "bbd93bff77e9d749cb5e4d9d151ab3275d8165f9d3cb5efb54409c24743df47d"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/Overall.aadl",
+          "line_start": 117,
+          "line_end": 118,
+          "sha256": "479b55d7545758d495634c9abf35521e9ecca425858afcc066bf9ad4bcbc982c",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/Overall.aadl#L117-L118",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Cloud-to-stakeholder management flow.",
+          "span_sha256": "23919ad3aa4f46c3df0f6829888f4a1b4baaca8312a238297bb42c92f7dd26f6"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/Overall.aadl",
+          "line_start": 129,
+          "line_end": 130,
+          "sha256": "479b55d7545758d495634c9abf35521e9ecca425858afcc066bf9ad4bcbc982c",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/Overall.aadl#L129-L130",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Stakeholder cloud access request flow.",
+          "span_sha256": "7f836df7019f144abc95f5eaf939638944e6c5f90b262298e6394675c73523c5"
+        }
+      ]
+    },
+    {
+      "id": "APS-REQ-011",
+      "text": "The APS traffic module shall use a bidirectional VHF data interface for AIS traffic, receive GNSS input, output local navigation information, and accept management input. It shall support wireless traffic management and remote management.",
+      "origin_kind": "model_derived",
+      "category": "interface",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 1311,
+          "line_end": 1331,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L1311-L1331",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "VHF property, feature directions, flows and functional property on TrafficModule.",
+          "span_sha256": "81292cecdaa656234ba0e7bbaf338eaf2d3447980fdabdddcc8202785eec820a"
+        }
+      ]
+    },
+    {
+      "id": "APS-REQ-012",
+      "text": "The aids-to-navigation service shall provide a UHF correction signal to the APS navigation system. The navigation system shall distribute incoming GNSS signals to two GNSS receivers and distribute the RTK-UHF correction output to both main and backup GNSS/IMU units.",
+      "origin_kind": "model_derived",
+      "category": "navigation",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/Overall.aadl",
+          "line_start": 49,
+          "line_end": 51,
+          "sha256": "479b55d7545758d495634c9abf35521e9ecca425858afcc066bf9ad4bcbc982c",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/Overall.aadl#L49-L51",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "UHF position correction transmitter functional property.",
+          "span_sha256": "66f00c1feac7cb4bc72c530f42f599895807c51a1c1deaf4edeed815f2d20330"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/Overall.aadl",
+          "line_start": 71,
+          "line_end": 72,
+          "sha256": "479b55d7545758d495634c9abf35521e9ecca425858afcc066bf9ad4bcbc982c",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/Overall.aadl#L71-L72",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "External UHF connection.",
+          "span_sha256": "f8db8a987aeb2f0a9213e49ea94425e31b844825efc926e8ecef793833a0474a"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 675,
+          "line_end": 676,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L675-L676",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Main GNSS receiver and correction path.",
+          "span_sha256": "14fa35341f2334b368badee2bac99652efbf4526af6b2e41f085247de81a8983"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 691,
+          "line_end": 692,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L691-L692",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Backup GNSS receiver and shared correction path.",
+          "span_sha256": "e87c42bb600e8f252894183a2863f35018a5f2b71ca654a1ba7e4db72598fd5a"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 710,
+          "line_end": 712,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L710-L712",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "UHF and GNSS inputs fan out within the selected navigation implementation.",
+          "span_sha256": "c693609b6cebc050733cded5ec6e3cf95e17c21b81ec56002a5615b23d5fb770"
+        }
+      ]
+    },
+    {
+      "id": "APS-REQ-013",
+      "text": "The APS shall contain an Internet module, a direct RCC module, a traffic module, an emergency control module, main and backup core switches, primary and secondary WAN load balancers, an ASC, machinery and navigation subsystems, a safety subsystem, a battery-management subsystem, an emergency-button transmitter, and two intrusion-detection subsystems.",
+      "origin_kind": "model_derived",
+      "category": "architecture",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 48,
+          "line_end": 77,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L48-L77",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Active constituents of APSCommunication.impl; commented alternatives excluded.",
+          "span_sha256": "d62855a494ab9f8738df89abb267c8d57ff0f8d38faba9d3d2f35ac2614f77b5"
+        }
+      ]
+    },
+    {
+      "id": "APS-REQ-014",
+      "text": "Each of the two WAN load balancers shall connect to both the Internet module and the direct RCC module through separate Ethernet ports. Both core switches shall connect to both load balancers; the core switches shall have a mutual redundancy link, and the load balancers shall have their own mutual redundancy link.",
+      "origin_kind": "model_derived",
+      "category": "redundancy",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 101,
+          "line_end": 109,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L101-L109",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Primary and secondary external communication attachments.",
+          "span_sha256": "9e692c481cd4b476d6f856484b66b73fb01e25af5fd5fd732a350e7157cae5f8"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 124,
+          "line_end": 125,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L124-L125",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Core-switch redundancy connection.",
+          "span_sha256": "87e4d91a5dfdf8b2521febc8e24bd5cb7b7b80d6cc18615139b356d081251938"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 170,
+          "line_end": 178,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L170-L178",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Cross connections and load-balancer redundancy connection.",
+          "span_sha256": "6632dadb093037a8c4dc927d8fb73ecb3ae434f0fa5b2b294b866a3f1a11c6c8"
+        }
+      ]
+    },
+    {
+      "id": "APS-REQ-015",
+      "text": "Each WAN load balancer shall support VPN communication, quality of service, load balancing, policy-based routing, redundant LAN access, failover, backup, and remote management, with secure communication and user-access management.",
+      "origin_kind": "author_requirement",
+      "category": "network",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 1246,
+          "line_end": 1249,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L1246-L1249",
+          "evidence_kind": "embedded_author_requirement",
+          "independent_of_model": false,
+          "explanation": "Explicit WANLoadBalancer functional and security properties.",
+          "span_sha256": "b169f0e95eefa4ec3935b53395f7ad0c7cd42f1e58de271202b8ed49bba28587"
+        }
+      ],
+      "source_context": "model_embedded_author_prose"
+    },
+    {
+      "id": "APS-REQ-016",
+      "text": "Both main and backup core switches shall support VLANs, inter-VLAN routing, packet switching, failover, backup, and remote management, provide at least twelve Ethernet interfaces, and support secure communication and user-access management.",
+      "origin_kind": "author_requirement",
+      "category": "network",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 1613,
+          "line_end": 1615,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L1613-L1615",
+          "evidence_kind": "embedded_author_requirement",
+          "independent_of_model": false,
+          "explanation": "Main-core author requirement property; twelve is the stated minimum, not the exact instantiated port count.",
+          "span_sha256": "6c70a48a4d9561734f33cc556f2465b2da5e8dacc46c4b589a55a068e8e38d5e"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 1662,
+          "line_end": 1664,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L1662-L1664",
+          "evidence_kind": "embedded_author_requirement",
+          "independent_of_model": false,
+          "explanation": "Corresponding backup-core requirement.",
+          "span_sha256": "6c70a48a4d9561734f33cc556f2465b2da5e8dacc46c4b589a55a068e8e38d5e"
+        }
+      ],
+      "source_context": "model_embedded_author_prose"
+    },
+    {
+      "id": "APS-REQ-017",
+      "text": "The Internet module shall support 5G wireless Internet access and IP routing, expose two LAN data ports and a management port, support redundant LAN access and backup, transmit ship information, receive control commands, carry ASC updates, and support secure communication and remote user-access management.",
+      "origin_kind": "model_derived",
+      "category": "network",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 1279,
+          "line_end": 1295,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L1279-L1295",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Internet-module interfaces and explicit functional/security properties.",
+          "span_sha256": "0ee3b8b5d1ba9abfb72db5046f36396cea2e7320274cdfbb294f51b75b31991e"
+        }
+      ]
+    },
+    {
+      "id": "APS-REQ-018",
+      "text": "The direct RCC module shall support wireless point-to-point IP communication with two LAN data ports and a control port; it shall support redundant LAN access, backup, ship-data transmission, control-command reception, ASC updates, and secure remote management with user-access control.",
+      "origin_kind": "model_derived",
+      "category": "network",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 1297,
+          "line_end": 1309,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L1297-L1309",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Direct RCC module interface and functional/security properties.",
+          "span_sha256": "d870a577d20ac8f4a6ef68aa5597cd9aa101737c57ebbed55d9afd84bbed69db"
+        }
+      ]
+    },
+    {
+      "id": "APS-REQ-019",
+      "text": "The ASC shall comprise main and backup controller subsystems. Each shall contain collision-avoidance/situational-awareness processing, network-and-system management, and an information-security management subsystem (IS3MS). Each function shall expose primary and secondary network interfaces; the backup controller shall additionally expose an emergency-control interface.",
+      "origin_kind": "model_derived",
+      "category": "architecture",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 248,
+          "line_end": 270,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L248-L270",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Main and backup ASC assembly and boundary wiring.",
+          "span_sha256": "2d6081c84bb3fb8df671a8f98869f4f68767a815816522e599397991ce516f2d"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 273,
+          "line_end": 322,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L273-L322",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Functional decomposition and paired interfaces of the two controller subsystems.",
+          "span_sha256": "8539687fe6cc5c1faa41ed3de4c1c6390a166d621f61370e413cbcc0368b3f25"
+        }
+      ]
+    },
+    {
+      "id": "APS-REQ-020",
+      "text": "Main ASC collision-avoidance, network-management, and information-security interfaces shall connect to the primary and secondary WAN load balancers. Corresponding backup ASC interfaces shall connect to the main and backup core switches. The ASC emergency interface shall connect to the emergency control module.",
+      "origin_kind": "model_derived",
+      "category": "deployment",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 126,
+          "line_end": 126,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L126-L126",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "ASC emergency-module connection.",
+          "span_sha256": "75c9af8f3e1cd80af3b42f2da20a0fbf0a6225cc6abce95ed315a517bfe6a9f8"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 133,
+          "line_end": 134,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L133-L134",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Main collision-avoidance connections.",
+          "span_sha256": "03766190afc601a8d7d047cace5b46e42d9ffa8e2f54d511a1c5b9a50368adef"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 174,
+          "line_end": 177,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L174-L177",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Other main ASC service connections.",
+          "span_sha256": "3de114bb782a3e0b829820b4d40086dad26845e564208ff8b39ecc309049185a"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 183,
+          "line_end": 188,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L183-L188",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Backup ASC service connections.",
+          "span_sha256": "38077d34fdcb297aeb85da6fca5795537736ffce43d9e79a8c0ff9941876395d"
+        }
+      ]
+    },
+    {
+      "id": "APS-REQ-021",
+      "text": "The navigation subsystem shall contain five radar devices, four lidar devices, five electro-optical devices, one dome camera, and one infrared camera. It shall contain one top sensor-processing unit, four hull sensor-processing units, two sensor switches, two GNSS receivers, main and backup GNSS/IMU units, and one RTK-UHF unit.",
+      "origin_kind": "model_derived",
+      "category": "navigation",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 636,
+          "line_end": 670,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L636-L670",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Counts taken from NavigationSystem.impl_withRedundancy2, selected by APSCommunication.impl line 71.",
+          "span_sha256": "9d8c66044d8188dd9b5bdc840ab62fca145095b02b71a26d19b29d62b3a0fbe2"
+        }
+      ]
+    },
+    {
+      "id": "APS-REQ-022",
+      "text": "The top sensor-processing unit shall aggregate one radar, one infrared camera, one dome camera, and one electro-optical device. Each of the four hull sensor-processing units shall aggregate one electro-optical device, one lidar, and one radar. Each processing unit shall have an output connection to each of the two sensor switches.",
+      "origin_kind": "model_derived",
+      "category": "navigation",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 672,
+          "line_end": 674,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L672-L674",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Top and first two hull units connect to the main sensor switch.",
+          "span_sha256": "e88851171794424510ebdc757d946e85b5b728b91be96e23aa8a220b221e4dbd"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 681,
+          "line_end": 690,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L681-L690",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Top and first two hull sensor allocations.",
+          "span_sha256": "b0939d5de5a5bbe8565218f5ceb6eaa9cfe5d6972703224b82323cd390eb2203"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 697,
+          "line_end": 709,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L697-L709",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Remaining sensor allocations and complementary switch connections.",
+          "span_sha256": "3a8b8a1b79c06208f0c8a62139497a059bf9eb161312dbe1aa0214d6a83516de"
+        }
+      ]
+    },
+    {
+      "id": "APS-REQ-023",
+      "text": "Sensor-processing units shall provide secure sensor and LAN access, transmit processed sensor information, and support at least four sensor interfaces. Each sensor switch shall support managed packet switching, secure access, redundant LAN access, and at least eight Ethernet interfaces.",
+      "origin_kind": "author_requirement",
+      "category": "navigation",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 1781,
+          "line_end": 1782,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L1781-L1782",
+          "evidence_kind": "embedded_author_requirement",
+          "independent_of_model": false,
+          "explanation": "Author-stated sensor-switch minimum and capabilities.",
+          "span_sha256": "6cdf8ef8130f4f3b61316f5d5ec9f17ce196d8414f5b02f01abaa6b9817e65ee"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 1805,
+          "line_end": 1806,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L1805-L1806",
+          "evidence_kind": "embedded_author_requirement",
+          "independent_of_model": false,
+          "explanation": "Top SPU requirements.",
+          "span_sha256": "3f9c1dce8cb3be97db7e38ef4ea152b5457577617f76a865c197bdb1aa69b439"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 1825,
+          "line_end": 1826,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L1825-L1826",
+          "evidence_kind": "embedded_author_requirement",
+          "independent_of_model": false,
+          "explanation": "Hull SPU requirements.",
+          "span_sha256": "3f9c1dce8cb3be97db7e38ef4ea152b5457577617f76a865c197bdb1aa69b439"
+        }
+      ],
+      "source_context": "model_embedded_author_prose"
+    },
+    {
+      "id": "APS-REQ-024",
+      "text": "Both GNSS/IMU units shall accept GNSS receiver data and RTK-UHF correction data, provide two LAN data interfaces, and support secure access and redundant LAN communication.",
+      "origin_kind": "model_derived",
+      "category": "navigation",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 778,
+          "line_end": 811,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L778-L811",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Main and backup GNSS/IMU features and functional requirements.",
+          "span_sha256": "8f259b0634f666b20792f9f5b8d3ea4519d684760130da031d50a82a778593f9"
+        }
+      ]
+    },
+    {
+      "id": "APS-REQ-025",
+      "text": "The navigation subsystem shall expose four primary and four backup data interfaces for its two sensor-switch paths and two GNSS/IMU paths. The APS shall attach the primary interfaces to the main core switch and the backup interfaces to the backup core switch.",
+      "origin_kind": "model_derived",
+      "category": "redundancy",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 110,
+          "line_end": 118,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L110-L118",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "First two primary/backup navigation attachments.",
+          "span_sha256": "a418a00b5912b49b1c1f137eca8b3ff50229d91696b0b66d01b4b5c7ba99112e"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 135,
+          "line_end": 138,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L135-L138",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Third/fourth navigation attachments.",
+          "span_sha256": "639b610bd18da7b6f20e1023932926ad17a45c5f0ed5bd202ad3321ef3043982"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 677,
+          "line_end": 680,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L677-L680",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Main sensor/GNSS unit boundary paths.",
+          "span_sha256": "ffb93a0921166d806ba2dad5146ab7e2368f90b3d878af895b6f4f03c0f60f6f"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 693,
+          "line_end": 696,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L693-L696",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Backup sensor/GNSS unit boundary paths; this requirement does not prescribe anomalous individual directions.",
+          "span_sha256": "42d7b370d2c9e5734ae469776b3b2f45f77a980a7fb215773938b87a0bd9f1e6"
+        }
+      ]
+    },
+    {
+      "id": "APS-REQ-026",
+      "text": "The machinery subsystem shall provide four azimuth thrusters controlled by two I/O cards, with each card driving two thruster signal inputs. Each I/O card shall have primary and backup LAN access and shall support secure access and thruster interfacing.",
+      "origin_kind": "model_derived",
+      "category": "actuation",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 388,
+          "line_end": 405,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L388-L405",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Two I/O cards, four thrusters, dual LAN interfaces and card-to-thruster mappings; duplicate logical connection is not specified as a requirement.",
+          "span_sha256": "1455fe523344644573e640d4ca91e5e24c4734ab6829d4e04289550223daffb7"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 1484,
+          "line_end": 1496,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L1484-L1496",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "I/O card interface and functional property.",
+          "span_sha256": "1186fd8145553859c6cc4e9a676149214beb0e24a8197169a8c1cc7c0592a349"
+        }
+      ]
+    },
+    {
+      "id": "APS-REQ-027",
+      "text": "The safety subsystem shall contain a user panel and a general I/O module controlling an anchor-drop device, a horn, an alarm, and a lantern. The panel shall feed the I/O module, whose four output signals shall drive these four devices respectively; the module shall provide main and backup LAN access.",
+      "origin_kind": "model_derived",
+      "category": "safety",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 432,
+          "line_end": 449,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L432-L449",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Active safety constituents and control wiring; duplicate logical connections are not reproduced.",
+          "span_sha256": "3b557dad5b6e6c2ef327984889e158054cca4ab2fd91ca02f75924a865bc9ce5"
+        }
+      ]
+    },
+    {
+      "id": "APS-REQ-028",
+      "text": "The battery-management subsystem shall expose main and backup bidirectional data ports, with a power-information source flow on each, and connect those ports to the main and backup core switches respectively.",
+      "origin_kind": "model_derived",
+      "category": "power",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 452,
+          "line_end": 463,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L452-L463",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "BMS boundary and source flows; implementation remains abstract.",
+          "span_sha256": "60e5eebac6e1722e6cd4a99b6c2a2294a7bd3289f4b330add8c40af995bcb9ad"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 116,
+          "line_end": 123,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L116-L123",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "BMS main and backup switch attachments.",
+          "span_sha256": "02e97653d7404c3f7f0b50c0bfd8142756e95865c896a7741d4ea4cf1893d884"
+        }
+      ]
+    },
+    {
+      "id": "APS-REQ-029",
+      "text": "The APS emergency control module shall provide secure wireless communication, transmit emergency navigation and machinery information, and receive emergency control commands. The ECT counterpart shall receive that information and transmit emergency control commands over a secure wireless interface.",
+      "origin_kind": "author_requirement",
+      "category": "emergency",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 1354,
+          "line_end": 1357,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L1354-L1357",
+          "evidence_kind": "embedded_author_requirement",
+          "independent_of_model": false,
+          "explanation": "Explicit APS emergency communication requirements.",
+          "span_sha256": "356d00b1a6721b0ca8db6f24de7bd91c443fffd6f64eb52e9399946900c731f9"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/ECT.aadl",
+          "line_start": 24,
+          "line_end": 29,
+          "sha256": "e23704dcc88ba0e87b049cd31da3e57e6b1e5a011a6baf7e0c907e2a754d4bc4",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/ECT.aadl#L24-L29",
+          "evidence_kind": "embedded_author_requirement",
+          "independent_of_model": false,
+          "explanation": "Complementary ECT author requirement.",
+          "span_sha256": "017acc3b66afb7eea83a7c9bc201b51e9ba396ebe3cc74b860b609f1cb9f5bdf"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/ECT.aadl",
+          "line_start": 24,
+          "line_end": 35,
+          "sha256": "e23704dcc88ba0e87b049cd31da3e57e6b1e5a011a6baf7e0c907e2a754d4bc4",
+          "note": "The receive property is assigned but the internal wireless connection is directed outward.",
+          "span_sha256": "18123e9f92b7252ad685f3fc5322de5b1769bd07b533b61371f533342ea005f6",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/ECT.aadl#L24-L35"
+        }
+      ],
+      "note": "These are boundary flow declarations and author-stated receive intent. ECT.aadl connects its internal emergency module's wireless port outward to RadioCommunication, but does not establish the corresponding inbound path from the ECT boundary to that module. End-to-end reception is not claimed.",
+      "source_context": "model_embedded_author_prose"
+    },
+    {
+      "id": "APS-REQ-030",
+      "text": "The emergency push button shall be conveniently located and operated. It shall trigger an always-on, outgoing-only mobile communication module; the ECT shall receive the resulting signal through an always-on, incoming-only mobile receiver with alarm interfacing.",
+      "origin_kind": "author_requirement",
+      "category": "emergency",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 1368,
+          "line_end": 1379,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L1368-L1379",
+          "evidence_kind": "embedded_author_requirement",
+          "independent_of_model": false,
+          "explanation": "Embedded emergency-button requirements and wiring; property explicitly references author requirement C-X-2.",
+          "span_sha256": "57a3e711436e24d300af0448e28656fd8f66a35c7ea4961aea88a61af744a526"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/ECT.aadl",
+          "line_start": 30,
+          "line_end": 36,
+          "sha256": "e23704dcc88ba0e87b049cd31da3e57e6b1e5a011a6baf7e0c907e2a754d4bc4",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/ECT.aadl#L30-L36",
+          "evidence_kind": "embedded_author_requirement",
+          "independent_of_model": false,
+          "explanation": "ECT receiver requirement and event connection.",
+          "span_sha256": "cc69e71c36f565f7ebc1a68dfc126384f6c77457465b576d4fc4f8213664d454"
+        }
+      ],
+      "source_context": "model_embedded_author_prose"
+    },
+    {
+      "id": "APS-REQ-031",
+      "text": "The RCC shall contain network-and-system management, IS3MS, intrusion detection, an operator joystick, Internet, direct APS and traffic modules, a main control computer, and primary and secondary WAN load balancers. Both Internet and direct APS modules shall connect to both load balancers, and the main control computer shall connect to both load balancers.",
+      "origin_kind": "model_derived",
+      "category": "architecture",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/RCC.aadl",
+          "line_start": 37,
+          "line_end": 75,
+          "sha256": "1906837e49b9ce6c1b080cf221ac0a97ad690cb60c66ca87ccd768f655926bd1",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/RCC.aadl#L37-L75",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Active RCC constituents; commented backup computers and switches excluded.",
+          "span_sha256": "4df584e9bf1bcb0e93560abf8460c3789453a4f8f9de906a4bf69d4d83655397"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/RCC.aadl",
+          "line_start": 94,
+          "line_end": 100,
+          "sha256": "1906837e49b9ce6c1b080cf221ac0a97ad690cb60c66ca87ccd768f655926bd1",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/RCC.aadl#L94-L100",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Dual WAN and control-computer attachments.",
+          "span_sha256": "493f625e34092d5fd1a01e1576156ea0c2b809f0074ee1e8ec612172c82d14d5"
+        }
+      ]
+    },
+    {
+      "id": "APS-REQ-032",
+      "text": "The RCC main control computer shall receive navigation, power, safety, machinery, shore-sensor, and other ship information; transmit control commands; and transmit ASC updates. The RCC direct APS module shall receive ship information and transmit control commands and ASC updates.",
+      "origin_kind": "author_requirement",
+      "category": "control",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/RCC.aadl",
+          "line_start": 47,
+          "line_end": 58,
+          "sha256": "1906837e49b9ce6c1b080cf221ac0a97ad690cb60c66ca87ccd768f655926bd1",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/RCC.aadl#L47-L58",
+          "evidence_kind": "embedded_author_requirement",
+          "independent_of_model": false,
+          "explanation": "Author-stated control-computer and direct-link duties.",
+          "span_sha256": "f0ec2bd3790fbfc7589617ca22bca194a376fdb0975c187b740e7dc96f03cbce"
+        }
+      ],
+      "source_context": "model_embedded_author_prose"
+    },
+    {
+      "id": "APS-REQ-033",
+      "text": "Collision-avoidance/situational-awareness processing in both ASC branches shall support user-access management, anti-virus protection, and firewall protection.",
+      "origin_kind": "author_requirement",
+      "category": "security",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 961,
+          "line_end": 963,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L961-L963",
+          "evidence_kind": "embedded_author_requirement",
+          "independent_of_model": false,
+          "explanation": "Main controller security property.",
+          "span_sha256": "fb3e1946d07cdbed11d3a49cc4f140a682560b1dc24be8ce37c0fed016869ad3"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 1114,
+          "line_end": 1115,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L1114-L1115",
+          "evidence_kind": "embedded_author_requirement",
+          "independent_of_model": false,
+          "explanation": "Backup controller security property.",
+          "span_sha256": "f31443ed29ac4a59c4c058dac0caf3856ed436f484e47a9cab26dfc980df2cb2"
+        }
+      ],
+      "source_context": "model_embedded_author_prose"
+    },
+    {
+      "id": "APS-REQ-034",
+      "text": "Two APS intrusion-detection subsystems shall be retained at distinct network attachment points: one connected to both WAN load balancers, and the other connected to both core switches.",
+      "origin_kind": "model_derived",
+      "category": "security",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 76,
+          "line_end": 77,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L76-L77",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Two IDS declarations.",
+          "span_sha256": "c3f2277d03b019a7f40e856ad456e6d8f03467fb34ad8981f06bc40d56526468"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 179,
+          "line_end": 182,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L179-L182",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "IDS attachments across the WAN and core network layers.",
+          "span_sha256": "cae0546b984029087985e1f5cb4fe54cde38cfd938a135f4c4f6ec5286195845"
+        }
+      ]
+    },
+    {
+      "id": "APS-REQ-035",
+      "text": "The general I/O module shall interface non-IP safety devices while providing redundant LAN access and secure access; the local safety user panel shall also support secure access.",
+      "origin_kind": "author_requirement",
+      "category": "security",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aps/APS.aadl",
+          "line_start": 1860,
+          "line_end": 1870,
+          "sha256": "113ee6ef73362607d0d98e3e423a852be3d84ce081b0d21920f0e2773f36c17a",
+          "source_repository": "ahmed-amro/APS-Communication_Architecture",
+          "source_ref": "2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e",
+          "source_url": "https://github.com/ahmed-amro/APS-Communication_Architecture/blob/2cb6cfc34b2b7c5c0fc5b76b7a5ab0822e60368e/APS.aadl#L1860-L1870",
+          "evidence_kind": "embedded_author_requirement",
+          "independent_of_model": false,
+          "explanation": "Author-stated general I/O and user-panel security requirements.",
+          "span_sha256": "15f6f4e9a8dfd80f8c883dd6ca1bf8c32b4f178083aff2a9fd681ed8db93ff76"
+        }
+      ],
+      "source_context": "model_embedded_author_prose"
+    }
+  ],
+  "schema_version": 1,
+  "requirement_origin": "derived_example",
+  "is_gold_reference": false,
+  "root_classifiers": [
+    "Overall::APSCommunicationArchitecture.impl"
+  ],
+  "author_requirement_meaning": "Paraphrased author prose embedded in source models; not an independent original specification.",
+  "curation_method": "AI-assisted architecture reconstruction with line-level source review; no claim of complete functional coverage or contract proof."
+}

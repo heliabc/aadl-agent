@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from copy import deepcopy
 from functools import lru_cache
 import hashlib
 from importlib.resources import files
@@ -12,7 +13,6 @@ import sys
 from types import MappingProxyType, ModuleType
 from typing import Any
 
-import jsonschema
 from llguidance import LLMatcher, LLTokenizer, TokenizerWrapper
 
 from .grammar import GrammarFrontend
@@ -68,9 +68,7 @@ class RuleBundle:
     profile: str
     digest: str
     grammar: str
-    planning_schema: dict
     system_prompt: str
-    planning_prompt: str
     generation_prompt: str
     semantics: Any = field(repr=False, compare=False)
     frontend: GrammarFrontend = field(repr=False, compare=False)
@@ -105,7 +103,63 @@ class RuleBundle:
         return AttributeEngine(self, declarations, context=context, project=project)
 
     def normalize_plan(self, plan):
-        return self.semantics.normalize_plan(plan)
+        # Retained only for old declaration-constrained engine snapshots/replay.
+        # Active generation has no declaration-planning request or schema.
+        hook = getattr(self.semantics, 'normalize_plan', None)
+        if not callable(hook):
+            raise RuleDefinitionError('This rule bundle does not support legacy declaration plans')
+        return hook(plan)
+
+    @property
+    def repair_prompt(self):
+        # Repair is a separate task from initial generation. Older independent
+        # rule bundles keep a language-neutral fallback without changing decoding.
+        return self.semantics.METADATA.get('repair_prompt',
+            'Correct the rejected project using the supplied diagnostics. Preserve '
+            'the requirements. Return the entire corrected project.')
+
+    def repair_advice(self, sources, diagnostics, declarations=None):
+        """Obtain explanatory advice without letting a hook mutate a run's inputs.
+
+        Diagnostics may include located validator objects as well as legacy
+        strings. Only the rule package interprets language-specific constructs;
+        advice does not change source files, validation results, or token masks.
+        """
+        hook = getattr(self.semantics, 'repair_advice', None)
+        if hook is None:
+            return []
+        try:
+            advice = hook(deepcopy(sources), deepcopy(diagnostics), deepcopy(declarations))
+        except Exception as exc:
+            raise RuleDefinitionError(f'repair_advice() failed: {exc}') from exc
+        fields = {'id', 'source', 'line', 'observed', 'explanation', 'suggestion'}
+        if not isinstance(advice, list):
+            raise RuleDefinitionError('repair_advice() must return a list of located advice objects')
+        for item in advice:
+            if (not isinstance(item, dict) or set(item) != fields
+                    or type(item['line']) is not int or item['line'] < 1
+                    or any(not isinstance(item[key], str) or not item[key].strip()
+                           for key in fields - {'line'})):
+                raise RuleDefinitionError('repair_advice() returned an invalid located advice object')
+        return deepcopy(advice)
+
+    def reobserve_repair_focus(self, focus, sources):
+        """Return pattern re-observation, never a verdict that a repair worked.
+
+        Unsupported language patterns or missing source correspondence return
+        None. The independent checker still decides project validity after a
+        changed candidate; these observations only describe feedback outcomes.
+        """
+        hook = getattr(self.semantics, 'reobserve_repair_focus', None)
+        if hook is None:
+            return None
+        try:
+            observed = hook(deepcopy(focus), deepcopy(sources))
+        except Exception as exc:
+            raise RuleDefinitionError(f'reobserve_repair_focus() failed: {exc}') from exc
+        if observed is not None and type(observed) is not bool:
+            raise RuleDefinitionError('reobserve_repair_focus() must return bool or None')
+        return observed
 
     def new_matcher(self):
         return LLMatcher(byte_tokenizer(), self.grammar, log_level=0)
@@ -136,9 +190,18 @@ def _validate_bindings(module, frontend):
             targets = (target,) if isinstance(target, str) else target
             if not isinstance(targets, (tuple, list)) or any(t not in frontend.productions | frontend.terminals.keys() for t in targets):
                 raise RuleDefinitionError(f"{name}.{field_name}: unknown grammar field target {target!r}")
-    for function in ("evaluate", "normalize_plan"):
+    # Generation no longer performs declaration planning. A legacy normalizer
+    # is checked only when explicitly used, not imposed on every new rule pack.
+    for function in ("evaluate",):
         if not callable(getattr(module, function, None)):
             raise RuleDefinitionError(f"semantics.py is missing {function}()")
+    if hasattr(module, 'repair_advice') and not callable(module.repair_advice):
+        raise RuleDefinitionError('semantics.py repair_advice must be callable when provided')
+    if hasattr(module, 'reobserve_repair_focus') and not callable(module.reobserve_repair_focus):
+        raise RuleDefinitionError('semantics.py reobserve_repair_focus must be callable when provided')
+    repair_prompt = module.METADATA.get('repair_prompt')
+    if repair_prompt is not None and (not isinstance(repair_prompt, str) or not repair_prompt.strip()):
+        raise RuleDefinitionError('semantics.py repair_prompt must be nonempty text when provided')
     handlers = getattr(module, "HANDLERS", None)
     constraints = getattr(module, "CONSTRAINTS", None)
     required_attributes = getattr(module, "REQUIRED_ATTRIBUTES", None)
@@ -202,10 +265,10 @@ def load_bundle(path: str | Path | None = None) -> RuleBundle:
         frontend = GrammarFrontend(grammar)
         _validate_bindings(module, frontend)
         frontend.bindings = MappingProxyType({name: MappingProxyType(dict(fields)) for name, fields in module.BINDINGS.items()})
-        schema = metadata["planning_schema"]
-        jsonschema.Draft202012Validator.check_schema(schema)
-        bundle = RuleBundle(root, metadata["profile"], fingerprint, grammar, schema,
-                            metadata["system_prompt"], metadata["planning_prompt"], metadata["generation_prompt"],
+        # Prompts describe source generation and feedback repair only. A bundle
+        # must not require a JSON planning schema just to load its AADL rules.
+        bundle = RuleBundle(root, metadata["profile"], fingerprint, grammar,
+                            metadata["system_prompt"], metadata["generation_prompt"],
                             module, frontend, MappingProxyType(snapshot))
         matcher = bundle.new_matcher()
         if matcher.is_error():

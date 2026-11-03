@@ -5,6 +5,7 @@ inference HTTP API. Only this project's symlinks and systemd unit are managed.
 """
 from __future__ import annotations
 import argparse
+import hashlib
 import io
 import json
 import os
@@ -22,21 +23,26 @@ UNIT = "aadl-single-agent.service"
 
 def pack(args):
     from aadl_single_agent.rules import load_bundle
+    from aadl_single_agent.project import GENERATED_FILE_COUNT, PROJECT_GRAMMAR
     project, rules = Path(args.project).resolve(), Path(args.rules).resolve()
     bundle = load_bundle(rules)
     target = Path(args.archive).resolve()
     target.parent.mkdir(parents=True, exist_ok=True)
     metadata = {"action": args.action, "rule_bundle_sha256": bundle.digest,
                 "compiled_grammar_sha256": bundle.compiled_grammar_sha256,
-                "runtime_version": bundle.runtime_version, "profile": bundle.profile}
+                "runtime_version": bundle.runtime_version, "profile": bundle.profile,
+                "generated_file_limit": GENERATED_FILE_COUNT,
+                "transport_grammar_sha256": hashlib.sha256(PROJECT_GRAMMAR.encode("utf-8")).hexdigest()}
     def filtered(info):
-        if any(part in {"__pycache__", ".pytest_cache", ".git", ".venv", ".runs"}
+        if any(part in {"__pycache__", ".pytest_cache", ".git", ".venv", ".runs", "temp"}
                for part in Path(info.name).parts) or info.name.endswith((".pyc", ".pyo")):
             return None
         return info
     with tarfile.open(target, "w:gz") as archive:
         if args.action == "Deploy":
-            for name in ["src", "resources", "scripts", "examples", "pyproject.toml", "README.md"]:
+            # Reference corpora stay with the experiment client. Inference uses
+            # installed source and rules, never the reference answers in example.
+            for name in ["src", "resources", "scripts", "pyproject.toml", "README.md"]:
                 path = project / name
                 if path.exists():
                     archive.add(path, arcname="project/" + name, filter=filtered)
@@ -143,8 +149,15 @@ def _wait_ready(port, metadata, release):
             raise RuntimeError("Started service uses a different runtime.")
         if actual.get("rule_bundle", {}).get("compiled_grammar_sha256") != metadata["compiled_grammar_sha256"]:
             raise RuntimeError("Started service compiled the rule grammar differently.")
-        if not {"plain", "aadl_joint", "json_schema"} <= set(actual.get("constraint_types", [])):
+        if not {"plain", "aadl_joint"} <= set(actual.get("constraint_types", [])):
             raise RuntimeError("Started service is missing a required capability.")
+        if actual.get("generation_protocol_version") != 2:
+            raise RuntimeError("Started service is missing generation protocol 2.")
+        if (type(actual.get("generated_file_limit")) is not int
+                or actual.get("generated_file_limit") != metadata["generated_file_limit"]):
+            raise RuntimeError("Started service does not enforce the single-generated-file profile.")
+        if actual.get("transport_grammar_sha256") != metadata["transport_grammar_sha256"]:
+            raise RuntimeError("Started service uses a different transport grammar.")
         return actual
     raise RuntimeError("Service did not become ready: " + last_error)
 

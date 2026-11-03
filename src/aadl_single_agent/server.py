@@ -21,9 +21,11 @@ from importlib.metadata import version
 from typing import Any
 
 from .decoder import (ConstrainedDecodingError, JointLogitsProcessor, NoLegalTokenError,
-                      RepeatedLineDetector, repetition_stop_configuration)
+                      GenerationDeadlineExceeded, RepeatedLineDetector, repetition_stop_configuration)
+from .generation_protocol import (GENERATION_PROTOCOL_VERSION, GenerationProtocolMismatch,
+                                  generation_policy)
 from .semantic_types import RuleDefinitionError, ParseResourceError
-from .project import PROJECT_GRAMMAR, coerce_context
+from .project import GENERATED_FILE_COUNT, PROJECT_GRAMMAR, coerce_context
 from . import __version__
 
 
@@ -156,9 +158,13 @@ class TransformersRuntime:
         if not callable(getattr(cfg.llg_tokenizer, "decode_bytes", None)):
             raise RuntimeError("llguidance byte tokenizer does not implement decode_bytes")
         self.byte_tokenizer = cfg.llg_tokenizer
-        # Compile both bundled formats at startup. Dependency/grammar failures
-        # abort startup instead of advertising an unavailable constraint backend.
-        json_processor = self.json_processor_factory(json_schema=json.dumps(self.bundle.planning_schema))
+        # The transport backend still supports generic JSON requests, but AADL
+        # generation no longer has a declaration-planning phase. Test that
+        # capability with a language-neutral schema rather than a rule-bundle
+        # planning schema, so removing planning cannot break server startup.
+        probe_schema = {"type": "object", "properties": {"ok": {"type": "boolean"}},
+                        "required": ["ok"], "additionalProperties": False}
+        json_processor = self.json_processor_factory(json_schema=json.dumps(probe_schema))
         for processor in (cfg, json_processor):
             matcher = llguidance.LLMatcher(processor.llg_tokenizer, processor.grammar)
             if error := matcher.get_error():
@@ -193,7 +199,7 @@ class TransformersRuntime:
                  "mtime_ns": path.stat().st_mtime_ns} for path in sorted(files)]
 
     def capabilities(self) -> dict:
-        kinds = ["plain", "aadl_joint", "json_schema"] if self.ready else []
+        kinds = ["plain", "aadl_gcd", "aadl_joint", "json_schema"] if self.ready else []
         return {
             "model": self.model_name,
             "framework": "outlines",
@@ -205,6 +211,8 @@ class TransformersRuntime:
             "semantic_engine": {"kind": "production_attribute_grammar", "format": "python",
                                 "evaluation": "dependency_driven_partial", "unknown": "deferred"},
             "runtime_version": self.bundle.runtime_version,
+            "generation_protocol_version": GENERATION_PROTOCOL_VERSION,
+            "generation_policy": generation_policy(repetition_stop_configuration(), self.config.generation_timeout),
             "model_identity": self.model_identity,
             "tokenizer_identity": self.tokenizer_identity,
             "versions": self.versions,
@@ -222,7 +230,11 @@ class TransformersRuntime:
             "server_version": __version__,
             "server_code_sha256": self.source_sha256,
             "project_transport": "AADL-PROJECT 1",
+            "generated_file_limit": GENERATED_FILE_COUNT,
+            "generated_file_limit_scope": "generated_output_only_excludes_explicit_dependencies",
+            "transport_grammar_sha256": hashlib.sha256(PROJECT_GRAMMAR.encode("utf-8")).hexdigest(),
             "dependency_snapshots": True,
+            "experimental_decoders": ["aadl_gcd"],
         }
 
     def _eos_ids(self) -> list[int]:
@@ -278,9 +290,14 @@ class TransformersRuntime:
         evidence = {"kind": kind, "sha256": canonical_constraint_hash(spec), "applied": kind != "plain" or project,
                     "rule_bundle_sha256": self.bundle.digest, "runtime_version": self.bundle.runtime_version,
                     "compiled_grammar_sha256": self.bundle.compiled_grammar_sha256,
-                    "transport_mask_applied": project, "aadl_cfg_applied": kind == "aadl_joint",
+                    "transport_mask_applied": project, "aadl_cfg_applied": kind in {"aadl_joint", "aadl_gcd"},
                     "attributes_applied": kind == "aadl_joint"}
-        if kind not in {"plain", "aadl_joint", "json_schema"}:
+        if project:
+            # Both ordinary and joint generation share this file-count limit;
+            # real read-only dependency files do not count as generated output.
+            evidence.update(generated_file_limit=GENERATED_FILE_COUNT,
+                            transport_grammar_sha256=hashlib.sha256(PROJECT_GRAMMAR.encode("utf-8")).hexdigest())
+        if kind not in {"plain", "aadl_gcd", "aadl_joint", "json_schema"}:
             raise ValueError(f"Unsupported constraint kind: {kind!r}")
         if not self.ready:
             raise RuntimeError("The required Outlines/llguidance backend is not initialized")
@@ -294,22 +311,29 @@ class TransformersRuntime:
                 processor = JointLogitsProcessor(engine, self.tokenizer, prompt_ids, self._eos_ids(), syntax_processor=cfg, mask_role="transport")
                 return [processor], evidence, processor
             return [], evidence, None
-        if kind == "aadl_joint":
-            if set(spec) - {"kind", "profile", "declarations", "project"} or spec.get("profile") != self.bundle.profile:
-                raise ValueError(f"aadl_joint requires profile={self.bundle.profile} and accepts optional declarations only")
-            declarations = spec.get("declarations")
-            if "declarations" in spec and not isinstance(declarations, list):
-                raise ValueError("aadl_joint declarations must be a list")
+        if kind in {"aadl_joint", "aadl_gcd"}:
+            # Predeclaration promises are not part of the current generation
+            # contract. Reject old fields instead of silently ignoring them.
+            allowed = {"kind", "profile", "project"}
+            if set(spec) - allowed or spec.get("profile") != self.bundle.profile:
+                raise ValueError(f"{kind} requires profile={self.bundle.profile} and recognized fields only")
             from .constraints import JointEngine
 
-            # The wire protocol owns only the list envelope. The selected rule
-            # bundle owns its planning schema, normalization, and semantic checks.
-            engine = JointEngine(declarations=declarations, bundle=self.bundle, context=context, project=project)
+            if kind == "aadl_joint":
+                engine = JointEngine(bundle=self.bundle, context=context, project=project)
+            else:
+                from .attribute_runtime import AttributeEngine
+                # The experiment ablation keeps the identical tokenizer, CFG
+                # and selector. No symbol table, plan or attribute rule is read.
+                engine = AttributeEngine(self.bundle, context=context, project=project,
+                                         joint=False, syntax_only=True)
             cfg = self.cfg_processor_factory(grammar=PROJECT_GRAMMAR if project else self.bundle.grammar)
             processor = JointLogitsProcessor(engine, self.tokenizer, prompt_ids, self._eos_ids(), syntax_processor=cfg,
                                             mask_role="transport" if project else "aadl")
-            evidence.update(profile=self.bundle.profile, framework="outlines", backend="llguidance+joint-semantics",
-                            scope="supported bundle rules", semantic_engine="production_attribute_grammar")
+            evidence.update(profile=self.bundle.profile, framework="outlines",
+                            backend="llguidance+joint-semantics" if kind == "aadl_joint" else "llguidance",
+                            scope="supported bundle rules" if kind == "aadl_joint" else "grammar only",
+                            semantic_engine="production_attribute_grammar" if kind == "aadl_joint" else None)
             return [processor], evidence, processor
         if set(spec) != {"kind", "schema"} or not isinstance(spec["schema"], dict):
             raise ValueError("json_schema requires exactly kind and an object schema")
@@ -330,6 +354,8 @@ class TransformersRuntime:
             "id": "chatcmpl-" + uuid.uuid4().hex,
             "object": "chat.completion", "created": int(time.time()),
             "model": self.model_name,
+            "generation_protocol_version": GENERATION_PROTOCOL_VERSION,
+            "generation_policy": generation_policy(repetition_stop_configuration(), self.config.generation_timeout),
             "error": {"type": "generation_timeout" if timeout else "decoder_infrastructure",
                       "exception": type(error).__name__, "message": str(error), "retryable": False},
             "rule_bundle_sha256": self.bundle.digest,
@@ -376,6 +402,30 @@ class TransformersRuntime:
         # retryable constraint_failure/dead_end protocol, even with valid usage.
         return InferenceInfrastructureError(504 if timeout else 500, payload)
 
+    def _deadline_outcome(self, error, *, context, evidence, joint, prompt_count,
+                          generated, generation_started, deadline_started, phase):
+        """Convert only a stopped, metered cooperative deadline into an outcome.
+
+        Reuse the byte-exact error snapshot, without running expensive semantic
+        finalization after the time allowance has already expired. Unknown usage
+        or a broken decoder remains infrastructure; no tokens are guessed.
+        """
+        failure = self._infrastructure_failure(error, context=context, evidence=evidence, joint=joint,
+            prompt_count=prompt_count, generated=generated, generation_started=generation_started)
+        data = failure.payload
+        if (generated is None or "usage" not in data or not data.get("choices")
+                or data.get("partial_decode_error") or not data.get("constraint")):
+            raise failure
+        data.pop("error")
+        data["choices"][0]["finish_reason"] = "length"
+        data["termination"] = {
+            "kind": "generation_timeout", "phase": phase, "stage": error.phase,
+            "limit_seconds": self.config.generation_timeout,
+            "elapsed_seconds": time.monotonic() - deadline_started,
+            "worker_stopped": True, "selected_token_count": len(generated),
+        }
+        return data
+
     def generate(self, request: Any) -> dict:
         """Run synchronously in FastAPI's worker while retaining the model lock.
 
@@ -387,6 +437,10 @@ class TransformersRuntime:
 
         if self.model is None:
             raise RuntimeError("Model is not loaded")
+        if (getattr(request, "generation_protocol_version", None) != GENERATION_PROTOCOL_VERSION
+                or getattr(request, "generation_policy", None) !=
+                generation_policy(repetition_stop_configuration(), self.config.generation_timeout)):
+            raise GenerationProtocolMismatch("Generation protocol or stop policy differs from this deployment")
         if request.runtime_version != self.bundle.runtime_version:
             raise RuleMismatchError("runtime_version does not match this server")
         if request.rule_bundle_sha256 != self.bundle.digest:
@@ -399,6 +453,9 @@ class TransformersRuntime:
         if not self.lock.acquire(blocking=False):
             raise BlockingIOError("Model is busy")
         joint, output, prompt_count, generation_started = None, None, None, None
+        repetition = None
+        deadline_started = None
+        phase = "planning" if request.constraint and request.constraint.get("kind") == "json_schema" else "generation"
         evidence = {}
         try:
             inputs = self.tokenizer.apply_chat_template(
@@ -415,7 +472,8 @@ class TransformersRuntime:
             evidence["context_sha256"] = context.sha256
             device = self.model.get_input_embeddings().weight.device
             inputs = {key: value.to(device) for key, value in inputs.items()}
-            deadline = time.monotonic() + self.config.generation_timeout
+            deadline_started = time.monotonic()
+            deadline = deadline_started + self.config.generation_timeout
             if joint is not None:
                 joint.bridge.deadline = deadline
             generation_started = time.perf_counter()
@@ -473,7 +531,7 @@ class TransformersRuntime:
                 constraint_failure = {"code": "dead_end", "message": str(exc)}
             # The worker has now stopped.  Only now may a timeout release its lock.
             if stopper.timed_out or time.monotonic() >= deadline:
-                raise TimeoutError("Generation exceeded its cooperative deadline; worker has now stopped")
+                raise GenerationDeadlineExceeded("generation", "Generation exceeded its cooperative deadline; worker has now stopped")
             validation = None
             if constraint_failure is not None:
                 generated = list(joint.bridge.token_ids)
@@ -512,6 +570,8 @@ class TransformersRuntime:
                                              clean_up_tokenization_spaces=False)
             if joint is not None:
                 evidence.update(joint.evidence())
+            evidence["repetition_detection_seconds"] = repetition.observation_seconds
+            evidence["repetition_observations"] = repetition.observations
             evidence["generation_seconds"] = time.perf_counter() - generation_started
             completion_count = len(generated)
             response = {
@@ -519,6 +579,8 @@ class TransformersRuntime:
                 "object": "chat.completion",
                 "created": int(time.time()),
                 "model": self.model_name,
+                "generation_protocol_version": GENERATION_PROTOCOL_VERSION,
+                "generation_policy": generation_policy(repetition_stop_configuration(), self.config.generation_timeout),
                 "rule_bundle_sha256": self.bundle.digest,
                 "runtime_version": self.bundle.runtime_version,
                 "compiled_grammar_sha256": self.bundle.compiled_grammar_sha256,
@@ -541,12 +603,24 @@ class TransformersRuntime:
                 # Metered truncation uses the same token accounting and repair
                 # budget as max_tokens. It is neither a semantic conflict nor a
                 # worker fault, and does not change the logits/masks in any mode.
-                response["termination"] = repetition.termination
+                response["termination"] = {**repetition.termination, "phase": phase,
+                                           "worker_stopped": True, "selected_token_count": completion_count}
             if constraint_failure is not None:
                 # No top-level `error`: this is a metered generation outcome that
                 # the same agent may retry within its remaining total budget.
                 response["constraint_failure"] = constraint_failure
             return response
+        except GenerationDeadlineExceeded as exc:
+            # This handler runs only after model.generate returned or unwound.
+            # Keep the model lock until the measured outcome has been assembled.
+            generated = (output[0][prompt_count:].tolist() if output is not None else
+                         joint.selected_token_ids if joint is not None else None)
+            if repetition is not None:
+                evidence["repetition_detection_seconds"] = repetition.observation_seconds
+                evidence["repetition_observations"] = repetition.observations
+            return self._deadline_outcome(exc, context=context, evidence=evidence, joint=joint,
+                prompt_count=prompt_count, generated=generated, generation_started=generation_started,
+                deadline_started=deadline_started, phase=phase)
         except (RuleDefinitionError, ParseResourceError, TimeoutError, ConstrainedDecodingError) as exc:
             generated = (output[0][prompt_count:].tolist() if output is not None else
                          joint.selected_token_ids if joint is not None else None)
@@ -574,6 +648,8 @@ def create_app(config: ServerConfig, runtime: TransformersRuntime | None = None)
         n: int = 1
         num_beams: int = 1
         constraint: dict | None = None
+        generation_protocol_version: int | None = None
+        generation_policy: dict | None = None
         rule_bundle_sha256: str = Field(pattern="^[0-9a-f]{64}$")
         runtime_version: str
         compiled_grammar_sha256: str = Field(pattern="^[0-9a-f]{64}$")
@@ -622,6 +698,8 @@ def create_app(config: ServerConfig, runtime: TransformersRuntime | None = None)
             return runtime.generate(request)
         except InferenceInfrastructureError as exc:
             return JSONResponse(status_code=exc.status_code, content=exc.payload)
+        except GenerationProtocolMismatch as exc:
+            raise HTTPException(409, {"code": "generation_protocol_mismatch", "message": str(exc)}) from exc
         except RuleMismatchError as exc:
             # Discovery and generation are separate requests: a deployment may
             # change between them. Preserve this distinction with a stable code
@@ -649,7 +727,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--model-name", default=os.environ.get("AADL_MODEL_NAME"))
     parser.add_argument("--rules", default=os.environ.get("AADL_RULES_PATH"), help="Validated rule bundle directory")
     parser.add_argument("--host", default="127.0.0.1")
-    parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--port", type=int, default=8001)
     parser.add_argument("--context-limit", type=int, default=None)
     parser.add_argument("--timeout", type=float, default=600.0)
     parser.add_argument("--max-new-tokens", type=int, default=8192)

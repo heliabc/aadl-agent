@@ -14,19 +14,24 @@ from typing import Iterable, Mapping
 
 
 PROJECT_HEADER = "AADL-PROJECT 1\n"
-PROJECT_GRAMMAR = r'''start: "AADL-PROJECT 1\n" file+ "END_PROJECT\n"
+GENERATED_FILE_COUNT = 1
+PROJECT_GRAMMAR = r'''start: "AADL-PROJECT 1\n" file "END_PROJECT\n"
 file: "FILE\n" line* "END_FILE\n"
 line: "|" /[^\r\n]+/? "\n"
 '''
 PROJECT_INSTRUCTIONS = (
-    "Return one complete project without Markdown. The first line must be exactly AADL-PROJECT 1. "
-    "Start each source file with a line containing exactly FILE (no filename). "
+    "Return exactly one complete generated AADL source file without Markdown. "
+    "It must contain exactly one model unit: one package or one property set. "
+    "The first line must be exactly AADL-PROJECT 1. "
+    "Start the source file with a line containing exactly FILE (no filename). "
     "Prefix EVERY source line, including blank lines, with one extra | character. "
     "After the complete source of a file, write END_FILE on its own line without |. "
-    "Repeat FILE, prefixed source lines, END_FILE for additional files. "
+    "Do not start a second FILE block; place all generated declarations in the single model unit. "
     "Finally write END_PROJECT on its own line without | and stop. "
     "Use actual LF newlines, never escaped newline strings or placeholder text. "
-    "All required source definitions must be present before END_PROJECT."
+    "Local references may precede their definitions inside that model unit. "
+    "All required generated definitions must be present before END_PROJECT. "
+    "Explicitly supplied read-only dependencies are external and must not be regenerated."
 )
 
 
@@ -35,6 +40,9 @@ class ProjectFile:
     name: str
     text: str
     complete: bool = True
+    # Once a control record starts with E, another |source line is impossible.
+    # The file is syntactically sealed even before END_FILE's final LF arrives.
+    closure_started: bool = False
 
 
 @dataclass(frozen=True)
@@ -43,10 +51,31 @@ class ProjectDocument:
     complete: bool = False
     diagnostics: tuple[str, ...] = ()
     started: bool = False
+    # This is distinct from complete: sealing the sole generated source file
+    # already rules out any later definitions, even before END_PROJECT arrives.
+    closure_started: bool = False
 
     @property
     def valid(self):
         return self.complete and not self.diagnostics
+
+
+def _lf_records(text: str):
+    """Yield protocol records separated only by LF, retaining source characters.
+
+    Unicode line/paragraph separators and other str.splitlines delimiters can
+    occur inside source comments or strings. They are source characters, not
+    control-record boundaries. CR handling remains at the existing call sites.
+    """
+    start = 0
+    while True:
+        end = text.find("\n", start)
+        if end < 0:
+            if start < len(text):
+                yield text[start:]
+            return
+        yield text[start:end + 1]
+        start = end + 1
 
 
 def parse_project(text: str) -> ProjectDocument:
@@ -57,8 +86,9 @@ def parse_project(text: str) -> ProjectDocument:
         return ProjectDocument(diagnostics=() if PROJECT_HEADER.startswith(text) else ("Expected AADL-PROJECT 1 header",))
     files, body, errors = [], None, []
     rest = text[len(PROJECT_HEADER):]
-    records = rest.splitlines(keepends=True)
+    records = _lf_records(rest)
     closed = False
+    file_closure_started = project_closure_started = False
     for record in records:
         if closed:
             errors.append("Content follows END_PROJECT")
@@ -74,33 +104,51 @@ def parse_project(text: str) -> ProjectDocument:
                 files.append(ProjectFile(f"model_{len(files)+1:03d}.aadl", "".join(body)))
                 body = None
             elif not terminated and "END_FILE\n".startswith(record):
+                file_closure_started = bool(record)
                 break
             else:
                 errors.append("Expected a '|' source record or END_FILE")
                 break
         elif record == "FILE\n":
+            if files:
+                errors.append("Only one generated source file is allowed; a second FILE block is invalid")
+                break
             body = []
         elif record == "END_PROJECT\n" and files:
             closed = True
-        elif not terminated and any(marker.startswith(record) for marker in ("FILE\n", "END_PROJECT\n")):
+        elif files and not terminated and "FILE\n".startswith(record):
+            # The first F after END_FILE is already irreversible: continuing
+            # it cannot yield the sole legal END_PROJECT control record.
+            errors.append("Only one generated source file is allowed; a second FILE prefix is invalid")
+            break
+        elif not terminated and any(marker.startswith(record) for marker in
+                                    (("END_PROJECT\n",) if files else ("FILE\n",))):
+            project_closure_started = bool(record) and "END_PROJECT\n".startswith(record)
             break
         else:
-            errors.append("Expected FILE, or END_PROJECT after at least one file")
+            errors.append("Expected END_PROJECT after the single file" if files else "Expected one FILE block")
             break
     if body is not None:
-        files.append(ProjectFile(f"model_{len(files)+1:03d}.aadl", "".join(body), False))
-    return ProjectDocument(tuple(files), closed and not errors, tuple(errors), True)
+        files.append(ProjectFile(f"model_{len(files)+1:03d}.aadl", "".join(body), False, file_closure_started))
+    # In the single-file profile, END_FILE itself seals the entire generated
+    # source set. The attribute runtime must close obligations at that boundary
+    # instead of accepting a prefix that would require a forbidden second file.
+    source_set_sealed = file_closure_started or bool(files and files[0].complete)
+    return ProjectDocument(tuple(files), closed and not errors, tuple(errors), True,
+                           project_closure_started or source_set_sealed)
 
 
 def serialize_project(files: Mapping[str, str] | Iterable[ProjectFile | str]) -> str:
     """Encode source records; names are deliberately absent from the wire format."""
-    values = files.values() if isinstance(files, Mapping) else files
+    values = tuple(files.values() if isinstance(files, Mapping) else files)
+    if len(values) != GENERATED_FILE_COUNT:
+        raise ValueError("The generated transport requires exactly one AADL source file")
     pieces = [PROJECT_HEADER]
     for value in values:
         text = value if isinstance(value, str) else value.text
         text = text.replace("\r\n", "\n").replace("\r", "\n")
         pieces.append("FILE\n")
-        for line in text.splitlines(keepends=True):
+        for line in _lf_records(text):
             pieces.append("|" + line + ("" if line.endswith("\n") else "\n"))
         pieces.append("END_FILE\n")
     pieces.append("END_PROJECT\n")

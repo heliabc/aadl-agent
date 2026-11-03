@@ -1,0 +1,1051 @@
+{
+  "case_id": "a3d_smaccm_phase2",
+  "title": "SMACCM Phase 2 UAV Architecture — Derived Example Requirements",
+  "independent_evaluation_eligible": false,
+  "source_repository": "smaccm/smaccm",
+  "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+  "source_license": "BSD-3-Clause, repository LICENSE, Copyright 2012-2013 Rockwell Collins; retain copyright, conditions and disclaimer. Related project website rights are separate.",
+  "purpose": "English generation input for the integrated UAS/UAV hardware and software architecture. Component AGREE guarantees and assumptions are author contracts, not proved system behavior or an independent flight specification.",
+  "coverage": [
+    "UAS radio context and UAV board composition",
+    "PX4FMU/PX4IOAR/ODROID hardware, sensor/motor interfaces and memory allocation",
+    "Copter/mission software, internal communication-security paths, typed queues and dispatch periods",
+    "Selected initialization, motor-output and conditional PPM-output AGREE contracts"
+  ],
+  "limitations": [
+    "Curated integrated-architecture requirements, not a transcription of every generated MAVLink type or implementation property.",
+    "The project is incomplete: todo.txt requests ODROID details, CAN connectivity, PX4-to-ODROID connections, and software completion. Missing physical links are not invented.",
+    "The RC path has Unimplemented markers and the copter-to-PPM connection is commented out. Component PPM contracts do not establish a complete end-to-end RC safety mechanism.",
+    "Mission software does not fully wire the system wrapper or all tasks. Internal routes are specified only within evidenced boundaries.",
+    "PPM captured is a TODO/unconstrained variable and output_ready is unconstrained. Dependent validity/arming timing behavior is not promoted into a complete operational requirement.",
+    "Dummy true contracts, suspicious ppm_last7=ppm6, unused motor-floor/adjustment equations, UART-labelled SPI types and the Cortex-M4 60us clock are excluded.",
+    "Integer system-time units are unspecified; no milliseconds are assigned to AGREE timeout/hysteresis constants. Scheduling Period values retain explicit ms units.",
+    "Memory bindings are not processor bindings. No schedulability, cryptographic implementation, airworthiness, execution or proof result is asserted.",
+    "Related project website thresholds differ and are not merged with the fixed model."
+  ],
+  "original_requirement_status": {
+    "status": "no_version_matched_independent_specification_found; embedded_contracts_available",
+    "independent_of_model": false,
+    "explanation": "Author contracts remain part of the model. Related project website instructions have no verified commit/version match and serve only as background."
+  },
+  "source_search_evidence": [
+    {
+      "source": "Fixed SmaccmPhase2 tree and todo.txt",
+      "url": "https://github.com/smaccm/smaccm/tree/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2",
+      "finding": "No standalone natural-language system requirements or design PDF found in this project directory. Author AGREE contracts are present. todo.txt leaves ODROID details, PX4-to-ODROID wiring, and software details unfinished.",
+      "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/todo.txt",
+      "line_start": 1,
+      "line_end": 6,
+      "sha256": "3c9667d847f06ba1f50312aa395a825a27b7ae8844598becc64a8500e45425f3"
+    },
+    {
+      "source": "SMACCMPilot project RC-controller documentation",
+      "url": "https://smaccmpilot.org/hardware/rc-controller.html",
+      "cache_file": ".cache/a3d/requirements-evidence/phase2-related-rc-controller.html",
+      "sha256": "8a1322fe02164760c0efe389d5a9395d6b447ec6375e818ea844ebc2b69c148f",
+      "finding": "Related natural-language RC instructions found, but exact version correspondence is unproven. Website arming thresholds (channel 6 >1500 and yaw >1950) differ from the fixed model (>1600 and >1900). Website thresholds are not copied into this draft.",
+      "independent_document_exists": true,
+      "version_match_verified": false,
+      "license_metadata": "Copyright Galois; no explicit reuse license established on inspected page. Background link only.",
+      "full_text_included": false
+    },
+    {
+      "source": "SMACCMPilot project flight-components documentation",
+      "url": "https://smaccmpilot.org/software/flight-components.html",
+      "cache_file": ".cache/a3d/requirements-evidence/phase2-related-flight-components.html",
+      "sha256": "8e37f22de665bbe641e7709d9a644f56bc9ee7c9841b6093c089940ccb0983ea",
+      "finding": "Related architecture and behavior explanation found, with an evolving-design warning. Exact correspondence to the pinned source is unverified; background only.",
+      "version_match_verified": false,
+      "license_metadata": "Copyright Galois; no explicit reuse license established on inspected page.",
+      "full_text_included": false
+    }
+  ],
+  "requirements": [
+    {
+      "id": "PHASE2-REQ-001",
+      "text": "The unmanned-aircraft system shall comprise one unmanned aerial vehicle (UAV), one ground station, and one radio-control (RC) controller, with separate 915 MHz and 2.4 GHz radio-spectrum buses.",
+      "origin_kind": "model_derived",
+      "category": "architecture",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/UAS.aadl",
+          "line_start": 13,
+          "line_end": 19,
+          "sha256": "50913499f370523d08446e8dca8216c83c92ea4726f24de5fd93d9c46f44734f",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/UAS.aadl#L13-L19",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Active UAS constituents.",
+          "span_sha256": "03f482787d2a0534bb79a1c2d3f1e86164bcc13b8768d2ec2190770829d83dab"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-002",
+      "text": "The ground station and UAV shall exchange bidirectional encrypted-MAVLink data over the 915 MHz radio domain. The RC controller shall send flight-control commands to the UAV through a distinct 2.4 GHz radio domain.",
+      "origin_kind": "model_derived",
+      "category": "interface",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/UAS.aadl",
+          "line_start": 21,
+          "line_end": 35,
+          "sha256": "50913499f370523d08446e8dca8216c83c92ea4726f24de5fd93d9c46f44734f",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/UAS.aadl#L21-L35",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Spectrum attachments and logical data connections.",
+          "span_sha256": "3dcec7345b58f6dece529ee44fb5d5ffd0de7bd1bec2f5f1602dd1e80ad90c7b"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/UAS.aadl",
+          "line_start": 49,
+          "line_end": 53,
+          "sha256": "50913499f370523d08446e8dca8216c83c92ea4726f24de5fd93d9c46f44734f",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/UAS.aadl#L49-L53",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "RC output and radio-spectrum type.",
+          "span_sha256": "77a67a727de427a631f0d43828427b6bfe78ef637ef9064c4ab0b5137835ae29"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-003",
+      "text": "The UAV shall expose a bidirectional encrypted-MAVLink data port and an input flight-control-command data port. Flight-control commands shall be represented by a structure containing eight floating-point PPM fields, ppm0 through ppm7.",
+      "origin_kind": "model_derived",
+      "category": "interface",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/UAV.aadl",
+          "line_start": 13,
+          "line_end": 19,
+          "sha256": "a4e59ecbf2cf543c7073a446e2dd467bb3b1632714bd6e1324a87844f473bd7b",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/UAV.aadl#L13-L19",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "UAV boundary.",
+          "span_sha256": "38302b36344b35ef3f0cd5a05feeb6dbe9f3f2fefca6fa39fb88a93f8f7c1775"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/dataTypes/DATATYPES.aadl",
+          "line_start": 33,
+          "line_end": 50,
+          "sha256": "6d3ad81b298af0c1b3c7ee6fa54c60b4b6973412ba9c26ec1ece7e6f12402970",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/dataTypes/DATATYPES.aadl#L33-L50",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Eight floating-point PPM fields.",
+          "span_sha256": "d1665f129c23b7e507e171b9e8d941af19b6d8ee59321b26236993f856d1716f"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-004",
+      "text": "The UAV shall contain separate copter software and mission software systems together with a PX4FMU board, a PX4IOAR board, an ODROID-XU board, and an ODROID daughter board.",
+      "origin_kind": "model_derived",
+      "category": "architecture",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/UAV.aadl",
+          "line_start": 21,
+          "line_end": 28,
+          "sha256": "a4e59ecbf2cf543c7073a446e2dd467bb3b1632714bd6e1324a87844f473bd7b",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/UAV.aadl#L21-L28",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Six active subcomponents.",
+          "span_sha256": "2e81a8de01bd7f254078b09dfa0cb7441eb8cff864b95858a84ebe6a4f246b51"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-005",
+      "text": "The PX4FMU expansion feature group shall connect to the PX4IOAR expansion connector. The daughter-board IDE and MIPI feature groups shall connect to the corresponding ODROID-XU feature groups.",
+      "origin_kind": "model_derived",
+      "category": "deployment",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/UAV.aadl",
+          "line_start": 30,
+          "line_end": 35,
+          "sha256": "a4e59ecbf2cf543c7073a446e2dd467bb3b1632714bd6e1324a87844f473bd7b",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/UAV.aadl#L30-L35",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Board feature-group links; no missing PX4-to-ODROID physical link is invented.",
+          "span_sha256": "12b756585de5c66f786a2d1d8e5dc28bdd3ee3665f1f3e98b37b448e35538afc"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-006",
+      "text": "Copter software and mission software shall each contain a flight-generation process. The copter process shall be memory-bound to PX4FMU microcontroller flash, while the mission process shall be memory-bound to ODROID-XU DRAM.",
+      "origin_kind": "model_derived",
+      "category": "deployment",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/UAV.aadl",
+          "line_start": 44,
+          "line_end": 46,
+          "sha256": "a4e59ecbf2cf543c7073a446e2dd467bb3b1632714bd6e1324a87844f473bd7b",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/UAV.aadl#L44-L46",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Memory bindings, not processor bindings.",
+          "span_sha256": "a0b8d6503ae049d1e9920bd3ab24dd099eca669a9a207d935fbc686d7baf0fa1"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl",
+          "line_start": 281,
+          "line_end": 289,
+          "sha256": "6cc46e2c185107d5e3aed74aec8d2e650d64b88d48e550834572759b4a5108f4",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/Copter_Software.aadl#L281-L289",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Copter process assembly.",
+          "span_sha256": "0264e48857a279235ae68dc48301f63bda046868e1dbdefcfd2f4bf3c0502ad5"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/Mission_Software.aadl",
+          "line_start": 25,
+          "line_end": 29,
+          "sha256": "66d9a90f4ddd6aeca1c2ca9268aaf983142606cf2ea63b61a9916bd7265e4605",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/Mission_Software.aadl#L25-L29",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Mission process declaration.",
+          "span_sha256": "d59c69116376795d8cd6fe6dcdf45fa9e1300e3ec6ba4df48073ed4620f9d4eb"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-007",
+      "text": "The copter flight-generation process shall be designated for the eChronos operating system, and the mission flight-generation process shall be designated for seL4.",
+      "origin_kind": "model_derived",
+      "category": "deployment",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl",
+          "line_start": 373,
+          "line_end": 374,
+          "sha256": "6cc46e2c185107d5e3aed74aec8d2e650d64b88d48e550834572759b4a5108f4",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/Copter_Software.aadl#L373-L374",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Copter OS property.",
+          "span_sha256": "ef83639a0628a7d5846e44ebad032055955186cf230ba6bcc91f9984d1c7cd2f"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/Mission_Software.aadl",
+          "line_start": 132,
+          "line_end": 133,
+          "sha256": "66d9a90f4ddd6aeca1c2ca9268aaf983142606cf2ea63b61a9916bd7265e4605",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/Mission_Software.aadl#L132-L133",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Mission OS property, spelled Sel4 in source.",
+          "span_sha256": "405bea33f78f491c26319b5c447995d4207458e35bbf59a7fe52c774c909268b"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-008",
+      "text": "The PX4FMU microcontroller subsystem shall contain an ARM Cortex-M4 processor, 128 KByte read-write SRAM based at hexadecimal 20000000, and 1 MByte execute-only flash based at hexadecimal 08000000, connected through an AHB bus matrix.",
+      "origin_kind": "model_derived",
+      "category": "hardware",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/CORTEX.aadl",
+          "line_start": 17,
+          "line_end": 38,
+          "sha256": "e427aa4757dc6582865863d130cddbea09df7277e5ae33fb737be4d27ce74131",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/CORTEX.aadl#L17-L38",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Microcontroller constituents and bus connections.",
+          "span_sha256": "d0af9789094a23696db80a3019dd7673dd68477aed0bd78ec6ba1c57f623c76d"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/CORTEX.aadl",
+          "line_start": 49,
+          "line_end": 67,
+          "sha256": "e427aa4757dc6582865863d130cddbea09df7277e5ae33fb737be4d27ce74131",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/CORTEX.aadl#L49-L67",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Memory capacity, protocol and base address; questionable CPU clock value excluded.",
+          "span_sha256": "5093f1119f40b180b07bbd38e5c8260272b1756fa8c867a4146916c687008621"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-009",
+      "text": "The ODROID-XU subsystem shall contain a Cortex-A15 quad processor and 2 GByte of read-write DRAM connected by a memory bus.",
+      "origin_kind": "model_derived",
+      "category": "hardware",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/ODROID_XU.aadl",
+          "line_start": 11,
+          "line_end": 33,
+          "sha256": "5a0d7655388e2214d9669bc499b7b3fe4d86c6b715f1c3b3bb5120722e281c66",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/ODROID_XU.aadl#L11-L33",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Processor, memory-bus connection and memory properties.",
+          "span_sha256": "68e132274424cdfc2b51dde63f6b3b13aa4044a1d72091694f75ab197ea74820"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-010",
+      "text": "The PX4FMU shall provide a reset device, USB device, battery monitor, GPS receiver, MPU-6000 motion sensor, MS5611 barometer, HMC5883L magnetometer, EEPROM, and an I2C bus around its STM32F415 microcontroller subsystem.",
+      "origin_kind": "model_derived",
+      "category": "hardware",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/PX4FMU.aadl",
+          "line_start": 15,
+          "line_end": 28,
+          "sha256": "01b5ce7b06b37e878cd95ca27af4192165d1bb483d83417d1977ea09f9bfcc84",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/PX4FMU.aadl#L15-L28",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Active PX4FMU constituents.",
+          "span_sha256": "5f16fab9dde549fa5881aa5c9e0e1333ef0bb465c510bbb2c949d161061bf846"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-011",
+      "text": "The barometer, magnetometer, and EEPROM shall attach to the PX4FMU I2C bus, which shall attach to the microcontroller I2C2 interface. Barometric and magnetometer measurements shall be exposed through the board sensor interface.",
+      "origin_kind": "model_derived",
+      "category": "interface",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/PX4FMU.aadl",
+          "line_start": 30,
+          "line_end": 38,
+          "sha256": "01b5ce7b06b37e878cd95ca27af4192165d1bb483d83417d1977ea09f9bfcc84",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/PX4FMU.aadl#L30-L38",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "I2C device and sensor-output connections.",
+          "span_sha256": "4896d64d0cea6cf1a71e3175ced9dd0231001a695619a1a3781212b79e557118"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-012",
+      "text": "The PX4FMU battery monitor shall connect to the microcontroller ADC interface, GPS to USART6, the MPU-6000 motion sensor to SPI1, and USB to the USB OTG interface. Reset, battery, GPS, and motion outputs shall be exposed through the board sensor interface.",
+      "origin_kind": "model_derived",
+      "category": "interface",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/PX4FMU.aadl",
+          "line_start": 40,
+          "line_end": 48,
+          "sha256": "01b5ce7b06b37e878cd95ca27af4192165d1bb483d83417d1977ea09f9bfcc84",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/PX4FMU.aadl#L40-L48",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Direct devices and data outputs.",
+          "span_sha256": "4f9f671b038a3e69351c339d2c91e624a93eef17a045bc191fbc4bf8c8f99f83"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-013",
+      "text": "The UAV sensor feature group shall contain input data ports for magnetometer, barometric, motion, battery, and GPS information, together with a reset event-data input. PX4FMU shall supply that feature group to the copter software.",
+      "origin_kind": "model_derived",
+      "category": "interface",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/UAV.aadl",
+          "line_start": 63,
+          "line_end": 71,
+          "sha256": "a4e59ecbf2cf543c7073a446e2dd467bb3b1632714bd6e1324a87844f473bd7b",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/UAV.aadl#L63-L71",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Sensor data/event features.",
+          "span_sha256": "cf1f686ea0b52df564a70655d4200b7fb7f29580a98d877aca7e9c0949b8a197"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/UAV.aadl",
+          "line_start": 34,
+          "line_end": 34,
+          "sha256": "a4e59ecbf2cf543c7073a446e2dd467bb3b1632714bd6e1324a87844f473bd7b",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/UAV.aadl#L34-L34",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "PX4FMU-to-copter sensor connection.",
+          "span_sha256": "caa649ff1c53f8e18cdd02f773350f9ac9e531843983cd169c0708503d0caf25"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-014",
+      "text": "The PX4IOAR board shall contain four motors, a buzzer, an RC radio, a 3DR radio, and a USART2 motor bus. Each motor shall accept its own servo-command data port and attach to the shared USART2 motor bus.",
+      "origin_kind": "model_derived",
+      "category": "hardware",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/PX4IOAR.aadl",
+          "line_start": 21,
+          "line_end": 41,
+          "sha256": "6ff0067eb1cc4605580f4dce39fe123ba63092b82387f230342fb0be695ad6ab",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/PX4IOAR.aadl#L21-L41",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Four motors and their individual data and bus connections.",
+          "span_sha256": "64aa983e5bfa59e88b5c0b34262bc534de95470fdb539e6dd21fe27ecdab88ca"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-015",
+      "text": "The PX4IOAR buzzer shall attach to the expansion alarm interface. The RC radio shall attach to the expansion PPM interface and 2.4 GHz spectrum; the 3DR radio shall attach to expansion USART1 and the 915 MHz spectrum, with bidirectional encrypted-MAVLink interfaces on its internal and external sides.",
+      "origin_kind": "model_derived",
+      "category": "interface",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/PX4IOAR.aadl",
+          "line_start": 43,
+          "line_end": 56,
+          "sha256": "6ff0067eb1cc4605580f4dce39fe123ba63092b82387f230342fb0be695ad6ab",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/PX4IOAR.aadl#L43-L56",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Buzzer, PPM and 3DR attachments.",
+          "span_sha256": "b2353fe57b6d71ab26c6635b6410252e81d6a032d91e32f44782c8748dc897b2"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/PX4IOAR.aadl",
+          "line_start": 84,
+          "line_end": 89,
+          "sha256": "6ff0067eb1cc4605580f4dce39fe123ba63092b82387f230342fb0be695ad6ab",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/PX4IOAR.aadl#L84-L89",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "3DR typed interfaces.",
+          "span_sha256": "9ee8a5a146d699c51a51006ed9186e9bd0269d1c40593076f9dd5c7a4d93622e"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-016",
+      "text": "The daughter board shall contain MPU, gyroscope, barometer, and accelerometer devices attached to the IDE SPI1 bus, and shall route IDE UART0 to its external UART interface.",
+      "origin_kind": "model_derived",
+      "category": "hardware",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/XU_DAUGHTER_BOARD.aadl",
+          "line_start": 11,
+          "line_end": 24,
+          "sha256": "74d680a8e08078b9b8e8a4c8a76db14850bc86c6d013d3b49d0d4c1e34a75a34",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/XU_DAUGHTER_BOARD.aadl#L11-L24",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Active daughter-board devices and connections; anomalous UART-labelled SPI types excluded.",
+          "span_sha256": "32e83afa2a5242cd703cb028ae5b4f4b6500d4982e68f548b461779de35f08b5"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-017",
+      "text": "At the UAV integration boundary, declare two separate event-data connections from mission software to copter software: one carrying RC-channel override messages and one carrying control-law requests. The sender and receiver interfaces shall each have queue capacity 16.",
+      "origin_kind": "model_derived",
+      "category": "interface",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/Mission_Software.aadl",
+          "line_start": 18,
+          "line_end": 21,
+          "sha256": "66d9a90f4ddd6aeca1c2ca9268aaf983142606cf2ea63b61a9916bd7265e4605",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/Mission_Software.aadl#L18-L21",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Mission output types and queues.",
+          "span_sha256": "fd1a7d7e0f23ce2081f9ad61a63d4df85e368ed3e21c64cca7313c561e8d719e"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl",
+          "line_start": 271,
+          "line_end": 276,
+          "sha256": "6cc46e2c185107d5e3aed74aec8d2e650d64b88d48e550834572759b4a5108f4",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/Copter_Software.aadl#L271-L276",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Copter input types and queues.",
+          "span_sha256": "4a2a1b9be61b5ecd055830802f9298f67c9289239b1e071bdf1936524718bc43"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/UAV.aadl",
+          "line_start": 33,
+          "line_end": 34,
+          "sha256": "a4e59ecbf2cf543c7073a446e2dd467bb3b1632714bd6e1324a87844f473bd7b",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/UAV.aadl#L33-L34",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Mission-to-copter connections.",
+          "span_sha256": "9216094f9b3f7ee3066c6d27c9ef5b5f52345fb69aaf55c0b5eab0f79ba96701"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/Mission_Software.aadl",
+          "line_start": 25,
+          "line_end": 29,
+          "sha256": "66d9a90f4ddd6aeca1c2ca9268aaf983142606cf2ea63b61a9916bd7265e4605",
+          "note": "The system wrapper has no delegating output connections.",
+          "span_sha256": "d59c69116376795d8cd6fe6dcdf45fa9e1300e3ec6ba4df48073ed4620f9d4eb",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/Mission_Software.aadl#L25-L29"
+        }
+      ],
+      "note": "Mission_Software::Software.Impl instantiates the mission logic but does not delegate its outputs to the wrapper outputs. These UAV-level connections do not establish a complete internal-mission-task-to-copter path."
+    },
+    {
+      "id": "PHASE2-REQ-018",
+      "text": "The mission process shall contain shared process data, a datalink thread, communication-security, ground-control-service, and UART thread groups, and a MAVLink-input task.",
+      "origin_kind": "model_derived",
+      "category": "architecture",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/Mission_Software.aadl",
+          "line_start": 110,
+          "line_end": 117,
+          "sha256": "66d9a90f4ddd6aeca1c2ca9268aaf983142606cf2ea63b61a9916bd7265e4605",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/Mission_Software.aadl#L110-L117",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Mission process constituents; this does not imply all task interfaces are connected.",
+          "span_sha256": "34220f61ae94ad2ec1fa767ae73ab33277c30c510ac5db0e70cebf4249b9ab50"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-019",
+      "text": "Within the mission process, outbound ground-control bytes shall flow from the ground-control-service group to communication security, then to datalink framing, and then to UART5 output. Received datalink frames shall flow through communication security to the ground-control MAVLink stream, while datalink status shall feed the ground-control radio-status input.",
+      "origin_kind": "model_derived",
+      "category": "flow",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/Mission_Software.aadl",
+          "line_start": 119,
+          "line_end": 127,
+          "sha256": "66d9a90f4ddd6aeca1c2ca9268aaf983142606cf2ea63b61a9916bd7265e4605",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/Mission_Software.aadl#L119-L127",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Internal transmit, receive and status connections; no physical mission-board radio link is invented.",
+          "span_sha256": "faeea3163faf5baf3339774c90331187df852a93ef2b5bca7d75d99987c245db"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-020",
+      "text": "The communication-security group shall separate encryption and decryption into two threads. Its plaintext input and output event-data ports shall carry 80-byte unsigned-byte arrays with queue capacity 16; its encrypted input and output ports shall carry 96-byte unsigned-byte arrays with queue capacity 8.",
+      "origin_kind": "model_derived",
+      "category": "security",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/Commsec.aadl",
+          "line_start": 8,
+          "line_end": 21,
+          "sha256": "ac1a4ff410d09a46032b580a40dce85de49e6b38387af433f5deed9fe25d2467",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/Commsec.aadl#L8-L21",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Array types and queue capacities.",
+          "span_sha256": "bcc80d0c6478e55d798645023b3044b570964e13c29ba7a76d5f042ff3036a3f"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/Commsec.aadl",
+          "line_start": 29,
+          "line_end": 38,
+          "sha256": "ac1a4ff410d09a46032b580a40dce85de49e6b38387af433f5deed9fe25d2467",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/Commsec.aadl#L29-L38",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Encrypt/decrypt decomposition; no particular cryptographic algorithm is specified.",
+          "span_sha256": "6399d9bb37bae4f5ba00cb97a374d79fd3f3fa515063423c50d944aab354f333"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-021",
+      "text": "The copter process shall contain a PX4IOAR service thread, sensor-processing group, position-state and motor-state threads, motor mixer, blink/status thread, user-input group, flight-control group, UART group, and shared process data.",
+      "origin_kind": "model_derived",
+      "category": "architecture",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl",
+          "line_start": 322,
+          "line_end": 333,
+          "sha256": "6cc46e2c185107d5e3aed74aec8d2e650d64b88d48e550834572759b4a5108f4",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/Copter_Software.aadl#L322-L333",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Active copter process constituents.",
+          "span_sha256": "b8f56d33044d799c7608586bf4bf5be6aa6fae3ffd57b10f78b2ee049d480e37"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-022",
+      "text": "Copter software shall route mission RC overrides and control-law requests to the user-input group, sensor positions to the position-state thread, flight-control outputs to the motor mixer, and motor-mixer outputs to both the PX4IOAR service and motor-state thread.",
+      "origin_kind": "model_derived",
+      "category": "flow",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl",
+          "line_start": 335,
+          "line_end": 344,
+          "sha256": "6cc46e2c185107d5e3aed74aec8d2e650d64b88d48e550834572759b4a5108f4",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/Copter_Software.aadl#L335-L344",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Mission, position, control and motor connections.",
+          "span_sha256": "2a8619aa73d3f5528f85586892980a7eddf37ca9f02076bf38e8ea5cdd4e3fd2"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-023",
+      "text": "The flight-control group shall access shared sensor data, user input, control law, control parameters, and attitude/altitude-control state. The motor mixer and blink/status thread shall receive the shared control law, and user-input proxies shall publish user-input and control-law state into shared process data.",
+      "origin_kind": "model_derived",
+      "category": "data",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl",
+          "line_start": 346,
+          "line_end": 360,
+          "sha256": "6cc46e2c185107d5e3aed74aec8d2e650d64b88d48e550834572759b4a5108f4",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/Copter_Software.aadl#L346-L360",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Shared data and control-law connections.",
+          "span_sha256": "ef88564a636ed14da28069abc6fef64d846c15a2cad8bc0e2a78091573f35deb"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/UserInput.aadl",
+          "line_start": 23,
+          "line_end": 28,
+          "sha256": "2105667795abe6233a34a94fe9f8467055a1cd5c5ef2d0acd4686a7805cdb95f",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/UserInput.aadl#L23-L28",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Proxy accesses are write-only.",
+          "span_sha256": "bab209f1907be72d4132152d84eed6ff1e15e26f87b57bed8e9a236ae45d0aa7"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-024",
+      "text": "The copter PX4IOAR service shall expose four individual motor-command outputs to the UAV motor-and-radio feature group. It shall use hybrid dispatch with a 1 ms period, a 256-byte stack, priority value 12, and a motor-input event queue of capacity 16.",
+      "origin_kind": "model_derived",
+      "category": "timing",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl",
+          "line_start": 61,
+          "line_end": 80,
+          "sha256": "6cc46e2c185107d5e3aed74aec8d2e650d64b88d48e550834572759b4a5108f4",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/Copter_Software.aadl#L61-L80",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Motor queue, outputs and scheduling properties.",
+          "span_sha256": "8a288c91bfea186e3177aefdbe4bc4b3dc7b1e9bd28380b0accd59cc0846320a"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl",
+          "line_start": 366,
+          "line_end": 369,
+          "sha256": "6cc46e2c185107d5e3aed74aec8d2e650d64b88d48e550834572759b4a5108f4",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/Copter_Software.aadl#L366-L369",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Four boundary motor connections.",
+          "span_sha256": "dcf7ef312d923f3141b7423f6cb9a93bff4a0f7312f11a616b17ea85744ee1c2"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-025",
+      "text": "The user-input group shall contain a user-input multiplexer, a control-law task, a PPM-input task, and separate control-law and user-input proxy threads. The multiplexer shall receive MAVLink-derived and PPM-derived user input and the selected control law; the control-law task shall receive MAVLink and PPM control-law requests.",
+      "origin_kind": "model_derived",
+      "category": "architecture",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/UserInput.aadl",
+          "line_start": 89,
+          "line_end": 111,
+          "sha256": "2105667795abe6233a34a94fe9f8467055a1cd5c5ef2d0acd4686a7805cdb95f",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/UserInput.aadl#L89-L111",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "User-input group constituents and internal connections.",
+          "span_sha256": "abeb832348d0c52aee5c6006e7b893a7f56362764d92bcc7ff0cb7ad4b0d2adc"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-026",
+      "text": "The PPM-input task shall use hybrid dispatch with a 50 ms period, priority value 26, and a 256-byte stack; its user-input and control-request output queues shall each have capacity 16. The control-law task shall be sporadically dispatched with priority value 24 and a 256-byte stack.",
+      "origin_kind": "model_derived",
+      "category": "timing",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/UserInput.aadl",
+          "line_start": 356,
+          "line_end": 380,
+          "sha256": "2105667795abe6233a34a94fe9f8467055a1cd5c5ef2d0acd4686a7805cdb95f",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/UserInput.aadl#L356-L380",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "PPM timing, stack and queues.",
+          "span_sha256": "4b3fe3557ac1389dcdc904cadef0cec2c22f2a4b6d07ecaf3be8cbb5d2cca19e"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/UserInput.aadl",
+          "line_start": 295,
+          "line_end": 319,
+          "sha256": "2105667795abe6233a34a94fe9f8467055a1cd5c5ef2d0acd4686a7805cdb95f",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/UserInput.aadl#L295-L319",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Control-law task scheduling and stack.",
+          "span_sha256": "82c3716b72b421e6d50f4fd1e6cf8abd465b7281f1e3205be4d6ac1b03cd0ab1"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-027",
+      "text": "The blink/status thread shall read the shared control law and use hybrid dispatch with a 125 ms period, priority value 20, and a 256-byte stack.",
+      "origin_kind": "model_derived",
+      "category": "timing",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl",
+          "line_start": 253,
+          "line_end": 267,
+          "sha256": "6cc46e2c185107d5e3aed74aec8d2e650d64b88d48e550834572759b4a5108f4",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/Copter_Software.aadl#L253-L267",
+          "evidence_kind": "model_structure",
+          "independent_of_model": false,
+          "explanation": "Status-thread data access and scheduling; no LED encoding is invented.",
+          "span_sha256": "eef1e752ee5fa6e6cebd060a5a2fed90e9385c707fdb8fe3215eddcb4ab52d1a"
+        }
+      ]
+    },
+    {
+      "id": "PHASE2-REQ-028",
+      "text": "For the copter and user-input behavioral contracts, the environment shall supply a nonnegative integer system-time input that strictly increases at every subsequent contract step.",
+      "origin_kind": "embedded_contract",
+      "category": "contract_assumption",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl",
+          "line_start": 298,
+          "line_end": 316,
+          "sha256": "6cc46e2c185107d5e3aed74aec8d2e650d64b88d48e550834572759b4a5108f4",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/Copter_Software.aadl#L298-L316",
+          "evidence_kind": "embedded_contract",
+          "independent_of_model": false,
+          "explanation": "Environmental AGREE assumptions, not implementation guarantees.",
+          "span_sha256": "a5621f21f4c3c5860cd0f049d591c55934862bf6c592d04a742c90ee72335b15"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/UserInput.aadl",
+          "line_start": 79,
+          "line_end": 83,
+          "sha256": "2105667795abe6233a34a94fe9f8467055a1cd5c5ef2d0acd4686a7805cdb95f",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/UserInput.aadl#L79-L83",
+          "evidence_kind": "embedded_contract",
+          "independent_of_model": false,
+          "explanation": "Same assumptions at user-input boundary.",
+          "span_sha256": "440442c4de3c3bf870e7bcd559fda57165d7fe4a9d89e1eaccbc65090187c515"
+        }
+      ],
+      "source_context": "model_embedded_agree_contract"
+    },
+    {
+      "id": "PHASE2-REQ-029",
+      "text": "The user-input control-law output shall start in safe mode, encoded as 0. Control-law mode encodings shall distinguish safe (0), disarmed (1), and armed (2).",
+      "origin_kind": "embedded_contract",
+      "category": "embedded_contract",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/UserInput.aadl",
+          "line_start": 63,
+          "line_end": 64,
+          "sha256": "2105667795abe6233a34a94fe9f8467055a1cd5c5ef2d0acd4686a7805cdb95f",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/UserInput.aadl#L63-L64",
+          "evidence_kind": "embedded_contract",
+          "independent_of_model": false,
+          "explanation": "Initial-safe guarantee.",
+          "span_sha256": "b88728911aeca427b2d52ae41083c48159a6f4da50a4679750d4ce09c6532fe7"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/UserInput.aadl",
+          "line_start": 323,
+          "line_end": 334,
+          "sha256": "2105667795abe6233a34a94fe9f8467055a1cd5c5ef2d0acd4686a7805cdb95f",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/UserInput.aadl#L323-L334",
+          "evidence_kind": "embedded_contract",
+          "independent_of_model": false,
+          "explanation": "Mode encodings and initial-mode guarantee.",
+          "span_sha256": "c796fb755cfcf065fd553421df36a474eb185d8dcbe7b93156ce844c04388d46"
+        }
+      ],
+      "source_context": "model_embedded_agree_contract"
+    },
+    {
+      "id": "PHASE2-REQ-030",
+      "text": "At the user-input contract boundary, an armed-mode output (2) shall imply that an armable dead-man input and a stick-corner condition have each occurred at least once up to that step. The armable condition is PPM field ppm5 greater than 1600; the stick-corner condition is ppm2 below 1050 together with ppm3 above 1900. This history condition does not require the two events to occur at the same step.",
+      "origin_kind": "embedded_contract",
+      "category": "embedded_contract",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/UserInput.aadl",
+          "line_start": 38,
+          "line_end": 61,
+          "sha256": "2105667795abe6233a34a94fe9f8467055a1cd5c5ef2d0acd4686a7805cdb95f",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/UserInput.aadl#L38-L61",
+          "evidence_kind": "embedded_contract",
+          "independent_of_model": false,
+          "explanation": "Independent historical predicates and implication; an abstract contract, not a demonstrated physical arming procedure.",
+          "span_sha256": "5340fd8fdfadd5424227775e34cf5bbfa1c9273f071e203a5422394f2beb799a"
+        }
+      ],
+      "source_context": "model_embedded_agree_contract"
+    },
+    {
+      "id": "PHASE2-REQ-031",
+      "text": "When the motor-mixer control law is not armed mode 2, all four motor outputs—front left, front right, back left, and back right—shall be zero.",
+      "origin_kind": "embedded_contract",
+      "category": "embedded_contract",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl",
+          "line_start": 242,
+          "line_end": 247,
+          "sha256": "6cc46e2c185107d5e3aed74aec8d2e650d64b88d48e550834572759b4a5108f4",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/Copter_Software.aadl#L242-L247",
+          "evidence_kind": "embedded_contract",
+          "independent_of_model": false,
+          "explanation": "Explicit unarmed motor-output guarantee.",
+          "span_sha256": "e01e279f6ffc7e640a763d6175a9aecab752dffcebe8de184b66dde286c00d35"
+        }
+      ],
+      "source_context": "model_embedded_agree_contract"
+    },
+    {
+      "id": "PHASE2-REQ-032",
+      "text": "The motor mixer shall constrain each of its four motor outputs to the inclusive range from 0.0 to 1.0; the copter process shall retain this as a component-composition contract obligation.",
+      "origin_kind": "embedded_contract",
+      "category": "embedded_contract",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl",
+          "line_start": 198,
+          "line_end": 201,
+          "sha256": "6cc46e2c185107d5e3aed74aec8d2e650d64b88d48e550834572759b4a5108f4",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/Copter_Software.aadl#L198-L201",
+          "evidence_kind": "embedded_contract",
+          "independent_of_model": false,
+          "explanation": "Per-channel saturation definitions.",
+          "span_sha256": "cb4dffe98dae804e4f8b71fd049c6465276ddecafac5f7a5424ae67571105287"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl",
+          "line_start": 237,
+          "line_end": 247,
+          "sha256": "6cc46e2c185107d5e3aed74aec8d2e650d64b88d48e550834572759b4a5108f4",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/Copter_Software.aadl#L237-L247",
+          "evidence_kind": "embedded_contract",
+          "independent_of_model": false,
+          "explanation": "Armed and unarmed output guarantees.",
+          "span_sha256": "51b70b01ee0dca473992cdeaecacba981f983a33cae3cad842306d3c0e097616"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/Copter_Software.aadl",
+          "line_start": 378,
+          "line_end": 387,
+          "sha256": "6cc46e2c185107d5e3aed74aec8d2e650d64b88d48e550834572759b4a5108f4",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/Copter_Software.aadl#L378-L387",
+          "evidence_kind": "embedded_contract",
+          "independent_of_model": false,
+          "explanation": "Composition lemma; proof status is not asserted.",
+          "span_sha256": "6235ecbc1825f3c28ba50e9934cca6dece8da53bd4b957770c87fa903d9e3942"
+        }
+      ],
+      "source_context": "model_embedded_agree_contract"
+    },
+    {
+      "id": "PHASE2-REQ-033",
+      "text": "When the PPM-input component considers its retained PPM sample valid, it shall map retained fields ppm0, ppm1, ppm2, and ppm3 respectively to roll, pitch, throttle, and yaw using clamp((value - 1500.0) / 500.0, -1.0, 1.0), and timestamp the result with the current component time.",
+      "origin_kind": "embedded_contract",
+      "category": "embedded_contract",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/UserInput.aadl",
+          "line_start": 515,
+          "line_end": 533,
+          "sha256": "2105667795abe6233a34a94fe9f8467055a1cd5c5ef2d0acd4686a7805cdb95f",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/UserInput.aadl#L515-L533",
+          "evidence_kind": "embedded_contract",
+          "independent_of_model": false,
+          "explanation": "Offset, division and saturation.",
+          "span_sha256": "00c90498236d543659d50dfa700da089ace9143008b8fd9cf77447be05467904"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/UserInput.aadl",
+          "line_start": 552,
+          "line_end": 558,
+          "sha256": "2105667795abe6233a34a94fe9f8467055a1cd5c5ef2d0acd4686a7805cdb95f",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/UserInput.aadl#L552-L558",
+          "evidence_kind": "embedded_contract",
+          "independent_of_model": false,
+          "explanation": "Conditional output guarantee; does not assert completeness of sampling/validity logic.",
+          "span_sha256": "389644a4055809b0b7642b746a0a6f6cec7f70913e7bdb62873ac77d84d38868"
+        }
+      ],
+      "source_context": "model_embedded_agree_contract"
+    },
+    {
+      "id": "PHASE2-REQ-034",
+      "text": "When the PPM-input component marks its input invalid, it shall output zero roll, pitch, and yaw, throttle -1.0, and the previous output timestamp, using timestamp 0 at the initial step.",
+      "origin_kind": "embedded_contract",
+      "category": "embedded_contract",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/smaccm/models/SmaccmPhase2/packages/software/UserInput.aadl",
+          "line_start": 544,
+          "line_end": 550,
+          "sha256": "2105667795abe6233a34a94fe9f8467055a1cd5c5ef2d0acd4686a7805cdb95f",
+          "source_repository": "smaccm/smaccm",
+          "source_ref": "7393c423b5aca1a272a88cbb89b5dcfd08a5a47c",
+          "source_url": "https://github.com/smaccm/smaccm/blob/7393c423b5aca1a272a88cbb89b5dcfd08a5a47c/models/SmaccmPhase2/packages/software/UserInput.aadl#L544-L550",
+          "evidence_kind": "embedded_contract",
+          "independent_of_model": false,
+          "explanation": "Conditional invalid-input guarantee; capture detection is incomplete.",
+          "span_sha256": "b97a7bcb6675c92f59b4a0746f9b10a0669cb540c1852a98629631bb7a8daf8e"
+        }
+      ],
+      "source_context": "model_embedded_agree_contract"
+    }
+  ],
+  "schema_version": 1,
+  "requirement_origin": "derived_example",
+  "is_gold_reference": false,
+  "root_classifiers": [
+    "UAS::UAS.Impl"
+  ],
+  "author_requirement_meaning": "Paraphrased author prose embedded in source models; not an independent original specification.",
+  "curation_method": "AI-assisted architecture reconstruction with line-level source review; no claim of complete functional coverage or contract proof."
+}

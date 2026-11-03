@@ -1,0 +1,304 @@
+{
+  "case_id": "a3d_adiru",
+  "validated_at_utc": "2026-11-03T05:01:27.152712+00:00",
+  "validator_script_sha256": "1024ae005d269341f77822846c397dfd96bc4efa5a291ab3b567b4d17d55acf1",
+  "environment_sha256": "80a8c3d8467a0c4ec2afdf9e32c1d07d73f8bc02ee390093bd6beadcaf0f8acf",
+  "environment_file": "environment-80a8c3d8467a.json",
+  "roots": [
+    {
+      "root": "ADIRU::ADIRU.impl",
+      "role": "primary_architecture",
+      "status": "not_run",
+      "reason": "Core syntax/linking check did not pass.",
+      "prerequisite_status": "failed"
+    },
+    {
+      "root": "ADIRU::ADIRU.DeOS",
+      "role": "additional_entry_or_variant",
+      "status": "not_run",
+      "reason": "Core syntax/linking check did not pass.",
+      "prerequisite_status": "failed"
+    },
+    {
+      "root": "ADIRU::ADIRU.VxWorks653",
+      "role": "additional_entry_or_variant",
+      "status": "not_run",
+      "reason": "Core syntax/linking check did not pass.",
+      "prerequisite_status": "failed"
+    },
+    {
+      "root": "ADIRU::ADIRU.EMV2",
+      "role": "additional_entry_or_variant",
+      "status": "not_run",
+      "reason": "Core syntax/linking check did not pass.",
+      "prerequisite_status": "failed"
+    }
+  ],
+  "proof": {
+    "status": "not_run",
+    "reason": "No annex theorem prover was invoked."
+  },
+  "selection": {
+    "primary_directory": "aadlib/examples/adiru",
+    "dependency_pool": "aadlib",
+    "preserved_primary_aadl_count": 9,
+    "selected_count": 9,
+    "excluded_builtin_copies": [
+      {
+        "path": "aadlib\\src\\property_set\\arp4761.aadl",
+        "sha256": "cd040ef467653cdcd2eb86eeaa0a8989c2d3f14d9601591eea79a8ac1719c2ed",
+        "reason": "provided_by_osate_distribution",
+        "declarations": [
+          "arp4761"
+        ]
+      },
+      {
+        "path": "aadlib\\src\\property_set\\milstd882.aadl",
+        "sha256": "892f5714d5696e53e85e2038f8aa5ee07ffe54c6d091f68ede0dac23049cb318",
+        "reason": "provided_by_osate_distribution",
+        "declarations": [
+          "milstd882"
+        ]
+      }
+    ],
+    "static_unresolved_names": [],
+    "selection_issues": [],
+    "builtin_dependencies": [
+      {
+        "declaration": "arinc653",
+        "jar": "org.osate.contribution.sei_2.2.2.v20260928-1804.jar",
+        "resource": "resources/properties/ARINC653.aadl",
+        "sha256": "b155351264fe9a5ffb1579367670d487f997d33770c4cdadf9c578efb8fab3fe"
+      },
+      {
+        "declaration": "data_model",
+        "jar": "org.osate.contribution.sei_2.2.2.v20260928-1804.jar",
+        "resource": "resources/properties/Data_Model.aadl",
+        "sha256": "1cf3b7beaeb27dd84458dd091be9d98413805b756164673ef4148af2f5e47ec7"
+      },
+      {
+        "declaration": "emv2",
+        "jar": "org.osate.aadl2.errormodel.contrib_1.0.12.v20260928-1804.jar",
+        "resource": "resources/properties/EMV2.aadl",
+        "sha256": "53fc03a823761bdffbcc9f9b3ef7adccbf4860cbfc12c18671b581208120ff19"
+      }
+    ],
+    "note": "Static namespace closure selects files; OSATE diagnostics are authoritative for linking."
+  },
+  "sources": [
+    {
+      "path": "aadlib\\examples\\adiru\\adiru_devices.aadl",
+      "sha256": "555b59c815d2ed9d9909ad9b3b7e45f7eaa735f640a276db91970edfa45286e0",
+      "size": 1151,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "adiru_devices"
+      ],
+      "annexes": [
+        "emv2"
+      ],
+      "staged_path": "m000.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\adiru\\adiru_errlibrary.aadl",
+      "sha256": "204c39f4926461f63cefbfaada06ed1f655e577873a1849b8eb30e0579b97ee4",
+      "size": 882,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "adiru_errlibrary"
+      ],
+      "annexes": [
+        "emv2"
+      ],
+      "staged_path": "m001.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\adiru\\adiru_memory.aadl",
+      "sha256": "7f0070965501b417a91fc39506d7fce6d3bc01dc812db905a524e6eda49060ec",
+      "size": 927,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "adiru_memory"
+      ],
+      "annexes": [],
+      "staged_path": "m002.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\adiru\\adiru_processor.aadl",
+      "sha256": "aa816fc7163fa38be9e469f83ce8f5faaa2a5f7c7037a48eeeac2f9247672560",
+      "size": 4167,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "adiru_processor"
+      ],
+      "annexes": [],
+      "staged_path": "m003.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\adiru\\model.aadl",
+      "sha256": "b37b2e19623ca8b61f49e9b9ca3ea84c24142fb6b37037291bbf428970a1cff8",
+      "size": 7516,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "adiru"
+      ],
+      "annexes": [
+        "emv2"
+      ],
+      "staged_path": "m004.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\adiru\\partitions.aadl",
+      "sha256": "62ed642bcb62a651d8515710499949b9cbac8d3e1a3b4f240676ebe8b52deb50",
+      "size": 18965,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "partitions"
+      ],
+      "annexes": [
+        "emv2"
+      ],
+      "staged_path": "m005.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\adiru\\shm_datatype.aadl",
+      "sha256": "df391390b38464c9dc66474ade13454ead0d04979c7a9f565c34d69c4033ef8d",
+      "size": 874,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "shm_datatype"
+      ],
+      "annexes": [],
+      "staged_path": "m006.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\adiru\\subprograms.aadl",
+      "sha256": "fb99e84a508118c864ac7e24872e6586b2a503c1a645043b2951577fadcc3fb5",
+      "size": 6975,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "subprograms"
+      ],
+      "annexes": [],
+      "staged_path": "m007.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\adiru\\threads.aadl",
+      "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+      "size": 18051,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "threads"
+      ],
+      "annexes": [],
+      "staged_path": "m008.aadl"
+    }
+  ],
+  "annexes": [
+    {
+      "name": "emv2",
+      "parser_status": "registered_in_distribution",
+      "semantic_validation": "subject_to_osate_diagnostics",
+      "proof_status": "not_run"
+    }
+  ],
+  "interpretation": "Core syntax/linking and requested instantiation only. Unsupported annex bodies remain unchanged and may be accepted by the default parser; acceptance is not annex validation or proof.",
+  "staging": {
+    "directory": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\83fb1543\\s",
+    "source_bytes_preserved": true
+  },
+  "core": {
+    "status": "failed",
+    "diagnostics": [
+      {
+        "severity": "warning",
+        "message": "ARINC653 in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\83fb1543\\r\\osate-run-680605fb766c43008e49b8b25caa676b\\model\\m002.aadl",
+        "line": 6,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/adiru/adiru_memory.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to property definition 'ARINC653::Memory_Type'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\83fb1543\\r\\osate-run-680605fb766c43008e49b8b25caa676b\\model\\m002.aadl",
+        "line": 17,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/adiru/adiru_memory.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'Code_Memory'. For classifier references use classifier( <ref> ).",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\83fb1543\\r\\osate-run-680605fb766c43008e49b8b25caa676b\\model\\m002.aadl",
+        "line": 17,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/adiru/adiru_memory.aadl"
+      }
+    ],
+    "version": "0.3.0",
+    "stdout": "osate-cli 0.3.0\nCreated D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\83fb1543\\r\\osate-run-680605fb766c43008e49b8b25caa676b\\model\\.project\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\83fb1543\\r\\osate-run-680605fb766c43008e49b8b25caa676b\\session-home\"\n62494\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\83fb1543\\r\\osate-run-680605fb766c43008e49b8b25caa676b\\session-home\"\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\83fb1543\\r\\osate-run-680605fb766c43008e49b8b25caa676b\\model\\m002.aadl:6:9: warning: ARINC653 in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\83fb1543\\r\\osate-run-680605fb766c43008e49b8b25caa676b\\model\\m002.aadl:17:7: error: Couldn't resolve reference to property definition 'ARINC653::Memory_Type'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\83fb1543\\r\\osate-run-680605fb766c43008e49b8b25caa676b\\model\\m002.aadl:17:33: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'Code_Memory'. For classifier references use classifier( <ref> ).\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\83fb1543\\r\\osate-run-680605fb766c43008e49b8b25caa676b\\session-home\"\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\83fb1543\\r\\osate-run-680605fb766c43008e49b8b25caa676b\\model\\m002.aadl:6:9: warning: ARINC653 in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\83fb1543\\r\\osate-run-680605fb766c43008e49b8b25caa676b\\model\\m002.aadl:17:7: error: Couldn't resolve reference to property definition 'ARINC653::Memory_Type'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\83fb1543\\r\\osate-run-680605fb766c43008e49b8b25caa676b\\model\\m002.aadl:17:33: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'Code_Memory'. For classifier references use classifier( <ref> ).\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\83fb1543\\r\\osate-run-680605fb766c43008e49b8b25caa676b\\session-home\"\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\83fb1543\\r\\osate-run-680605fb766c43008e49b8b25caa676b\\session-home\"",
+    "executable": "D:\\AADL-multi-agent\\aadl-research\\.tools\\osate-cli-0.3.0\\bin\\osate-cli.bat",
+    "binary_provenance": [
+      {
+        "file": "osate-cli.jar",
+        "sha256": "169f943de2f046c05ea9a5e0a540a2c9aa575e5a9dbcf637e3de9a71c639e549"
+      },
+      {
+        "file": "org.osate.xtext.aadl2_9.1.0.v20260928-1804.jar",
+        "sha256": "8d695f12a402b568ccc4b9cd2996fa5ccf521184fe3f1879a36109c88ec085e6"
+      },
+      {
+        "file": "osate-workspace-server-0.3.0.jar",
+        "sha256": "bf02f4aa3ebf3d581acc63ead929f9bcedb2df23aed4317967b38d964c14df3d"
+      }
+    ],
+    "instance": {
+      "status": "not_requested",
+      "root": null
+    },
+    "workspace": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\83fb1543\\r\\osate-run-680605fb766c43008e49b8b25caa676b",
+    "sources": [
+      {
+        "path": "m000.aadl",
+        "sha256": "555b59c815d2ed9d9909ad9b3b7e45f7eaa735f640a276db91970edfa45286e0"
+      },
+      {
+        "path": "m001.aadl",
+        "sha256": "204c39f4926461f63cefbfaada06ed1f655e577873a1849b8eb30e0579b97ee4"
+      },
+      {
+        "path": "m002.aadl",
+        "sha256": "7f0070965501b417a91fc39506d7fce6d3bc01dc812db905a524e6eda49060ec"
+      },
+      {
+        "path": "m003.aadl",
+        "sha256": "aa816fc7163fa38be9e469f83ce8f5faaa2a5f7c7037a48eeeac2f9247672560"
+      },
+      {
+        "path": "m004.aadl",
+        "sha256": "b37b2e19623ca8b61f49e9b9ca3ea84c24142fb6b37037291bbf428970a1cff8"
+      },
+      {
+        "path": "m005.aadl",
+        "sha256": "62ed642bcb62a651d8515710499949b9cbac8d3e1a3b4f240676ebe8b52deb50"
+      },
+      {
+        "path": "m006.aadl",
+        "sha256": "df391390b38464c9dc66474ade13454ead0d04979c7a9f565c34d69c4033ef8d"
+      },
+      {
+        "path": "m007.aadl",
+        "sha256": "fb99e84a508118c864ac7e24872e6586b2a503c1a645043b2951577fadcc3fb5"
+      },
+      {
+        "path": "m008.aadl",
+        "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0"
+      }
+    ]
+  },
+  "original_sources_unchanged": true,
+  "working_artifacts": {
+    "workspaces_retained": false,
+    "reason": "Temporary reference-validation workspaces removed during repository cleanup; source bytes and diagnostics remain preserved."
+  }
+}

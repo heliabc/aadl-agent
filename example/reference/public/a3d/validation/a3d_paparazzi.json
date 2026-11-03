@@ -1,0 +1,348 @@
+{
+  "case_id": "a3d_paparazzi",
+  "validated_at_utc": "2026-11-03T05:01:10.360023+00:00",
+  "validator_script_sha256": "1024ae005d269341f77822846c397dfd96bc4efa5a291ab3b567b4d17d55acf1",
+  "environment_sha256": "80a8c3d8467a0c4ec2afdf9e32c1d07d73f8bc02ee390093bd6beadcaf0f8acf",
+  "environment_file": "environment-80a8c3d8467a.json",
+  "roots": [
+    {
+      "root": "paparazzi_system::paparazzi.basic_archi",
+      "role": "primary_architecture",
+      "status": "not_run",
+      "reason": "Core syntax/linking check did not pass.",
+      "prerequisite_status": "failed"
+    },
+    {
+      "root": "paparazzi_system::paparazzi.PnP_tasks_interruptions",
+      "role": "additional_entry_or_variant",
+      "status": "not_run",
+      "reason": "Core syntax/linking check did not pass.",
+      "prerequisite_status": "failed"
+    },
+    {
+      "root": "paparazzi_system::paparazzi.PP_tasks_interruptions",
+      "role": "additional_entry_or_variant",
+      "status": "not_run",
+      "reason": "Core syntax/linking check did not pass.",
+      "prerequisite_status": "failed"
+    },
+    {
+      "root": "paparazzi_system::paparazzi.PP_tasks_AP_interruptions",
+      "role": "additional_entry_or_variant",
+      "status": "not_run",
+      "reason": "Core syntax/linking check did not pass.",
+      "prerequisite_status": "failed"
+    }
+  ],
+  "proof": {
+    "status": "not_run",
+    "reason": "No annex theorem prover was invoked."
+  },
+  "selection": {
+    "primary_directory": "aadlib/examples/paparazzi",
+    "dependency_pool": "aadlib",
+    "preserved_primary_aadl_count": 10,
+    "selected_count": 10,
+    "excluded_builtin_copies": [
+      {
+        "path": "aadlib\\src\\property_set\\arp4761.aadl",
+        "sha256": "cd040ef467653cdcd2eb86eeaa0a8989c2d3f14d9601591eea79a8ac1719c2ed",
+        "reason": "provided_by_osate_distribution",
+        "declarations": [
+          "arp4761"
+        ]
+      },
+      {
+        "path": "aadlib\\src\\property_set\\milstd882.aadl",
+        "sha256": "892f5714d5696e53e85e2038f8aa5ee07ffe54c6d091f68ede0dac23049cb318",
+        "reason": "provided_by_osate_distribution",
+        "declarations": [
+          "milstd882"
+        ]
+      }
+    ],
+    "static_unresolved_names": [],
+    "selection_issues": [],
+    "builtin_dependencies": [
+      {
+        "declaration": "base_types",
+        "jar": "org.osate.contribution.sei_2.2.2.v20260928-1804.jar",
+        "resource": "resources/packages/Base_Types.aadl",
+        "sha256": "43c21ff9d7557da762fd4fbb1ecbe3d5cd2bece20e6aa898c46ec33ca72add46"
+      }
+    ],
+    "note": "Static namespace closure selects files; OSATE diagnostics are authoritative for linking."
+  },
+  "sources": [
+    {
+      "path": "aadlib\\examples\\paparazzi\\autopilot_hard.aadl",
+      "sha256": "81828ae850098cbb5455d74d3f2d9e4a2c83f62cee4ed10fda3e1a1a16d82208",
+      "size": 2640,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "autopilot_hard"
+      ],
+      "annexes": [],
+      "staged_path": "m000.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\paparazzi\\autopilot_soft.aadl",
+      "sha256": "f52527860da6961fe44458b197fae945e4fa8a06c3303e6b82affec470058bce",
+      "size": 9755,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "autopilot_soft"
+      ],
+      "annexes": [],
+      "staged_path": "m001.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\paparazzi\\autopilot_subsys.aadl",
+      "sha256": "755f2bf582f1c5d7c57bbf351b50330144842de93f756375e5c2468030761cfb",
+      "size": 2952,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "autopilot_subsys"
+      ],
+      "annexes": [],
+      "staged_path": "m002.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\paparazzi\\flybywire_hard.aadl",
+      "sha256": "c7ac403d0c37cb7296a9e3ab68cb9b0ad5cc5d2c6364b11b881fe140e2e90d4e",
+      "size": 2018,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "flybywire_hard"
+      ],
+      "annexes": [],
+      "staged_path": "m003.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\paparazzi\\flybywire_soft.aadl",
+      "sha256": "3101deee1fc152bbcf4012307e2ed9da447eb51d3aea0d033344ea4b3a9a59b9",
+      "size": 9598,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "flybywire_soft"
+      ],
+      "annexes": [],
+      "staged_path": "m004.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\paparazzi\\flybywire_subsys.aadl",
+      "sha256": "81aca4fed0e5152573f2bd50107d9a54af4409908df2c83399ccac61e6441415",
+      "size": 3720,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "flybywire_subsys"
+      ],
+      "annexes": [],
+      "staged_path": "m005.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\paparazzi\\papa_types.aadl",
+      "sha256": "ec751fda864410890941b92f3b05409cbc3175ae5aaacf9bcda8ef49a72ac3b1",
+      "size": 5212,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "papa_types"
+      ],
+      "annexes": [],
+      "staged_path": "m006.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\paparazzi\\paparazzi_hard.aadl",
+      "sha256": "716afe08d0b0b6841f9cb48de88c804600ff51c0c0342353fa69b255fba354c1",
+      "size": 105,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "paparazzi_hard"
+      ],
+      "annexes": [],
+      "staged_path": "m007.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\paparazzi\\paparazzi_subprograms.aadl",
+      "sha256": "8c2553e8fb3fc25b1249ba7cb8890f13d01d22115ab0ad3f9b99528b952bd2d5",
+      "size": 528,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "paparazzi_subprograms"
+      ],
+      "annexes": [],
+      "staged_path": "m008.aadl"
+    },
+    {
+      "path": "aadlib\\examples\\paparazzi\\paparazzi_system.aadl",
+      "sha256": "cad413d2341b778e8aa60b1a991a59f005120fa68841a0672d0d9190713bec79",
+      "size": 8523,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "paparazzi_system"
+      ],
+      "annexes": [],
+      "staged_path": "m009.aadl"
+    }
+  ],
+  "annexes": [],
+  "interpretation": "Core syntax/linking and requested instantiation only. Unsupported annex bodies remain unchanged and may be accepted by the default parser; acceptance is not annex validation or proof.",
+  "staging": {
+    "directory": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\s",
+    "source_bytes_preserved": true
+  },
+  "core": {
+    "status": "failed",
+    "diagnostics": [
+      {
+        "severity": "warning",
+        "message": "paparazzi_hard in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m000.aadl",
+        "line": 7,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/paparazzi/autopilot_hard.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'paparazzi_hard::SPI'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m000.aadl",
+        "line": 92,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/paparazzi/autopilot_hard.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "paparazzi_hard in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m002.aadl",
+        "line": 8,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/paparazzi/autopilot_subsys.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'paparazzi_hard::SPI'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m002.aadl",
+        "line": 20,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/paparazzi/autopilot_subsys.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "paparazzi_hard in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m003.aadl",
+        "line": 7,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/paparazzi/flybywire_hard.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'paparazzi_hard::SPI'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m003.aadl",
+        "line": 59,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/paparazzi/flybywire_hard.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "paparazzi_hard in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m005.aadl",
+        "line": 8,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/paparazzi/flybywire_subsys.aadl"
+      },
+      {
+        "severity": "error",
+        "message": "Couldn't resolve reference to BusFeatureClassifier 'paparazzi_hard::SPI'.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m005.aadl",
+        "line": 18,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/paparazzi/flybywire_subsys.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Expected feature 'SPI_Con' to have classifier 'paparazzi_hard::SPI'",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m009.aadl",
+        "line": 62,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/paparazzi/paparazzi_system.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Expected feature 'SPI_Con' to have classifier 'paparazzi_hard::SPI'",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m009.aadl",
+        "line": 63,
+        "rule_id": "osate.diagnostic",
+        "original_source": "aadlib/examples/paparazzi/paparazzi_system.aadl"
+      }
+    ],
+    "version": "0.3.0",
+    "stdout": "osate-cli 0.3.0\nCreated D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\.project\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\session-home\"\n53149\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\session-home\"\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m000.aadl:7:8: warning: paparazzi_hard in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m000.aadl:92:31: error: Couldn't resolve reference to BusFeatureClassifier 'paparazzi_hard::SPI'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m002.aadl:8:8: warning: paparazzi_hard in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m002.aadl:20:35: error: Couldn't resolve reference to BusFeatureClassifier 'paparazzi_hard::SPI'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m003.aadl:7:8: warning: paparazzi_hard in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m003.aadl:59:31: error: Couldn't resolve reference to BusFeatureClassifier 'paparazzi_hard::SPI'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m005.aadl:8:8: warning: paparazzi_hard in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m005.aadl:18:35: error: Couldn't resolve reference to BusFeatureClassifier 'paparazzi_hard::SPI'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m009.aadl:62:31: warning: Expected feature 'SPI_Con' to have classifier 'paparazzi_hard::SPI'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m009.aadl:63:31: warning: Expected feature 'SPI_Con' to have classifier 'paparazzi_hard::SPI'\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\session-home\"\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m000.aadl:7:8: warning: paparazzi_hard in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m000.aadl:92:31: error: Couldn't resolve reference to BusFeatureClassifier 'paparazzi_hard::SPI'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m002.aadl:8:8: warning: paparazzi_hard in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m002.aadl:20:35: error: Couldn't resolve reference to BusFeatureClassifier 'paparazzi_hard::SPI'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m003.aadl:7:8: warning: paparazzi_hard in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m003.aadl:59:31: error: Couldn't resolve reference to BusFeatureClassifier 'paparazzi_hard::SPI'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m005.aadl:8:8: warning: paparazzi_hard in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m005.aadl:18:35: error: Couldn't resolve reference to BusFeatureClassifier 'paparazzi_hard::SPI'.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m009.aadl:62:31: warning: Expected feature 'SPI_Con' to have classifier 'paparazzi_hard::SPI'\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\model\\m009.aadl:63:31: warning: Expected feature 'SPI_Con' to have classifier 'paparazzi_hard::SPI'\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\session-home\"\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523\\session-home\"",
+    "executable": "D:\\AADL-multi-agent\\aadl-research\\.tools\\osate-cli-0.3.0\\bin\\osate-cli.bat",
+    "binary_provenance": [
+      {
+        "file": "osate-cli.jar",
+        "sha256": "169f943de2f046c05ea9a5e0a540a2c9aa575e5a9dbcf637e3de9a71c639e549"
+      },
+      {
+        "file": "org.osate.xtext.aadl2_9.1.0.v20260928-1804.jar",
+        "sha256": "8d695f12a402b568ccc4b9cd2996fa5ccf521184fe3f1879a36109c88ec085e6"
+      },
+      {
+        "file": "osate-workspace-server-0.3.0.jar",
+        "sha256": "bf02f4aa3ebf3d581acc63ead929f9bcedb2df23aed4317967b38d964c14df3d"
+      }
+    ],
+    "instance": {
+      "status": "not_requested",
+      "root": null
+    },
+    "workspace": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\e649db1b\\r\\osate-run-d36b41d57770498fb35ff9ebcad33523",
+    "sources": [
+      {
+        "path": "m000.aadl",
+        "sha256": "81828ae850098cbb5455d74d3f2d9e4a2c83f62cee4ed10fda3e1a1a16d82208"
+      },
+      {
+        "path": "m001.aadl",
+        "sha256": "f52527860da6961fe44458b197fae945e4fa8a06c3303e6b82affec470058bce"
+      },
+      {
+        "path": "m002.aadl",
+        "sha256": "755f2bf582f1c5d7c57bbf351b50330144842de93f756375e5c2468030761cfb"
+      },
+      {
+        "path": "m003.aadl",
+        "sha256": "c7ac403d0c37cb7296a9e3ab68cb9b0ad5cc5d2c6364b11b881fe140e2e90d4e"
+      },
+      {
+        "path": "m004.aadl",
+        "sha256": "3101deee1fc152bbcf4012307e2ed9da447eb51d3aea0d033344ea4b3a9a59b9"
+      },
+      {
+        "path": "m005.aadl",
+        "sha256": "81aca4fed0e5152573f2bd50107d9a54af4409908df2c83399ccac61e6441415"
+      },
+      {
+        "path": "m006.aadl",
+        "sha256": "ec751fda864410890941b92f3b05409cbc3175ae5aaacf9bcda8ef49a72ac3b1"
+      },
+      {
+        "path": "m007.aadl",
+        "sha256": "716afe08d0b0b6841f9cb48de88c804600ff51c0c0342353fa69b255fba354c1"
+      },
+      {
+        "path": "m008.aadl",
+        "sha256": "8c2553e8fb3fc25b1249ba7cb8890f13d01d22115ab0ad3f9b99528b952bd2d5"
+      },
+      {
+        "path": "m009.aadl",
+        "sha256": "cad413d2341b778e8aa60b1a991a59f005120fa68841a0672d0d9190713bec79"
+      }
+    ]
+  },
+  "original_sources_unchanged": true,
+  "working_artifacts": {
+    "workspaces_retained": false,
+    "reason": "Temporary reference-validation workspaces removed during repository cleanup; source bytes and diagnostics remain preserved."
+  }
+}

@@ -1,0 +1,1354 @@
+{
+  "case_id": "a3d_qfcs_v2",
+  "validated_at_utc": "2026-11-03T04:59:59.217288+00:00",
+  "validator_script_sha256": "1024ae005d269341f77822846c397dfd96bc4efa5a291ab3b567b4d17d55acf1",
+  "environment_sha256": "80a8c3d8467a0c4ec2afdf9e32c1d07d73f8bc02ee390093bd6beadcaf0f8acf",
+  "environment_file": "environment-80a8c3d8467a.json",
+  "roots": [
+    {
+      "root": "FCS::FCS.impl",
+      "role": "primary_architecture",
+      "status": "passed",
+      "instance_status": "passed",
+      "result": {
+        "status": "passed",
+        "diagnostics": [
+          {
+            "severity": "warning",
+            "message": "Base_Types in 'with' clause of public package section is not used.",
+            "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m003.aadl",
+            "line": 7,
+            "rule_id": "osate.diagnostic",
+            "original_source": "smaccm/models/QFCS_V2/packages/FCC.aadl"
+          },
+          {
+            "severity": "warning",
+            "message": "DATA_TYPES in 'with' clause of public package section is not used.",
+            "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m009.aadl",
+            "line": 3,
+            "rule_id": "osate.diagnostic",
+            "original_source": "smaccm/models/QFCS_V2/packages/ISAS_REQS/ISAS_RC_Dual_Channel_Inputs.aadl"
+          },
+          {
+            "severity": "warning",
+            "message": "Base_Types in 'with' clause of public package section is not used.",
+            "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m017.aadl",
+            "line": 3,
+            "rule_id": "osate.diagnostic",
+            "original_source": "smaccm/models/QFCS_V2/packages/ISAS_REQS/ISAS_S_200.aadl"
+          },
+          {
+            "severity": "warning",
+            "message": "OSAS_S_100 in 'with' clause of public package section is not used.",
+            "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m028.aadl",
+            "line": 3,
+            "rule_id": "osate.diagnostic",
+            "original_source": "smaccm/models/QFCS_V2/packages/OSAS_REQS/OSAS_S_110.aadl"
+          },
+          {
+            "severity": "warning",
+            "message": "RUN_LENGTH in 'with' clause of public package section is not used.",
+            "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m028.aadl",
+            "line": 4,
+            "rule_id": "osate.diagnostic",
+            "original_source": "smaccm/models/QFCS_V2/packages/OSAS_REQS/OSAS_S_110.aadl"
+          },
+          {
+            "severity": "warning",
+            "message": "RUN_LENGTH in 'with' clause of public package section is not used.",
+            "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m029.aadl",
+            "line": 4,
+            "rule_id": "osate.diagnostic",
+            "original_source": "smaccm/models/QFCS_V2/packages/OSAS_REQS/OSAS_S_120.aadl"
+          },
+          {
+            "severity": "warning",
+            "message": "OCCURRED in 'with' clause of public package section is not used.",
+            "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m029.aadl",
+            "line": 5,
+            "rule_id": "osate.diagnostic",
+            "original_source": "smaccm/models/QFCS_V2/packages/OSAS_REQS/OSAS_S_120.aadl"
+          }
+        ],
+        "version": "0.3.0",
+        "stdout": "osate-cli 0.3.0\nCreated D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\.project\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\session-home\"\n62276\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\session-home\"\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m003.aadl:7:8: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m009.aadl:3:8: warning: DATA_TYPES in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m017.aadl:3:9: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m028.aadl:3:7: warning: OSAS_S_100 in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m028.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m029.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m029.aadl:5:7: warning: OCCURRED in 'with' clause of public package section is not used.\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\session-home\"\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m003.aadl:7:8: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m009.aadl:3:8: warning: DATA_TYPES in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m017.aadl:3:9: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m028.aadl:3:7: warning: OSAS_S_100 in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m028.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m029.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m029.aadl:5:7: warning: OCCURRED in 'with' clause of public package section is not used.\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\session-home\"\nInstantiated FCS::FCS.impl as FCS_impl_Instance\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\session-home\"\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m003.aadl:7:8: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m009.aadl:3:8: warning: DATA_TYPES in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m017.aadl:3:9: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m028.aadl:3:7: warning: OSAS_S_100 in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m028.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m029.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m029.aadl:5:7: warning: OCCURRED in 'with' clause of public package section is not used.\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\session-home\"\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m003.aadl:7:8: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m009.aadl:3:8: warning: DATA_TYPES in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m017.aadl:3:9: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m028.aadl:3:7: warning: OSAS_S_100 in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m028.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m029.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m029.aadl:5:7: warning: OCCURRED in 'with' clause of public package section is not used.\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\session-home\"\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\session-home\"",
+        "executable": "D:\\AADL-multi-agent\\aadl-research\\.tools\\osate-cli-0.3.0\\bin\\osate-cli.bat",
+        "binary_provenance": [
+          {
+            "file": "osate-cli.jar",
+            "sha256": "169f943de2f046c05ea9a5e0a540a2c9aa575e5a9dbcf637e3de9a71c639e549"
+          },
+          {
+            "file": "org.osate.xtext.aadl2_9.1.0.v20260928-1804.jar",
+            "sha256": "8d695f12a402b568ccc4b9cd2996fa5ccf521184fe3f1879a36109c88ec085e6"
+          },
+          {
+            "file": "osate-workspace-server-0.3.0.jar",
+            "sha256": "bf02f4aa3ebf3d581acc63ead929f9bcedb2df23aed4317967b38d964c14df3d"
+          }
+        ],
+        "instance": {
+          "status": "passed",
+          "root": "FCS::FCS.impl",
+          "source": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m006.aadl",
+          "stdout": "Instantiated FCS::FCS.impl as FCS_impl_Instance\n",
+          "files": [
+            {
+              "path": "example/reference/public/a3d/validation/artifacts/m006_FCS_impl_Instance.aaxl2",
+              "sha256": "e93ca43f223777e15a2e6256aa6ce9077619d5751ba0b2e0918f835ea309f836",
+              "path_base": "repository",
+              "original_path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\instances\\m006_FCS_impl_Instance.aaxl2",
+              "retained": true
+            }
+          ],
+          "retained_source_binding": {
+            "original_staged_source": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2\\model\\m006.aadl",
+            "path": "example/reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/FCS.aadl",
+            "path_base": "repository",
+            "sha256": "e52aeadce090abefb3cd7a04f43aed4b2fda705772e380122e8cf01cb70b4361"
+          },
+          "artifact_location_note": "Archived bytes unchanged; XML hrefs retain original staging names. Resolve provenance using sources and retained_source_binding, not the archive directory."
+        },
+        "workspace": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-45ca62c64a7a41bc9cec791516196df2",
+        "sources": [
+          {
+            "path": "m000.aadl",
+            "sha256": "466bd1dd37b826a5e1718b1e2a04ff5240d4fe2222bdff008d016de00d7da147"
+          },
+          {
+            "path": "m001.aadl",
+            "sha256": "6f51c9ae399f038d2091942bbd1810bc5bcf59a22ebc02cc2011a8c2c0fcb2fc"
+          },
+          {
+            "path": "m002.aadl",
+            "sha256": "4a15d13696f346cec764753001155cef72056e88932af1998885d660c18a6458"
+          },
+          {
+            "path": "m003.aadl",
+            "sha256": "153ccc26f7811fb22e9b844c8ba23938f65767372f00935afe24831a5ff125de"
+          },
+          {
+            "path": "m004.aadl",
+            "sha256": "d800fc4702a6a9dc4152341bfaa1367817db7af601e0083e719360e6f30c93f5"
+          },
+          {
+            "path": "m005.aadl",
+            "sha256": "8aa9aeeb2ff0d1307dc34fdb44121b39f3f963016ce35287c220f98f8c421201"
+          },
+          {
+            "path": "m006.aadl",
+            "sha256": "e52aeadce090abefb3cd7a04f43aed4b2fda705772e380122e8cf01cb70b4361"
+          },
+          {
+            "path": "m007.aadl",
+            "sha256": "df06b89fc307509bad9a4ece8819cb8544465556aa67f8d8880a1370101bab6e"
+          },
+          {
+            "path": "m008.aadl",
+            "sha256": "e0663ebd41376e2d26d3e05ec94330b74822cfef9c7d3d1784393ed0f3461d62"
+          },
+          {
+            "path": "m009.aadl",
+            "sha256": "88c54ad931f88c402d194ccedb1062b1be37bec1605ac3b8ad59cdd7797b35e9"
+          },
+          {
+            "path": "m010.aadl",
+            "sha256": "521a85ff768778fa5821016c1eb97d825bb1a6a8dd3ff43711acd468f5a1755e"
+          },
+          {
+            "path": "m011.aadl",
+            "sha256": "3c097b9183597606bf6a7ebe7aed133104419eb4f0803fec7af79f680b616127"
+          },
+          {
+            "path": "m012.aadl",
+            "sha256": "c61ed4612a4380a34e5aa8010819052e9af12234541fea40fdaceaa24ef93694"
+          },
+          {
+            "path": "m013.aadl",
+            "sha256": "c2b222d315851ce64bdc09e59efd03179febe6d162e28505c62811d0538ba86a"
+          },
+          {
+            "path": "m014.aadl",
+            "sha256": "0cce4d6cac37f285e34e9095ba524627ecccc42eafcb4144c31ca7ea053992d3"
+          },
+          {
+            "path": "m015.aadl",
+            "sha256": "ef10a151d2fe8b89ef553413b2451488bbe8f995d83eebd8faf365a01bc23e72"
+          },
+          {
+            "path": "m016.aadl",
+            "sha256": "f1c4410636c03ec123d577fce57d6e42f7ec93af1079e4218e6ac7baeebb0ef1"
+          },
+          {
+            "path": "m017.aadl",
+            "sha256": "301f3ab90cd05bb43b25ac8f1a49b64d589a972ba8d7a824bbb385e9aa0ce686"
+          },
+          {
+            "path": "m018.aadl",
+            "sha256": "6f8c3fe59c0edb4a362dddea35d00b73b718b06580cfa457ced116fc6bdc2560"
+          },
+          {
+            "path": "m019.aadl",
+            "sha256": "94c42922a9534bb456bbf3152e450d34991eba7763d78292d08724945c137950"
+          },
+          {
+            "path": "m020.aadl",
+            "sha256": "86d5e0ceb68da708cf91988e8742c87b267a58e729342ca8d2a1dd481d251cbc"
+          },
+          {
+            "path": "m021.aadl",
+            "sha256": "db36f71f5bcc892a0bc1a6f14fba38131aee174e4102f2e70483365ebb2107b0"
+          },
+          {
+            "path": "m022.aadl",
+            "sha256": "0b6e4f5be26ee8c03ee9b07972da4716512624677b3eb415c86420dfd4178c69"
+          },
+          {
+            "path": "m023.aadl",
+            "sha256": "1966ac6a35f473f79a4f154a74f5f31969a387cf7417cea523f580deb4a88ca4"
+          },
+          {
+            "path": "m024.aadl",
+            "sha256": "ae388cc2cd986f5390be6c69a072f7a588bd95adaaf77767784d17121759cad4"
+          },
+          {
+            "path": "m025.aadl",
+            "sha256": "e0ba632a90ab5bbb21ac4fd7cad00875b067e924672a67b80a08d5098f9f042c"
+          },
+          {
+            "path": "m026.aadl",
+            "sha256": "c29be7b6a2c94e0ce936eb3c2b46ca0ee7a51e7d251271696b886cfdd72fcf87"
+          },
+          {
+            "path": "m027.aadl",
+            "sha256": "e62208490d54a1cc9f1a5d1bef8d5215c7204d4863a302516455c92c3764ccdb"
+          },
+          {
+            "path": "m028.aadl",
+            "sha256": "c0d64164cb6fbcd8d560078572867fbebbf2ab276008d7d6bac2a84835a2cb7a"
+          },
+          {
+            "path": "m029.aadl",
+            "sha256": "473a41194b0042e8d2ed5f7f7f04c67a3d7247b6debaa09d64088607620ff000"
+          },
+          {
+            "path": "m030.aadl",
+            "sha256": "cd7fa7dc8cb8e868629d0bc44b9787c10aec3665e0217223d40b9aea3675d38c"
+          },
+          {
+            "path": "m031.aadl",
+            "sha256": "8126ea0cea5acb16218778f003d2fcb30dba080b9f9d542aea2c09e0a1675794"
+          },
+          {
+            "path": "m032.aadl",
+            "sha256": "fb5abd5056b6b660490d32545973b22592fa6c55220e971b337b2d80e57c11cc"
+          },
+          {
+            "path": "m033.aadl",
+            "sha256": "5d19cedfb105dcf9db6d75b1cf21202b96ccf002fe2be39161b13cbf4c2cdcfa"
+          },
+          {
+            "path": "m034.aadl",
+            "sha256": "923f68cd8c1fdbd081d68c5bd3858f20a874b8ca602bb83c72a7a92b77d10c79"
+          },
+          {
+            "path": "m035.aadl",
+            "sha256": "ba0fd40e61f13497dd6368ead7c84512d8f0a44891801d55d10dfdd277533228"
+          },
+          {
+            "path": "m036.aadl",
+            "sha256": "430c9d638966d471d5d491bd5a4737a77e6a8b7e126e739f67f5c16587b5ce74"
+          },
+          {
+            "path": "m037.aadl",
+            "sha256": "e2a7517b647960dce50e24d04925904716f4b7d325507c2a63c5aa13c60efda0"
+          }
+        ],
+        "adapter_observation": {
+          "status": "failed",
+          "instance_status": "failed",
+          "diagnostics": [
+            {
+              "severity": "error",
+              "message": "Instantiation did not produce a verified SystemInstance: Instantiated FCS::FCS.impl as FCS_impl_Instance",
+              "path": null,
+              "line": null,
+              "rule_id": "osate.instantiation"
+            }
+          ]
+        },
+        "artifact_verification": {
+          "status": "passed",
+          "representation": "xmi:XMI",
+          "instance_name": "FCS_impl_Instance",
+          "sha256": "e93ca43f223777e15a2e6256aa6ce9077619d5751ba0b2e0918f835ea309f836",
+          "requested_root": "FCS::FCS.impl",
+          "classifier_references": {
+            "classifier": "../m006.aadl#FCS.FCS.impl",
+            "componentImplementation": "../m006.aadl#FCS.FCS.impl"
+          },
+          "post_instantiation_checks": "OsateRunner completed update and check before reporting files."
+        }
+      }
+    },
+    {
+      "root": "ISAS_RC_Dual_Channel_Inputs::ISAS_RC_Dual_Channel_Inputs.impl",
+      "role": "additional_entry_or_variant",
+      "status": "passed",
+      "instance_status": "passed",
+      "result": {
+        "status": "passed",
+        "diagnostics": [
+          {
+            "severity": "warning",
+            "message": "Base_Types in 'with' clause of public package section is not used.",
+            "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m003.aadl",
+            "line": 7,
+            "rule_id": "osate.diagnostic",
+            "original_source": "smaccm/models/QFCS_V2/packages/FCC.aadl"
+          },
+          {
+            "severity": "warning",
+            "message": "DATA_TYPES in 'with' clause of public package section is not used.",
+            "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m009.aadl",
+            "line": 3,
+            "rule_id": "osate.diagnostic",
+            "original_source": "smaccm/models/QFCS_V2/packages/ISAS_REQS/ISAS_RC_Dual_Channel_Inputs.aadl"
+          },
+          {
+            "severity": "warning",
+            "message": "Base_Types in 'with' clause of public package section is not used.",
+            "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m017.aadl",
+            "line": 3,
+            "rule_id": "osate.diagnostic",
+            "original_source": "smaccm/models/QFCS_V2/packages/ISAS_REQS/ISAS_S_200.aadl"
+          },
+          {
+            "severity": "warning",
+            "message": "OSAS_S_100 in 'with' clause of public package section is not used.",
+            "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m028.aadl",
+            "line": 3,
+            "rule_id": "osate.diagnostic",
+            "original_source": "smaccm/models/QFCS_V2/packages/OSAS_REQS/OSAS_S_110.aadl"
+          },
+          {
+            "severity": "warning",
+            "message": "RUN_LENGTH in 'with' clause of public package section is not used.",
+            "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m028.aadl",
+            "line": 4,
+            "rule_id": "osate.diagnostic",
+            "original_source": "smaccm/models/QFCS_V2/packages/OSAS_REQS/OSAS_S_110.aadl"
+          },
+          {
+            "severity": "warning",
+            "message": "RUN_LENGTH in 'with' clause of public package section is not used.",
+            "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m029.aadl",
+            "line": 4,
+            "rule_id": "osate.diagnostic",
+            "original_source": "smaccm/models/QFCS_V2/packages/OSAS_REQS/OSAS_S_120.aadl"
+          },
+          {
+            "severity": "warning",
+            "message": "OCCURRED in 'with' clause of public package section is not used.",
+            "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m029.aadl",
+            "line": 5,
+            "rule_id": "osate.diagnostic",
+            "original_source": "smaccm/models/QFCS_V2/packages/OSAS_REQS/OSAS_S_120.aadl"
+          }
+        ],
+        "version": "0.3.0",
+        "stdout": "osate-cli 0.3.0\nCreated D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\.project\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\session-home\"\n54759\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\session-home\"\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m003.aadl:7:8: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m009.aadl:3:8: warning: DATA_TYPES in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m017.aadl:3:9: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m028.aadl:3:7: warning: OSAS_S_100 in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m028.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m029.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m029.aadl:5:7: warning: OCCURRED in 'with' clause of public package section is not used.\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\session-home\"\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m003.aadl:7:8: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m009.aadl:3:8: warning: DATA_TYPES in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m017.aadl:3:9: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m028.aadl:3:7: warning: OSAS_S_100 in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m028.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m029.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m029.aadl:5:7: warning: OCCURRED in 'with' clause of public package section is not used.\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\session-home\"\nInstantiated ISAS_RC_Dual_Channel_Inputs::ISAS_RC_Dual_Channel_Inputs.impl as ISAS_RC_Dual_Channel_Inputs_impl_Instance\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\session-home\"\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m003.aadl:7:8: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m009.aadl:3:8: warning: DATA_TYPES in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m017.aadl:3:9: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m028.aadl:3:7: warning: OSAS_S_100 in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m028.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m029.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m029.aadl:5:7: warning: OCCURRED in 'with' clause of public package section is not used.\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\session-home\"\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m003.aadl:7:8: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m009.aadl:3:8: warning: DATA_TYPES in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m017.aadl:3:9: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m028.aadl:3:7: warning: OSAS_S_100 in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m028.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m029.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m029.aadl:5:7: warning: OCCURRED in 'with' clause of public package section is not used.\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\session-home\"\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\session-home\"",
+        "executable": "D:\\AADL-multi-agent\\aadl-research\\.tools\\osate-cli-0.3.0\\bin\\osate-cli.bat",
+        "binary_provenance": [
+          {
+            "file": "osate-cli.jar",
+            "sha256": "169f943de2f046c05ea9a5e0a540a2c9aa575e5a9dbcf637e3de9a71c639e549"
+          },
+          {
+            "file": "org.osate.xtext.aadl2_9.1.0.v20260928-1804.jar",
+            "sha256": "8d695f12a402b568ccc4b9cd2996fa5ccf521184fe3f1879a36109c88ec085e6"
+          },
+          {
+            "file": "osate-workspace-server-0.3.0.jar",
+            "sha256": "bf02f4aa3ebf3d581acc63ead929f9bcedb2df23aed4317967b38d964c14df3d"
+          }
+        ],
+        "instance": {
+          "status": "passed",
+          "root": "ISAS_RC_Dual_Channel_Inputs::ISAS_RC_Dual_Channel_Inputs.impl",
+          "source": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m009.aadl",
+          "stdout": "Instantiated ISAS_RC_Dual_Channel_Inputs::ISAS_RC_Dual_Channel_Inputs.impl as ISAS_RC_Dual_Channel_Inputs_impl_Instance\n",
+          "files": [
+            {
+              "path": "example/reference/public/a3d/validation/artifacts/m009_ISAS_RC_Dual_Channel_Inputs_impl_Instance.aaxl2",
+              "sha256": "74c12ecce776c88c4d78d7b991a12c8372f2ea3e5d30abdaa38d6846853fe505",
+              "path_base": "repository",
+              "original_path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\instances\\m009_ISAS_RC_Dual_Channel_Inputs_impl_Instance.aaxl2",
+              "retained": true
+            }
+          ],
+          "retained_source_binding": {
+            "original_staged_source": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a\\model\\m009.aadl",
+            "path": "example/reference/public/a3d/sources/smaccm/models/QFCS_V2/packages/ISAS_REQS/ISAS_RC_Dual_Channel_Inputs.aadl",
+            "path_base": "repository",
+            "sha256": "88c54ad931f88c402d194ccedb1062b1be37bec1605ac3b8ad59cdd7797b35e9"
+          },
+          "artifact_location_note": "Archived bytes unchanged; XML hrefs retain original staging names. Resolve provenance using sources and retained_source_binding, not the archive directory."
+        },
+        "workspace": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-06248e1249a44aa3b632926bd9382e8a",
+        "sources": [
+          {
+            "path": "m000.aadl",
+            "sha256": "466bd1dd37b826a5e1718b1e2a04ff5240d4fe2222bdff008d016de00d7da147"
+          },
+          {
+            "path": "m001.aadl",
+            "sha256": "6f51c9ae399f038d2091942bbd1810bc5bcf59a22ebc02cc2011a8c2c0fcb2fc"
+          },
+          {
+            "path": "m002.aadl",
+            "sha256": "4a15d13696f346cec764753001155cef72056e88932af1998885d660c18a6458"
+          },
+          {
+            "path": "m003.aadl",
+            "sha256": "153ccc26f7811fb22e9b844c8ba23938f65767372f00935afe24831a5ff125de"
+          },
+          {
+            "path": "m004.aadl",
+            "sha256": "d800fc4702a6a9dc4152341bfaa1367817db7af601e0083e719360e6f30c93f5"
+          },
+          {
+            "path": "m005.aadl",
+            "sha256": "8aa9aeeb2ff0d1307dc34fdb44121b39f3f963016ce35287c220f98f8c421201"
+          },
+          {
+            "path": "m006.aadl",
+            "sha256": "e52aeadce090abefb3cd7a04f43aed4b2fda705772e380122e8cf01cb70b4361"
+          },
+          {
+            "path": "m007.aadl",
+            "sha256": "df06b89fc307509bad9a4ece8819cb8544465556aa67f8d8880a1370101bab6e"
+          },
+          {
+            "path": "m008.aadl",
+            "sha256": "e0663ebd41376e2d26d3e05ec94330b74822cfef9c7d3d1784393ed0f3461d62"
+          },
+          {
+            "path": "m009.aadl",
+            "sha256": "88c54ad931f88c402d194ccedb1062b1be37bec1605ac3b8ad59cdd7797b35e9"
+          },
+          {
+            "path": "m010.aadl",
+            "sha256": "521a85ff768778fa5821016c1eb97d825bb1a6a8dd3ff43711acd468f5a1755e"
+          },
+          {
+            "path": "m011.aadl",
+            "sha256": "3c097b9183597606bf6a7ebe7aed133104419eb4f0803fec7af79f680b616127"
+          },
+          {
+            "path": "m012.aadl",
+            "sha256": "c61ed4612a4380a34e5aa8010819052e9af12234541fea40fdaceaa24ef93694"
+          },
+          {
+            "path": "m013.aadl",
+            "sha256": "c2b222d315851ce64bdc09e59efd03179febe6d162e28505c62811d0538ba86a"
+          },
+          {
+            "path": "m014.aadl",
+            "sha256": "0cce4d6cac37f285e34e9095ba524627ecccc42eafcb4144c31ca7ea053992d3"
+          },
+          {
+            "path": "m015.aadl",
+            "sha256": "ef10a151d2fe8b89ef553413b2451488bbe8f995d83eebd8faf365a01bc23e72"
+          },
+          {
+            "path": "m016.aadl",
+            "sha256": "f1c4410636c03ec123d577fce57d6e42f7ec93af1079e4218e6ac7baeebb0ef1"
+          },
+          {
+            "path": "m017.aadl",
+            "sha256": "301f3ab90cd05bb43b25ac8f1a49b64d589a972ba8d7a824bbb385e9aa0ce686"
+          },
+          {
+            "path": "m018.aadl",
+            "sha256": "6f8c3fe59c0edb4a362dddea35d00b73b718b06580cfa457ced116fc6bdc2560"
+          },
+          {
+            "path": "m019.aadl",
+            "sha256": "94c42922a9534bb456bbf3152e450d34991eba7763d78292d08724945c137950"
+          },
+          {
+            "path": "m020.aadl",
+            "sha256": "86d5e0ceb68da708cf91988e8742c87b267a58e729342ca8d2a1dd481d251cbc"
+          },
+          {
+            "path": "m021.aadl",
+            "sha256": "db36f71f5bcc892a0bc1a6f14fba38131aee174e4102f2e70483365ebb2107b0"
+          },
+          {
+            "path": "m022.aadl",
+            "sha256": "0b6e4f5be26ee8c03ee9b07972da4716512624677b3eb415c86420dfd4178c69"
+          },
+          {
+            "path": "m023.aadl",
+            "sha256": "1966ac6a35f473f79a4f154a74f5f31969a387cf7417cea523f580deb4a88ca4"
+          },
+          {
+            "path": "m024.aadl",
+            "sha256": "ae388cc2cd986f5390be6c69a072f7a588bd95adaaf77767784d17121759cad4"
+          },
+          {
+            "path": "m025.aadl",
+            "sha256": "e0ba632a90ab5bbb21ac4fd7cad00875b067e924672a67b80a08d5098f9f042c"
+          },
+          {
+            "path": "m026.aadl",
+            "sha256": "c29be7b6a2c94e0ce936eb3c2b46ca0ee7a51e7d251271696b886cfdd72fcf87"
+          },
+          {
+            "path": "m027.aadl",
+            "sha256": "e62208490d54a1cc9f1a5d1bef8d5215c7204d4863a302516455c92c3764ccdb"
+          },
+          {
+            "path": "m028.aadl",
+            "sha256": "c0d64164cb6fbcd8d560078572867fbebbf2ab276008d7d6bac2a84835a2cb7a"
+          },
+          {
+            "path": "m029.aadl",
+            "sha256": "473a41194b0042e8d2ed5f7f7f04c67a3d7247b6debaa09d64088607620ff000"
+          },
+          {
+            "path": "m030.aadl",
+            "sha256": "cd7fa7dc8cb8e868629d0bc44b9787c10aec3665e0217223d40b9aea3675d38c"
+          },
+          {
+            "path": "m031.aadl",
+            "sha256": "8126ea0cea5acb16218778f003d2fcb30dba080b9f9d542aea2c09e0a1675794"
+          },
+          {
+            "path": "m032.aadl",
+            "sha256": "fb5abd5056b6b660490d32545973b22592fa6c55220e971b337b2d80e57c11cc"
+          },
+          {
+            "path": "m033.aadl",
+            "sha256": "5d19cedfb105dcf9db6d75b1cf21202b96ccf002fe2be39161b13cbf4c2cdcfa"
+          },
+          {
+            "path": "m034.aadl",
+            "sha256": "923f68cd8c1fdbd081d68c5bd3858f20a874b8ca602bb83c72a7a92b77d10c79"
+          },
+          {
+            "path": "m035.aadl",
+            "sha256": "ba0fd40e61f13497dd6368ead7c84512d8f0a44891801d55d10dfdd277533228"
+          },
+          {
+            "path": "m036.aadl",
+            "sha256": "430c9d638966d471d5d491bd5a4737a77e6a8b7e126e739f67f5c16587b5ce74"
+          },
+          {
+            "path": "m037.aadl",
+            "sha256": "e2a7517b647960dce50e24d04925904716f4b7d325507c2a63c5aa13c60efda0"
+          }
+        ],
+        "adapter_observation": {
+          "status": "failed",
+          "instance_status": "failed",
+          "diagnostics": [
+            {
+              "severity": "error",
+              "message": "Instantiation did not produce a verified SystemInstance: Instantiated ISAS_RC_Dual_Channel_Inputs::ISAS_RC_Dual_Channel_Inputs.impl as ISAS_RC_Dual_Channel_Inputs_impl_Instance",
+              "path": null,
+              "line": null,
+              "rule_id": "osate.instantiation"
+            }
+          ]
+        },
+        "artifact_verification": {
+          "status": "passed",
+          "representation": "xmi:XMI",
+          "instance_name": "ISAS_RC_Dual_Channel_Inputs_impl_Instance",
+          "sha256": "74c12ecce776c88c4d78d7b991a12c8372f2ea3e5d30abdaa38d6846853fe505",
+          "requested_root": "ISAS_RC_Dual_Channel_Inputs::ISAS_RC_Dual_Channel_Inputs.impl",
+          "classifier_references": {
+            "classifier": "../m009.aadl#ISAS_RC_Dual_Channel_Inputs.ISAS_RC_Dual_Channel_Inputs.impl",
+            "componentImplementation": "../m009.aadl#ISAS_RC_Dual_Channel_Inputs.ISAS_RC_Dual_Channel_Inputs.impl"
+          },
+          "post_instantiation_checks": "OsateRunner completed update and check before reporting files."
+        }
+      }
+    }
+  ],
+  "proof": {
+    "status": "not_run",
+    "reason": "No annex theorem prover was invoked."
+  },
+  "selection": {
+    "primary_directory": "smaccm/models/QFCS_V2",
+    "dependency_pool": "smaccm/models/QFCS_V2",
+    "preserved_primary_aadl_count": 38,
+    "selected_count": 38,
+    "excluded_builtin_copies": [],
+    "static_unresolved_names": [],
+    "selection_issues": [],
+    "builtin_dependencies": [
+      {
+        "declaration": "base_types",
+        "jar": "org.osate.contribution.sei_2.2.2.v20260928-1804.jar",
+        "resource": "resources/packages/Base_Types.aadl",
+        "sha256": "43c21ff9d7557da762fd4fbb1ecbe3d5cd2bece20e6aa898c46ec33ca72add46"
+      }
+    ],
+    "note": "Static namespace closure selects files; OSATE diagnostics are authoritative for linking."
+  },
+  "sources": [
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\AGREE_CONSTANTS.aadl",
+      "sha256": "466bd1dd37b826a5e1718b1e2a04ff5240d4fe2222bdff008d016de00d7da147",
+      "size": 8680,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "agree_constants"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m000.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\CCDL.aadl",
+      "sha256": "6f51c9ae399f038d2091942bbd1810bc5bcf59a22ebc02cc2011a8c2c0fcb2fc",
+      "size": 2512,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "claw"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m001.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\DATA_TYPES.aadl",
+      "sha256": "4a15d13696f346cec764753001155cef72056e88932af1998885d660c18a6458",
+      "size": 12692,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "data_types"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m002.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\FCC.aadl",
+      "sha256": "153ccc26f7811fb22e9b844c8ba23938f65767372f00935afe24831a5ff125de",
+      "size": 6875,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "fcc"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m003.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\FCC_REQS\\FCC_RC5.aadl",
+      "sha256": "d800fc4702a6a9dc4152341bfaa1367817db7af601e0083e719360e6f30c93f5",
+      "size": 5708,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "fcc_rc5"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m004.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\FCC_REQS\\FCC_RC_2.aadl",
+      "sha256": "8aa9aeeb2ff0d1307dc34fdb44121b39f3f963016ce35287c220f98f8c421201",
+      "size": 3877,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "fcc_rc_2"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m005.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\FCS.aadl",
+      "sha256": "e52aeadce090abefb3cd7a04f43aed4b2fda705772e380122e8cf01cb70b4361",
+      "size": 6092,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "fcs"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m006.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\FCS_REQS\\FCS_RC1.aadl",
+      "sha256": "df06b89fc307509bad9a4ece8819cb8544465556aa67f8d8880a1370101bab6e",
+      "size": 6964,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "fcs_rc1"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m007.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\ISAS.aadl",
+      "sha256": "e0663ebd41376e2d26d3e05ec94330b74822cfef9c7d3d1784393ed0f3461d62",
+      "size": 12620,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "isas"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m008.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\ISAS_REQS\\ISAS_RC_Dual_Channel_Inputs.aadl",
+      "sha256": "88c54ad931f88c402d194ccedb1062b1be37bec1605ac3b8ad59cdd7797b35e9",
+      "size": 21052,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "isas_rc_dual_channel_inputs"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m009.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\ISAS_REQS\\ISAS_S_100_130.aadl",
+      "sha256": "521a85ff768778fa5821016c1eb97d825bb1a6a8dd3ff43711acd468f5a1755e",
+      "size": 4706,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "isas_s_100_130"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m010.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\ISAS_REQS\\ISAS_S_110.aadl",
+      "sha256": "3c097b9183597606bf6a7ebe7aed133104419eb4f0803fec7af79f680b616127",
+      "size": 8369,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "isas_s_110"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m011.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\ISAS_REQS\\ISAS_S_140.aadl",
+      "sha256": "c61ed4612a4380a34e5aa8010819052e9af12234541fea40fdaceaa24ef93694",
+      "size": 3139,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "isas_s_140"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m012.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\ISAS_REQS\\ISAS_S_140_150.aadl",
+      "sha256": "c2b222d315851ce64bdc09e59efd03179febe6d162e28505c62811d0538ba86a",
+      "size": 11832,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "isas_s_140_150"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m013.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\ISAS_REQS\\ISAS_S_150.aadl",
+      "sha256": "0cce4d6cac37f285e34e9095ba524627ecccc42eafcb4144c31ca7ea053992d3",
+      "size": 9195,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "isas_s_150"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m014.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\ISAS_REQS\\ISAS_S_170.aadl",
+      "sha256": "ef10a151d2fe8b89ef553413b2451488bbe8f995d83eebd8faf365a01bc23e72",
+      "size": 2672,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "isas_s_170"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m015.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\ISAS_REQS\\ISAS_S_190.aadl",
+      "sha256": "f1c4410636c03ec123d577fce57d6e42f7ec93af1079e4218e6ac7baeebb0ef1",
+      "size": 5627,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "isas_s_190"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m016.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\ISAS_REQS\\ISAS_S_200.aadl",
+      "sha256": "301f3ab90cd05bb43b25ac8f1a49b64d589a972ba8d7a824bbb385e9aa0ce686",
+      "size": 2432,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "isas_s_200"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m017.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\ISAS_REQS\\ISAS_S_210.aadl",
+      "sha256": "6f8c3fe59c0edb4a362dddea35d00b73b718b06580cfa457ced116fc6bdc2560",
+      "size": 1398,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "isas_s_210"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m018.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\ISAS_REQS\\ISAS_S_220.aadl",
+      "sha256": "94c42922a9534bb456bbf3152e450d34991eba7763d78292d08724945c137950",
+      "size": 2935,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "isas_s_220"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m019.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\ISAS_REQS\\ISAS_S_240.aadl",
+      "sha256": "86d5e0ceb68da708cf91988e8742c87b267a58e729342ca8d2a1dd481d251cbc",
+      "size": 20768,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "isas_s_240"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m020.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\ISAS_REQS\\ISAS_S_260.aadl",
+      "sha256": "db36f71f5bcc892a0bc1a6f14fba38131aee174e4102f2e70483365ebb2107b0",
+      "size": 9441,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "isas_s_260"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m021.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\LIBRARY\\HISTORICALLY.aadl",
+      "sha256": "0b6e4f5be26ee8c03ee9b07972da4716512624677b3eb415c86420dfd4178c69",
+      "size": 174,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "historically"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m022.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\LIBRARY\\OCCURRED.aadl",
+      "sha256": "1966ac6a35f473f79a4f154a74f5f31969a387cf7417cea523f580deb4a88ca4",
+      "size": 138,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "occurred"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m023.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\LIBRARY\\RUN_LENGTH.aadl",
+      "sha256": "ae388cc2cd986f5390be6c69a072f7a588bd95adaaf77767784d17121759cad4",
+      "size": 219,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "run_length"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m024.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\OSAS.aadl",
+      "sha256": "e0ba632a90ab5bbb21ac4fd7cad00875b067e924672a67b80a08d5098f9f042c",
+      "size": 3303,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "osas"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m025.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\OSAS_REQS\\OSAS_S_100.aadl",
+      "sha256": "c29be7b6a2c94e0ce936eb3c2b46ca0ee7a51e7d251271696b886cfdd72fcf87",
+      "size": 264,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "osas_s_100"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m026.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\OSAS_REQS\\OSAS_S_100_110.aadl",
+      "sha256": "e62208490d54a1cc9f1a5d1bef8d5215c7204d4863a302516455c92c3764ccdb",
+      "size": 2959,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "osas_s_100_110"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m027.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\OSAS_REQS\\OSAS_S_110.aadl",
+      "sha256": "c0d64164cb6fbcd8d560078572867fbebbf2ab276008d7d6bac2a84835a2cb7a",
+      "size": 3325,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "osas_s_110"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m028.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\OSAS_REQS\\OSAS_S_120.aadl",
+      "sha256": "473a41194b0042e8d2ed5f7f7f04c67a3d7247b6debaa09d64088607620ff000",
+      "size": 1945,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "osas_s_120"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m029.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\OSAS_REQS\\OSAS_S_140.aadl",
+      "sha256": "cd7fa7dc8cb8e868629d0bc44b9787c10aec3665e0217223d40b9aea3675d38c",
+      "size": 1374,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "osas_s_140"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m030.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\OSAS_REQS\\OSAS_S_170.aadl",
+      "sha256": "8126ea0cea5acb16218778f003d2fcb30dba080b9f9d542aea2c09e0a1675794",
+      "size": 1488,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "osas_s_170"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m031.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\OSAS_REQS\\OSAS_S_180.aadl",
+      "sha256": "fb5abd5056b6b660490d32545973b22592fa6c55220e971b337b2d80e57c11cc",
+      "size": 3354,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "osas_s_180"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m032.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\OSAS_REQS\\OSAS_S_190.aadl",
+      "sha256": "5d19cedfb105dcf9db6d75b1cf21202b96ccf002fe2be39161b13cbf4c2cdcfa",
+      "size": 2288,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "osas_s_190"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m033.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\OSAS_REQS\\OSAS_S_190_240_250.aadl",
+      "sha256": "923f68cd8c1fdbd081d68c5bd3858f20a874b8ca602bb83c72a7a92b77d10c79",
+      "size": 2850,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "osas_s_190_240_250"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m034.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\OSAS_REQS\\OSAS_S_210_220_230.aadl",
+      "sha256": "ba0fd40e61f13497dd6368ead7c84512d8f0a44891801d55d10dfdd277533228",
+      "size": 3138,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "osas_s_210_220_230"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m035.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\OSAS_REQS\\OSAS_S_240.aadl",
+      "sha256": "430c9d638966d471d5d491bd5a4737a77e6a8b7e126e739f67f5c16587b5ce74",
+      "size": 1494,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "osas_s_240"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m036.aadl"
+    },
+    {
+      "path": "smaccm\\models\\QFCS_V2\\packages\\OSAS_REQS\\OSAS_S_250.aadl",
+      "sha256": "e2a7517b647960dce50e24d04925904716f4b7d325507c2a63c5aa13c60efda0",
+      "size": 1606,
+      "encoding": "utf-8-sig",
+      "declarations": [
+        "osas_s_250"
+      ],
+      "annexes": [
+        "agree"
+      ],
+      "staged_path": "m037.aadl"
+    }
+  ],
+  "annexes": [
+    {
+      "name": "agree",
+      "parser_status": "unsupported",
+      "semantic_validation": "not_run",
+      "proof_status": "not_run"
+    }
+  ],
+  "interpretation": "Core syntax/linking and requested instantiation only. Unsupported annex bodies remain unchanged and may be accepted by the default parser; acceptance is not annex validation or proof.",
+  "staging": {
+    "directory": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\s",
+    "source_bytes_preserved": true
+  },
+  "core": {
+    "status": "passed",
+    "diagnostics": [
+      {
+        "severity": "warning",
+        "message": "Base_Types in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\model\\m003.aadl",
+        "line": 7,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/QFCS_V2/packages/FCC.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "DATA_TYPES in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\model\\m009.aadl",
+        "line": 3,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/QFCS_V2/packages/ISAS_REQS/ISAS_RC_Dual_Channel_Inputs.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "Base_Types in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\model\\m017.aadl",
+        "line": 3,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/QFCS_V2/packages/ISAS_REQS/ISAS_S_200.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "OSAS_S_100 in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\model\\m028.aadl",
+        "line": 3,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/QFCS_V2/packages/OSAS_REQS/OSAS_S_110.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "RUN_LENGTH in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\model\\m028.aadl",
+        "line": 4,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/QFCS_V2/packages/OSAS_REQS/OSAS_S_110.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "RUN_LENGTH in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\model\\m029.aadl",
+        "line": 4,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/QFCS_V2/packages/OSAS_REQS/OSAS_S_120.aadl"
+      },
+      {
+        "severity": "warning",
+        "message": "OCCURRED in 'with' clause of public package section is not used.",
+        "path": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\model\\m029.aadl",
+        "line": 5,
+        "rule_id": "osate.diagnostic",
+        "original_source": "smaccm/models/QFCS_V2/packages/OSAS_REQS/OSAS_S_120.aadl"
+      }
+    ],
+    "version": "0.3.0",
+    "stdout": "osate-cli 0.3.0\nCreated D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\model\\.project\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\session-home\"\n58404\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\session-home\"\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\model\\m003.aadl:7:8: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\model\\m009.aadl:3:8: warning: DATA_TYPES in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\model\\m017.aadl:3:9: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\model\\m028.aadl:3:7: warning: OSAS_S_100 in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\model\\m028.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\model\\m029.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\model\\m029.aadl:5:7: warning: OCCURRED in 'with' clause of public package section is not used.\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\session-home\"\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\model\\m003.aadl:7:8: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\model\\m009.aadl:3:8: warning: DATA_TYPES in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\model\\m017.aadl:3:9: warning: Base_Types in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\model\\m028.aadl:3:7: warning: OSAS_S_100 in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\model\\m028.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\model\\m029.aadl:4:7: warning: RUN_LENGTH in 'with' clause of public package section is not used.\nD:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\model\\m029.aadl:5:7: warning: OCCURRED in 'with' clause of public package section is not used.\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\session-home\"\nPicked up JAVA_TOOL_OPTIONS: -Dosate.cli.home=\"D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030\\session-home\"",
+    "executable": "D:\\AADL-multi-agent\\aadl-research\\.tools\\osate-cli-0.3.0\\bin\\osate-cli.bat",
+    "binary_provenance": [
+      {
+        "file": "osate-cli.jar",
+        "sha256": "169f943de2f046c05ea9a5e0a540a2c9aa575e5a9dbcf637e3de9a71c639e549"
+      },
+      {
+        "file": "org.osate.xtext.aadl2_9.1.0.v20260928-1804.jar",
+        "sha256": "8d695f12a402b568ccc4b9cd2996fa5ccf521184fe3f1879a36109c88ec085e6"
+      },
+      {
+        "file": "osate-workspace-server-0.3.0.jar",
+        "sha256": "bf02f4aa3ebf3d581acc63ead929f9bcedb2df23aed4317967b38d964c14df3d"
+      }
+    ],
+    "instance": {
+      "status": "not_requested",
+      "root": null
+    },
+    "workspace": "D:\\AADL-multi-agent\\aadl-single-agent\\.cache\\a3d\\validation\\21c76aef\\r\\osate-run-e81ed2dded544e629f3a6a8f74962030",
+    "sources": [
+      {
+        "path": "m000.aadl",
+        "sha256": "466bd1dd37b826a5e1718b1e2a04ff5240d4fe2222bdff008d016de00d7da147"
+      },
+      {
+        "path": "m001.aadl",
+        "sha256": "6f51c9ae399f038d2091942bbd1810bc5bcf59a22ebc02cc2011a8c2c0fcb2fc"
+      },
+      {
+        "path": "m002.aadl",
+        "sha256": "4a15d13696f346cec764753001155cef72056e88932af1998885d660c18a6458"
+      },
+      {
+        "path": "m003.aadl",
+        "sha256": "153ccc26f7811fb22e9b844c8ba23938f65767372f00935afe24831a5ff125de"
+      },
+      {
+        "path": "m004.aadl",
+        "sha256": "d800fc4702a6a9dc4152341bfaa1367817db7af601e0083e719360e6f30c93f5"
+      },
+      {
+        "path": "m005.aadl",
+        "sha256": "8aa9aeeb2ff0d1307dc34fdb44121b39f3f963016ce35287c220f98f8c421201"
+      },
+      {
+        "path": "m006.aadl",
+        "sha256": "e52aeadce090abefb3cd7a04f43aed4b2fda705772e380122e8cf01cb70b4361"
+      },
+      {
+        "path": "m007.aadl",
+        "sha256": "df06b89fc307509bad9a4ece8819cb8544465556aa67f8d8880a1370101bab6e"
+      },
+      {
+        "path": "m008.aadl",
+        "sha256": "e0663ebd41376e2d26d3e05ec94330b74822cfef9c7d3d1784393ed0f3461d62"
+      },
+      {
+        "path": "m009.aadl",
+        "sha256": "88c54ad931f88c402d194ccedb1062b1be37bec1605ac3b8ad59cdd7797b35e9"
+      },
+      {
+        "path": "m010.aadl",
+        "sha256": "521a85ff768778fa5821016c1eb97d825bb1a6a8dd3ff43711acd468f5a1755e"
+      },
+      {
+        "path": "m011.aadl",
+        "sha256": "3c097b9183597606bf6a7ebe7aed133104419eb4f0803fec7af79f680b616127"
+      },
+      {
+        "path": "m012.aadl",
+        "sha256": "c61ed4612a4380a34e5aa8010819052e9af12234541fea40fdaceaa24ef93694"
+      },
+      {
+        "path": "m013.aadl",
+        "sha256": "c2b222d315851ce64bdc09e59efd03179febe6d162e28505c62811d0538ba86a"
+      },
+      {
+        "path": "m014.aadl",
+        "sha256": "0cce4d6cac37f285e34e9095ba524627ecccc42eafcb4144c31ca7ea053992d3"
+      },
+      {
+        "path": "m015.aadl",
+        "sha256": "ef10a151d2fe8b89ef553413b2451488bbe8f995d83eebd8faf365a01bc23e72"
+      },
+      {
+        "path": "m016.aadl",
+        "sha256": "f1c4410636c03ec123d577fce57d6e42f7ec93af1079e4218e6ac7baeebb0ef1"
+      },
+      {
+        "path": "m017.aadl",
+        "sha256": "301f3ab90cd05bb43b25ac8f1a49b64d589a972ba8d7a824bbb385e9aa0ce686"
+      },
+      {
+        "path": "m018.aadl",
+        "sha256": "6f8c3fe59c0edb4a362dddea35d00b73b718b06580cfa457ced116fc6bdc2560"
+      },
+      {
+        "path": "m019.aadl",
+        "sha256": "94c42922a9534bb456bbf3152e450d34991eba7763d78292d08724945c137950"
+      },
+      {
+        "path": "m020.aadl",
+        "sha256": "86d5e0ceb68da708cf91988e8742c87b267a58e729342ca8d2a1dd481d251cbc"
+      },
+      {
+        "path": "m021.aadl",
+        "sha256": "db36f71f5bcc892a0bc1a6f14fba38131aee174e4102f2e70483365ebb2107b0"
+      },
+      {
+        "path": "m022.aadl",
+        "sha256": "0b6e4f5be26ee8c03ee9b07972da4716512624677b3eb415c86420dfd4178c69"
+      },
+      {
+        "path": "m023.aadl",
+        "sha256": "1966ac6a35f473f79a4f154a74f5f31969a387cf7417cea523f580deb4a88ca4"
+      },
+      {
+        "path": "m024.aadl",
+        "sha256": "ae388cc2cd986f5390be6c69a072f7a588bd95adaaf77767784d17121759cad4"
+      },
+      {
+        "path": "m025.aadl",
+        "sha256": "e0ba632a90ab5bbb21ac4fd7cad00875b067e924672a67b80a08d5098f9f042c"
+      },
+      {
+        "path": "m026.aadl",
+        "sha256": "c29be7b6a2c94e0ce936eb3c2b46ca0ee7a51e7d251271696b886cfdd72fcf87"
+      },
+      {
+        "path": "m027.aadl",
+        "sha256": "e62208490d54a1cc9f1a5d1bef8d5215c7204d4863a302516455c92c3764ccdb"
+      },
+      {
+        "path": "m028.aadl",
+        "sha256": "c0d64164cb6fbcd8d560078572867fbebbf2ab276008d7d6bac2a84835a2cb7a"
+      },
+      {
+        "path": "m029.aadl",
+        "sha256": "473a41194b0042e8d2ed5f7f7f04c67a3d7247b6debaa09d64088607620ff000"
+      },
+      {
+        "path": "m030.aadl",
+        "sha256": "cd7fa7dc8cb8e868629d0bc44b9787c10aec3665e0217223d40b9aea3675d38c"
+      },
+      {
+        "path": "m031.aadl",
+        "sha256": "8126ea0cea5acb16218778f003d2fcb30dba080b9f9d542aea2c09e0a1675794"
+      },
+      {
+        "path": "m032.aadl",
+        "sha256": "fb5abd5056b6b660490d32545973b22592fa6c55220e971b337b2d80e57c11cc"
+      },
+      {
+        "path": "m033.aadl",
+        "sha256": "5d19cedfb105dcf9db6d75b1cf21202b96ccf002fe2be39161b13cbf4c2cdcfa"
+      },
+      {
+        "path": "m034.aadl",
+        "sha256": "923f68cd8c1fdbd081d68c5bd3858f20a874b8ca602bb83c72a7a92b77d10c79"
+      },
+      {
+        "path": "m035.aadl",
+        "sha256": "ba0fd40e61f13497dd6368ead7c84512d8f0a44891801d55d10dfdd277533228"
+      },
+      {
+        "path": "m036.aadl",
+        "sha256": "430c9d638966d471d5d491bd5a4737a77e6a8b7e126e739f67f5c16587b5ce74"
+      },
+      {
+        "path": "m037.aadl",
+        "sha256": "e2a7517b647960dce50e24d04925904716f4b7d325507c2a63c5aa13c60efda0"
+      }
+    ]
+  },
+  "original_sources_unchanged": true,
+  "working_artifacts": {
+    "workspaces_retained": false,
+    "reason": "Temporary reference-validation workspaces removed during repository cleanup; source bytes and diagnostics remain preserved."
+  }
+}

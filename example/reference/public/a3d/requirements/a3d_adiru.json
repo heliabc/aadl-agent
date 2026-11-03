@@ -1,0 +1,900 @@
+{
+  "case_id": "a3d_adiru",
+  "title": "ADIRU derived architectural example requirements",
+  "independent_evaluation_eligible": false,
+  "source_repository": "OpenAADL/AADLib",
+  "source_ref": "c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a",
+  "coverage": [
+    "Four-partition base architecture with six sensor channels and all active thread decompositions",
+    "Measurement, alarm and mitigation interfaces; processor and memory bindings",
+    "Periodic execution structure and C subprogram bindings",
+    "Separate DeOS, VxWorks653 and EMV2 variants"
+  ],
+  "original_requirement_status": "No independent natural-language requirements baseline tied to this fixed ADIRU version was located. Source comments and author publications describe architecture and demonstration goals. Every requirement here is a model-derived example or a restatement of an embedded EMV2 declaration; none is labeled an original product requirement.",
+  "limitations": [
+    "Current local OSATE core checks fail at adiru_memory.aadl:17 because ARINC653::Memory_Type and Code_Memory are unavailable in the installed standard library; all four root instantiations were not run. This task does not repair source or certify deployment.",
+    "Four partition identifiers are all 1 and explicitly marked XXX in adiru_processor.aadl:24-33; those duplicate identifiers are not adopted as desired identifiers.",
+    "The processor declares a 150 ms major frame with only one 1 ms slot per partition. DeOS adds 25 ms partition periods and 1 ms execution times. Threads declare 400..500 ms computation and 500 ms deadlines. These figures have not been reconciled and no schedulability or timing guarantee is asserted; only periodic structure and illustrative periods are restated.",
+    "Each memory segment is 102400 bytes at base address 0, while threads individually declare 100 KByte code, 20 KByte stack and 1 KByte data. These values are not treated as a feasible memory layout or capacity requirement.",
+    "Sampling refresh properties differ across the same flow: process measurements use 25 ms, accelerometer-thread outputs 50 ms, accelerometer-HM inputs 20 ms, and ADIRUp process inputs 1 ms. No unified freshness guarantee is inferred.",
+    "All four virtual processors mark DAL LEVEL_A with XXX Review value; all eight processor health-monitor actions are ignore. Neither certification level nor recovery adequacy is established.",
+    "The ADIRUp EMV2 transition considers triples among inputs 1..4 although six measurement inputs exist; it is not generalized to a six-sensor voting requirement. Device probability 3.4e-5 is an example declaration without a verified empirical basis.",
+    "EMV2 device event-data outputs connect to process data inputs; variant compatibility and error-model semantics have not been checked because core prerequisites failed. No error-propagation analysis was run.",
+    "Source code generation paths refer to object files and external ARINC653 runtimes. No Ocarina code generation, target execution, ABI validation, failure injection or numerical solver correctness was performed.",
+    "The author paper/slides link in the SEI article now redirects to a generic projects page. A conference tutorial confirms the ADIRU demonstration but does not provide a version-matched independent requirements set.",
+    "The EMV2 physical-device inputs end at added thread ports; the inherited C subprogram call is not connected to those inputs. A functional path from real sensor data to simulated outputs is not established."
+  ],
+  "source_search_evidence": [
+    {
+      "url": "https://github.com/OpenAADL/AADLib/tree/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru",
+      "finding": "Fixed tree, all imported ADIRU model packages, C bindings and notes.txt checked. No standalone original requirements document appears in this example; notes are implementation TODOs.",
+      "license": "Repository BSD-3-Clause, Copyright 2024 OpenAADL; retained license applies to imported source."
+    },
+    {
+      "url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/README#L33-L34",
+      "finding": "The upstream examples README credits the ADIRU subsystem to GONG Huawei, MS EMS student at ISAE in 2013-2014. Searches by the contributor name and ADIRU did not identify a separate public requirements baseline; SEI/tutorial descriptions are related author accounts, not evidence of sole authorship.",
+      "license": "Repository BSD-3-Clause."
+    },
+    {
+      "url": "https://sei.cmu.edu/blog/aadl-code-generation-for-avionics-systems/",
+      "title": "AADL Code Generation for Avionics Systems",
+      "author": "Julien Delange",
+      "date": "2015-06-22",
+      "location": "Two AADL Code Generation Case Studies, ADIRU paragraphs",
+      "finding": "Primary author account describes the same four-partition ADIRU roles and DeOS/VxWorks653 generation targets. It describes a demonstration, not a complete requirements specification or exact fixed-commit mapping.",
+      "license": "No explicit redistribution permission verified; link and short paraphrase only."
+    },
+    {
+      "url": "https://resources.sei.cmu.edu/aadl-wiki.cfm",
+      "finding": "Followed ADIRU slides link from the author article; it redirects to https://www.sei.cmu.edu/projects/ and no slides were recovered there.",
+      "license": "Not established; no copied document."
+    },
+    {
+      "url": "https://cruise.umple.org/models2015/tutorials.html",
+      "title": "MODELS 2015 tutorial listing",
+      "location": "Jérôme Hugues and Julien Delange AADL tutorial",
+      "finding": "First-party conference listing confirms an illustrative ADIRU case for combined safety analyses and automatic implementation; no independent version-matched requirements document was linked in the inspected entry.",
+      "license": "No redistribution permission verified; link only."
+    }
+  ],
+  "requirements": [
+    {
+      "id": "ADIRU-DR-001",
+      "text": "Create a software-oriented ADIRU architecture with four processes: accelerometer simulation acc_pr, accelerometer health monitoring acc_hm_pr, ADIRU computation ADIRUp_pr, and system health monitoring SHM_pr. The base root is ADIRU::ADIRU.impl.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/model.aadl",
+          "line_start": 19,
+          "line_end": 42,
+          "sha256": "b37b2e19623ca8b61f49e9b9ca3ea84c24142fb6b37037291bbf428970a1cff8",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/model.aadl#L19-L42",
+          "span_sha256": "104e33ca33adcd9f53d449b485fb03e50bd9a86067a731e33766bd5bc0d0abda"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "ADIRU-DR-002",
+      "text": "Model one PowerPC processor containing four virtual-processor partitions named acc, acc_hm, adirup and shm. Bind the four processes to part1, part2, part3 and part4 respectively, maintaining separate execution partitions.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/adiru_processor.aadl",
+          "line_start": 16,
+          "line_end": 34,
+          "sha256": "aa816fc7163fa38be9e469f83ce8f5faaa2a5f7c7037a48eeeac2f9247672560",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/adiru_processor.aadl#L16-L34",
+          "span_sha256": "f0ecd7a2f5bef016171b515ed5ca04328e3ddb98695fc20d9a77ecc1113d858c"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/model.aadl",
+          "line_start": 74,
+          "line_end": 80,
+          "sha256": "b37b2e19623ca8b61f49e9b9ca3ea84c24142fb6b37037291bbf428970a1cff8",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/model.aadl#L74-L80",
+          "span_sha256": "3a74b50c533b531f2f04156deb68f7c1e3cd97eb011d993fd4bc0a9cb3626b46"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "ADIRU-DR-003",
+      "text": "Model a main-memory component with four separate memory subcomponents accMem, acc_hmMem, ADIRUpMem and SHMMem, and bind each process to its corresponding memory subcomponent. Concrete memory addresses and feasible capacities remain unresolved configuration parameters.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/adiru_memory.aadl",
+          "line_start": 20,
+          "line_end": 32,
+          "sha256": "7f0070965501b417a91fc39506d7fce6d3bc01dc812db905a524e6eda49060ec",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/adiru_memory.aadl#L20-L32",
+          "span_sha256": "a87373f3a176d50c8fe34a3b8da4c9717b0be0ced0396e470d9477c5155d166c"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/model.aadl",
+          "line_start": 84,
+          "line_end": 89,
+          "sha256": "b37b2e19623ca8b61f49e9b9ca3ea84c24142fb6b37037291bbf428970a1cff8",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/model.aadl#L84-L89",
+          "span_sha256": "5b1b9b373c677ee39fe3edf28fc3758465f2bf1d458804ade26a5d83c5f313fb"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "ADIRU-DR-004",
+      "text": "Use distinct data types accData, errorData and actionData for measurements, error reports and corrective commands. In this reference example each derives from an unsigned integer representation with modeled size four bytes and C type mapping unsigned long int; target ABI compatibility must be checked before code generation.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/shm_datatype.aadl",
+          "line_start": 8,
+          "line_end": 27,
+          "sha256": "df391390b38464c9dc66474ade13454ead0d04979c7a9f565c34d69c4033ef8d",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/shm_datatype.aadl#L8-L27",
+          "span_sha256": "8c03c5b25f9095140c93f3c7dcf34211eca6806a7f2a90560b8fb986a59ec6f0"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "ADIRU-DR-005",
+      "text": "Decompose acc_pr into six accelerometer-output threads, acc1 through acc6. Give each thread one accelerometer data output and one incoming event-data corrective-command port, preserving channel identity.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/partitions.aadl",
+          "line_start": 19,
+          "line_end": 60,
+          "sha256": "62ed642bcb62a651d8515710499949b9cbac8d3e1a3b4f240676ebe8b52deb50",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/partitions.aadl#L19-L60",
+          "span_sha256": "95fa2f6150d4ccdcafc42eb090665abd32e1723ee4d7c1f1f9f23bef94a3c8bd"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "ADIRU-DR-006",
+      "text": "Connect each of the six acc_pr measurement outputs to the same-numbered acc_hm_pr measurement input using data-port connections.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/model.aadl",
+          "line_start": 46,
+          "line_end": 52,
+          "sha256": "b37b2e19623ca8b61f49e9b9ca3ea84c24142fb6b37037291bbf428970a1cff8",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/model.aadl#L46-L52",
+          "span_sha256": "91d98ef1300a370a7cc554b76d87e69a5fc2ff7baa669a0907d21a0904339626"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "ADIRU-DR-007",
+      "text": "Connect the six corrective event-data outputs of acc_hm_pr back to the same-numbered command inputs of acc_pr; retain six distinct feedback paths.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/model.aadl",
+          "line_start": 54,
+          "line_end": 59,
+          "sha256": "b37b2e19623ca8b61f49e9b9ca3ea84c24142fb6b37037291bbf428970a1cff8",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/model.aadl#L54-L59",
+          "span_sha256": "dc8e2a51339c62571aac29dd6239c1c1aeaacd591e38931fe08d21ec3c0925a7"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/partitions.aadl",
+          "line_start": 30,
+          "line_end": 35,
+          "sha256": "62ed642bcb62a651d8515710499949b9cbac8d3e1a3b4f240676ebe8b52deb50",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/partitions.aadl#L30-L35",
+          "span_sha256": "3bc9ec2395ffb479e876792e1b801b1d556107d8d98d4103a50a9e34a5300820"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/partitions.aadl",
+          "line_start": 156,
+          "line_end": 161,
+          "sha256": "62ed642bcb62a651d8515710499949b9cbac8d3e1a3b4f240676ebe8b52deb50",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/partitions.aadl#L156-L161",
+          "span_sha256": "322c3df632bb93b1d54000b79995c4b2975002396d32891f4956c393880f4f68"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "ADIRU-DR-008",
+      "text": "Implement acc_hm_pr with one health-monitor thread accepting six measurement values, producing six validated measurement values, issuing six per-accelerometer action events, receiving a system-level action, and emitting an error event.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/partitions.aadl",
+          "line_start": 137,
+          "line_end": 191,
+          "sha256": "62ed642bcb62a651d8515710499949b9cbac8d3e1a3b4f240676ebe8b52deb50",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/partitions.aadl#L137-L191",
+          "span_sha256": "e8a2ccce82b88c52c0cd4be5229b579f483ce1c42f070c181cf58de60ecc3202"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 218,
+          "line_end": 242,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L218-L242",
+          "span_sha256": "d14425ac4024eb7ffef9cc3d4d7ae9ed66d6ef2cc633f8a3a33b58982ccfd101"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "ADIRU-DR-009",
+      "text": "Connect each of the six validated outputs from acc_hm_pr to the corresponding input of ADIRUp_pr, keeping health-monitoring mediation between the sensor-emulation and computation processes.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/model.aadl",
+          "line_start": 61,
+          "line_end": 66,
+          "sha256": "b37b2e19623ca8b61f49e9b9ca3ea84c24142fb6b37037291bbf428970a1cff8",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/model.aadl#L61-L66",
+          "span_sha256": "8895eed1f3cebeb727c82b96ab473585647aee88327beed604ab6646dd2c08e4"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "ADIRU-DR-010",
+      "text": "Implement ADIRUp_pr with one ADIRUp_HM thread and one ADIRUp_solve thread. Route its six incoming measurements through ADIRUp_HM and then through six distinct data connections into the solver. Do not add the commented-out second solver.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/partitions.aadl",
+          "line_start": 242,
+          "line_end": 280,
+          "sha256": "62ed642bcb62a651d8515710499949b9cbac8d3e1a3b4f240676ebe8b52deb50",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/partitions.aadl#L242-L280",
+          "span_sha256": "ea644f3f7330f6ac1c01ea85d3290333f9a7f0bac59250f095720ad4e6df7e60"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "ADIRU-DR-011",
+      "text": "Provide one error event from acc_hm_pr and one error event from ADIRUp_pr to separate inputs of SHM_pr. Provide a corrective-action event path from SHM_pr to each of those two originating processes.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/model.aadl",
+          "line_start": 68,
+          "line_end": 72,
+          "sha256": "b37b2e19623ca8b61f49e9b9ca3ea84c24142fb6b37037291bbf428970a1cff8",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/model.aadl#L68-L72",
+          "span_sha256": "edd21a3dcee9085f0f5c8feedd6d4b115fb570b51adfbcfa52a183479542d1df"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/partitions.aadl",
+          "line_start": 251,
+          "line_end": 253,
+          "sha256": "62ed642bcb62a651d8515710499949b9cbac8d3e1a3b4f240676ebe8b52deb50",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/partitions.aadl#L251-L253",
+          "span_sha256": "68d7b7a1647c1fddc932d9dd0ca2a3f6b4c36ab1431b02b95185e70303da9a28"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/partitions.aadl",
+          "line_start": 322,
+          "line_end": 327,
+          "sha256": "62ed642bcb62a651d8515710499949b9cbac8d3e1a3b4f240676ebe8b52deb50",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/partitions.aadl#L322-L327",
+          "span_sha256": "78c4b1937059b373d8b258cd9feb43efedc51550d2cf5439593abaa3b16703f4"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/partitions.aadl",
+          "line_start": 356,
+          "line_end": 357,
+          "sha256": "62ed642bcb62a651d8515710499949b9cbac8d3e1a3b4f240676ebe8b52deb50",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/partitions.aadl#L356-L357",
+          "span_sha256": "eea676d3d5f92b8df2b7c82271c95bc1fabe1712224b8d76ef19f4ebd1bc02a4"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "ADIRU-DR-012",
+      "text": "Decompose SHM_pr into an alarm aggregator, a diagnosis engine and a mitigation actor. Route both incoming error-event streams into the aggregator, then pass aggregated error data to the diagnosis engine and diagnosis results to the mitigation actor.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/partitions.aadl",
+          "line_start": 360,
+          "line_end": 367,
+          "sha256": "62ed642bcb62a651d8515710499949b9cbac8d3e1a3b4f240676ebe8b52deb50",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/partitions.aadl#L360-L367",
+          "span_sha256": "d92203424250a4c18f3ad369d01460b394a62f5e98c8025b7c40a3c26421e2fc"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/partitions.aadl",
+          "line_start": 399,
+          "line_end": 400,
+          "sha256": "62ed642bcb62a651d8515710499949b9cbac8d3e1a3b4f240676ebe8b52deb50",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/partitions.aadl#L399-L400",
+          "span_sha256": "8146c185f448ff9d37c0b145261e0d84f5fdb78f87fc572fc46fb15640a1e3c0"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "ADIRU-DR-013",
+      "text": "Broadcast the mitigation actor's action output to the two system-level corrective-action ports: one targeting accelerometer health monitoring and one targeting ADIRU computation health monitoring.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/partitions.aadl",
+          "line_start": 384,
+          "line_end": 385,
+          "sha256": "62ed642bcb62a651d8515710499949b9cbac8d3e1a3b4f240676ebe8b52deb50",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/partitions.aadl#L384-L385",
+          "span_sha256": "2a30c1fa06b71b5e777f99ca7fe651dd38cef6745c4360d8f5f4ae7e4d146d2c"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "ADIRU-DR-014",
+      "text": "Model measurement transport as data ports and error/action transport as event-data ports across the four process boundaries. Preserve this distinction when mapping the example to ARINC653 sampling versus queuing communication services.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/partitions.aadl",
+          "line_start": 19,
+          "line_end": 35,
+          "sha256": "62ed642bcb62a651d8515710499949b9cbac8d3e1a3b4f240676ebe8b52deb50",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/partitions.aadl#L19-L35",
+          "span_sha256": "5c91f02fb72c7c88df6bd9ac8a4693752633b5243a181ffcd065c27e149d9d34"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/partitions.aadl",
+          "line_start": 137,
+          "line_end": 161,
+          "sha256": "62ed642bcb62a651d8515710499949b9cbac8d3e1a3b4f240676ebe8b52deb50",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/partitions.aadl#L137-L161",
+          "span_sha256": "ca61003084bc3d24b47dbdca86a2378ad421f06961209b76191a328364eafda1"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/partitions.aadl",
+          "line_start": 242,
+          "line_end": 253,
+          "sha256": "62ed642bcb62a651d8515710499949b9cbac8d3e1a3b4f240676ebe8b52deb50",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/partitions.aadl#L242-L253",
+          "span_sha256": "80258470c1f763ca946e4882c878d72bb3832db0afe6bda92844c9e316763dda"
+        }
+      ],
+      "note": "The port categories are source facts; the author SEI article corroborates the ARINC653 sampling/queuing mapping. No specific queue capacity or overflow policy is supplied."
+    },
+    {
+      "id": "ADIRU-DR-015",
+      "text": "Use periodic dispatch for all twelve active threads. The six accelerometer-output threads, accelerometer health monitor, ADIRU health monitor and solver have a modeled period of 4000 ms; the alarm aggregator, diagnosis engine and mitigation actor have a modeled period of 3000 ms. These are illustrative thread periods, not established response-time guarantees.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 15,
+          "line_end": 28,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L15-L28",
+          "span_sha256": "d0a20ed8d5d18e37c5a96672ce54f2af9abd9c118accc27f2900ab592d393d71"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 47,
+          "line_end": 62,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L47-L62",
+          "span_sha256": "cafd315f58265e4e51a6465e729dfcad26568971e826ca25b1b6e2fcafcbb584"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 82,
+          "line_end": 98,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L82-L98",
+          "span_sha256": "3020d3231d71b69d5b598fbe5b925b8d12a02b27e3721aad5c346fc4fb2638ca"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 117,
+          "line_end": 132,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L117-L132",
+          "span_sha256": "33de2dfea79c3219aaf2df05df95a12f5042f66d7a86d32ef3fc0d209aacbba7"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 152,
+          "line_end": 165,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L152-L165",
+          "span_sha256": "d9b3ed1a8d40cb09ab5b1d7db7b3cbbf8753ab81ce3e8c5010df6b3ceeb8403d"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 185,
+          "line_end": 198,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L185-L198",
+          "span_sha256": "27ae3da5aaeee6122a5d1d79dc4728f95799d2c1727ab58c06d19a251f65e1d1"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 243,
+          "line_end": 251,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L243-L251",
+          "span_sha256": "93c27bd2b0cca3da0d0c4d6d0ecb19ae2a3a6957cb51573d120f6ed4cd41853a"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 294,
+          "line_end": 302,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L294-L302",
+          "span_sha256": "e3c926fd78851d2ed7f6cd9f03d2e42447a8947db0aeb215aa34693f335fe99a"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 336,
+          "line_end": 344,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L336-L344",
+          "span_sha256": "0adaee307be8a8e66237be598d45a83113cd9378050d398a39b762e471d0c8f6"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 392,
+          "line_end": 400,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L392-L400",
+          "span_sha256": "e1c25d8e095942e92bbba9564562ceed2465ea88a866201a40b95f367b5f209a"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 418,
+          "line_end": 426,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L418-L426",
+          "span_sha256": "d7cb583e53e2ec20e8e0a14bec11b3cbe1785bc62b1ab7f31eace604a6b84a4c"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 458,
+          "line_end": 466,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L458-L466",
+          "span_sha256": "012b46a98ba382e6ab3d6a33a79c52b15871fbe2741a830142e4e63b23801936"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "ADIRU-DR-016",
+      "text": "Retain the example's relative thread priorities: accelerometer 1 uses 2, accelerometers 2-6 use 1, accelerometer health monitoring uses 3, the solver uses 4, ADIRU health monitoring uses 5, and the alarm/diagnosis/mitigation pipeline uses 6/7/8 respectively. Interpret priority direction according to the selected runtime rather than assuming a universal scheduler convention.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 19,
+          "line_end": 27,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L19-L27",
+          "span_sha256": "05cada508e1b8838a48b097f9ef107cd2c1ac59045baf94a3a4ad359d23ca25d"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 54,
+          "line_end": 61,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L54-L61",
+          "span_sha256": "14d6ce1dd557f8e138efe7448c695ae4e01f381d0a38d1d7031d8bdc5bd4a403"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 82,
+          "line_end": 98,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L82-L98",
+          "span_sha256": "3020d3231d71b69d5b598fbe5b925b8d12a02b27e3721aad5c346fc4fb2638ca"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 124,
+          "line_end": 131,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L124-L131",
+          "span_sha256": "14d6ce1dd557f8e138efe7448c695ae4e01f381d0a38d1d7031d8bdc5bd4a403"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 157,
+          "line_end": 164,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L157-L164",
+          "span_sha256": "bfa3cf3fbab6c8e9e6c26cb7655046c8134a1679407ba2d25a1a743838e78f52"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 190,
+          "line_end": 197,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L190-L197",
+          "span_sha256": "14d6ce1dd557f8e138efe7448c695ae4e01f381d0a38d1d7031d8bdc5bd4a403"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 243,
+          "line_end": 251,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L243-L251",
+          "span_sha256": "93c27bd2b0cca3da0d0c4d6d0ecb19ae2a3a6957cb51573d120f6ed4cd41853a"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 294,
+          "line_end": 302,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L294-L302",
+          "span_sha256": "e3c926fd78851d2ed7f6cd9f03d2e42447a8947db0aeb215aa34693f335fe99a"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 336,
+          "line_end": 344,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L336-L344",
+          "span_sha256": "0adaee307be8a8e66237be598d45a83113cd9378050d398a39b762e471d0c8f6"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 392,
+          "line_end": 400,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L392-L400",
+          "span_sha256": "e1c25d8e095942e92bbba9564562ceed2465ea88a866201a40b95f367b5f209a"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 418,
+          "line_end": 426,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L418-L426",
+          "span_sha256": "d7cb583e53e2ec20e8e0a14bec11b3cbe1785bc62b1ab7f31eace604a6b84a4c"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 458,
+          "line_end": 466,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L458-L466",
+          "span_sha256": "012b46a98ba382e6ab3d6a33a79c52b15871fbe2741a830142e4e63b23801936"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "ADIRU-DR-017",
+      "text": "Represent ARINC653 module scheduling as a separate processor-level configuration from thread periods, with four individually identifiable partition slots in the order acc, acc_hm, adirup and shm. Do not assert that the imported numeric slot budgets satisfy thread execution demands.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/adiru_processor.aadl",
+          "line_start": 35,
+          "line_end": 45,
+          "sha256": "aa816fc7163fa38be9e469f83ce8f5faaa2a5f7c7037a48eeeac2f9247672560",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/adiru_processor.aadl#L35-L45",
+          "span_sha256": "a1cce5b64d6badac6c58d5b4676fa9aac512ea1e9e11b05c17ae52893011d096"
+        }
+      ],
+      "note": "The original has a 150 ms major frame and four 1 ms slots; those numbers are preserved as source observations in limitations, not certified budgets."
+    },
+    {
+      "id": "ADIRU-DR-018",
+      "text": "Retain a processor health-monitoring configuration that distinguishes deadline miss, application error, numeric error, illegal request, stack overflow, memory violation, hardware fault and power failure at process level. Recovery actions require an explicit scenario choice; the original all-ignore table is not adopted as a fault-tolerance requirement.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/adiru_processor.aadl",
+          "line_start": 47,
+          "line_end": 69,
+          "sha256": "aa816fc7163fa38be9e469f83ce8f5faaa2a5f7c7037a48eeeac2f9247672560",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/adiru_processor.aadl#L47-L69",
+          "span_sha256": "e03902e448c6f058015684fc2ba5c326b0d4b369e115dc3d37407530b2bb95b0"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "ADIRU-DR-019",
+      "text": "Associate the six accelerometer-output thread calls with C entry points acc1dataoutput through acc6dataoutput, and the accelerometer-health-monitor call with acchm_monitor, using the acc_code object-code group.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/subprograms.aadl",
+          "line_start": 14,
+          "line_end": 108,
+          "sha256": "fb99e84a508118c864ac7e24872e6586b2a503c1a645043b2951577fadcc3fb5",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/subprograms.aadl#L14-L108",
+          "span_sha256": "bcb25c414752c2407ce17a1adaf272a5745bb704316ffe9f742046b7d1fba2f2"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 30,
+          "line_end": 36,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L30-L36",
+          "span_sha256": "312c082cd14961456813e69862d53660d065e515ea283ddda2f1981d9e577e07"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 254,
+          "line_end": 282,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L254-L282",
+          "span_sha256": "19ec118a38dcbfc0a198e5a35c1ee837fb264dc338fbdf2066e4b68f8d7e2aed"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "ADIRU-DR-020",
+      "text": "Associate the solver and ADIRU health-monitor calls with C entry points solve and adirup_hm in the adirup_code object-code group. Associate the system-health pipeline with alarm_aggregator, diagnosis_engine and mitigation_actor in the shm_code object-code group.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/subprograms.aadl",
+          "line_start": 112,
+          "line_end": 181,
+          "sha256": "fb99e84a508118c864ac7e24872e6586b2a503c1a645043b2951577fadcc3fb5",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/subprograms.aadl#L112-L181",
+          "span_sha256": "f364e916538aa5dd7139949ff2faeb627644921756a8da33f788a9e01f1aa116"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "ADIRU-DR-021",
+      "text": "Keep platform adaptations as distinct extensions of the common base architecture: ADIRU::ADIRU.DeOS and ADIRU::ADIRU.VxWorks653. Select one platform variant for a deployment; do not require both platform configurations to hold in the same instance.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/model.aadl",
+          "line_start": 109,
+          "line_end": 149,
+          "sha256": "b37b2e19623ca8b61f49e9b9ca3ea84c24142fb6b37037291bbf428970a1cff8",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/model.aadl#L109-L149",
+          "span_sha256": "2e7614f7747f6527cfdaadd98df82652dbdbcf01009ad0deaa97d0bdc7fe0106"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "ADIRU-DR-022",
+      "text": "In the DeOS variant, identify the partition executables as adiru-acc.exe, adiru-acc-hm.exe, adiru-p.exe and adiru-shm.exe for part1 through part4. Treat its numeric partition-period and execution-time settings as unvalidated example configuration pending workload and schedule reconciliation.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/model.aadl",
+          "line_start": 113,
+          "line_end": 129,
+          "sha256": "b37b2e19623ca8b61f49e9b9ca3ea84c24142fb6b37037291bbf428970a1cff8",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/model.aadl#L113-L129",
+          "span_sha256": "4f829dc4da26c2e10ca6c6ff4007c92923a9575a6f6507b9bb71d91c0793b70e"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "ADIRU-DR-023",
+      "text": "In the VxWorks653 variant, identify the partition images as adiru_acc, adiru_acc_hm, adiru_p and adiru_shm for part1 through part4; preserve the shared four-process architecture and mappings inherited from the base.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/model.aadl",
+          "line_start": 140,
+          "line_end": 149,
+          "sha256": "b37b2e19623ca8b61f49e9b9ca3ea84c24142fb6b37037291bbf428970a1cff8",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/model.aadl#L140-L149",
+          "span_sha256": "b789ea99c12c9c84ed4ff79158f650c7c657045beb66019b883d11909332c4ec"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "ADIRU-DR-024",
+      "text": "Keep ADIRU::ADIRU.EMV2 as a distinct analysis extension of the base. Add six physical accelerometer device instances and refine the accelerometer process to accept six same-numbered device-input paths, rather than replacing the base emulation model for every scenario.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/model.aadl",
+          "line_start": 151,
+          "line_end": 177,
+          "sha256": "b37b2e19623ca8b61f49e9b9ca3ea84c24142fb6b37037291bbf428970a1cff8",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/model.aadl#L151-L177",
+          "span_sha256": "d01580a7edb0aba31d464a9ed38ddb091a52d73aedb59db354f355d90d049a6e"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/partitions.aadl",
+          "line_start": 63,
+          "line_end": 98,
+          "sha256": "62ed642bcb62a651d8515710499949b9cbac8d3e1a3b4f240676ebe8b52deb50",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/partitions.aadl#L63-L98",
+          "span_sha256": "df9a6396b36a92804b7b0cef55e68fe007f3ca8b29d4678e26345688ebb3c6d1"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 38,
+          "line_end": 44,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "The extended thread adds an input without connecting it to the inherited C call.",
+          "span_sha256": "e3489cd4659eb2d70cb708b031069027de9d2be4e5591c34bb4ba2203d4a93ef",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L38-L44"
+        }
+      ],
+      "note": "Physical-device data reaches a new thread input, but that input is not connected to the inherited C subprogram call. These are structural/EMV2 paths, not an established functional device-to-simulation pipeline."
+    },
+    {
+      "id": "ADIRU-DR-025",
+      "text": "For the EMV2 variant, represent erroneous accelerometer values as an outgoing ValueErroneous propagation from each accelerometer device. Associate the device failure state with this error source and preserve the in-flight erroneous-value hazard description.",
+      "origin_kind": "embedded_contract",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/adiru_devices.aadl",
+          "line_start": 7,
+          "line_end": 36,
+          "sha256": "555b59c815d2ed9d9909ad9b3b7e45f7eaa735f640a276db91970edfa45286e0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/adiru_devices.aadl#L7-L36",
+          "span_sha256": "d636424307108dfed1c2c3844deb72324e83c35f56bb587908a1f246b69155df"
+        }
+      ],
+      "note": "This is an error-model declaration, not an empirically validated failure-rate or safety claim."
+    },
+    {
+      "id": "ADIRU-DR-026",
+      "text": "In the EMV2 variant, retain six separate error-propagation paths through the refined accelerometer process, from each physical-device input to the corresponding simulated-process output.",
+      "origin_kind": "embedded_contract",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/partitions.aadl",
+          "line_start": 100,
+          "line_end": 124,
+          "sha256": "62ed642bcb62a651d8515710499949b9cbac8d3e1a3b4f240676ebe8b52deb50",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/partitions.aadl#L100-L124",
+          "span_sha256": "4cc77039338a5e27ee874c4e42bb22b8d47c798d19b193034500afc2d67bbec2"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "ADIRU-DR-027",
+      "text": "Model accelerometer-health-monitor error detection on each of its six ValueErroneous inputs, with an alarm at acc_error_out and a transition from operational to failed. The root composite error model shall expose the accelerometer-health-monitor failed state as the system failed state.",
+      "origin_kind": "embedded_contract",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/partitions.aadl",
+          "line_start": 193,
+          "line_end": 229,
+          "sha256": "62ed642bcb62a651d8515710499949b9cbac8d3e1a3b4f240676ebe8b52deb50",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/partitions.aadl#L193-L229",
+          "span_sha256": "d5e272d4a971e5d5711852edc0a918a7df563cc97072292c260a8790c3b61679"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/model.aadl",
+          "line_start": 178,
+          "line_end": 186,
+          "sha256": "b37b2e19623ca8b61f49e9b9ca3ea84c24142fb6b37037291bbf428970a1cff8",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/model.aadl#L178-L186",
+          "span_sha256": "e7111314b9857505da62c7ffdfaed33f2db2af8abe5b45ff0c0875ac667e3382"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "ADIRU-DR-028",
+      "text": "Keep the measurement-computation interface scoped to the six solver inputs in this example. The architecture does not specify a complete inertial-navigation output interface or a numerical navigation algorithm, so those functions are outside this derived requirement set.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/threads.aadl",
+          "line_start": 285,
+          "line_end": 317,
+          "sha256": "4e7744b1b29f793d9c5effd3a68ac876943564b3a81476c412bec1fa4a5bc8b0",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/threads.aadl#L285-L317",
+          "span_sha256": "638ae846f582987017ff4581cc54d52f9a202aef4252d05bf7ddcdf72e34a0e7"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/adiru/subprograms.aadl",
+          "line_start": 112,
+          "line_end": 126,
+          "sha256": "fb99e84a508118c864ac7e24872e6586b2a503c1a645043b2951577fadcc3fb5",
+          "note": "",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/adiru/subprograms.aadl#L112-L126",
+          "span_sha256": "864893f6615dcc37d3d5d680d6bfa5c5fdc47f2ddfec0de7cdfd0ebcc6c56576"
+        }
+      ],
+      "note": ""
+    }
+  ],
+  "schema_version": 1,
+  "requirement_origin": "derived_example",
+  "is_gold_reference": false,
+  "root_classifiers": [
+    "ADIRU::ADIRU.impl",
+    "ADIRU::ADIRU.DeOS",
+    "ADIRU::ADIRU.VxWorks653",
+    "ADIRU::ADIRU.EMV2"
+  ],
+  "author_requirement_meaning": "Paraphrased author prose embedded in source models; not an independent original specification.",
+  "curation_method": "AI-assisted architecture reconstruction with line-level source review; no claim of complete functional coverage or contract proof."
+}

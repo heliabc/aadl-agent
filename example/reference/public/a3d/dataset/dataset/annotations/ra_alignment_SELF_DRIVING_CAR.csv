@@ -1,0 +1,182 @@
+AADL_model,component_name,normalized_name,category,ports,ra_component
+AADL-Self-driving-car_integration_integration_functional_2,camera,camera,device,"[""picture""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_2,radar1,radar1,device,"[""distance""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_2,radar2,radar2,device,"[""distance""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_2,traffic_lane_sensor,traffic lane sensor,device,"[""lane_crossed""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_2,induction_speed_sensor,induction speed sensor,device,"[""speed""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_2,optical_speed_sensor,optical speed sensor,device,"[""speed""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_2,acceleration_pedal,acceleration pedal,device,"[""speed""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_2,brake,brake,device,"[""brake_cmd""]",Mobile_Platform_Actuators
+AADL-Self-driving-car_integration_integration_functional_2,accelerator,accelerator,device,"[""accelerate_cmd""]",Mobile_Platform_Actuators
+AADL-Self-driving-car_integration_integration_functional_2,panel,panel,device,"[""current_speed"", ""desired_speed""]",UI_UX_and_Infotainment
+AADL-Self-driving-car_integration_integration_functional_2,data_acquisition,data acquisition,process,"[""picture"", ""distance1"", ""distance2"", ""lane_change"", ""speed1"", ""speed2"", ""obstacle_detected"", ""distance_result"", ""overtaking_active"", ""speed_result""]",Data_Collection
+AADL-Self-driving-car_integration_integration_functional_2,thr_image_analysis,thr image analysis,thread,"[""picture"", ""obstacle_detected""]",ML_AI_DL_Algorithms
+AADL-Self-driving-car_integration_integration_functional_2,thr_distance_voter,thr distance voter,thread,"[""distance1"", ""distance2"", ""distance_result""]",Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_functional_2,thr_overtaking_detection,thr overtaking detection,thread,"[""lane_change"", ""overtaking_active""]",ML_AI_DL_Algorithms
+AADL-Self-driving-car_integration_integration_functional_2,thr_speed_voter,thr speed voter,thread,"[""speed1"", ""speed2"", ""speed_result""]",Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_functional_2,panel_controller,panel controller,process,"[""current_speed"", ""desired_speed"", ""current_speed_result"", ""desired_speed_result""]",UI_UX_and_Infotainment/Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_functional_2,speed_controller,speed controller,process,"[""obstacle_detected"", ""current_distance"", ""overtaking_active"", ""current_speed"", ""desired_speed"", ""brake_cmd"", ""accelerate_cmd""]",Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_hardware_2,camera,camera,device,"[""picture""]",Sensors
+AADL-Self-driving-car_integration_integration_hardware_2,radar1,radar1,device,"[""distance""]",Sensors
+AADL-Self-driving-car_integration_integration_hardware_2,radar2,radar2,device,"[""distance""]",Sensors
+AADL-Self-driving-car_integration_integration_hardware_2,traffic_lane_sensor,traffic lane sensor,device,"[""lane_crossed""]",Sensors
+AADL-Self-driving-car_integration_integration_hardware_2,induction_speed_sensor,induction speed sensor,device,"[""speed""]",Sensors
+AADL-Self-driving-car_integration_integration_hardware_2,optical_speed_sensor,optical speed sensor,device,"[""speed""]",Sensors
+AADL-Self-driving-car_integration_integration_hardware_2,acceleration_pedal,acceleration pedal,device,"[""speed""]",Sensors
+AADL-Self-driving-car_integration_integration_hardware_2,brake,brake,device,"[""brake_cmd""]",Mobile_Platform_Actuators
+AADL-Self-driving-car_integration_integration_hardware_2,accelerator,accelerator,device,"[""accelerate_cmd""]",Mobile_Platform_Actuators
+AADL-Self-driving-car_integration_integration_hardware_2,panel,panel,device,"[""current_speed"", ""desired_speed""]",UI_UX_and_Infotainment
+AADL-Self-driving-car_integration_integration_hardware_2,data_acquisition,data acquisition,process,"[""picture"", ""distance1"", ""distance2"", ""lane_change"", ""speed1"", ""speed2"", ""obstacle_detected"", ""distance_result"", ""overtaking_active"", ""speed_result""]",Data_Collection
+AADL-Self-driving-car_integration_integration_hardware_2,thr_image_analysis,thr image analysis,thread,"[""picture"", ""obstacle_detected""]",ML_AI_DL_Algorithms
+AADL-Self-driving-car_integration_integration_hardware_2,thr_distance_voter,thr distance voter,thread,"[""distance1"", ""distance2"", ""distance_result""]",Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_hardware_2,thr_overtaking_detection,thr overtaking detection,thread,"[""lane_change"", ""overtaking_active""]",ML_AI_DL_Algorithms
+AADL-Self-driving-car_integration_integration_hardware_2,thr_speed_voter,thr speed voter,thread,"[""speed1"", ""speed2"", ""speed_result""]",Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_hardware_2,panel_controller,panel controller,process,"[""current_speed"", ""desired_speed"", ""current_speed_result"", ""desired_speed_result""]",UI_UX_and_Infotainment/Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_hardware_2,speed_controller,speed controller,process,"[""obstacle_detected"", ""current_distance"", ""overtaking_active"", ""current_speed"", ""desired_speed"", ""brake_cmd"", ""accelerate_cmd""]",Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_hardware_2,can1,can1,bus,[],Internal_Networking_Interfaces
+AADL-Self-driving-car_integration_integration_hardware_2,can2,can2,bus,[],Internal_Networking_Interfaces
+AADL-Self-driving-car_integration_integration_hardware_2,can3,can3,bus,[],Internal_Networking_Interfaces
+AADL-Self-driving-car_integration_integration_hardware_2,cpu1,cpu1,processor,"[""socket1"", ""socket2""]",Processing_Units
+AADL-Self-driving-car_integration_integration_hardware_2,cpu2,cpu2,processor,"[""socket1"", ""socket2""]",Processing_Units
+AADL-Self-driving-car_integration_integration_functional_4,camera,camera,device,"[""picture""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_4,radar1,radar1,device,"[""distance""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_4,radar2,radar2,device,"[""distance""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_4,traffic_lane_sensor,traffic lane sensor,device,"[""lane_crossed""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_4,induction_speed_sensor,induction speed sensor,device,"[""speed""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_4,optical_speed_sensor,optical speed sensor,device,"[""speed""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_4,acceleration_pedal,acceleration pedal,device,"[""speed""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_4,brake,brake,device,"[""brake_cmd""]",Mobile_Platform_Actuators
+AADL-Self-driving-car_integration_integration_functional_4,accelerator,accelerator,device,"[""accelerate_cmd""]",Mobile_Platform_Actuators
+AADL-Self-driving-car_integration_integration_functional_4,panel,panel,device,"[""current_speed"", ""desired_speed""]",UI_UX_and_Infotainment
+AADL-Self-driving-car_integration_integration_functional_4,data_acquisition,data acquisition,process,"[""picture"", ""distance1"", ""distance2"", ""lane_change"", ""speed1"", ""speed2"", ""obstacle_detected"", ""distance_result"", ""overtaking_active"", ""speed_result""]",Data_Collection
+AADL-Self-driving-car_integration_integration_functional_4,thr_image_analysis,thr image analysis,thread,"[""picture"", ""obstacle_detected""]",ML_AI_DL_Algorithms
+AADL-Self-driving-car_integration_integration_functional_4,thr_distance_voter,thr distance voter,thread,"[""distance1"", ""distance2"", ""distance_result""]",Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_functional_4,thr_overtaking_detection,thr overtaking detection,thread,"[""lane_change"", ""overtaking_active""]",ML_AI_DL_Algorithms
+AADL-Self-driving-car_integration_integration_functional_4,thr_speed_voter,thr speed voter,thread,"[""speed1"", ""speed2"", ""speed_result""]",Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_functional_4,panel_controller,panel controller,process,"[""current_speed"", ""desired_speed"", ""current_speed_result"", ""desired_speed_result""]",UI_UX_and_Infotainment/Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_functional_4,speed_controller,speed controller,process,"[""obstacle_detected"", ""current_distance"", ""overtaking_active"", ""current_speed"", ""desired_speed"", ""brake_cmd"", ""accelerate_cmd""]",Real_time_and_Critical_Control_Software
+AASPE_automotive_system_car_cherokee_1,SYSTEM,system,system,"[""cellular_access"", ""wifi_access""]",V2X_Cloud_Comms
+AASPE_automotive_system_car_cherokee_1,can_ihs,can ihs,bus,[],Internal_Networking_Interfaces
+AASPE_automotive_system_car_cherokee_1,can_c,can c,bus,[],Internal_Networking_Interfaces
+AASPE_automotive_system_car_cherokee_1,wifi,wifi,bus,[],Internal_Networking_Interfaces/V2X_Cloud_Comms
+AASPE_automotive_system_car_cherokee_1,radio,radio,system,"[""can_ihs_socket"", ""can_c_socket"", ""wifi_access"", ""cellular_access""]",UI_UX_and_Infotainment/V2X_Cloud_Comms/Internal_Networking_Interfaces
+AASPE_automotive_system_car_cherokee_1,hvac,hvac,system,"[""can_socket""]",UI_UX_and_Infotainment
+AASPE_automotive_system_car_cherokee_1,amplifier,amplifier,system,"[""can_socket""]",UI_UX_and_Infotainment
+AASPE_automotive_system_car_cherokee_1,bcm,bcm,system,"[""can_socket""]",Real_time_and_Critical_Control_Software
+AASPE_automotive_system_car_cherokee_1,hsm,hsm,system,"[""can_socket""]",Real_time_and_Critical_Control_Software
+AASPE_automotive_system_car_cherokee_1,abs,abs,system,"[""can_socket""]",Mobile_Platform_Actuators/Real_time_and_Critical_Control_Software
+AASPE_automotive_system_car_cherokee_1,acc,acc,system,"[""can_socket""]",Real_time_and_Critical_Control_Software/ML_AI_DL_Algorithms
+AASPE_automotive_system_car_cherokee_1,eps,eps,system,"[""can_socket""]",Mobile_Platform_Actuators/Real_time_and_Critical_Control_Software
+AASPE_automotive_system_car_cherokee_1,epb,epb,system,"[""can_socket""]",Mobile_Platform_Actuators/Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_functional_3,camera,camera,device,"[""picture""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_3,radar1,radar1,device,"[""distance""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_3,radar2,radar2,device,"[""distance""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_3,traffic_lane_sensor,traffic lane sensor,device,"[""lane_crossed""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_3,induction_speed_sensor,induction speed sensor,device,"[""speed""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_3,optical_speed_sensor,optical speed sensor,device,"[""speed""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_3,acceleration_pedal,acceleration pedal,device,"[""speed""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_3,brake,brake,device,"[""brake_cmd""]",Mobile_Platform_Actuators
+AADL-Self-driving-car_integration_integration_functional_3,accelerator,accelerator,device,"[""accelerate_cmd""]",Mobile_Platform_Actuators
+AADL-Self-driving-car_integration_integration_functional_3,panel,panel,device,"[""current_speed"", ""desired_speed""]",UI_UX_and_Infotainment
+AADL-Self-driving-car_integration_integration_functional_3,data_acquisition,data acquisition,process,"[""picture"", ""distance1"", ""distance2"", ""lane_change"", ""speed1"", ""speed2"", ""obstacle_detected"", ""distance_result"", ""overtaking_active"", ""speed_result""]",Data_Collection
+AADL-Self-driving-car_integration_integration_functional_3,thr_image_analysis,thr image analysis,thread,"[""picture"", ""obstacle_detected""]",ML_AI_DL_Algorithms
+AADL-Self-driving-car_integration_integration_functional_3,thr_distance_voter,thr distance voter,thread,"[""distance1"", ""distance2"", ""distance_result""]",Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_functional_3,thr_overtaking_detection,thr overtaking detection,thread,"[""lane_change"", ""overtaking_active""]",ML_AI_DL_Algorithms
+AADL-Self-driving-car_integration_integration_functional_3,thr_speed_voter,thr speed voter,thread,"[""speed1"", ""speed2"", ""speed_result""]",Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_functional_3,panel_controller,panel controller,process,"[""current_speed"", ""desired_speed"", ""current_speed_result"", ""desired_speed_result""]",UI_UX_and_Infotainment/Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_functional_3,speed_controller,speed controller,process,"[""obstacle_detected"", ""current_distance"", ""overtaking_active"", ""current_speed"", ""desired_speed"", ""brake_cmd"", ""accelerate_cmd""]",Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_hardware_3,camera,camera,device,"[""picture""]",Sensors
+AADL-Self-driving-car_integration_integration_hardware_3,radar1,radar1,device,"[""distance""]",Sensors
+AADL-Self-driving-car_integration_integration_hardware_3,radar2,radar2,device,"[""distance""]",Sensors
+AADL-Self-driving-car_integration_integration_hardware_3,traffic_lane_sensor,traffic lane sensor,device,"[""lane_crossed""]",Sensors
+AADL-Self-driving-car_integration_integration_hardware_3,induction_speed_sensor,induction speed sensor,device,"[""speed""]",Sensors
+AADL-Self-driving-car_integration_integration_hardware_3,optical_speed_sensor,optical speed sensor,device,"[""speed""]",Sensors
+AADL-Self-driving-car_integration_integration_hardware_3,acceleration_pedal,acceleration pedal,device,"[""speed""]",Sensors
+AADL-Self-driving-car_integration_integration_hardware_3,brake,brake,device,"[""brake_cmd""]",Mobile_Platform_Actuators
+AADL-Self-driving-car_integration_integration_hardware_3,accelerator,accelerator,device,"[""accelerate_cmd""]",Mobile_Platform_Actuators
+AADL-Self-driving-car_integration_integration_hardware_3,panel,panel,device,"[""current_speed"", ""desired_speed""]",UI_UX_and_Infotainment
+AADL-Self-driving-car_integration_integration_hardware_3,data_acquisition,data acquisition,process,"[""picture"", ""distance1"", ""distance2"", ""lane_change"", ""speed1"", ""speed2"", ""obstacle_detected"", ""distance_result"", ""overtaking_active"", ""speed_result""]",Data_Collection
+AADL-Self-driving-car_integration_integration_hardware_3,thr_image_analysis,thr image analysis,thread,"[""picture"", ""obstacle_detected""]",ML_AI_DL_Algorithms
+AADL-Self-driving-car_integration_integration_hardware_3,thr_distance_voter,thr distance voter,thread,"[""distance1"", ""distance2"", ""distance_result""]",Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_hardware_3,thr_overtaking_detection,thr overtaking detection,thread,"[""lane_change"", ""overtaking_active""]",ML_AI_DL_Algorithms
+AADL-Self-driving-car_integration_integration_hardware_3,thr_speed_voter,thr speed voter,thread,"[""speed1"", ""speed2"", ""speed_result""]",Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_hardware_3,panel_controller,panel controller,process,"[""current_speed"", ""desired_speed"", ""current_speed_result"", ""desired_speed_result""]",UI_UX_and_Infotainment/Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_hardware_3,speed_controller,speed controller,process,"[""obstacle_detected"", ""current_distance"", ""overtaking_active"", ""current_speed"", ""desired_speed"", ""brake_cmd"", ""accelerate_cmd""]",Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_hardware_3,can1,can1,bus,[],Internal_Networking_Interfaces
+AADL-Self-driving-car_integration_integration_hardware_3,can2,can2,bus,[],Internal_Networking_Interfaces
+AADL-Self-driving-car_integration_integration_hardware_3,can3,can3,bus,[],Internal_Networking_Interfaces
+AADL-Self-driving-car_integration_integration_hardware_3,cpu1,cpu1,processor,"[""socket1"", ""socket2""]",Processing_Units
+AADL-Self-driving-car_integration_integration_hardware_3,cpu2,cpu2,processor,"[""socket1"", ""socket2""]",Processing_Units
+AADL-Self-driving-car_integration_integration_hardware_1,camera,camera,device,"[""picture""]",Sensors
+AADL-Self-driving-car_integration_integration_hardware_1,radar1,radar1,device,"[""distance""]",Sensors
+AADL-Self-driving-car_integration_integration_hardware_1,radar2,radar2,device,"[""distance""]",Sensors
+AADL-Self-driving-car_integration_integration_hardware_1,traffic_lane_sensor,traffic lane sensor,device,"[""lane_crossed""]",Sensors
+AADL-Self-driving-car_integration_integration_hardware_1,induction_speed_sensor,induction speed sensor,device,"[""speed""]",Sensors
+AADL-Self-driving-car_integration_integration_hardware_1,optical_speed_sensor,optical speed sensor,device,"[""speed""]",Sensors
+AADL-Self-driving-car_integration_integration_hardware_1,acceleration_pedal,acceleration pedal,device,"[""speed""]",Sensors
+AADL-Self-driving-car_integration_integration_hardware_1,brake,brake,device,"[""brake_cmd""]",Mobile_Platform_Actuators
+AADL-Self-driving-car_integration_integration_hardware_1,accelerator,accelerator,device,"[""accelerate_cmd""]",Mobile_Platform_Actuators
+AADL-Self-driving-car_integration_integration_hardware_1,panel,panel,device,"[""current_speed"", ""desired_speed""]",UI_UX_and_Infotainment
+AADL-Self-driving-car_integration_integration_hardware_1,data_acquisition,data acquisition,process,"[""picture"", ""distance1"", ""distance2"", ""lane_change"", ""speed1"", ""speed2"", ""obstacle_detected"", ""distance_result"", ""overtaking_active"", ""speed_result""]",Data_Collection
+AADL-Self-driving-car_integration_integration_hardware_1,thr_image_analysis,thr image analysis,thread,"[""picture"", ""obstacle_detected""]",ML_AI_DL_Algorithms
+AADL-Self-driving-car_integration_integration_hardware_1,thr_distance_voter,thr distance voter,thread,"[""distance1"", ""distance2"", ""distance_result""]",Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_hardware_1,thr_overtaking_detection,thr overtaking detection,thread,"[""lane_change"", ""overtaking_active""]",ML_AI_DL_Algorithms
+AADL-Self-driving-car_integration_integration_hardware_1,thr_speed_voter,thr speed voter,thread,"[""speed1"", ""speed2"", ""speed_result""]",Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_hardware_1,panel_controller,panel controller,process,"[""current_speed"", ""desired_speed"", ""current_speed_result"", ""desired_speed_result""]",UI_UX_and_Infotainment/Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_hardware_1,speed_controller,speed controller,process,"[""obstacle_detected"", ""current_distance"", ""overtaking_active"", ""current_speed"", ""desired_speed"", ""brake_cmd"", ""accelerate_cmd""]",Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_hardware_1,can1,can1,bus,[],Internal_Networking_Interfaces
+AADL-Self-driving-car_integration_integration_hardware_1,can2,can2,bus,[],Internal_Networking_Interfaces
+AADL-Self-driving-car_integration_integration_hardware_1,can3,can3,bus,[],Internal_Networking_Interfaces
+AADL-Self-driving-car_integration_integration_hardware_1,cpu1,cpu1,processor,"[""socket1"", ""socket2""]",Processing_Units
+AADL-Self-driving-car_integration_integration_hardware_1,cpu2,cpu2,processor,"[""socket1"", ""socket2""]",Processing_Units
+AADL-Self-driving-car_integration_integration_functional_1,camera,camera,device,"[""picture""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_1,radar1,radar1,device,"[""distance""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_1,radar2,radar2,device,"[""distance""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_1,traffic_lane_sensor,traffic lane sensor,device,"[""lane_crossed""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_1,induction_speed_sensor,induction speed sensor,device,"[""speed""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_1,optical_speed_sensor,optical speed sensor,device,"[""speed""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_1,acceleration_pedal,acceleration pedal,device,"[""speed""]",Sensors
+AADL-Self-driving-car_integration_integration_functional_1,brake,brake,device,"[""brake_cmd""]",Mobile_Platform_Actuators
+AADL-Self-driving-car_integration_integration_functional_1,accelerator,accelerator,device,"[""accelerate_cmd""]",Mobile_Platform_Actuators
+AADL-Self-driving-car_integration_integration_functional_1,panel,panel,device,"[""current_speed"", ""desired_speed""]",UI_UX_and_Infotainment
+AADL-Self-driving-car_integration_integration_functional_1,image_analysis,image analysis,process,"[""picture"", ""obstacle_detected""]",ML_AI_DL_Algorithms
+AADL-Self-driving-car_integration_integration_functional_1,distance_voter,distance voter,process,"[""distance1"", ""distance2"", ""distance_result""]",Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_functional_1,overtaking_detection,overtaking detection,process,"[""lane_change"", ""overtaking_active""]",ML_AI_DL_Algorithms
+AADL-Self-driving-car_integration_integration_functional_1,speed_voter,speed voter,process,"[""speed1"", ""speed2"", ""speed_result""]",Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_functional_1,panel_controller,panel controller,process,"[""current_speed"", ""desired_speed"", ""current_speed_result"", ""desired_speed_result""]",UI_UX_and_Infotainment/Real_time_and_Critical_Control_Software
+AADL-Self-driving-car_integration_integration_functional_1,speed_controller,speed controller,process,"[""obstacle_detected"", ""current_distance"", ""overtaking_active"", ""current_speed"", ""desired_speed"", ""brake_cmd"", ""accelerate_cmd""]",Real_time_and_Critical_Control_Software
+AASPE_automotive_system_integration_i_1,cellular,cellular,bus,[],V2X_Cloud_Comms/Internal_Networking_Interfaces
+AASPE_automotive_system_integration_i_1,internet,internet,bus,[],V2X_Cloud_Comms/Internal_Networking_Interfaces
+AASPE_automotive_system_integration_i_1,router_cel,router cel,device,"[""socket"", ""internet""]",Internal_Networking_Interfaces/V2X_Cloud_Comms
+AASPE_automotive_system_integration_i_1,car,car,system,"[""cellular_access"", ""wifi_access""]",V2X_Cloud_Comms
+AASPE_automotive_system_integration_i_1,can_ihs,can ihs,bus,[],Internal_Networking_Interfaces
+AASPE_automotive_system_integration_i_1,can_c,can c,bus,[],Internal_Networking_Interfaces
+AASPE_automotive_system_integration_i_1,wifi,wifi,bus,[],Internal_Networking_Interfaces/V2X_Cloud_Comms
+AASPE_automotive_system_integration_i_1,radio,radio,system,"[""can_ihs_socket"", ""can_c_socket"", ""wifi_access"", ""cellular_access""]",UI_UX_and_Infotainment/V2X_Cloud_Comms/Internal_Networking_Interfaces
+AASPE_automotive_system_integration_i_1,hvac,hvac,system,"[""can_socket""]",UI_UX_and_Infotainment
+AASPE_automotive_system_integration_i_1,amplifier,amplifier,system,"[""can_socket""]",UI_UX_and_Infotainment
+AASPE_automotive_system_integration_i_1,bcm,bcm,system,"[""can_socket""]",Real_time_and_Critical_Control_Software
+AASPE_automotive_system_integration_i_1,hsm,hsm,system,"[""can_socket""]",Real_time_and_Critical_Control_Software
+AASPE_automotive_system_integration_i_1,abs,abs,system,"[""can_socket""]",Mobile_Platform_Actuators/Real_time_and_Critical_Control_Software
+AASPE_automotive_system_integration_i_1,acc,acc,system,"[""can_socket""]",Real_time_and_Critical_Control_Software/ML_AI_DL_Algorithms
+AASPE_automotive_system_integration_i_1,eps,eps,system,"[""can_socket""]",Mobile_Platform_Actuators/Real_time_and_Critical_Control_Software
+AASPE_automotive_system_integration_i_1,epb,epb,system,"[""can_socket""]",Mobile_Platform_Actuators/Real_time_and_Critical_Control_Software
+AASPE_automotive_system_integration_attack_1,cellular,cellular,bus,[],V2X_Cloud_Comms/Internal_Networking_Interfaces
+AASPE_automotive_system_integration_attack_1,internet,internet,bus,[],V2X_Cloud_Comms/Internal_Networking_Interfaces
+AASPE_automotive_system_integration_attack_1,router_cel,router cel,device,"[""socket"", ""internet""]",Internal_Networking_Interfaces/V2X_Cloud_Comms
+AASPE_automotive_system_integration_attack_1,car,car,system,"[""cellular_access"", ""wifi_access""]",V2X_Cloud_Comms
+AASPE_automotive_system_integration_attack_1,can_ihs,can ihs,bus,[],Internal_Networking_Interfaces
+AASPE_automotive_system_integration_attack_1,can_c,can c,bus,[],Internal_Networking_Interfaces
+AASPE_automotive_system_integration_attack_1,wifi,wifi,bus,[],Internal_Networking_Interfaces/V2X_Cloud_Comms
+AASPE_automotive_system_integration_attack_1,radio,radio,system,"[""can_ihs_socket"", ""can_c_socket"", ""wifi_access"", ""cellular_access""]",UI_UX_and_Infotainment/V2X_Cloud_Comms/Internal_Networking_Interfaces
+AASPE_automotive_system_integration_attack_1,hvac,hvac,system,"[""can_socket""]",UI_UX_and_Infotainment
+AASPE_automotive_system_integration_attack_1,amplifier,amplifier,system,"[""can_socket""]",UI_UX_and_Infotainment
+AASPE_automotive_system_integration_attack_1,bcm,bcm,system,"[""can_socket""]",Real_time_and_Critical_Control_Software
+AASPE_automotive_system_integration_attack_1,hsm,hsm,system,"[""can_socket""]",Real_time_and_Critical_Control_Software
+AASPE_automotive_system_integration_attack_1,abs,abs,system,"[""can_socket""]",Mobile_Platform_Actuators/Real_time_and_Critical_Control_Software
+AASPE_automotive_system_integration_attack_1,acc,acc,system,"[""can_socket""]",Real_time_and_Critical_Control_Software/ML_AI_DL_Algorithms
+AASPE_automotive_system_integration_attack_1,eps,eps,system,"[""can_socket""]",Mobile_Platform_Actuators/Real_time_and_Critical_Control_Software
+AASPE_automotive_system_integration_attack_1,epb,epb,system,"[""can_socket""]",Mobile_Platform_Actuators/Real_time_and_Critical_Control_Software
+AASPE_automotive_system_integration_attack_1,attacker_cel,attacker cel,system,"[""connection""]",V2X_Cloud_Comms
+AASPE_automotive_system_integration_attack_1,attacker_wifi,attacker wifi,system,"[""connection""]",V2X_Cloud_Comms
+AASPE_automotive_system_integration_attack_1,attacker_internet,attacker internet,system,"[""connection""]",V2X_Cloud_Comms

@@ -1,0 +1,22 @@
+CORE
+osate-cli 0.3.0
+Created D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\83fb1543\r\osate-run-680605fb766c43008e49b8b25caa676b\model\.project
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\83fb1543\r\osate-run-680605fb766c43008e49b8b25caa676b\session-home"
+62494
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\83fb1543\r\osate-run-680605fb766c43008e49b8b25caa676b\session-home"
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\83fb1543\r\osate-run-680605fb766c43008e49b8b25caa676b\model\m002.aadl:6:9: warning: ARINC653 in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\83fb1543\r\osate-run-680605fb766c43008e49b8b25caa676b\model\m002.aadl:17:7: error: Couldn't resolve reference to property definition 'ARINC653::Memory_Type'.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\83fb1543\r\osate-run-680605fb766c43008e49b8b25caa676b\model\m002.aadl:17:33: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'Code_Memory'. For classifier references use classifier( <ref> ).
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\83fb1543\r\osate-run-680605fb766c43008e49b8b25caa676b\session-home"
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\83fb1543\r\osate-run-680605fb766c43008e49b8b25caa676b\model\m002.aadl:6:9: warning: ARINC653 in 'with' clause of public package section is not used.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\83fb1543\r\osate-run-680605fb766c43008e49b8b25caa676b\model\m002.aadl:17:7: error: Couldn't resolve reference to property definition 'ARINC653::Memory_Type'.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\83fb1543\r\osate-run-680605fb766c43008e49b8b25caa676b\model\m002.aadl:17:33: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'Code_Memory'. For classifier references use classifier( <ref> ).
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\83fb1543\r\osate-run-680605fb766c43008e49b8b25caa676b\session-home"
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\83fb1543\r\osate-run-680605fb766c43008e49b8b25caa676b\session-home"
+ADIRU::ADIRU.impl
+
+ADIRU::ADIRU.DeOS
+
+ADIRU::ADIRU.VxWorks653
+
+ADIRU::ADIRU.EMV2

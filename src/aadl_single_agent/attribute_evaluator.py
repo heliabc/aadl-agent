@@ -67,6 +67,23 @@ class _CacheEntry:
     dependencies: tuple[_Dependency, ...]
 
 
+@dataclass(frozen=True)
+class _UnitIndex:
+    """Immutable indexes for one syntax unit at one exact project position.
+
+    Reusing these tables avoids reconstructing unchanged dependency trees on
+    every candidate. They contain only frozen nodes, paths, tuples and read-only
+    mappings; evaluation caches and speculative state never enter this object.
+    """
+
+    root: SyntaxNode
+    path: tuple
+    nodes: Mapping
+    node_keys: Mapping
+    stamps: Mapping
+    locations: Mapping
+
+
 class AttributeContext:
     """Read-only handler API; every observable snapshot read is a dependency."""
 
@@ -161,38 +178,79 @@ class AttributeEvaluator:
         self._metrics = {"computed": 0, "cache_hits": 0, "invalidated": 0, "lookups": 0}
         self._install(project)
 
-    def _install(self, project):
+    def _install(self, project, previous=None):
         if not isinstance(project, ProjectView):
             raise RuleDefinitionError("Attribute snapshots require ProjectView")
         self.project = project
         self.root = SyntaxNode("__project__", project.text, tuple(project.all_units),
                                0, len(project.text), project.final, "<project>")
-        self._nodes, self._node_keys, self._stamps = {}, {}, {}
-        self._locations = {}
+        self._nodes = {(): self.root}
+        self._node_keys = {id(self.root): ()}
+        self._stamps = {}
+        root_location = (self.root.production, self.root.source, self.root.start, self.root.end, self.root.text)
+        self._locations = {root_location: [()]}
         self._relocated = {}
+        indexes, root_children = [], []
+        prior_indexes = previous._unit_indexes if previous is not None else ()
+        for position, node in enumerate(self.root.children):
+            path = (position,)
+            prior = prior_indexes[position] if position < len(prior_indexes) else None
+            # Identity and position must both match. Equal-looking new nodes or
+            # reordered dependencies are indexed afresh, preserving path-based
+            # attribute invalidation and duplicate-parent detection.
+            index = (prior if prior is not None and prior.root is node and prior.path == path
+                     else self._index_unit(node, path))
+            if not self._node_keys.keys().isdisjoint(index.node_keys):
+                raise RuleDefinitionError("A syntax node cannot have two parents in one attribute snapshot")
+            self._nodes.update(index.nodes)
+            self._node_keys.update(index.node_keys)
+            self._stamps.update(index.stamps)
+            for location, paths in index.locations.items():
+                self._locations.setdefault(location, []).extend(paths)
+            indexes.append(index)
+            root_children.append(index.stamps[path])
+        self._unit_indexes = tuple(indexes)
+        self._stamps[()] = (self.root.production, self.root.text, self.root.start, self.root.end,
+                            self.root.complete, self.root.source, tuple(sorted(self.root.bindings.items())),
+                            tuple(root_children))
+        self._project_stamp = self._stamps[()]
+
+    @staticmethod
+    def _index_unit(root, root_path):
+        nodes, node_keys, stamps, locations = {}, {}, {}, {}
 
         def visit(node, path):
             if not isinstance(node, SyntaxNode):
                 raise RuleDefinitionError("Attribute trees must contain SyntaxNode children")
-            self._nodes[path] = node
-            if id(node) in self._node_keys:
+            if id(node) in node_keys:
                 raise RuleDefinitionError("A syntax node cannot have two parents in one attribute snapshot")
-            self._node_keys[id(node)] = path
+            nodes[path], node_keys[id(node)] = node, path
             location = (node.production, node.source, node.start, node.end, node.text)
-            self._locations.setdefault(location, []).append(path)
-            children = tuple(visit(child, path + (index,)) for index, child in enumerate(node.children))
+            locations.setdefault(location, []).append(path)
+            children = tuple(visit(child, path + (position,)) for position, child in enumerate(node.children))
             stamp = (node.production, node.text, node.start, node.end, node.complete, node.source,
                      tuple(sorted(node.bindings.items())), children)
-            self._stamps[path] = stamp
+            stamps[path] = stamp
             return stamp
 
-        visit(self.root, ())
-        self._project_stamp = self._stamps[()]
+        visit(root, root_path)
+        return _UnitIndex(root, root_path, MappingProxyType(nodes), MappingProxyType(node_keys),
+                          MappingProxyType(stamps),
+                          MappingProxyType({location: tuple(paths) for location, paths in locations.items()}))
 
     def fork(self, project, *, inputs=None):
         """Share only immutable cache entries; branch dictionaries are independent."""
-        child = AttributeEvaluator(self.handlers, project, constraints=self.constraints,
-                                   inputs=self.inputs if inputs is None else inputs)
+        # Registrations were validated by the constructor and are immutable.
+        # Start every speculative bookkeeping container independently; only the
+        # frozen registrations, unit indexes and cache entries can be shared.
+        child = object.__new__(AttributeEvaluator)
+        child.handlers, child.constraints = self.handlers, self.constraints
+        child.inputs = self.inputs if inputs is None else _freeze(inputs)
+        if not isinstance(child.inputs, Mapping):
+            raise RuleDefinitionError("Attribute inputs must be a mapping")
+        child._active, child._validated = [], set()
+        child._metrics = {"computed": 0, "cache_hits": 0, "invalidated": 0, "lookups": 0}
+        child._install(project, previous=self)
         child._cache = dict(self._cache)
         return child
 

@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+title: "AADL Architectural Models Dataset"
+message: "If you use this dataset, please cite the following work."
+type: dataset
+
+authors:
+  - family-names: Tran
+    given-names: Thi Dinh
+    affiliation: "Gran Sasso Science Institute, L'Aquila, Italy"
+    email: "thidinh.tran@gssi.it"
+
+  - family-names: Rossi
+    given-names: Maria Teresa
+    affiliation: "Gran Sasso Science Institute, L'Aquila, Italy"
+    email: "mariateresa.rossi@gssi.it"
+
+  - family-names: Iovino
+    given-names: Ludovico
+    affiliation: "Gran Sasso Science Institute, L'Aquila, Italy"
+    email: "ludovico.iovino@gssi.it"
+
+  - family-names: Mariani
+    given-names: Leonardo
+    affiliation: "University of Milano-Bicocca, Milan, Italy"
+    email: "leonardo.mariani@unimib.it"
+
+version: 1.0.0
+date-released: 2026-03-20
+repository-code: "https://github.com/dinhtranthi/aadl-architectural-models-dataset.git"
+license: "CC-BY-4.0"
+doi: 10.5281/zenodo.19819886

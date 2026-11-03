@@ -10,12 +10,14 @@ from dataclasses import dataclass, field
 from copy import deepcopy
 import hashlib
 import json
+import math
 import re
 from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
 import httpx
-from .project import coerce_context
+from .project import coerce_context, GENERATED_FILE_COUNT, PROJECT_GRAMMAR
+from .generation_protocol import GENERATION_PROTOCOL_VERSION
 
 
 class ModelError(RuntimeError):
@@ -129,6 +131,15 @@ class ModelClient:
     def _check_rules(self, info: EndpointInfo) -> None:
         if self._expected_rules is None:
             return
+        limit = info.metadata.get("generated_file_limit")
+        if type(limit) is not int or limit != GENERATED_FILE_COUNT:
+            raise ModelError("Endpoint does not declare the required single-generated-file transport; deploy the matching server.",
+                             error_kind="unsupported")
+        # The envelope name is unchanged for old saved outputs. Bind the actual
+        # transport grammar so an old multi-file service cannot reuse that name.
+        if info.metadata.get("transport_grammar_sha256") != hashlib.sha256(PROJECT_GRAMMAR.encode("utf-8")).hexdigest():
+            raise ModelError("Endpoint transport grammar differs from the local single-file profile.",
+                             error_kind="model_protocol")
         profile, digest, runtime = self._expected_rules
         actual_profile = info.metadata.get("rule_bundle", {}).get("profile")
         if (actual_profile, info.rule_bundle_sha256, info.runtime_version) != (profile, digest, runtime):
@@ -174,6 +185,9 @@ class ModelClient:
                     if (response.status_code == 409 and isinstance(detail, dict)
                             and detail.get("code") == "rule_mismatch"):
                         kind = "rule_mismatch"
+                    elif (response.status_code == 409 and isinstance(detail, dict)
+                          and detail.get("code") == "generation_protocol_mismatch"):
+                        kind = "model_protocol"
                 except ValueError:
                     pass
             raise ModelError(
@@ -212,6 +226,15 @@ class ModelClient:
         runtime = capabilities.get("runtime_version")
         model_identity = capabilities.get("model_identity")
         tokenizer_identity = capabilities.get("tokenizer_identity")
+        if capabilities.get("generation_protocol_version") != GENERATION_PROTOCOL_VERSION:
+            raise ModelError("Generation protocol differs from this client; deploy a matching service.",
+                             error_kind="model_protocol")
+        policy = capabilities.get("generation_policy")
+        if (not isinstance(policy, dict) or not isinstance(policy.get("repetition_stop"), dict)
+                or type(policy.get("deadline_seconds")) not in (int, float)
+                or not math.isfinite(policy["deadline_seconds"])
+                or policy["deadline_seconds"] <= 0 or policy.get("deadline_retryable") is not False):
+            raise ModelError("Missing or invalid generation policy in capabilities.")
         if (not isinstance(model, str) or not model.strip()
                 or not isinstance(kinds, list)
                 or not all(isinstance(kind, str) and kind for kind in kinds)
@@ -242,9 +265,11 @@ class ModelClient:
         if kind == "json_schema":
             if not isinstance(constraint.get("schema"), dict):
                 raise ModelError("json_schema constraint requires a schema object.")
-        elif kind == "aadl_joint":
+        elif kind in {"aadl_joint", "aadl_gcd"}:
             if not isinstance(constraint.get("profile"), str) or not constraint["profile"]:
-                raise ModelError("aadl_joint constraint requires a profile.")
+                raise ModelError(f"{kind} constraint requires a profile.")
+            if set(constraint) - {"kind", "profile", "project"}:
+                raise ModelError(f"{kind} accepts only kind, profile and project; declaration planning is retired.")
         elif kind == "plain":
             if set(constraint) != {"kind", "project"} or constraint.get("project") is not True:
                 raise ModelError("Explicit plain constraint requires project=true; omit constraint for raw text.")
@@ -298,12 +323,88 @@ class ModelClient:
                 or evidence.get("applied") is not True):
             raise ModelError("Constraint evidence missing or mismatched: expected exact kind, sha256, and applied=true.")
         if constraint.get("project"):
+            limit = evidence.get("generated_file_limit")
+            if (type(limit) is not int or limit != GENERATED_FILE_COUNT
+                    or evidence.get("transport_grammar_sha256") != hashlib.sha256(PROJECT_GRAMMAR.encode("utf-8")).hexdigest()):
+                raise ModelError("Response lacks matching single-file transport evidence.")
             joint = constraint["kind"] == "aadl_joint"
+            syntax = constraint["kind"] in {"aadl_joint", "aadl_gcd"}
             if (evidence.get("transport_mask_applied") is not True
-                    or evidence.get("aadl_cfg_applied") is not joint
+                    or evidence.get("aadl_cfg_applied") is not syntax
                     or evidence.get("attributes_applied") is not joint):
                 raise ModelError("Transport/AADL/attribute mask evidence does not match the requested path.")
+            if not joint and (evidence.get("semantic_evaluations", 0) != 0
+                              or evidence.get("attribute_conflicts", 0) != 0):
+                raise ModelError("A non-semantic baseline unexpectedly executed semantic rules.")
         return dict(evidence)
+
+    @staticmethod
+    def _verify_termination(termination, data, constraint, usage, info) -> None:
+        """Accept metered early stops only with an explicit, matching policy.
+
+        Unknown HTTP errors never reach this path. Token IDs are the actual
+        selected sequence, not a re-tokenization of a partially decoded string.
+        """
+        phase = "planning" if constraint and constraint["kind"] == "json_schema" else "generation"
+        ids = data.get("selected_token_ids")
+        if (not isinstance(termination, dict) or termination.get("phase") != phase
+                or termination.get("worker_stopped") is not True
+                or type(termination.get("selected_token_count")) is not int
+                or termination["selected_token_count"] != usage["completion_tokens"]
+                or not isinstance(ids, list) or len(ids) != usage["completion_tokens"]
+                or any(type(token) is not int or token < 0 for token in ids)):
+            raise ModelError("Early termination lacks a stopped worker and exact selected-token accounting.")
+        policy = info.metadata["generation_policy"]
+        if termination.get("kind") == "generation_timeout":
+            elapsed = termination.get("elapsed_seconds")
+            if (termination.get("limit_seconds") != policy["deadline_seconds"]
+                    or type(elapsed) not in (int, float) or not math.isfinite(elapsed)
+                    or elapsed + 0.001 < policy["deadline_seconds"]
+                    or termination.get("stage") not in {"candidate_search", "generation"}):
+                raise ModelError("Computation deadline evidence is incomplete or inconsistent.")
+            return
+        if termination.get("kind") != "repetition":
+            raise ModelError("Unrecognized early termination reason.")
+        repeat_policy = policy["repetition_stop"]
+        if termination.get("unit") == "completed_nonempty_lines":
+            count = termination.get("repeated_lines")
+            if (type(count) is not int or count < repeat_policy.get("threshold", 32)
+                    or termination.get("threshold") != repeat_policy.get("threshold", 32)):
+                raise ModelError("Repeated-line stop does not match the discovered policy.")
+            text = data["choices"][0]["message"]["content"]
+            previous, observed, witness = None, 0, None
+            for index, line in enumerate(text.split("\n")[:-1], 1):
+                if line in ("", "\r"):
+                    previous, observed = None, 0
+                    continue
+                observed = observed + 1 if line == previous else 1
+                previous = line
+                if observed >= repeat_policy.get("threshold", 32):
+                    witness = (observed, index, line)
+                    break
+            if witness != (count, termination.get("completed_line_index"), termination.get("line")):
+                raise ModelError("Repeated-line evidence does not describe the actual partial text.")
+        elif termination.get("unit") == "periodic_suffix":
+            config = repeat_policy.get("periodic_suffix", {})
+            for field in ("window_characters", "minimum_repetitions", "minimum_span_characters", "max_period_characters"):
+                if termination.get(field) != config.get(field) or type(termination.get(field)) is not int:
+                    raise ModelError("Periodic stop does not match the discovered policy.")
+            start, end = termination.get("start_character"), termination.get("end_character")
+            period, count = termination.get("period_characters"), termination.get("repetitions")
+            fragment = termination.get("fragment")
+            text = data["choices"][0]["message"]["content"]
+            if (any(type(n) is not int for n in (start, end, period, count))
+                    or not 0 <= start < end == len(text)
+                    or not 1 <= period <= config["max_period_characters"]
+                    or count < config["minimum_repetitions"]
+                    or not config["minimum_span_characters"] <= end - start <= config["window_characters"]
+                    or end - start != count * period
+                    or termination.get("repeated_characters") != end - start
+                    or not isinstance(fragment, str) or len(fragment) != period
+                    or text[start:end] != fragment * count):
+                raise ModelError("Periodic stop span does not describe the returned partial text.")
+        else:
+            raise ModelError("Unsupported repetition unit.")
 
     def generate(
         self, messages: list[dict[str, Any]], *, max_tokens: int,
@@ -326,6 +427,8 @@ class ModelClient:
             )
         payload: dict[str, Any] = {
             "model": info.model, "messages": messages,
+            "generation_protocol_version": GENERATION_PROTOCOL_VERSION,
+            "generation_policy": deepcopy(info.metadata["generation_policy"]),
             "max_tokens": max_tokens, "stream": False, "temperature": 0,
             "rule_bundle_sha256": info.rule_bundle_sha256, "runtime_version": info.runtime_version,
             "context": self._context.as_dict(), "context_sha256": self._context.sha256,
@@ -340,6 +443,9 @@ class ModelClient:
         def failure(message: str, kind: str = "model_protocol") -> ModelError:
             return ModelError(message, error_kind=kind, **metadata)
 
+        if (data.get("generation_protocol_version") != GENERATION_PROTOCOL_VERSION
+                or data.get("generation_policy") != info.metadata["generation_policy"]):
+            raise failure("Response generation protocol or stop policy differs from discovery.")
         # Bind ordinary completions too: they are evaluated with the same rules.
         if (data.get("rule_bundle_sha256") != info.rule_bundle_sha256
                 or data.get("runtime_version") != info.runtime_version):
@@ -362,6 +468,14 @@ class ModelClient:
         finish_reason = choice.get("finish_reason")
         if not isinstance(finish_reason, str):
             raise failure("Completion is missing a valid finish_reason.")
+        # Contradictory envelopes cannot promote an interrupted candidate to
+        # successful generation, even when its extracted source happens to parse.
+        if (data.get("partial_decode_error")
+                or (finish_reason == "stop" and (data.get("termination") is not None
+                    or data.get("constraint_failure") is not None or data.get("partial_utf8_tail_hex")))
+                or (finish_reason in {"length", "max_tokens"} and data.get("constraint_failure") is not None)
+                or (finish_reason == "constraint_error" and data.get("termination") is not None)):
+            raise failure("Completion contains contradictory termination or byte-decoding evidence.")
         if finish_reason in {"length", "max_tokens"}:
             partial = choice.get("message")
             if (not isinstance(partial, dict) or partial.get("refusal")
@@ -388,12 +502,25 @@ class ModelClient:
             termination = data.get("termination")
             message = "Generation truncated at the token limit; regenerate a complete concise model."
             if termination is not None:
-                if (not isinstance(termination, dict) or termination.get("kind") != "repetition"
-                        or type(termination.get("repeated_lines")) is not int
-                        or termination["repeated_lines"] < 2):
-                    raise failure("Unrecognized early termination reason.")
-                message = (f"Generation stopped after {termination['repeated_lines']} repeated source lines. "
-                           "The project is unfinished; correct the cause using validator diagnostics and regenerate it.")
+                try:
+                    self._verify_termination(termination, data, constraint, usage, info)
+                except ModelError as exc:
+                    raise failure(str(exc)) from exc
+                if termination["kind"] == "generation_timeout":
+                    # The worker has stopped and exact usage/identity/mask evidence
+                    # passed the same checks as other outcomes. This is an effect
+                    # failure, but never an automatic extra 600-second request.
+                    raise ModelError(
+                        "Generation reached its measured computation deadline; project unfinished.",
+                        usage=usage, finish_reason=finish_reason, partial_text=partial["content"],
+                        retryable=False, applied_constraint=evidence, error_kind="generation_timeout",
+                        response_metadata=metadata["response_metadata"],
+                    )
+                description = (f"{termination['repeated_lines']} completed lines" if
+                               termination["unit"] == "completed_nonempty_lines" else
+                               f"a periodic text suffix ({termination['repetitions']} repetitions)")
+                message = (f"Generation stopped after repeating {description}. "
+                           "The project is unfinished; use validator diagnostics and regenerate it.")
             raise ModelError(
                 message,
                 usage=usage, finish_reason=finish_reason, partial_text=partial["content"],
@@ -407,7 +534,7 @@ class ModelClient:
             # failures or missing proof. Only this explicit protocol permits the
             # caller to spend the remaining budget on another generation.
             if (constraint is None
-                    or constraint["kind"] not in {"aadl_joint", "plain"}
+                    or constraint["kind"] not in {"aadl_joint", "aadl_gcd", "plain"}
                     or not isinstance(issue, dict) or issue.get("code") != "dead_end"
                     or not isinstance(issue.get("message"), str) or not issue["message"].strip()
                     or not isinstance(partial, dict) or partial.get("refusal")
@@ -423,7 +550,7 @@ class ModelClient:
             if usage["completion_tokens"] > max_tokens:
                 raise failure("Server exceeded the requested completion-token budget.")
             raise ModelError(
-                "Joint decoder dead end: " + issue["message"], usage=usage,
+                "Constrained decoder dead end: " + issue["message"], usage=usage,
                 finish_reason=finish_reason, partial_text=partial["content"],
                 retryable=True, applied_constraint=evidence,
                 error_kind="decoding_dead_end",

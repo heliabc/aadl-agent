@@ -6,7 +6,8 @@ param(
     [string]$ModelPath = '/home/wdd/qwen3/models/Qwen3-14B',
     [string]$BasePython = '/home/wdd/miniforge3/envs/qwen-vllm/bin/python',
     [string]$RulesPath,
-    [ValidateRange(1024, 65535)][int]$Port = 8000
+    # Match the currently configured service; -Port can override this for another deployment.
+    [ValidateRange(1024, 65535)][int]$Port = 8001
 )
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)

@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Reference Architecture Alignment Schema",
+  "description": "Schema describing component-level mappings between AADL models and reference architecture components.",
+  "type": "object",
+  "properties": {
+    "AADL_model": {
+      "type": "string",
+      "description": "Identifier or name of the AADL model containing the mapped component"
+    },
+    "component_name": {
+      "type": "string",
+      "description": "Original name of the component in the AADL model"
+    },
+    "normalized_name": {
+      "type": "string",
+      "description": "Normalized component name used to improve consistency across mappings"
+    },
+    "ra_component": {
+      "type": "string",
+      "description": "Reference architecture component assigned to the AADL component"
+    }
+  },
+  "required": [
+    "AADL_model",
+    "component_name",
+    "normalized_name",
+    "ra_component"
+  ],
+  "additionalProperties": false
+}

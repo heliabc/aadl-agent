@@ -1,0 +1,814 @@
+{
+  "case_id": "a3d_fms",
+  "title": "Flight management IMA/AFDX architecture - derived example requirements",
+  "independent_evaluation_eligible": false,
+  "root_classifiers": [
+    "fms::fms.impl"
+  ],
+  "coverage": [
+    "Covers fms::fms.impl and its four module implementations, five function threads, typed exchanges, CPU/memory bindings, partition schedules, CAN/AFDX topology, six virtual links and explicit flows.",
+    "Only the active three-switch Actual_Connection_Binding configuration is in scope. Module roots are subviews of this one example, not independent requirement cases."
+  ],
+  "limitations": [
+    "These requirements reproduce architectural declarations, not executable flight-management algorithms or proof of schedulability/network feasibility. Existing OSATE validation is not a pass.",
+    "The top-level flow latency bounds at fms.aadl lines 72-76 are comments and are not normative limits in this draft.",
+    "The alternative paths_specification annex refers to sw4 although sw4 is commented out; those contradictory routes are excluded rather than treated as requirements.",
+    "The physical-bandwidth and message-size literals in fms_hardware.aadl need unit/standard review; this draft does not promote them to AFDX requirements or silently substitute paper values.",
+    "The REAL annex invokes a restriction theorem but its local check is 1=1; its presence is not proof of ARINC653 compliance.",
+    "The author report identifies the same model family and depicts the four modules, but no commit identifier binds its diagrams, analysis assumptions or optimized network settings to this source revision."
+  ],
+  "original_requirement_status": "An author-authored design/analysis report explicitly linked to the AADLib FMS was located. It is not a standalone, revision-matched original requirement set. The draft therefore remains entirely model_derived.",
+  "source_search_evidence": [
+    {
+      "title": "Pinned AADLib example description",
+      "url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/README#L62-L64",
+      "finding": "The README identifies this as the G. Brau FMS example coupling the ARINC653 annex and AFDX modeling. The fixed FMS directory contains architecture/property files but no standalone requirements document.",
+      "license_note": "AADLib repository LICENSE is BSD-3-Clause; preserve notices."
+    },
+    {
+      "title": "Refinement of AADL models using early-stage analysis methods: An avionics example, TR-LASSY-13-06",
+      "url": "https://orbilu.uni.lu/handle/10993/15385",
+      "finding": "Read the author report, revised 6 February 2014. PDF pp. 4-5 (printed pp. 3-4) describe five functions; PDF p. 7 (printed p. 6), section 2.4 and footnote 1 explicitly identify the full AADLv2 model as part of AADLib. PDF p. 8 (printed p. 7), Figure 2 visually matches the four-module/five-function hierarchy. This establishes model-family provenance, not exact revision equivalence.",
+      "license_note": "ORBilu user license permits noncommercial copying/distribution with attribution and integrity conditions, and restricts modification/derivative uses. Formal artifacts keep links and provenance; requirements here are derived from the separately licensed AADLib source.",
+      "cached_context": [
+        {
+          "local_cache": ".cache/a3d/requirements-evidence/aadlib-context/fms-refinement-TR-LASSY-13-06.pdf",
+          "sha256": "226d891f224bd1b428a3afa444e984c09459460ef6ad00e866bef2c52074905c"
+        },
+        {
+          "local_cache": ".cache/a3d/requirements-evidence/aadlib-context/orbilu-user-license.html",
+          "sha256": "ddd77d51a24295c491dbe2ccfd9f4e404d915aa8a082133349d3bcba4844c69a"
+        }
+      ]
+    },
+    {
+      "title": "ORBilu user license",
+      "url": "https://orbilu.uni.lu/page/user-license",
+      "finding": "Accessed and cached the current license page. Its terms distinguish copying/distribution from modification and require attribution.",
+      "license_note": "A repository-wide unrestricted license cannot be inferred for the author report."
+    }
+  ],
+  "requirements": [
+    {
+      "id": "FMS-001",
+      "text": "The FMS example shall contain four execution modules, one keyboard, one display, one remote data concentrator (RDC), one CAN bus, one physical AFDX network and three AFDX switch devices.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/fms.aadl",
+          "line_start": 9,
+          "line_end": 29,
+          "sha256": "424ba3e3b5c0d6dd1046e396e1234825b00511b1d747f7d6f0eacf36d57ae43f",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "8645ba98ebdcd1dc6d975d72f4edb65516d38d7eb5d6b139e17caf5c45594df9",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/fms.aadl#L9-L29"
+        }
+      ]
+    },
+    {
+      "id": "FMS-002",
+      "text": "Module 1 shall host separate keyboard-unit (KU1) and multifunction-display (MFD1) processes; module 2 shall host the flight-manager (FM1) process; module 3 shall host an ADIRU process; and module 4 shall host a navigation-database (NDB) process.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/subsystem.aadl",
+          "line_start": 63,
+          "line_end": 69,
+          "sha256": "5332f3a1d79901e85b26060e122e14c06c965e831616baaf02f9e3e5920091ff",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "2c68b57a38e0dda0edeb16600997231aed9ddd5cffa6664507305cb065dfb2d5",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/subsystem.aadl#L63-L69"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/subsystem.aadl",
+          "line_start": 112,
+          "line_end": 117,
+          "sha256": "5332f3a1d79901e85b26060e122e14c06c965e831616baaf02f9e3e5920091ff",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "9210de693db2267b0537f04c7b23815f24c688e083f12291fb31feac6ac3668d",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/subsystem.aadl#L112-L117"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/subsystem.aadl",
+          "line_start": 150,
+          "line_end": 155,
+          "sha256": "5332f3a1d79901e85b26060e122e14c06c965e831616baaf02f9e3e5920091ff",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "fd2820219edacaabf7f8d49c958c713e521111fb84b13957314b09dfa1ce779e",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/subsystem.aadl#L150-L155"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/subsystem.aadl",
+          "line_start": 183,
+          "line_end": 188,
+          "sha256": "5332f3a1d79901e85b26060e122e14c06c965e831616baaf02f9e3e5920091ff",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "b4a1e504454243a5e9d2779291a5e970ce4e652671777b99d32e05f356567baa",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/subsystem.aadl#L183-L188"
+        }
+      ]
+    },
+    {
+      "id": "FMS-003",
+      "text": "Each execution module shall contain one processor and one main-memory component. Each hosted process shall be bound to its corresponding virtual-processor partition and dedicated memory segment; module 1 shall provide separate KU1 and MFD1 bindings.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/subsystem.aadl",
+          "line_start": 63,
+          "line_end": 88,
+          "sha256": "5332f3a1d79901e85b26060e122e14c06c965e831616baaf02f9e3e5920091ff",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "60b2529682a225a3d1c8260466f654b1ea2ca8cfa6450f1b84f621d25ee291a7",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/subsystem.aadl#L63-L88"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/subsystem.aadl",
+          "line_start": 112,
+          "line_end": 136,
+          "sha256": "5332f3a1d79901e85b26060e122e14c06c965e831616baaf02f9e3e5920091ff",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "ec3eab0e9b3f95f728619cc19a90f1e6bd28748262b92ec31d3daec796e89221",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/subsystem.aadl#L112-L136"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/subsystem.aadl",
+          "line_start": 150,
+          "line_end": 168,
+          "sha256": "5332f3a1d79901e85b26060e122e14c06c965e831616baaf02f9e3e5920091ff",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "6ee7872cfbb44717ce100a8a0352b775ce463274edf929e51efa46e8ce037f3c",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/subsystem.aadl#L150-L168"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/subsystem.aadl",
+          "line_start": 183,
+          "line_end": 201,
+          "sha256": "5332f3a1d79901e85b26060e122e14c06c965e831616baaf02f9e3e5920091ff",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "8d96d40f5018f22df41123dd525d7bf4be079be673934933edc705b7d301ab14",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/subsystem.aadl#L183-L201"
+        }
+      ]
+    },
+    {
+      "id": "FMS-004",
+      "text": "The keyboard shall emit pilot-request event data; the display shall receive display event data. Both device interfaces shall require CAN access. The RDC shall emit pressure event data and require AFDX access.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/subsystem.aadl",
+          "line_start": 14,
+          "line_end": 38,
+          "sha256": "5332f3a1d79901e85b26060e122e14c06c965e831616baaf02f9e3e5920091ff",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "343c3081d3f058d152325573ef9f731bea2e6b4082c67970cb0c5e12a79e108c",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/subsystem.aadl#L14-L38"
+        }
+      ]
+    },
+    {
+      "id": "FMS-005",
+      "text": "The keyboard request shall enter module 1 and be delegated to KU1. KU1 shall contain one thread that accepts the request and emits a waypoint identifier through the process and module outputs.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/fms.aadl",
+          "line_start": 32,
+          "line_end": 33,
+          "sha256": "424ba3e3b5c0d6dd1046e396e1234825b00511b1d747f7d6f0eacf36d57ae43f",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "2bc65947d4c1e7e2390f111262d7a6643deb01cb5c332f5935c0fea27851cd31",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/fms.aadl#L32-L33"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/subsystem.aadl",
+          "line_start": 72,
+          "line_end": 79,
+          "sha256": "5332f3a1d79901e85b26060e122e14c06c965e831616baaf02f9e3e5920091ff",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "d3cd16f6319a2bb6ff2e1f07817314043f0a6d93073834c79d656dfd1a4609e4",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/subsystem.aadl#L72-L79"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/m1_software.aadl",
+          "line_start": 10,
+          "line_end": 26,
+          "sha256": "81d296caba577976edd0ed260211ebc7f5ec0fce17b98503a24a6ce3ed672fed",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "d74e66fab91efb2f23595eb4d2606841c5da33700859cdbef6cad4e3e49e72be",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/m1_software.aadl#L10-L26"
+        }
+      ]
+    },
+    {
+      "id": "FMS-006",
+      "text": "Module 1 shall send its waypoint identifier to module 2. The FM1 process and its single thread shall accept that identifier and expose a database-query output; module 2 shall send this query to module 4.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/fms.aadl",
+          "line_start": 33,
+          "line_end": 34,
+          "sha256": "424ba3e3b5c0d6dd1046e396e1234825b00511b1d747f7d6f0eacf36d57ae43f",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "c08415fcdc9b12f65f648698541e0a0350e717dd82c3ac8c5d392974df995ac8",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/fms.aadl#L33-L34"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/m2_software.aadl",
+          "line_start": 9,
+          "line_end": 37,
+          "sha256": "cb791a3c1ed73e1455c9fdcbe68aeabcfd11f470b0e0137d32b0e5b04fc55649",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "89dd93a095eb7df741c6161a91ccc736e73c6cbfac56416ad84f2c2aaf0ef2d4",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/m2_software.aadl#L9-L37"
+        }
+      ]
+    },
+    {
+      "id": "FMS-007",
+      "text": "Module 4 shall delegate each database-query input to the single NDB thread and expose its database-answer output; this answer shall return to the FM1 process in module 2.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/fms.aadl",
+          "line_start": 34,
+          "line_end": 35,
+          "sha256": "424ba3e3b5c0d6dd1046e396e1234825b00511b1d747f7d6f0eacf36d57ae43f",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "06e7264c67817446bc0f7c48af1e378dde0a06e52a18dd62c2b7cc09cb22894d",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/fms.aadl#L34-L35"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/subsystem.aadl",
+          "line_start": 190,
+          "line_end": 195,
+          "sha256": "5332f3a1d79901e85b26060e122e14c06c965e831616baaf02f9e3e5920091ff",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "fa5eea193c4b363c45f2e2ed8c59552ce4cb3f71343d7ec9d2fcdcd9c24ba8c0",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/subsystem.aadl#L190-L195"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/m4_software.aadl",
+          "line_start": 9,
+          "line_end": 29,
+          "sha256": "a7fefd1485db245b3decf4fd11bc704aa8437462a87adc8a8e7f35b5c292d7c3",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "a742e33e8cc2ad253291d1aa75d34bc54af5ccd14474f5a4b1ef369b53fa8f5b",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/m4_software.aadl#L9-L29"
+        }
+      ]
+    },
+    {
+      "id": "FMS-008",
+      "text": "FM1 shall expose a database-answer-to-waypoint-information flow. The resulting waypoint information shall travel from module 2 to MFD1 in module 1 and then to the display through the MFD1 display output.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/fms.aadl",
+          "line_start": 36,
+          "line_end": 40,
+          "sha256": "424ba3e3b5c0d6dd1046e396e1234825b00511b1d747f7d6f0eacf36d57ae43f",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "56e9b3ce15156101e9b85a05f645eaba630ff246081b67bfc3a675970791544d",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/fms.aadl#L36-L40"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/m2_software.aadl",
+          "line_start": 23,
+          "line_end": 36,
+          "sha256": "cb791a3c1ed73e1455c9fdcbe68aeabcfd11f470b0e0137d32b0e5b04fc55649",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "a764e1f78d74b89fa41c5bc11147eba74c6a0e1cf28da914476d401845b2d4b4",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/m2_software.aadl#L23-L36"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/m1_software.aadl",
+          "line_start": 28,
+          "line_end": 46,
+          "sha256": "81d296caba577976edd0ed260211ebc7f5ec0fce17b98503a24a6ce3ed672fed",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "62075cd4a2f8c3b3f3ec80383b8da9764ad13899b2ced8028124f6eebebe6082",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/m1_software.aadl#L28-L46"
+        }
+      ]
+    },
+    {
+      "id": "FMS-009",
+      "text": "The RDC pressure-data output shall feed the ADIRU process in module 3. Its single ADIRU thread shall expose a pressure-to-speed flow and send the speed output to the flight manager in module 2.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/fms.aadl",
+          "line_start": 37,
+          "line_end": 38,
+          "sha256": "424ba3e3b5c0d6dd1046e396e1234825b00511b1d747f7d6f0eacf36d57ae43f",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "ff51d66df509ef0b938265142dd0ca317c8ac97effca71a68897d456a0e53ec4",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/fms.aadl#L37-L38"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/m3_software.aadl",
+          "line_start": 10,
+          "line_end": 26,
+          "sha256": "3174e4195a85bee03503faeaae6197ae42c3b9c706c7f7da45e6bd66e44ec336",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "d89fb58b3022e1c87f5c7b1338afd3ed2225b7166978d6eb4fe92245e1f276d5",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/m3_software.aadl#L10-L26"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/m2_software.aadl",
+          "line_start": 31,
+          "line_end": 36,
+          "sha256": "cb791a3c1ed73e1455c9fdcbe68aeabcfd11f470b0e0137d32b0e5b04fc55649",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "03b5e0e46a731a2e5f257b72ff44f7ef206fde082a53682001f802ff7e654bc7",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/m2_software.aadl#L31-L36"
+        }
+      ]
+    },
+    {
+      "id": "FMS-010",
+      "text": "The flight-manager thread shall expose a speed-to-estimated-arrival-time flow and send the resulting ETA data to the display process in module 1, whose thread shall expose an ETA-to-display flow.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/fms.aadl",
+          "line_start": 39,
+          "line_end": 39,
+          "sha256": "424ba3e3b5c0d6dd1046e396e1234825b00511b1d747f7d6f0eacf36d57ae43f",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "27769905a82e17e27c74895bd3d492e5831a941ef7988228b60b6aea588ad3b1",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/fms.aadl#L39-L39"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/m2_software.aadl",
+          "line_start": 43,
+          "line_end": 55,
+          "sha256": "cb791a3c1ed73e1455c9fdcbe68aeabcfd11f470b0e0137d32b0e5b04fc55649",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "15400e09ef11d6ccf066697def8c5225e0b974113f78503201db4653ff08247a",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/m2_software.aadl#L43-L55"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/m1_software.aadl",
+          "line_start": 67,
+          "line_end": 74,
+          "sha256": "81d296caba577976edd0ed260211ebc7f5ec0fce17b98503a24a6ce3ed672fed",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "ff2c2ca0f0f6e8faf2fdb04c4e0969d8e2aa4156f8bbbcb3c6c4d4283cd1c736",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/m1_software.aadl#L67-L74"
+        }
+      ]
+    },
+    {
+      "id": "FMS-011",
+      "text": "All functional request, waypoint identifier, waypoint information, database query, database answer, pressure, speed, ETA and display interfaces described by this example shall be typed event-data ports, with the corresponding named data classifiers retained.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/subsystem.aadl",
+          "line_start": 14,
+          "line_end": 38,
+          "sha256": "5332f3a1d79901e85b26060e122e14c06c965e831616baaf02f9e3e5920091ff",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "343c3081d3f058d152325573ef9f731bea2e6b4082c67970cb0c5e12a79e108c",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/subsystem.aadl#L14-L38"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/subsystem.aadl",
+          "line_start": 44,
+          "line_end": 61,
+          "sha256": "5332f3a1d79901e85b26060e122e14c06c965e831616baaf02f9e3e5920091ff",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "2f9a5d5a585a3c4a6c4ea0ecb3e6e7a962c45a5f8b8f2efa9881b3972da02007",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/subsystem.aadl#L44-L61"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/subsystem.aadl",
+          "line_start": 90,
+          "line_end": 110,
+          "sha256": "5332f3a1d79901e85b26060e122e14c06c965e831616baaf02f9e3e5920091ff",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "cb577f4c305b5ac220e92b21bf523808f9d7f10ecf2460b2cdf613dfb9563bb4",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/subsystem.aadl#L90-L110"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/subsystem.aadl",
+          "line_start": 138,
+          "line_end": 181,
+          "sha256": "5332f3a1d79901e85b26060e122e14c06c965e831616baaf02f9e3e5920091ff",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "3579750e42a839ceefb871a0898f36bfd538ecb162f2ae421dcb70584325c3bc",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/subsystem.aadl#L138-L181"
+        }
+      ]
+    },
+    {
+      "id": "FMS-012",
+      "text": "The KU1 thread shall be periodic with a 50 ms period, a 50 ms deadline and a declared execution-time interval of 0-25 ms.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/m1_software.aadl",
+          "line_start": 52,
+          "line_end": 65,
+          "sha256": "81d296caba577976edd0ed260211ebc7f5ec0fce17b98503a24a6ce3ed672fed",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "878e3e7b7f357bffab9011298a76f61aa8e8922f564dd0c0c395d4996c4ad52b",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/m1_software.aadl#L52-L65"
+        }
+      ]
+    },
+    {
+      "id": "FMS-013",
+      "text": "The MFD1 thread shall be periodic with a 50 ms period, a 50 ms deadline and a declared execution-time interval of 0-25 ms.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/m1_software.aadl",
+          "line_start": 67,
+          "line_end": 81,
+          "sha256": "81d296caba577976edd0ed260211ebc7f5ec0fce17b98503a24a6ce3ed672fed",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "ae22ad957ad11bc7f903df2f62b5ae0f23bc21d274d7b9a3202d8f3aa7043b1a",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/m1_software.aadl#L67-L81"
+        }
+      ]
+    },
+    {
+      "id": "FMS-014",
+      "text": "The FM1 thread shall be periodic with a 60 ms period, a 60 ms deadline and a declared execution-time interval of 0-30 ms.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/m2_software.aadl",
+          "line_start": 43,
+          "line_end": 63,
+          "sha256": "cb791a3c1ed73e1455c9fdcbe68aeabcfd11f470b0e0137d32b0e5b04fc55649",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "cdf1480974cb4a3297913e3a9f32b915ca0325112309bbd89a25daa38ba1ff06",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/m2_software.aadl#L43-L63"
+        }
+      ]
+    },
+    {
+      "id": "FMS-015",
+      "text": "The ADIRU thread shall be periodic with a 60 ms period, a 60 ms deadline and a declared execution-time interval of 0-30 ms.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/m3_software.aadl",
+          "line_start": 32,
+          "line_end": 46,
+          "sha256": "3174e4195a85bee03503faeaae6197ae42c3b9c706c7f7da45e6bd66e44ec336",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "11846f2ab6cb1123423f124791f040e4440a3ecbb1608d4582ab54f079676bcf",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/m3_software.aadl#L32-L46"
+        }
+      ]
+    },
+    {
+      "id": "FMS-016",
+      "text": "The NDB thread shall be periodic with a 100 ms period, a 100 ms deadline and a declared execution-time interval of 0-20 ms.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/m4_software.aadl",
+          "line_start": 35,
+          "line_end": 51,
+          "sha256": "a7fefd1485db245b3decf4fd11bc704aa8437462a87adc8a8e7f35b5c292d7c3",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "45c9a4c7a62580bdc05314f0ef3da76b7a683d5229aaa840ae4f8ad599d70a07",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/m4_software.aadl#L35-L51"
+        }
+      ]
+    },
+    {
+      "id": "FMS-017",
+      "text": "Every virtual-processor partition shall declare highest-priority-first POSIX scheduling. This specifies the partition scheduling policy; no numeric thread priorities are added because the source priority assignments are commented out.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/fms_hardware.aadl",
+          "line_start": 99,
+          "line_end": 102,
+          "sha256": "006a43e5b11cfa98e904673e4f880860cc7311f638d0b07d4a930953d403c4f8",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "0b5877fbfc0eb1af742365bba7e5dd5751a948599652dbdb056ce0ad2bf976c9",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/fms_hardware.aadl#L99-L102"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/m1_software.aadl",
+          "line_start": 59,
+          "line_end": 80,
+          "sha256": "81d296caba577976edd0ed260211ebc7f5ec0fce17b98503a24a6ce3ed672fed",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "b1ba7ac33553adee68c240755fbd7c897705c62de0d582891124795920e448a8",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/m1_software.aadl#L59-L80"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/m2_software.aadl",
+          "line_start": 56,
+          "line_end": 61,
+          "sha256": "cb791a3c1ed73e1455c9fdcbe68aeabcfd11f470b0e0137d32b0e5b04fc55649",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "562f5e647f324d1d1fa14d74420f7a8afe81962aa38fdd86de1b730ca40fd3a1",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/m2_software.aadl#L56-L61"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/m3_software.aadl",
+          "line_start": 39,
+          "line_end": 44,
+          "sha256": "3174e4195a85bee03503faeaae6197ae42c3b9c706c7f7da45e6bd66e44ec336",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "562f5e647f324d1d1fa14d74420f7a8afe81962aa38fdd86de1b730ca40fd3a1",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/m3_software.aadl#L39-L44"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/m4_software.aadl",
+          "line_start": 44,
+          "line_end": 49,
+          "sha256": "a7fefd1485db245b3decf4fd11bc704aa8437462a87adc8a8e7f35b5c292d7c3",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "db1b31ba63a1c53451e166f2f2f67a695a2bfe1f6a26f36f8857007aac0e0821",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/m4_software.aadl#L44-L49"
+        }
+      ]
+    },
+    {
+      "id": "FMS-018",
+      "text": "Module 1 shall use a 50 ms ARINC653 major frame with a 25 ms KU1 partition slot followed by a 25 ms MFD1 partition slot, each marking a periodic-processing start.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/fms_hardware.aadl",
+          "line_start": 107,
+          "line_end": 122,
+          "sha256": "006a43e5b11cfa98e904673e4f880860cc7311f638d0b07d4a930953d403c4f8",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "5479eef51dbad883f5f5bd7505b4d6b8213f3719799810a4fad70a9af2fc2ef0",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/fms_hardware.aadl#L107-L122"
+        }
+      ]
+    },
+    {
+      "id": "FMS-019",
+      "text": "Module 2 and module 3 shall each use a 60 ms ARINC653 major frame. Each shall contain two 30 ms slots for its own single partition, and each slot shall mark a periodic-processing start.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/fms_hardware.aadl",
+          "line_start": 124,
+          "line_end": 154,
+          "sha256": "006a43e5b11cfa98e904673e4f880860cc7311f638d0b07d4a930953d403c4f8",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "82dcec79b18a0f431918cb3d45444aa7abfbd091f3ce1a0a8ea9460b07066064",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/fms_hardware.aadl#L124-L154"
+        }
+      ]
+    },
+    {
+      "id": "FMS-020",
+      "text": "Module 4 shall use a 100 ms ARINC653 major frame containing a 20 ms NDB slot followed by an 80 ms NDB slot; both slots shall mark periodic-processing starts.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/fms_hardware.aadl",
+          "line_start": 156,
+          "line_end": 170,
+          "sha256": "006a43e5b11cfa98e904673e4f880860cc7311f638d0b07d4a930953d403c4f8",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "2aaf2433d486d4d44ad45ac9ce1cb3250587dec1072acf64d3e9bbf938666bea",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/fms_hardware.aadl#L156-L170"
+        }
+      ]
+    },
+    {
+      "id": "FMS-021",
+      "text": "The keyboard-to-module-1 request and module-1-to-display connections shall be bound to CAN. Both keyboard and display devices, and the corresponding module-1 CAN access features, shall be connected to that bus.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/fms.aadl",
+          "line_start": 42,
+          "line_end": 46,
+          "sha256": "424ba3e3b5c0d6dd1046e396e1234825b00511b1d747f7d6f0eacf36d57ae43f",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "f3622ae4c55a79dbf5ca1415cba463feb0ff092be4c86c06fb66305ae7b5c795",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/fms.aadl#L42-L46"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/fms.aadl",
+          "line_start": 77,
+          "line_end": 78,
+          "sha256": "424ba3e3b5c0d6dd1046e396e1234825b00511b1d747f7d6f0eacf36d57ae43f",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "77eefef0a1e20f7c6994aa95047ab50298c9dae3342e8c2d38beedce2720ccea",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/fms.aadl#L77-L78"
+        }
+      ]
+    },
+    {
+      "id": "FMS-022",
+      "text": "The AFDX physical bus shall contain six virtual links named VL1 through VL6. All four modules, the RDC and each of the three switches shall expose accesses connected to the physical AFDX network.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/fms_hardware.aadl",
+          "line_start": 67,
+          "line_end": 75,
+          "sha256": "006a43e5b11cfa98e904673e4f880860cc7311f638d0b07d4a930953d403c4f8",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "3e497c0595070678fcdb574e144b03ed0c796a0dd2d5829950a895515abdea81",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/fms_hardware.aadl#L67-L75"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/fms.aadl",
+          "line_start": 47,
+          "line_end": 54,
+          "sha256": "424ba3e3b5c0d6dd1046e396e1234825b00511b1d747f7d6f0eacf36d57ae43f",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "ae8306262d326a3c437893b80103042024f39128b97d6bb4644a9e3d8e6e058f",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/fms.aadl#L47-L54"
+        }
+      ]
+    },
+    {
+      "id": "FMS-023",
+      "text": "The waypoint-identifier connection shall be bound to VL1; waypoint-information and ETA connections shall share VL2; database query shall use VL3; database answer shall use VL4; speed shall use VL5; and pressure shall use VL6.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/fms.aadl",
+          "line_start": 79,
+          "line_end": 85,
+          "sha256": "424ba3e3b5c0d6dd1046e396e1234825b00511b1d747f7d6f0eacf36d57ae43f",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "f8d1d3ad5d9163abf2a3042504fffb92208035bc4b223429342e2df20f81090d",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/fms.aadl#L79-L85"
+        }
+      ]
+    },
+    {
+      "id": "FMS-024",
+      "text": "VL1, VL2, VL3, VL4, VL5 and VL6 shall have declared bandwidth-allocation gaps of 32, 8, 16, 64, 32 and 32 ms respectively. Each shall retain the locally declared 1 ms latency-constraint property, which is a model input rather than an established traversal-time result.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/fms_hardware.aadl",
+          "line_start": 25,
+          "line_end": 59,
+          "sha256": "006a43e5b11cfa98e904673e4f880860cc7311f638d0b07d4a930953d403c4f8",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "7a3c69d2f0402f0e45be2d503fed6d235999bd48052b3d38fd1eb9e485bc9d62",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/fms_hardware.aadl#L25-L59"
+        }
+      ]
+    },
+    {
+      "id": "FMS-025",
+      "text": "The virtual-link type shall declare a maximum jitter parameter of 500 us. Every switch device shall declare a switching-delay parameter of 140 us.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/fms_hardware.aadl",
+          "line_start": 19,
+          "line_end": 23,
+          "sha256": "006a43e5b11cfa98e904673e4f880860cc7311f638d0b07d4a930953d403c4f8",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "bbada8027b6ffe71e3c6adb25ae28d86fa57199cc34fb7f1ed6ae9e194e9bd02",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/fms_hardware.aadl#L19-L23"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/fms_hardware.aadl",
+          "line_start": 77,
+          "line_end": 83,
+          "sha256": "006a43e5b11cfa98e904673e4f880860cc7311f638d0b07d4a930953d403c4f8",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "3d9644c2c2effd409af13c33f4bc044be4c0af8981f3612d78d5eef312ebe867",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/fms_hardware.aadl#L77-L83"
+        }
+      ]
+    },
+    {
+      "id": "FMS-026",
+      "text": "For the active Actual_Connection_Binding route configuration, VL1 and VL4 shall follow sw1 then sw2; VL2 and VL3 shall follow sw2 then sw1; VL5 shall follow sw3, sw1, sw2; and VL6 shall use sw3.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/fms.aadl",
+          "line_start": 87,
+          "line_end": 94,
+          "sha256": "424ba3e3b5c0d6dd1046e396e1234825b00511b1d747f7d6f0eacf36d57ae43f",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "2a483a99956ba1fda897b0ae8150083c4da64a5377f071a639d5c97a61576223",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/fms.aadl#L87-L94"
+        }
+      ]
+    },
+    {
+      "id": "FMS-027",
+      "text": "The model shall expose five named inter-module end-to-end flows: waypoint identifier, waypoint information, database query, database answer and speed. It shall also expose the complete keyboard-request chain through module 1, module 2, module 4, module 2 and module 1 to the display.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/fms.aadl",
+          "line_start": 56,
+          "line_end": 69,
+          "sha256": "424ba3e3b5c0d6dd1046e396e1234825b00511b1d747f7d6f0eacf36d57ae43f",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "b5738166e876fde6ff76fd3ce9b4b571c3fc079327973c1ed0fc0019d8c76630",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/fms.aadl#L56-L69"
+        }
+      ]
+    },
+    {
+      "id": "FMS-028",
+      "text": "The module-level flow paths shall be refined through their process and thread boundaries for request-to-waypoint, waypoint-information-to-display, waypoint-to-query, answer-to-information, speed-to-ETA, pressure-to-speed and query-to-answer processing.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/subsystem.aadl",
+          "line_start": 78,
+          "line_end": 80,
+          "sha256": "5332f3a1d79901e85b26060e122e14c06c965e831616baaf02f9e3e5920091ff",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "2f25e0fd9ae1fd7cbd049c90f40be54c00bde9cfa013023452a58ca1beef41d3",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/subsystem.aadl#L78-L80"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/subsystem.aadl",
+          "line_start": 127,
+          "line_end": 130,
+          "sha256": "5332f3a1d79901e85b26060e122e14c06c965e831616baaf02f9e3e5920091ff",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "c1b903bd12d8c1dd3cc093588e39c91e8177df160945155f3dae2779208374f2",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/subsystem.aadl#L127-L130"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/subsystem.aadl",
+          "line_start": 161,
+          "line_end": 162,
+          "sha256": "5332f3a1d79901e85b26060e122e14c06c965e831616baaf02f9e3e5920091ff",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "54af8a6fa0ec10738f01743edec389df5d8ef0819b5aad03ab63bd86187283f5",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/subsystem.aadl#L161-L162"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/subsystem.aadl",
+          "line_start": 194,
+          "line_end": 195,
+          "sha256": "5332f3a1d79901e85b26060e122e14c06c965e831616baaf02f9e3e5920091ff",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "edbd0e643e407c91917e1dcd14e50597cd5f892d5a89bfba2b0cf79f77ac4aeb",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/subsystem.aadl#L194-L195"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/m1_software.aadl",
+          "line_start": 18,
+          "line_end": 46,
+          "sha256": "81d296caba577976edd0ed260211ebc7f5ec0fce17b98503a24a6ce3ed672fed",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "70a32a74bd875e0c2b1f4c45afb35346688e1a35166b4f6bd033305bb28b0987",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/m1_software.aadl#L18-L46"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/m2_software.aadl",
+          "line_start": 23,
+          "line_end": 37,
+          "sha256": "cb791a3c1ed73e1455c9fdcbe68aeabcfd11f470b0e0137d32b0e5b04fc55649",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "d5f0270e9a0d9cf699084ecd5c813bf5eb84f0c96f401f41b81ab6c42d01cbd2",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/m2_software.aadl#L23-L37"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/m3_software.aadl",
+          "line_start": 18,
+          "line_end": 26,
+          "sha256": "3174e4195a85bee03503faeaae6197ae42c3b9c706c7f7da45e6bd66e44ec336",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "890ecfa1651b10a2dc54175d2a5e3be744b62682e914fa96b18d0f686d393c10",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/m3_software.aadl#L18-L26"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/fms/m4_software.aadl",
+          "line_start": 19,
+          "line_end": 29,
+          "sha256": "a7fefd1485db245b3decf4fd11bc704aa8437462a87adc8a8e7f35b5c292d7c3",
+          "note": "Active model declarations at the pinned source revision; no external standard-compliance claim is implied.",
+          "span_sha256": "c3621fa63cc28f46533ebec51010a856fea3cb5352b81bede5fc8fbc701d3b52",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/fms/m4_software.aadl#L19-L29"
+        }
+      ]
+    }
+  ],
+  "schema_version": 1,
+  "requirement_origin": "derived_example",
+  "is_gold_reference": false,
+  "source_repository": "OpenAADL/AADLib",
+  "source_ref": "c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a",
+  "author_requirement_meaning": "Paraphrased author prose embedded in source models; not an independent original specification.",
+  "curation_method": "AI-assisted architecture reconstruction with line-level source review; no claim of complete functional coverage or contract proof."
+}

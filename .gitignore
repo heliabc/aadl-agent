@@ -3,8 +3,11 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .runs/
+Generate/
 dist/
 build/
 *.egg-info/
 .tools/
+.cache/
+temp/
 

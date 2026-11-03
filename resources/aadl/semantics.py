@@ -37,6 +37,7 @@ RESERVED = frozenset(['aadlboolean',
  'connections',
  'constant',
  'data',
+ 'delta',
  'device',
  'end',
  'enumeration',
@@ -52,7 +53,6 @@ RESERVED = frozenset(['aadlboolean',
  'in',
  'inherit',
  'initial',
- 'internal',
  'inverse',
  'is',
  'list',
@@ -2409,6 +2409,8 @@ class _Package:
     imports: set = field(default_factory=set)
     renames: dict = field(default_factory=dict)
     import_all: set = field(default_factory=set)
+    sections: dict = field(default_factory=dict)
+    parts: list = field(default_factory=list)
 
 
 @dataclass
@@ -2425,11 +2427,14 @@ class _Declaration:
     children: dict = field(default_factory=dict)
     connections: dict = field(default_factory=dict)
     modes: dict = field(default_factory=dict)
+    transitions: dict = field(default_factory=dict)
     flows: dict = field(default_factory=dict)
+    end_to_end: dict = field(default_factory=dict)
     prototypes: dict = field(default_factory=dict)
     calls: dict = field(default_factory=dict)
     internal: dict = field(default_factory=dict)
     processor: dict = field(default_factory=dict)
+    public_part: object = None
 
 
 @dataclass
@@ -2527,74 +2532,302 @@ def _validate_plan(plan):
     return symbols
 
 
-_PORT_SCHEMA = {'type': 'object', 'additionalProperties': False,
-    'required': ['name', 'direction', 'kind', 'classifier'], 'properties': {
-        'name': {'type': 'string', 'minLength': 1}, 'direction': {'type': 'string', 'enum': list(DIRECTIONS)},
-        'kind': {'type': 'string', 'enum': ['data', 'event', 'event data']}, 'classifier': {'type': 'string'}}}
-_TYPE_SCHEMA = {'type': 'object', 'additionalProperties': False,
-    'required': ['name', 'category', 'ports'], 'properties': {
-        'name': {'type': 'string', 'minLength': 1}, 'category': {'type': 'string', 'enum': list(CATEGORIES)},
-        'ports': {'type': 'array', 'items': _PORT_SCHEMA}}}
-_IMPL_SCHEMA = {'type': 'object', 'additionalProperties': False,
-    'required': ['name', 'category'], 'properties': {
-        'name': {'type': 'string', 'minLength': 1}, 'category': {'type': 'string', 'enum': list(CATEGORIES)}}}
+def _repair_code_view(text):
+    """Hide non-code without changing source offsets or line numbers.
+
+    Repair hints are not a second parser. They deliberately ignore strings,
+    comments and annex bodies, whose words must not be treated as AADL clauses.
+    The same masking also handles truncated quoted/annex text conservatively.
+    """
+    output, index = list(text), 0
+    while index < len(text):
+        start = index
+        if text.startswith('--', index):
+            while index < len(text) and text[index] not in '\r\n':
+                index += 1
+        elif text.startswith('{**', index):
+            end = text.find('**}', index + 3)
+            index = len(text) if end < 0 else end + 3
+        elif text[index] == '"':
+            index += 1
+            while index < len(text):
+                if text.startswith('""', index):
+                    index += 2  # AADL escapes a quote by doubling it.
+                elif text[index] == '"':
+                    index += 1
+                    break
+                else:
+                    index += 1
+        else:
+            index += 1
+            continue
+        for position in range(start, index):
+            if text[position] not in '\r\n':
+                output[position] = ' '
+    return ''.join(output)
+
+
+def _repair_data_patterns(source):
+    """Recognize two narrow malformed constructs, without judging a project.
+
+    This recognizer only supplies advice after a real error at the same source
+    line. Keeping recognition separate also lets later feedback report whether
+    a construct was observed again, without calling its disappearance a fix.
+    """
+    identifier = _IDENT.pattern
+    namespace = rf'{identifier}(?:\s*::\s*{identifier})*'
+    classifier = rf'{namespace}(?:\s*\.\s*{identifier})?'
+    patterns = (
+        ('aadl.data_port_classifier_keyword', re.compile(
+            rf'^\s*{identifier}\s*:\s*(?:in\s+out|in|out)\s+(?:event\s+)?data\s+port\s+type\s+{classifier}\s*;\s*$',
+            re.IGNORECASE),
+         'A data or event-data port names its classifier directly after port; type is not an intervening keyword.',
+         'Remove the extra type keyword between data port and the classifier. '
+         'Use the fragment `p: out data port Library::Payload;`, preserving this port\'s actual name, '
+         'direction, kind and classifier. Regenerate the complete project.'),
+        ('aadl.data_declaration_keyword', re.compile(
+            rf'^\s*data\s+type\s+{identifier}\s*$', re.IGNORECASE),
+         'A data component type declaration begins with data followed by its defining name.',
+         'Remove the extra type keyword from this declaration header. Use the fragment '
+         '`data Payload ... end Payload;`, preserving the actual defining and closing name. '
+         'The ellipsis denotes the existing body, not literal AADL source. Regenerate the complete project.'),
+    )
+    original = source['text'].splitlines()
+    for number, line in enumerate(_repair_code_view(source['text']).splitlines(), 1):
+        for pattern_id, pattern, explanation, suggestion in patterns:
+            if pattern.fullmatch(line):
+                yield {'id': pattern_id, 'source': source['name'], 'line': number,
+                       'observed': original[number - 1].strip(),
+                       'explanation': explanation, 'suggestion': suggestion}
+
+
+def _repair_error_lines(source, diagnostics):
+    """Only located errors in this file support the new construct advice.
+
+    Flat messages and warnings cannot prove where a malformed spelling occurs.
+    Preserve a relative source's full path suffix instead of matching arbitrary
+    basenames, which could attach another file's diagnostic to this source.
+    """
+    name = source['name'].replace('\\', '/').casefold()
+    for diagnostic in diagnostics:
+        if (not isinstance(diagnostic, dict) or not isinstance(diagnostic.get('severity'), str)
+                or diagnostic['severity'].lower() != 'error'):
+            continue
+        path = diagnostic.get('source', diagnostic.get('path', diagnostic.get('file')))
+        line = diagnostic.get('line')
+        if isinstance(path, str) and type(line) is int and line > 0:
+            path = path.replace('\\', '/').casefold()
+            if path == name or path.endswith('/' + name):
+                yield line
+
+
+def reobserve_repair_focus(focus, sources):
+    """Re-observe a supported spelling in its source, not a repaired obligation.
+
+    Lines may move between attempts, so this is deliberately source-wide. A
+    false result means only that this recognizable construct was not seen; it
+    does not establish syntax, semantics, or requirement satisfaction. Missing
+    sources and unsupported patterns remain unknown rather than false.
+    """
+    pattern_id, name = focus.get('pattern_id'), focus.get('source')
+    if pattern_id not in {'aadl.data_port_classifier_keyword', 'aadl.data_declaration_keyword'}:
+        return None
+    text = sources.get(name)
+    if not isinstance(text, str):
+        return None
+    return any(item['id'] == pattern_id for item in _repair_data_patterns({'name': name, 'text': text}))
+
+
+def repair_advice(sources, diagnostics, declarations=None):
+    """Return located AADL advice, never rewritten source or decoding rules.
+
+    The validators retain their original diagnostics. These narrowly recognized
+    source patterns explain a likely cause when parser recovery instead reports
+    a misleading missing ``end`` or mismatched package name. No package names
+    are hard-coded, and suggestions remain advisory for the same model to apply.
+    """
+    identifier = _IDENT.pattern
+    namespace = rf'{identifier}(?:\s*::\s*{identifier})*'
+    names = rf'{namespace}(?:\s*,\s*{namespace})*'
+    import_word = '[iI][mM][pP][oO][rR][tT]'
+    clause = re.compile(rf'^\s*{import_word}\s+({names})\s*;?\s*$')
+    bare = re.compile(rf'^\s*({namespace})\s*;?\s*$')
+    package_header = re.compile(rf'\b[pP][aA][cC][kK][aA][gG][eE]\s+({namespace})')
+    known, views = set(), []
+    for declaration in declarations or ():
+        name = declaration.get('name', '')
+        if '::' in name:
+            known.add(name.rsplit('::', 1)[0].lower())
+    for source in sources:
+        code = _repair_code_view(source['text'])
+        views.append(code)
+        for match in re.finditer(rf'{identifier}(?:\s*::\s*{identifier})+', code):
+            # A qualified classifier/property use supplies its namespace; a
+            # namespaced package/with declaration itself does not supply its
+            # shorter parent namespace as a separate dependency.
+            before = code[code.rfind('\n', 0, match.start()) + 1:match.start()].strip().lower()
+            if before not in {'package', 'with'}:
+                known.add(re.sub(r'\s+', '', match.group()).rsplit('::', 1)[0].lower())
+        for match in package_header.finditer(code):
+            known.add(re.sub(r'\s+', '', match.group(1)).lower())
+
+    advice = []
+    for source, code in zip(sources, views):
+        error_lines = set(_repair_error_lines(source, diagnostics))
+        advice.extend(item for item in _repair_data_patterns(source) if item['line'] in error_lines)
+        original = source['text'].splitlines()
+        offset = 0
+        for line_number, code_line in enumerate(code.splitlines(keepends=True), 1):
+            line = code_line.rstrip('\r\n')
+            match = clause.fullmatch(line)
+            # The broad identifier pattern also spells reserved words. They
+            # cannot be namespace targets: in particular, ``import renames``
+            # can be the start of a legal alias named import, with its category
+            # and target on later lines or after comments. Leave it untouched.
+            if match and any(part.lower() in RESERVED for part in re.findall(identifier, match.group(1))):
+                match = None
+            if match:
+                targets = ', '.join(re.sub(r'\s+', '', item) for item in match.group(1).split(','))
+                advice.append({'id': 'aadl.with_clause_keyword', 'source': source['name'],
+                    'line': line_number, 'observed': original[line_number - 1].strip(),
+                    'explanation': 'AADL makes a namespace visible with the keyword with. '
+                        'This standalone import statement is not an AADL visibility clause; '
+                        'a later missing-end or ending-name diagnostic can be parser recovery from this line.',
+                    'suggestion': f'Replace this statement with `with {targets};` in the package visibility section '
+                        'or property-set import section, before declarations. Preserve the package and component names; '
+                        'regenerate the complete project.'})
+            elif not source['complete']:
+                match = bare.fullmatch(line)
+                spelling = re.sub(r'\s+', '', match.group(1)) if match else ''
+                target = spelling[6:] if spelling[:6].lower() == 'import' else ''
+                prefix = code[:offset]
+                # Only explain this spelling immediately in a visibility
+                # section. A component/feature actually named importLibrary,
+                # or an alias followed by renames on the next line, is legal.
+                sections = list(re.finditer(r'\b(?:[pP][uU][bB][lL][iI][cC]|[pP][rR][iI][vV][aA][tT][eE])\b', prefix))
+                visibility = prefix[sections[-1].end():] if sections else None
+                follows_visibility = visibility is not None and re.fullmatch(
+                    rf'\s*(?:[wW][iI][tT][hH]\s+{names}\s*;\s*)*', visibility) is not None
+                remaining = code[offset + len(code_line):].lstrip()
+                alias_follows = re.match(r'[rR][eE][nN][aA][mM][eE][sS]\b', remaining) is not None
+                own = package_header.search(prefix)
+                own_name = re.sub(r'\s+', '', own.group(1)).lower() if own else ''
+                if (target and target.lower() in known and target.lower() != own_name
+                        and follows_visibility and not alias_follows):
+                    advice.append({'id': 'aadl.unfinished_visibility_identifier', 'source': source['name'],
+                        'line': line_number, 'observed': original[line_number - 1].strip(),
+                        'explanation': f'This line is an unfinished identifier, not a with clause. '
+                            f'The source names {target} as a namespace. Repeating comments cannot complete the declaration.',
+                        'suggestion': f'If this line was intended to make namespace {target} visible, restart it as '
+                            f'`with {target};` before classifiers and regenerate the whole project. '
+                            'Do not rename a genuine identifier or replace a valid renames declaration.'})
+            offset += len(code_line)
+    return advice
+
+
+# Both groups receive the same production shapes. Metavariables avoid supplying
+# concrete library/classifier names or a fixed architecture to copy. Showing the
+# full header/body/end shape makes semicolon and section boundaries explicit.
+_SOURCE_GUIDANCE = (
+    'The following are separate core-AADL production shapes, not a project to copy. '
+    '<...> denotes a placeholder; [...] denotes an optional block. Replace placeholders with required names or '
+    'declarations and omit unused blocks; never emit the angle brackets, square brackets or explanatory labels.\n'
+    'AADL category keywords are literal header words. For a device type use `device N`; for a system type use '
+    '`system N`. Matching implementation headers are `device implementation N.i` and `system implementation N.i`. '
+    'N and i stand for the required type name and implementation variant. '
+    'Never use `component type N` or `implementation device N.i` as a header.\n'
+    'Package:\npackage <package_name>\npublic\n[with <other_package>;]\n<declarations>\nend <package_name>;\n'
+    'Type form:\n<category> <type_name>\n[features\n  <feature_declarations>]\n'
+    '[properties\n  <property_associations>]\nend <type_name>;\n'
+    'Implementation form:\n<category> implementation <type_name>.<variant>\n'
+    '[subcomponents\n  <child_name>: <child_category> <child_classifier>;]\n'
+    '[connections\n  <link_name>: port <source_endpoint> -> <destination_endpoint>;]\n'
+    'end <type_name>.<variant>;\n'
+    'Data type:\ndata <data_name>\n[properties\n  Data_Size => <byte_count> Bytes;]\nend <data_name>;\n'
+    'Headers package, component type and implementation have no trailing semicolon. '
+    'Use the matching defining name after end, followed by a semicolon; do not write end package or end features. '
+    'A section contains one or more declarations and has no separate end clause. '
+    'Omit an unused section rather than emitting an empty features, subcomponents or connections section. '
+    'Choose category from the requirements: a device remains device, a system remains system; '
+    'its implementation uses the same category as its type. An implementation automatically inherits its type\'s '
+    'interfaces: no implements or inherits clause is needed. Use extends only for explicitly intended inheritance '
+    'from another classifier. All classifier declarations are peers in their package, not nested inside a type. '
+    'Closing a type with end <type_name>; leaves its package open for subsequent declarations. '
+    'Finish all declarations belonging to a package block before end <package_name>;. '
+    'An implementation must be inside a package body; do not move it after the package closing clause. '
+    'Event-port form: <port_name>: <direction> event port; '
+    'Data-port form: <port_name>: <direction> data port <data_classifier>; '
+    'Event-data-port form: <port_name>: <direction> event data port <data_classifier>; '
+    'direction is in, out or in out. Preserve the required event/data/event-data kind and classifier: '
+    'an event data port carries data and must not be replaced by a plain event port. '
+    'An event port has no data classifier; a data classifier follows port directly, without a type keyword. '
+    'A storage size is a Data_Size property association, not a feature named size. '
+    'For a type in the same package use its local name. Add with only when referring to a package actually '
+    'provided by the explicitly supplied environment or standard libraries, and use its qualified classifier name. '
+    'Do not import the containing package or invent a dependency to imitate these syntax shapes. '
+    'A standard document title such as AS5506D is not itself an importable AADL package. '
+    'Generate exactly one AADL source file in exactly one FILE block. Under the selected OSATE file profile, '
+    'that file contains one package or one property set. For a component-modeling requirement, keep all types, '
+    'implementations and supporting declarations inside the same package. A classifier referenced earlier '
+    'may be defined later within this package, including another system at the same nesting level. '
+    'Define every required local target before closing this single file. '
+    'Within an implementation, an endpoint on the enclosing component is its local port name; '
+    'an endpoint on a child starts with the child instance name, as <child_name>.<port_name>. '
+    'Do not prefix an enclosing port with its classifier or implementation name. Use one hyphen in ->. '
+    'Create the required declarations and necessary supporting definitions; do not add illustrative data types, '
+    'ports or child instances that the architecture does not need. ')
+
 METADATA = {
     'profile': 'AS5506D-core', 'runtime_version': '4', 'standard': STANDARD,
+    'generation_profile': 'single_source_file',
+    # The active service derives symbols from generated source. Declaration
+    # plans are not an input to generation; legacy helpers remain replay-only.
+    'generation_interface': 'single_source_no_declaration_plan',
+    'generation_file_count': 1,
+    'file_compatibility_profile': 'OSATE: one generated source file containing one package or property set; same-file forward references remain deferred',
     'osate_revision': OSATE_REVISION, 'osate_source': OSATE_SOURCE,
     'implemented_scope': (
-        'Core declarations, project-wide names and visibility, category containment, basic inheritance/refinement, '
+        'One generated source file per requirement, core declarations, names and visibility within that file '
+        'and explicitly supplied libraries, category containment, basic inheritance/refinement, '
         'ordinary port connections and forward interface obligations, scalar/list/record/range property typing, '
-        'property units/applicability, basic modes/flow endpoints, array positivity, and explicit deferred checks.'),
+        'property units/applicability, property-set imports and qualified classifier owners, constant and list typing, '
+        'split public/private packages and implementation visibility views, alias target/category obligations, '
+        'inherited mode-transition namespaces and membership domains, data-access/feature-group flow endpoints, '
+        'array positivity, and explicit deferred checks. This inventory is not a claim of complete AS5506D coverage.'),
     'unsupported_checks': (
         'Computed properties and effective access rights whose values require unresolved modal/binding context '
         'remain explicit Pending obligations. Instance binding-dependent communication protocol support and '
-        'full runtime behavior are not established by declaration checking. Annex internals are outside the selected scope.'),
+        'full runtime behavior are not established by declaration checking. Prototype Signature_Match and '
+        'modal/computed/context-dependent substitution policies remain explicit Pending obligations. '
+        'Annex internals and cross-file generation are outside the selected generation and acceptance scope.'),
+    'prototype_policy_scope': (
+        'Prototype_Substitution_Rule is read from the formal inline association, determinable inherited classifier '
+        'associations, or the loaded Modeling_Properties definition default (currently Type_Extension). '
+        'Classifier_Match compares component types; Type_Extension follows component-type ancestry. '
+        'Open policy scopes defer checking; Signature_Match is not approximated by subtype checks.'),
     'instance_scope': 'AS5506D 13.1 C1 classifier/process-thread checks and C9 required category presence; local instance reference integrity.',
     'instance_unsupported_checks': 'Complete binding/resource/timing analysis, source-code compliance, behavioral reachability and schedulability are not proved by this hook.',
-    'planning_schema': {'type': 'object', 'additionalProperties': False,
-        'required': ['component_types', 'implementations'], 'properties': {
-            'component_types': {'type': 'array', 'items': _TYPE_SCHEMA},
-            'implementations': {'type': 'array', 'items': _IMPL_SCHEMA}}},
     'system_prompt': (
         'You are one AADL modeling agent. Implement the supplied requirements using AS5506D core AADL. '
-        'Follow the output format of the current phase: declaration-plan JSON during planning, '
-        'and the explicitly supplied project-file container during generation. Do not add Markdown or prose. '
-        'Preserve required classifier names and interfaces. '
-        'A project may contain packages and property sets; imports refer to actual project or standard library units. '
-        'Forward classifier references are permitted and must be defined before project completion. '
-        'Component types declare interfaces; implementations inherit them. Sections do not have end clauses. '
-        'Every package, property set, type, implementation and feature group uses its matching closing name. '
+        'Return exactly one complete AADL source file in the supplied container, with exactly one FILE block '
+        'and no JSON, Markdown or explanation. '
+        'Preserve required classifier names, component categories and interfaces. '
+        'The generated file contains one package or one property set; imports refer only to explicitly supplied '
+        'or standard library units. Forward classifier references inside the generated package are permitted '
+        'and must be defined before file completion. '
         'Ordinary child connections connect an out port to an in port; boundary input ports act as internal sources '
         'and boundary output ports as internal destinations. Keep categories, classifiers and port kinds compatible. '
         'Do not replace requested structure with comments. Annex internal languages are outside this core-language task.'),
-    'planning_prompt': (
-        'Return a declaration plan as JSON with component_types and implementations arrays. Each type has name, '
-        'category, and ports; each port has name, direction (in/out/in out), kind (data/event/event data), '
-        'and classifier (empty if absent). Implementations have name and category. Use Package::Type names when '
-        'the project has multiple packages. Include all planned data classifiers and matching base types. '
-        'Plan only declaration/interfaces here, then generate the required full architecture.'),
-    'generation_prompt': (
-        'Generate the complete AADL project implementing the original requirements. Apply supplied diagnostics. '
-        'If a declaration plan exists, fulfill all its actual definitions and interfaces. Follow the outer project '
-        'container instructions exactly, including its file/control lines and the leading | on every source line. '
-        'Do not output Markdown, JSON, explanatory prose, or AADL comments. '
-        'Every port connection must have its own name and the port keyword: '
-        'link_name: port source -> destination; Use -> with one hyphen, never -->. '
-        'A subcomponent in another package uses its qualified classifier, such as Library::Unit.impl, '
-        'and its package must be imported by the complete statement with Library; after public '
-        'and before any component declarations. The import statement requires its semicolon. '
-        'The following is only a complete format and syntax illustration; choose declarations and names from the actual requirements. '
-        'A component implementation is a separate package declaration, never a feature inside a type:\n'
-        'AADL-PROJECT 1\nFILE\n|package SyntaxIllustration\n|public\n|with SyntaxLibrary;\n'
-        '|system Composite\n|features\n| input_p: in event port;\n| output_p: out event port;\n|end Composite;\n'
-        '|system implementation Composite.impl\n|subcomponents\n| stage_unit: system SyntaxLibrary::Stage.impl;\n|connections\n'
-        '| upstream: port input_p -> stage_unit.input_p;\n| downstream: port stage_unit.output_p -> output_p;\n'
-        '|end Composite.impl;\n|end SyntaxIllustration;\nEND_FILE\n'
-        'FILE\n|package SyntaxLibrary\n|public\n'
-        '|system Stage\n|features\n| input_p: in event port;\n| output_p: out event port;\n|end Stage;\n'
-        '|system implementation Stage.impl\n|end Stage.impl;\n|end SyntaxLibrary;\nEND_FILE\nEND_PROJECT\n'
-        'Now produce the requested project. Use additional FILE blocks for additional source files, '
-        'and finish with END_PROJECT as shown. The illustration is not part of your answer.'),
+    'generation_prompt': ('Generate the complete single-file AADL model for the original requirements. ' + _SOURCE_GUIDANCE),
+    'repair_prompt': ('Repair the previous rejected single-file model using the selected repair focus and validator evidence. '
+        'The focus is a bounded next correction to inspect, not proof of the only root cause. '
+        'Change the erroneous source construct and preserve valid names, interfaces and connections. '
+        'Parser-recovery messages after an earlier bad clause may be secondary: do not rename correctly matched '
+        'packages or classifiers just to satisfy a downstream recovery message. '
+        # Shared syntax guidance is supplied once in the system message by the
+        # pipeline. A repair turn adds the actual failure, not another tutorial.
+        'Regenerate the entire corrected model as exactly one AADL file in the next response. '
+        'Do not return an edit description, a patch or only the changed line.'),
 }
 
 
@@ -2609,6 +2842,8 @@ class _Check:
         self._feature_cache, self._child_cache = {}, {}
         self._constant_stack = set()
         self._scope_sections = {}
+        self._private_completions = {}
+        self._prototype_resolution = set()
 
     def bound(self, node, field):
         """Read a registered synthesized field, with dependencies tracked."""
@@ -2650,16 +2885,40 @@ class _Check:
                     self.collect_property_set(node)
                 elif node.production == 'package_spec':
                     self.collect_package(node)
+        for private in self._private_completions.values():
+            public = private.public_part
+            # §4.2 L3/(9)/(10): two source declarations form one implementation,
+            # but their visibility views remain separate immutable syntax nodes.
+            # External lookup selects the public view; private lookup sees its
+            # structural completion and inherits the public header/modes.
+            body = _first(public.node, 'implementation_body')
+            for section in getattr(body, 'children', ()):
+                if not section.production.isupper() and section.production not in {'gap', 'sep', 'modes', 'properties'}:
+                    self.conflict('package.public_implementation_shell',
+                                  'A split public implementation may contain only properties and modes', section, '§4.2 L3')
+            if private.extension or _direct(private.node, 'prototype_bindings'):
+                self.conflict('package.private_implementation_header',
+                              'The public implementation supplies extends and prototype bindings', private.node, '§4.2(10)')
+            private.extension = public.extension
 
     def collect_package(self, node):
         name_node = self.bound(node, 'name')
         if not _complete(name_node):
             return
         name = _name(name_node)
-        if name in self.packages or name in self.property_sets:
+        if name in self.property_sets:
             self.conflict('name.unique_model_unit', f'Duplicate package/property-set name {name}', name_node, '§4.2')
-        package = _Package(name, node)
+        package = self.packages.get(name) or _Package(name, node)
         self.packages[name] = package
+        package.parts.append(node)
+        # §4.2 N2/L2: one public and one private section may be declared in
+        # separate package declarations/files, in either physical file order.
+        for section in node.children:
+            if section.production in {'public_section', 'private_section'}:
+                if section.production in package.sections:
+                    self.conflict('name.unique_package_section', f'Duplicate {section.production} of package {name}', section, '§4.2 L2')
+                else:
+                    package.sections[section.production] = section
         self.match_end(node, name, 'end_package_name')
         for imp in _find(node, 'import_declaration'):
             package.imports.update(_name(n) for n in _find(imp, 'import_name') if _complete(n))
@@ -2673,10 +2932,10 @@ class _Check:
                 package.import_all.add(_name(target))
             else:
                 alias = self.bound(rename, 'name')
-                name = _name(alias) if alias is not None else _name(target).rsplit('::', 1)[-1]
-                if name in package.renames:
-                    self.conflict('name.unique_alias', f'Duplicate alias {name}', rename, '§4.2')
-                package.renames[name] = _name(target)
+                alias_name = _name(alias) if alias is not None else _name(target).rsplit('::', 1)[-1]
+                if alias_name in package.renames:
+                    self.conflict('name.unique_alias', f'Duplicate alias {alias_name}', rename, '§4.2')
+                package.renames[alias_name] = _name(target)
         for section in getattr(node, 'children', ()):
             if section.production not in {'public_section', 'private_section'}:
                 continue
@@ -2704,20 +2963,42 @@ class _Check:
         if not category:
             return
         key = package.name + '::' + name
-        if key in self.symbols:
+        previous = self.symbols.get(key)
+        if previous is not None and not (implementation and previous.implementation and previous.private != private
+                                         and key not in self._private_completions):
             self.conflict('name.unique_classifier', f'Duplicate classifier {key}', nn, '§4.2')
             return
         ext = self.bound(node, 'extension')
         declaration = _Declaration(key, name, package, category, implementation, node, private,
                                    self.attributes.get(node, 'extension'))
-        self.symbols[key] = declaration
+        if previous is not None:
+            public, completion = (previous, declaration) if private else (declaration, previous)
+            self.require(public.category == completion.category, 'package.implementation_category',
+                         'Public and private implementation declarations must have the same category', node, '§4.2 L3/§4.4 L3')
+            completion.public_part = public
+            self.symbols[key] = public
+            self._private_completions[key] = completion
+        else:
+            self.symbols[key] = declaration
         self.match_end(node, name, 'end_implementation_name' if implementation else 'end_name')
         for feature in _section_items(node, 'features', 'feature'):
             value = self.feature(feature)
             if value:
                 self.put_member(declaration.features, value.name, value, declaration, feature)
         for child in _section_items(node, 'subcomponents', 'subcomponent'):
-            if not _complete(_first(child, 'declaration_name')) or not _complete(_first(child, 'category')):
+            name_node, category_node = self.bound(child, 'name'), self.bound(child, 'category')
+            if not _complete(name_node):
+                continue
+            if not _complete(category_node):
+                # The name is fixed before the category is: after ``x:`` a
+                # second local x cannot be repaired by finishing ``system``.
+                # Do not invent a typed child or consult inherited members here;
+                # a refinement can legitimately reuse an inherited name. At an
+                # open identifier the frontend also retains an incomplete-name
+                # alternative, which the runtime must still consider viable.
+                if _name(name_node) in declaration.children:
+                    self.conflict('name.unique_member',
+                                  f'Duplicate member {declaration.key}.{_name(name_node)}', child, '§4.3')
                 continue
             reference_node = self.bound(child, 'classifier')
             value = _Child(_name(self.bound(child, 'name')), _text(self.bound(child, 'category')),
@@ -2726,7 +3007,10 @@ class _Check:
         for section, production, target in (
                 ('connections', 'connection', declaration.connections),
                 ('modes', 'mode', declaration.modes), ('type_modes', 'mode', declaration.modes),
+                ('modes', 'mode_transition', declaration.transitions),
+                ('type_modes', 'mode_transition', declaration.transitions),
                 ('flow_specs', 'flow_spec', declaration.flows),
+                ('flow_implementations', 'end_to_end_flow', declaration.end_to_end),
                 ('prototypes', 'prototype', declaration.prototypes),
                 ('calls', 'subprogram_call', declaration.calls)):
             for member in _section_items(node, section, production):
@@ -2816,14 +3100,77 @@ class _Check:
             # those imports and may add private ones. A classifier declaration
             # has already passed its section's visibility_declaration* prefix,
             # so appending text cannot repair a missing import at this use.
-            self.conflict('name.package_visibility',
+            report = self.pending if (scope.get('section') == 'private' and
+                                     self.public_visibility_open(package)) else self.conflict
+            report('name.package_visibility',
                           f'{target_package} is not imported in the {scope.get("section", "package")} scope of {package.name}',
                           node, '§4.2 N5')
         return target_package + '::' + name
 
+    def public_visibility_open(self, package):
+        """Can a later public part still supply imports to this private part?"""
+        if self.final:
+            return False
+        public = package.sections.get('public_section')
+        if public is None:
+            return True
+        # Once a declaration starts, visibility_declaration* has finished.
+        return not _complete(public) and not _find(public, 'aadl_declaration')
+
     def resolve(self, owner, reference, categories=None, node=None, implementation=None):
         if not reference:
             return None
+        if '::' not in reference and '.' not in reference:
+            scopes = self.namespace_ancestors(owner)
+            formal = next((scope.prototypes[reference] for scope in scopes if reference in scope.prototypes), None)
+            if formal is not None:
+                spec = _first(formal, 'component_prototype', 'feature_group_prototype', 'feature_prototype', recursive=True)
+                category_node = _first(spec, 'category')
+                category = _text(category_node) if category_node is not None else (
+                    'feature group' if getattr(spec, 'production', '') == 'feature_group_prototype' else '')
+                if categories and category and category != 'abstract':
+                    self.require(category in categories, 'prototype.reference_category',
+                                 f'Prototype {reference} is {category}, not {sorted(categories)}', node, '§4.7')
+                # Bindings in the public header also apply to its private
+                # completion. Inspect only classifier headers, never bindings
+                # belonging to a nested subcomponent using another classifier.
+                for scope in scopes:
+                    headers = (scope.node,) + _direct(scope.node, 'type_extension')
+                    for header in headers:
+                        for bindings in _direct(header, 'prototype_bindings'):
+                            for binding in _direct(bindings, 'prototype_binding'):
+                                if _field(binding, 'prototype_name') != reference:
+                                    continue
+                                actual = _first(binding, 'prototype_actual')
+                                values = _find(actual, 'component_actual')
+                                if len(values) != 1 or _first(actual, 'component_actual_list') is not None:
+                                    return None  # array actuals are checked by check_prototype_actual
+                                target = _first(values[0], 'classifier_reference')
+                                if not _complete(target):
+                                    self.pending('prototype.binding_complete', f'Complete actual for {reference}', binding, '§4.7')
+                                    return None
+                                identity = (id(owner.node), reference)
+                                if identity in self._prototype_resolution:
+                                    self.conflict('prototype.binding_cycle', f'Cyclic prototype binding for {reference}', binding, '§4.7')
+                                    return None
+                                self._prototype_resolution.add(identity)
+                                try:
+                                    return self.resolve(scope, _name(target), categories, target, implementation)
+                                finally:
+                                    self._prototype_resolution.remove(identity)
+                # Unbound generic prototypes are legal declarations. They are
+                # not fabricated package classifiers or unresolved package names.
+                return None
+            if self.namespace_can_grow(owner, include_local=False):
+                # An inherited formal may shadow a same-spelled package
+                # classifier, including one with a different category. Until
+                # every ancestor's prototype namespace is known, do not turn
+                # this use into a package classifier or contaminate its category
+                # obligations. Closing the current package does not close a
+                # forward-defined ancestor in another package (§4.7).
+                self.pending('prototype.inherited_scope',
+                             f'Resolve inherited prototype scope for {owner.key}.{reference}', node, '§4.7')
+                return None
         key = self.qualified(owner.package, reference, node if node is not None else owner.node)
         requested = set(categories or CATEGORIES + ('feature group',))
         prior = self.demands.setdefault(key, requested.copy())
@@ -2840,24 +3187,36 @@ class _Check:
         else:
             signature = self.attributes.get(self.attributes.root, 'symbols').get(key)
         found = self.symbols.get(key) if signature is not None and not isinstance(signature, Missing) else None
+        if found is not None and owner.private and found.package.name == owner.package.name:
+            found = self._private_completions.get(key, found)
         if found is None:
             # Prototypes are declarations with deferred classifier binding, not
             # global fake classifiers introduced merely to satisfy a reference.
-            prototype = owner.prototypes.get(reference)
-            if prototype is not None:
-                return None
+            scope_section = self._scope_sections.get(id(node), None)
+            containing_part = next((part for part in owner.package.parts
+                                    if scope_section is not None and scope_section in part.children), owner.package.node)
             closing = any(c.production == 'end_package_name' or
                           c.production.isupper() and _name(c) in {'e', 'en', 'end'}
-                          for c in getattr(owner.package.node, 'children', ()))
+                          for c in getattr(containing_part, 'children', ()))
+            # A private-only part may precede its public declaration in another
+            # file. A closed private file cannot close that missing namespace.
+            if owner.private and not self.final:
+                public = owner.package.sections.get('public_section')
+                if public is None or not _complete(public):
+                    closing = False
             if key.rsplit('::', 1)[0] == owner.package.name and closing:
                 self.conflict('reference.package_closed', f'Package closure prevents defining {key}', node, '§4.2/§4.3')
             else:
                 self.pending('reference.defined', f'Define classifier {key}', node, '§4.2/§4.3')
             return None
-        if found.private and found.package.name != owner.package.name:
-            self.conflict('reference.private_visibility', f'Private classifier {key} is not visible', node, '§4.2')
-        elif found.private and not owner.private:
-            self.conflict('reference.public_private_dependency', f'Public classifier {owner.key} cannot refer to private classifier {key}', node, '§4.2')
+        if found.private and (found.package.name != owner.package.name or not owner.private):
+            # Only an implementation may gain a matching public declaration
+            # later (§4.2 L3). A private type can never be exported by appending
+            # a public duplicate, so its visibility conflict is immediate.
+            public = found.package.sections.get('public_section')
+            can_be_exported = found.implementation and not self.final and (public is None or not _complete(public))
+            report = self.pending if can_be_exported else self.conflict
+            report('reference.private_visibility', f'Private classifier {key} needs a visible public declaration', node, '§4.2 N9/L3')
         if found.category not in requested:
             self.conflict('reference.category', f'{key} is {found.category}; expected {sorted(requested)}', node, '§4.3')
         if implementation is not None and found.implementation != implementation:
@@ -2866,14 +3225,16 @@ class _Check:
 
     def inherited(self, owner, attribute, active=()):
         cache = self._feature_cache if attribute == 'features' else self._child_cache
-        identity = (owner.key, attribute)
+        identity = (id(owner.node), attribute)
         if identity in cache:
             return cache[identity]
         if owner.key in active:
             self.conflict('inheritance.acyclic', f'Classifier extension cycle through {owner.key}', owner.node, '§4.3')
             return {}
         result = {}
-        if owner.implementation and attribute in {'features', 'prototypes', 'modes', 'flows'}:
+        if owner.public_part is not None:
+            result.update(self.inherited(owner.public_part, attribute, active))
+        if owner.implementation and attribute in {'features', 'prototypes', 'modes', 'transitions', 'flows'}:
             base = self.resolve(owner, owner.name.split('.', 1)[0], {owner.category}, owner.node, False)
             if base:
                 result.update(self.inherited(base, attribute, active + (owner.key,)))
@@ -2948,7 +3309,7 @@ class _Check:
                 typ = [w for w in typ if w != 'inherit']
                 owners = _split_top(body[split + 3:-1], ',')
                 self.property_defs[key] = {'type': self.type_descriptor(typ, name, declaration),
-                    'owners': tuple(' '.join(w) for w in owners), 'node': declaration,
+                    'owners': tuple(''.join(w) if '::' in w else ' '.join(w) for w in owners), 'node': declaration,
                     'scope': name, 'default': body[value_split + 1:split] if value_split is not None else None}
 
     def type_descriptor(self, words, scope, node):
@@ -3017,9 +3378,9 @@ class _Check:
     def property_key(self, reference, scope, mapping):
         if '::' in reference:
             return reference
-        key = scope + '::' + reference
-        if key in mapping:
-            return key
+        # §11.1 N4 and §11.1.3 N2 require qualification even inside the
+        # declaring property set. Bare names select predeclared entities only;
+        # falling back to scope::name would silently accept a user constant.
         key = 'aadl_project::' + reference
         if key in mapping:
             return key
@@ -3027,14 +3388,17 @@ class _Check:
         # do not gain global visibility merely by sharing an unqualified name.
         predefined = {name[:-5].lower() for name in BUILTIN_SOURCES}
         matches = [key for key in mapping if key.endswith('::' + reference) and key.rsplit('::', 1)[0] in predefined]
-        return matches[0] if len(matches) == 1 else scope + '::' + reference
+        return matches[0] if len(matches) == 1 else reference
 
     def resolve_type(self, desc, active=()):
         if desc is None:
             return None
         if desc['kind'] != 'named':
             return desc
-        key = self.property_key(desc['reference'], desc['scope'], self.property_types)
+        self.check_property_reference_visibility(desc['reference'], desc['scope'], desc['node'])
+        key = self.property_type_key(desc)
+        if key is None:
+            return None
         if key in active:
             self.conflict('property.type_acyclic', f'Property type cycle through {key}', desc['node'], '§11')
             return None
@@ -3044,7 +3408,41 @@ class _Check:
             return None
         return self.resolve_type(target, active + (key,))
 
-    def numeric_value(self, words, desc, active=()):
+    def property_type_key(self, desc):
+        # User-defined type names, like constants, require their property-set
+        # qualifier even inside that same set (§11.1 N4 / §11.1.1 N2).
+        # Bare type names can only select a predeclared type such as Time.
+        reference = desc['reference']
+        key = self.property_key(reference, '', self.property_types)
+        if '::' not in reference and key not in self.property_types:
+            self.conflict('property.type_qualification', f'User-defined property type {reference} requires its property-set qualifier', desc['node'], '§11.1.1 N2')
+            return None
+        return key
+
+    def check_property_reference_visibility(self, reference, scope, node):
+        """Qualified names still require a visible model-unit import.
+
+        Both property sets and package sections have fixed import prefixes;
+        defining the referenced set in a later file cannot repair an omitted
+        import at a use already generated (§4.2 N5, §11.1).
+        """
+        if '::' not in reference:
+            return
+        target = reference.rsplit('::', 1)[0]
+        if target == scope or target in {name[:-5].lower() for name in BUILTIN_SOURCES}:
+            return
+        if scope in self.property_sets:
+            imports = {_name(n) for declaration in _find(self.property_sets[scope], 'import_declaration')
+                       for n in _find(declaration, 'import_name') if _complete(n)}
+        elif scope in self.packages:
+            section = self._scope_sections.get(id(node), self.packages[scope].node)
+            imports = self.attributes.get(section, 'scope')['imports']
+        else:
+            return
+        self.require(target in imports, 'property.reference_visibility',
+                     f'Model unit {target} is not imported in {scope}', node, '§4.2 N5 / §11.1')
+
+    def numeric_value(self, words, desc, active=(), value_scope=None):
         if not words:
             return None
         sign = words[0] if words[0] in {'+', '-'} else ''
@@ -3054,13 +3452,13 @@ class _Check:
             value = _number(sign + scalar)
         except (ValueError, InvalidOperation):
             reference = ''.join(words[1:] if sign else words)
-            key = self.property_key(reference, desc['scope'], self.constants)
+            key = self.property_key(reference, value_scope or desc['scope'], self.constants)
             if key in active:
                 self.conflict('property.constant_acyclic', f'Property constant cycle through {key}', desc['node'], '§11')
                 return None
             constant = self.constants.get(key)
             if constant is not None:
-                resolved = self.numeric_value(constant['value'], desc, active + (key,))
+                resolved = self.numeric_value(constant['value'], desc, active + (key,), constant['scope'])
                 return -resolved if resolved is not None and sign == '-' else resolved
             return None
         units = self.resolve_type(desc.get('units'))
@@ -3070,22 +3468,67 @@ class _Check:
             return value * units['units'][after[0]]
         return value if not after else None
 
-    def validate_value(self, words, desc, node, owner=None, complete=True):
+    def property_types_match(self, actual, expected, active=()):
+        """Compare constant types before substituting their literal values.
+
+        A boolean constant cannot become an integer just because a later
+        evaluator happens to accept its text. Numeric subranges are checked
+        separately against the receiving property's bounds (§11.4 L3).
+        """
+        actual, expected = self.resolve_type(actual), self.resolve_type(expected)
+        if actual is None or expected is None:
+            return None
+        pair = (id(actual), id(expected))
+        if pair in active:
+            return None
+        if actual['kind'] != expected['kind']:
+            return False
+        kind = actual['kind']
+        if kind in {'list', 'range'}:
+            return self.property_types_match(actual['item'], expected['item'], active + (pair,))
+        if kind in {'integer', 'real'}:
+            left, right = actual.get('units'), expected.get('units')
+            if (left is None) != (right is None):
+                return False
+            return self.property_types_match(left, right, active + (pair,)) if left else True
+        if kind in {'enumeration', 'units'}:
+            # Literal identities belong to the declaring type namespace.
+            # Reusing its named type resolves to this same descriptor; an
+            # unrelated declaration with equally spelled literals does not.
+            return actual is expected
+        if kind == 'record':
+            if actual['fields'].keys() != expected['fields'].keys():
+                return False
+            answers = [self.property_types_match(actual['fields'][name], expected['fields'][name], active + (pair,))
+                       for name in actual['fields']]
+            return False if False in answers else None if None in answers else True
+        return True
+
+    def validate_value(self, words, desc, node, owner=None, complete=True, value_scope=None):
+        # A named type may live in a different property set than the value.
+        # Keep expression lookup in its lexical scope when resolving that type,
+        # and explicitly switch scopes when expanding a constant definition.
+        value_scope = value_scope or (owner.package.name if owner is not None else (desc or {}).get('scope', ''))
         desc = self.resolve_type(desc)
         if desc is None or not words:
             return
         kind = desc['kind']
         if complete and words and not words[0].startswith('"'):
             reference = ''.join(words)
-            constant_key = self.property_key(reference, desc['scope'], self.constants)
+            constant_key = self.property_key(reference, value_scope, self.constants)
             constant = self.constants.get(constant_key)
             if constant is not None:
+                self.check_property_reference_visibility(reference, value_scope, node)
+                matches = self.property_types_match(constant['type'], desc)
+                if matches is False:
+                    self.conflict('property.constant_type', f'Constant {constant_key} has a different property type', node, '§11.4 L3')
+                    return
                 if constant_key in self._constant_stack:
                     self.conflict('property.constant_acyclic', f'Property constant cycle through {constant_key}', node, '§11')
                     return
                 self._constant_stack.add(constant_key)
                 try:
-                    self.validate_value(constant['value'], desc, node, owner, True)
+                    self.validate_value(constant['value'], desc, constant['node'], owner, True, constant['scope'])
                 finally:
                     self._constant_stack.remove(constant_key)
                 return
@@ -3102,16 +3545,21 @@ class _Check:
                 return
             for value in _split_top(words[1:-1] if words[-1:] == [')'] else words[1:], ','):
                 if value:
-                    self.validate_value(value, desc['item'], node, owner, complete)
+                    self.validate_value(value, desc['item'], node, owner, complete, value_scope)
             return
         if kind == 'range':
             parts = _split_top(words, '..')
             if len(parts) == 2:
-                for part in parts:
-                    self.validate_value(part, desc['item'], node, owner, complete)
+                # A delta is a third numeric term, not part of the upper
+                # bound's unit spelling (§11.4 S6). In a prefix it may still
+                # be empty, so only completed terms are checked strictly.
+                upper = _split_top(parts[1], 'delta')
+                terms = [parts[0], *upper]
+                for part in terms:
+                    self.validate_value(part, desc['item'], node, owner, complete, value_scope)
                 scalar = self.resolve_type(desc['item'])
                 if scalar:
-                    a, b = self.numeric_value(parts[0], scalar), self.numeric_value(parts[1], scalar)
+                    a, b = self.numeric_value(parts[0], scalar, value_scope=value_scope), self.numeric_value(upper[0], scalar, value_scope=value_scope)
                     if a is not None and b is not None:
                         self.require(a <= b, 'property.range_order', 'Range lower bound exceeds upper bound', node, '§11')
             elif complete:
@@ -3131,7 +3579,7 @@ class _Check:
                 if name not in desc['fields'] or name in seen:
                     self.conflict('property.record_field', f'Unknown or duplicate record field {name}', node, '§11')
                 else:
-                    self.validate_value(assignment[at + 1:], desc['fields'][name], node, owner, complete)
+                    self.validate_value(assignment[at + 1:], desc['fields'][name], node, owner, complete, value_scope)
                 seen.add(name)
             return
         if kind in {'integer', 'real'}:
@@ -3142,9 +3590,13 @@ class _Check:
             try:
                 numeric = _number((''.join(words[:offset])) + words[offset])
             except (ValueError, InvalidOperation):
-                key = self.property_key(''.join(words[offset:]), desc['scope'], self.constants)
+                key = self.property_key(''.join(words[offset:]), value_scope, self.constants)
                 if key in self.constants:
-                    value = self.numeric_value(words, desc)
+                    self.check_property_reference_visibility(''.join(words[offset:]), value_scope, node)
+                    if self.property_types_match(self.constants[key]['type'], desc) is False:
+                        self.conflict('property.constant_type', f'Constant {key} has a different numeric property type', node, '§11.4 L3')
+                        return
+                    value = self.numeric_value(words, desc, value_scope=value_scope)
                     if value is not None:
                         if kind == 'integer':
                             self.require(value == value.to_integral_value(), 'property.integer_value',
@@ -3160,8 +3612,8 @@ class _Check:
                     self.pending('property.value_reference', f'Resolve numeric property value {"".join(words)}', node, '§11')
                 return
             rest = words[offset + 1:]
-            if kind == 'integer' and numeric != numeric.to_integral_value():
-                self.conflict('property.integer_value', 'Integer property cannot contain a fractional value', node, '§11')
+            if kind == 'integer' and ('.' in words[offset] or numeric != numeric.to_integral_value()):
+                self.conflict('property.integer_value', 'Integer property requires an integer literal, not a real literal', node, '§11.4 L1')
             if units and units.get('kind') == 'units':
                 allowed = set(units['units'])
                 if rest:
@@ -3174,7 +3626,7 @@ class _Check:
             elif rest and complete:
                 self.conflict('property.unexpected_unit', 'Unitless numeric property has an extra unit/value', node, '§11')
             if complete:
-                value = self.numeric_value(words, desc)
+                value = self.numeric_value(words, desc, value_scope=value_scope)
                 bounds = desc.get('bounds', ())
                 if value is not None and len(bounds) == 2:
                     low, high = self.numeric_value(bounds[0], desc), self.numeric_value(bounds[1], desc)
@@ -3188,23 +3640,34 @@ class _Check:
                 self.conflict('property.value_type', 'String property requires an AADL string', node, '§11')
         elif kind == 'boolean':
             if complete and any(w not in {'true', 'false', 'not', 'and', 'or', '(', ')'} for w in words):
-                key = self.property_key(''.join(words), desc['scope'], self.constants)
+                key = self.property_key(''.join(words), value_scope, self.constants)
                 if key not in self.constants:
                     self.pending('property.value_reference', f'Resolve boolean property value {"".join(words)}', node, '§11')
         elif kind == 'enumeration':
             value = ''.join(words)
             if complete and value not in desc['values']:
-                self.conflict('property.enumeration_value', f'{value} is not an enumeration literal', node, '§11')
-            elif not complete and not any(v.startswith(value) for v in desc['values']):
-                self.conflict('property.enumeration_prefix', f'{value!r} cannot extend to an enumeration literal', node, '§11')
+                # An identifier can instead denote a forward-declared
+                # constant. Rejecting by literal prefix alone would mask all
+                # such references before the defining property set appears.
+                self.pending('property.enumeration_value', f'Resolve {value} as an enumeration literal or matching constant', node, '§11.4')
+        elif kind == 'units':
+            value = ''.join(words)
+            if complete and value not in desc['units']:
+                self.pending('property.units_value', f'Resolve {value} as a unit literal or matching constant', node, '§11.4')
         elif kind == 'classifier':
             if words[:2] == ['classifier', '('] and words[-1:] == [')'] and owner is not None:
-                self.resolve(owner, ''.join(words[2:-1]), set(desc['owners']) or None, node)
+                target = self.resolve(owner, ''.join(words[2:-1]), None, node)
+                if target is not None and desc['owners']:
+                    self.require(self.property_owner_matches(target, set(desc['owners']), owner, node),
+                                 'property.classifier_type', 'Classifier is outside the property type category restriction', node, '§11.1.1 S10')
             elif complete:
                 self.conflict('property.value_type', 'Classifier property requires classifier(...)', node, '§11')
         elif kind == 'reference':
             if words[:2] == ['reference', '('] and words[-1:] == [')'] and owner is not None:
-                self.path(owner, ''.join(words[2:-1]), node)
+                target = self.path(owner, ''.join(words[2:-1]), node)
+                if target is not None and desc['owners']:
+                    self.require(self.property_owner_matches(target, set(desc['owners']), owner, node),
+                                 'property.reference_type', 'Referenced element is outside the property type category restriction', node, '§11.1.1 S11')
             elif complete:
                 self.conflict('property.value_type', 'Reference property requires reference(...)', node, '§11')
 
@@ -3221,7 +3684,9 @@ class _Check:
             return
         pset = key.rsplit('::', 1)[0]
         if owner is not None and pset not in {n[:-5].lower() for n in BUILTIN_SOURCES}:
-            self.require(pset in owner.package.imports or pset == owner.package.name,
+            section = self._scope_sections.get(id(pn), owner.node)
+            imports = self.attributes.get(section, 'scope')['imports']
+            self.require(pset in imports or pset == owner.package.name,
                          'property.visibility', f'Property set {pset} is not imported', pn, '§11')
         operator = _text(_first(node, 'assignment_operator'))
         if operator == '+=>':
@@ -3257,6 +3722,13 @@ class _Check:
         for value in outer_values:
             self.validate_value(_tokens(value.text), definition['type'], value, owner, _complete(value))
         applies = _first(node, 'applies_to')
+        if applies is not None and _find(node, 'in_modes'):
+            # A second completed target already fixes the violation; an
+            # unfinished first target does not. This is independent of whether
+            # those targets have been declared yet (§11.3 L2).
+            paths = _find(applies, 'contained_path')
+            self.require(len(paths) <= 1, 'property.modal_single_target',
+                         'A modal contained association must have exactly one target path', applies, '§11.3 L2')
         if inline_target is not None and applies is not None:
             self.conflict('property.inline_applies', 'Inline properties cannot have applies to', applies, '§11')
         if owner is None:
@@ -3271,13 +3743,53 @@ class _Check:
             targets.append(inline_target if inline_target is not None else owner)
         allowed = set(definition['owners'])
         for target in targets:
-            labels = _owner_labels(target)
-            if isinstance(target, _Declaration):
-                labels.add(target.key)
-                if target.implementation:
-                    labels.add(target.key.rsplit('.', 1)[0])
-            if not ('all' in allowed or allowed & labels):
-                self.conflict('property.applies_to', f'{name} does not apply to {sorted(labels)}', node, '§11')
+            # Abstract components implicitly accept every property, even when
+            # the property's applies-to list names only a concrete category.
+            if getattr(target, 'category', '') != 'abstract' and not self.property_owner_matches(target, allowed, owner, node):
+                self.conflict('property.applies_to', f'{name} does not apply to {sorted(_owner_labels(target))}', node, '§11.1.2 L1 / §11.3 L1')
+
+    def property_owner_matches(self, target, allowed, owner, node):
+        """Apply meta-class restrictions and classifier ancestry separately."""
+        labels = _owner_labels(target) | {'named element', 'namedelement'}
+        category = getattr(target, 'category', '')
+        if isinstance(target, _Declaration):
+            labels.add(category + (' implementation' if target.implementation else ' type'))
+        if 'all' in allowed or allowed & labels:
+            return True
+        # A classifier-qualified owner applies to its instances and extensions
+        # (§11.1.2 S3), not only to one exactly spelled declaration name.
+        classifier = target if isinstance(target, _Declaration) else None
+        if isinstance(target, _Child) and target.classifier:
+            classifier = self.resolve(owner, target.classifier, None, target.node)
+            if classifier is None:
+                return True  # resolve already recorded the outstanding dependency
+        if classifier is not None:
+            for name in allowed:
+                if '::' not in name:
+                    continue
+                base = self.symbols.get(name)
+                if base is None:
+                    self.pending('property.owner_defined', f'Define property owner classifier {name}', node, '§11.1.2 N4')
+                    return True
+                candidates = [classifier]
+                if classifier.implementation:
+                    component_type = self.symbols.get(classifier.key.rsplit('.', 1)[0])
+                    if component_type is None:
+                        self.pending('property.owner_type_defined', f'Define component type for {classifier.key}', node, '§11.1.2 S3')
+                        return True
+                    candidates.append(component_type)
+                for current in candidates:
+                    visited = set()
+                    while current.key not in visited:
+                        if current.key == base.key:
+                            return True
+                        visited.add(current.key)
+                        if not current.extension:
+                            break
+                        current = self.resolve(current, current.extension, None, current.node)
+                        if current is None:
+                            return True  # a future ancestor may fulfill applies-to
+        return False
 
     def path(self, owner, value, node, interface_request=None):
         """Resolve containment paths against inherited environments, never text order."""
@@ -3286,7 +3798,7 @@ class _Check:
         value = re.sub(r'\[[^]]*\]', '', value)
         parts = value.split('.')
         if len(parts) == 2 and parts[0] in {'self', 'processor'}:
-            members = owner.internal if parts[0] == 'self' else owner.processor
+            members = self.inherited(owner, 'internal' if parts[0] == 'self' else 'processor')
             member = members.get(parts[1])
             if member is not None:
                 return member
@@ -3304,6 +3816,10 @@ class _Check:
                 children = self.inherited(current, 'children')
                 found = features.get(part) or children.get(part)
                 if found is None:
+                    # §8.9/§12 N3 permit internal and processor features to be
+                    # referenced without their optional self./processor. prefix.
+                    found = self.inherited(current, 'internal').get(part) or self.inherited(current, 'processor').get(part)
+                if found is None:
                     if part in current.connections:
                         found = current.connections[part]
                     elif part in current.flows:
@@ -3320,7 +3836,8 @@ class _Check:
                             self.conflict('path.member_defined', f'No member {current.key}.{part}', node, '§4.3')
                     else:
                         self.pending('path.member_defined', f'Define member {current.key}.{part}', node, '§4.3')
-                    return None
+                    if found is None:
+                        return None
                 current = found
                 if isinstance(current, (_Child, _Feature)) and index < len(selections) and selections[index]:
                     self.check_selected_dimensions(current, selections[index], owner, node)
@@ -3421,13 +3938,32 @@ class _Check:
                     self.conflict('connection.refinement', f'Connection {name} has no extended implementation', node, '§9')
             return
         source_node, target_node = _first(body, 'source_endpoint'), _first(body, 'destination_endpoint')
-        if not _complete(source_node) or not _complete(target_node):
+        kind_node, arrow_node = _first(body, 'connection_kind'), _first(body, 'connection_arrow')
+        if not _complete(kind_node) or not _complete(arrow_node):
             return
-        kind = _text(_first(body, 'connection_kind'))
-        bidirectional = _text(_first(body, 'connection_arrow')) == '<->'
-        left, lk, lb = self.connection_endpoint(owner, _name(source_node), True, bidirectional, kind, source_node)
-        right, rk, rb = self.connection_endpoint(owner, _name(target_node), False, bidirectional, kind, target_node)
+        kind = _text(kind_node)
+        bidirectional = _text(arrow_node) == '<->'
+        # A completed arrow fixes the source's role even while the destination
+        # identifier is still growing. Check each completed endpoint in its
+        # existing lexical/inherited scope; unresolved references remain Pending.
+        # Pair constraints and edges still require both endpoint fields. Keeping
+        # this split inside the rule package preserves language-neutral parsing
+        # and the runtime's existential treatment of partial parse alternatives.
+        source_result = (self.connection_endpoint(owner, _name(source_node), True, bidirectional, kind, source_node)
+                         if _complete(source_node) else None)
+        target_result = (self.connection_endpoint(owner, _name(target_node), False, bidirectional, kind, target_node)
+                         if _complete(target_node) else None)
+        if source_result is None or target_result is None:
+            return
+        left, lk, lb = source_result
+        right, rk, rb = target_result
         if kind == 'port':
+            # §9.2(4) permits sibling links and mappings up/down containment,
+            # not a wire directly between two ports of the same boundary.
+            if isinstance(left, _Feature) and isinstance(right, _Feature):
+                self.require(not (lb and rb and left.kind in PORT_KINDS and right.kind in PORT_KINDS),
+                             'connection.distinct_component_boundary',
+                             'A port connection cannot directly connect two ports of its containing component', node, '§9.2(4)')
             if lk and rk:
                 self.edges.append((lk, rk, bidirectional, node))
             if left is not None and right is not None:
@@ -3630,7 +4166,8 @@ class _Check:
             if _complete(_first(sequence, 'declaration_name')):
                 self.require(name not in names, 'calls.unique_sequence', f'Duplicate call sequence {name}', sequence, '§5.2 N1')
                 names.add(name)
-                for attribute in ('features', 'children', 'connections', 'modes', 'prototypes', 'calls'):
+                for attribute in ('features', 'children', 'connections', 'modes', 'transitions',
+                                  'flows', 'end_to_end', 'prototypes', 'calls'):
                     self.require(name not in self.inherited(owner, attribute), 'calls.sequence_namespace',
                                  f'Call sequence {name} conflicts with a local member', sequence, '§5.2 N1')
         if owner.category == 'subprogram':
@@ -4055,7 +4592,12 @@ class _Check:
                 self.check_implementation_ancestry(owner, extended)
         features, children = self.inherited(owner, 'features'), self.inherited(owner, 'children')
         local_names = {}
-        for members in (owner.features, owner.children, owner.connections, owner.modes, owner.prototypes, owner.calls, owner.internal, owner.processor):
+        for attribute in ('features', 'children', 'connections', 'modes', 'transitions', 'flows',
+                          'end_to_end', 'prototypes', 'calls', 'internal', 'processor'):
+            # Namespace uniqueness includes inherited declarations (§4.3 N2/N4,
+            # §4.4 N3/N4). Refinement replaces a member of its own kind; it must
+            # not hide an inherited declaration from a different section.
+            members = self.inherited(owner, attribute)
             for name, member in members.items():
                 if name in local_names:
                     self.conflict('name.local_namespace', f'{owner.key}.{name} is declared in two sections', getattr(member, 'node', member), '§4.3')
@@ -4306,10 +4848,10 @@ class _Check:
         modes = self.inherited(owner, 'modes')
         names = set(modes)
         initial = [node for node in modes.values() if _first(node, 'initial_marker') is not None]
-        required = bool(_find(owner.node, 'requires_modes'))
+        required = any(_find(ancestor.node, 'requires_modes') for ancestor in self.namespace_ancestors(owner))
         if owner.implementation:
             base = self.resolve(owner, owner.name.rsplit('.', 1)[0], {owner.category}, owner.node, False)
-            required |= bool(base and _find(base.node, 'requires_modes'))
+            required |= bool(base and any(_find(ancestor.node, 'requires_modes') for ancestor in self.namespace_ancestors(base)))
             if base is not None:
                 self.require(not (required and sections), 'modes.required_type_implementation',
                              'An implementation of a type with requires modes cannot have a modes subclause', owner.node, '§4.4 L6')
@@ -4321,10 +4863,11 @@ class _Check:
             self.conflict('modes.required_initial', 'Required modes do not declare an initial mode', owner.node, '§12 L2')
         if names and not initial and not required and _complete(owner.node) and not owner.extension:
             self.conflict('modes.initial_present', 'Mode declarations require an initial mode', owner.node, '§12 L2')
-        transitions = _find(owner.node, 'mode_transition')
-        transition_names = {_field(t, 'declaration_name') for t in transitions if _first(t, 'declaration_name')}
+        transitions = tuple(t for ancestor in self.namespace_ancestors(owner)
+                            for t in _find(ancestor.node, 'mode_transition'))
+        transition_names = set(self.inherited(owner, 'transitions'))
         deterministic = {}
-        for transition in _find(owner.node, 'mode_transition'):
+        for transition in transitions:
             refs = _direct(transition, 'mode_reference')
             for mode_name in refs:
                 self.check_mode_reference(owner, mode_name, names)
@@ -4332,11 +4875,20 @@ class _Check:
                 if _complete(trigger):
                     found = self.path(owner, _name(trigger), trigger)
                     if isinstance(found, _Feature):
-                        self.require(found.kind in {'event port', 'event data port'}, 'modes.trigger_kind',
+                        # A dotted feature-group endpoint still belongs to the
+                        # containing component. Only a subcomponent/call denotes
+                        # an outgoing endpoint here; dots alone cannot decide it.
+                        spelling = _name(trigger)
+                        proxy = any(found is f for attribute in ('internal', 'processor')
+                                    for f in self.inherited(owner, attribute).values())
+                        self.require(found.kind in {'event port', 'event data port'} or proxy and found.kind == 'port', 'modes.trigger_kind',
                                      'Mode triggers require event/event-data ports or internal events', trigger, '§12')
-                        boundary = '.' not in _name(trigger)
+                        head = spelling.split('.')[0]
+                        boundary = not proxy and head not in self.inherited(owner, 'children') and head not in self.inherited(owner, 'calls')
                         self.require(found.direction in ({'in', 'in out'} if boundary else {'out', 'in out'}),
                                      'modes.trigger_direction', 'Mode trigger port has incompatible direction', trigger, '§12 N')
+                    elif found is not None:
+                        self.conflict('modes.trigger_kind', 'A mode trigger must name an event feature, not a component or other declaration', trigger, '§12 N3')
                     if len(refs) == 2 and all(_complete(r) for r in refs):
                         key, destination = (_name(refs[0]), _name(trigger)), _name(refs[1])
                         if key in deterministic and deterministic[key] != destination:
@@ -4345,7 +4897,8 @@ class _Check:
         parents = {id(child): parent for parent in _walk(owner.node) for child in getattr(parent, 'children', ())}
         for membership in _find(owner.node, 'in_modes'):
             contexts = [owner]
-            current = parents.get(id(membership))
+            container = parents.get(id(membership))
+            current = container
             while current is not None and current.production != 'property_association':
                 current = parents.get(id(current))
             if current is not None:
@@ -4362,7 +4915,16 @@ class _Check:
                 if mapped:
                     contexts = mapped
             for context in contexts:
-                allowed = set(self.inherited(context, 'modes')) | (transition_names if context is owner else set())
+                # The grammar intentionally shares an identifier-list node for
+                # in_modes and in_modes_and_transitions. Its *owning production*
+                # supplies the inherited reference domain (not the spelling).
+                transition_context = container is not None and (
+                    container.production in {'connection', 'flow_implementation', 'end_to_end_flow'} or
+                    container.production == 'flow_spec' and _first(container, 'refinement') is not None or
+                    container.production == 'property_association' and _first(container, 'applies_to') is not None)
+                allowed = set(self.inherited(context, 'modes'))
+                if transition_context:
+                    allowed |= set(self.inherited(context, 'transitions'))
                 for reference in _find(membership, 'mode_reference'):
                     self.check_mode_reference(context, reference, allowed)
         for child in self.inherited(owner, 'children').values():
@@ -4372,7 +4934,8 @@ class _Check:
             if target is None:
                 continue
             type_target = self.resolve(target, target.name.rsplit('.', 1)[0], {target.category}, target.node, False) if target.implementation else target
-            child_required = bool(type_target and _find(type_target.node, 'requires_modes'))
+            child_required = bool(type_target and any(_find(ancestor.node, 'requires_modes')
+                                                      for ancestor in self.namespace_ancestors(type_target)))
             memberships = _direct(child.node, 'component_in_modes')
             if not memberships:
                 if child_required and names:
@@ -4387,7 +4950,7 @@ class _Check:
                     if not refs or not _complete(refs[0]):
                         continue
                     parent_mode = _name(refs[0])
-                    self.check_mode_reference(owner, refs[0], names)
+                    self.check_mode_reference(owner, refs[0], names | transition_names)
                     if parent_mode in seen:
                         self.conflict('modes.unique_mapping', f'{parent_mode} is mapped more than once', binding, '§12')
                     seen.add(parent_mode)
@@ -4396,9 +4959,45 @@ class _Check:
                     if child_required:
                         self.check_mode_reference(target, refs[-1], set(self.inherited(target, 'modes')))
 
+    def namespace_ancestors(self, owner):
+        """Known inherited scopes, with unresolved ancestors left as obligations.
+
+        Declarations can precede their bases in the same or a later file. A
+        complete local declaration therefore does not imply a closed inherited
+        namespace. Cycles are diagnosed separately by inherited().
+        """
+        pending, seen, result = [owner], set(), []
+        while pending:
+            current = pending.pop()
+            if id(current.node) in seen:
+                continue
+            seen.add(id(current.node))
+            result.append(current)
+            if current.public_part is not None:
+                pending.append(current.public_part)
+            references = ([current.extension] if current.extension else [])
+            if current.implementation:
+                references.append(current.name.split('.', 1)[0])
+            for reference in references:
+                target = self.symbols.get(self.qualified(current.package, reference, current.node))
+                if target is not None:
+                    pending.append(target)
+        return result
+
+    def namespace_can_grow(self, owner, include_local=True):
+        for ancestor in self.namespace_ancestors(owner):
+            if (include_local or ancestor is not owner) and not _complete(ancestor.node):
+                return True
+            references = ([ancestor.extension] if ancestor.extension else [])
+            if ancestor.implementation:
+                references.append(ancestor.name.split('.', 1)[0])
+            if any(self.qualified(ancestor.package, ref, ancestor.node) not in self.symbols for ref in references):
+                return True
+        return False
+
     def check_mode_reference(self, owner, node, names):
         if _complete(node) and _name(node) not in names:
-            if _complete(owner.node):
+            if not self.namespace_can_grow(owner):
                 self.conflict('modes.reference', f'Unknown mode {_name(node)} in {owner.key}', node, '§12 N')
             else:
                 self.pending('modes.reference', f'Define mode {_name(node)} in {owner.key}', node, '§12 N')
@@ -4421,8 +5020,10 @@ class _Check:
                                      'Flow specification endpoint must be a feature', endpoint, '§10')
                         if isinstance(found, _Feature):
                             direction = 'in' if flow_kind == 'sink' or flow_kind == 'path' and index == 0 else 'out'
-                            self.require(found.direction in {direction, 'in out'}, 'flows.endpoint_direction',
-                                         f'{flow_kind} flow endpoint {_name(endpoint)} requires {direction}', endpoint, '§10.1')
+                            compatible = self.flow_feature_compatible(owner, found, direction, endpoint)
+                            if compatible is not None:
+                                self.require(compatible, 'flows.endpoint_direction',
+                                             f'{flow_kind} flow endpoint {_name(endpoint)} cannot carry a flow {direction}', endpoint, '§10.1 L2–L12')
         base = self.resolve(owner, owner.name.rsplit('.', 1)[0], {owner.category}, owner.node, False) if owner.implementation else owner
         specifications = self.inherited(base, 'flows') if base else {}
         for production in ('flow_implementation', 'end_to_end_flow'):
@@ -4485,6 +5086,58 @@ class _Check:
                     actual = set().union(*(self.membership(flow, all_modes) for flow in flows))
                     self.require(wanted <= actual, 'flows.mode_coverage',
                                  f'Flow implementations do not cover all modes of {name}', owner.node, '§10.2 L4')
+
+    def flow_feature_compatible(self, owner, feature, direction, node, active=()):
+        """Flow direction is an attribute of the endpoint's feature kind.
+
+        Access features use Access_Right, not requires/provides. A feature-group
+        flow needs one suitable member (or an empty group), rather than every
+        member having a common direction (§10.1 L4–L10).
+        """
+        if feature.kind in PORT_KINDS or feature.kind == 'parameter':
+            return feature.direction in {direction, 'in out'}
+        if feature.kind == 'data access':
+            capabilities = self.access_capabilities(owner, feature, node)
+            return None if capabilities is None else ('read' if direction == 'in' else 'write') in capabilities
+        if feature.kind == 'subprogram access':
+            # The standard permits access features as flow endpoints; the
+            # requires/provides marker is not a port direction (§10.1 N2).
+            return True
+        if feature.kind != 'feature group':
+            return False
+        if not feature.classifier:
+            return True
+        target = self.resolve(owner, feature.classifier, {'feature group'}, node, False)
+        if target is None:
+            return None
+        if target.key in active:
+            self.conflict('feature_group.recursive_signature', 'Recursive feature-group flow interface', node, '§8.2')
+            return False
+        inverse = _first(target.node, 'inverse_clause')
+        flip = feature.inverse
+        if inverse is not None:
+            reference = _first(inverse, 'classifier_reference')
+            if not _complete(reference):
+                return None
+            original = self.resolve(target, _name(reference), {'feature group'}, reference, False)
+            if original is None:
+                return None
+            # An explicit inverse keeps its declared, already reversed members;
+            # an implicit inverse obtains members from its referenced type.
+            if not self.inherited(target, 'features'):
+                target, flip = original, not flip
+        members = tuple(self.inherited(target, 'features').values())
+        if not members:
+            return True
+        effective_direction = ('out' if direction == 'in' else 'in') if flip else direction
+        results = [self.flow_feature_compatible(target, member, effective_direction, node, active + (target.key,))
+                   for member in members]
+        if any(value is True for value in results):
+            return True
+        if any(value is None for value in results) or self.namespace_can_grow(target):
+            self.pending('flows.group_interface', f'Complete the compatible flow interface of {target.key}', node, '§10.1 L6–L10')
+            return None
+        return False
 
     def membership(self, node, all_modes):
         membership = _first(node, 'in_modes', 'component_in_modes')
@@ -4590,19 +5243,35 @@ class _Check:
                     seen.add(name)
                     formal = formals.get(name)
                     if formal is None:
-                        if _complete(target.node):
+                        # A closed target can still inherit its formals from a
+                        # future base; use the inherited namespace's closure,
+                        # not just this declaration's trailing semicolon.
+                        if _complete(target.node) and not self.namespace_can_grow(target):
                             self.conflict('prototype.formal_defined', f'{target.key} has no prototype {name}', binding, '§4.7')
                         else:
                             self.pending('prototype.formal_defined', f'Define prototype {target.key}.{name}', binding, '§4.7')
                         continue
                     actual = _first(binding, 'prototype_actual')
                     if actual is not None:
-                        self.check_prototype_actual(owner, formal, actual)
+                        # The formal's constraint is written in its declaring
+                        # classifier, while actual names are written at this
+                        # binding site. Inherited formals must retain that
+                        # lexical owner instead of borrowing the caller's package.
+                        formal_owner = next((scope for scope in self.namespace_ancestors(target)
+                                             if any(item is formal for item in scope.prototypes.values())), None)
+                        if formal_owner is None:
+                            raise RuleDefinitionError('An inherited prototype has no declaring scope')
+                        # An extension's inherited formal lives in the derived
+                        # classifier for effective-property lookup, even though
+                        # its classifier constraint keeps the original lexical
+                        # owner. Subcomponent actuals instead use their target.
+                        policy_owner = owner if parent is owner.node or parent.production in {'type_extension', 'implementation_extension'} else target
+                        self.check_prototype_actual(owner, formal, actual, formal_owner, policy_owner)
             for child in getattr(parent, 'children', ()):
                 visit(child)
         visit(owner.node)
 
-    def check_prototype_actual(self, owner, formal, actual):
+    def check_prototype_actual(self, owner, formal, actual, formal_owner, policy_owner):
         formal_spec = _first(formal, 'component_prototype', 'feature_group_prototype', 'feature_prototype', recursive=True)
         if formal_spec is None:
             return
@@ -4622,7 +5291,7 @@ class _Check:
                 reference = _first(value, 'classifier_reference')
                 if _complete(reference):
                     target = self.resolve(owner, _name(reference), None if category == 'abstract' else {category}, reference)
-                    self.check_prototype_constraint(owner, formal_spec, target, reference)
+                    self.check_prototype_constraint(formal_owner, formal_spec, target, reference, formal, policy_owner, owner)
         elif formal_spec.production == 'feature_group_prototype':
             value = _first(actual, 'feature_group_actual')
             if value is None:
@@ -4632,7 +5301,7 @@ class _Check:
                 reference = _first(value, 'classifier_reference')
                 if _complete(reference):
                     target = self.resolve(owner, _name(reference), {'feature group'}, reference)
-                    self.check_prototype_constraint(owner, formal_spec, target, reference)
+                    self.check_prototype_constraint(formal_owner, formal_spec, target, reference, formal, policy_owner, owner)
         else:
             value = _first(actual, 'port_spec', 'access_spec', 'feature_prototype')
             if value is None:
@@ -4646,24 +5315,203 @@ class _Check:
                              'Feature prototype actual has incompatible direction', actual, '§4.7')
             reference = _first(value, 'classifier_reference', recursive=True)
             if _complete(reference):
-                self.resolve(owner, _name(reference), None, reference)
+                target = self.resolve(owner, _name(reference), None, reference)
+                self.check_prototype_constraint(formal_owner, formal_spec, target, reference, formal, policy_owner, owner)
 
-    def check_prototype_constraint(self, owner, formal, actual, node):
+    def prototype_substitution_rule(self, formal_owner, prototype, policy_owner, binding_owner):
+        """Select a known substitution policy without inventing a default.
+
+        The predeclared property's actual definition controls both its default
+        and whether owner values are inherited. Unsupported evaluations remain
+        obligations, rather than silently using Type_Extension (§4.7, §11.3).
+        """
+        key = 'modeling_properties::prototype_substitution_rule'
+        definition = self.property_defs.get(key)
+        if definition is None:
+            self.pending('prototype.substitution_policy', 'Load the Prototype_Substitution_Rule definition', prototype, '§4.7')
+            return None
+
+        def selected(properties, scope, allowed_targets=()):
+            matches = []
+            for prop in properties:
+                if self.property_key(_field(prop, 'property_name'), scope.package.name, self.property_defs) != key:
+                    continue
+                applies = _first(prop, 'applies_to')
+                if applies is not None:
+                    targets = {_name(path) for path in _find(applies, 'contained_path')}
+                    if not targets & set(allowed_targets):
+                        continue
+                matches.append(prop)
+            if not matches:
+                return False, None
+            prop = matches[0]
+            assignment = _first(prop, 'assignment')
+            values = _find(assignment, 'modal_value')
+            if (len(matches) != 1 or not _complete(prop) or len(values) != 1
+                    or _find(prop, 'in_modes') or _first(prop, 'in_binding') is not None
+                    or _field(prop, 'assignment_operator') != '=>'):
+                self.pending('prototype.substitution_policy', 'Evaluate modal, binding-specific or incomplete prototype policy', prop, '§4.7/§11.3')
+                return True, None
+            value = _text(_first(values[0], 'property_value'))
+            if value not in {'classifier_match', 'type_extension', 'signature_match'}:
+                self.pending('prototype.substitution_policy', 'Evaluate computed or referenced prototype policy', prop, '§4.7/§11.3')
+                return True, None
+            return True, value
+
+        present, value = selected(_section_items(prototype, 'inline_properties', 'property_association'), formal_owner)
+        if present:
+            return value
+        if not _complete(prototype):
+            self.pending('prototype.substitution_policy', 'Complete the formal prototype policy', prototype, '§4.7')
+            return None
+        if _first(definition['node'], 'inherit_marker') is not None:
+            active = set()
+
+            def inherited_policy(scope):
+                if id(scope.node) in active:
+                    return False, None  # declaration inheritance reports its own cycle
+                active.add(id(scope.node))
+                present, value = selected(_section_items(scope.node, 'properties', 'property_association'),
+                                          scope, (_field(prototype, 'declaration_name'),))
+                if present:
+                    return True, value
+                if not _complete(scope.node):
+                    self.pending('prototype.substitution_policy', 'An open classifier can still declare its prototype policy', scope.node, '§4.7/§11.3')
+                    return True, None
+                ancestors = []
+                if scope.public_part is not None:
+                    ancestors.append(scope.public_part)
+                if scope.extension:
+                    ancestor = self.resolve(scope, scope.extension, None, scope.node)
+                    if ancestor is None:
+                        return True, None
+                    ancestors.append(ancestor)
+                if scope.implementation:
+                    ancestor = self.resolve(scope, scope.key.rsplit('.', 1)[0], {scope.category}, scope.node, False)
+                    if ancestor is None:
+                        return True, None
+                    ancestors.append(ancestor)
+                for ancestor in ancestors:
+                    present, value = inherited_policy(ancestor)
+                    if present:
+                        return True, value
+                return False, None
+
+            present, value = inherited_policy(policy_owner)
+            if present:
+                return value
+            if binding_owner is not policy_owner:
+                # Effective properties inherited through an instantiated
+                # subcomponent's containing component need an instance context.
+                # Do not silently turn a known contextual override into the
+                # classifier-definition default during declaration checking.
+                for scope in self.namespace_ancestors(binding_owner):
+                    present, _ = selected(_section_items(scope.node, 'properties', 'property_association'), scope)
+                    if present or not _complete(scope.node):
+                        self.pending('prototype.substitution_context',
+                                     'Resolve the containing-component prototype policy context', scope.node, '§4.7/§11.3')
+                        return None
+        default = definition.get('default')
+        if default is None or len(default) != 1 or default[0] not in {'classifier_match', 'type_extension', 'signature_match'}:
+            self.pending('prototype.substitution_policy', 'Evaluate the declared prototype policy default', definition['node'], '§4.7/§11.3')
+            return None
+        return default[0]
+
+    def check_prototype_constraint(self, formal_owner, formal, actual, node, prototype, policy_owner, binding_owner):
         reference = _first(formal, 'classifier_reference')
         if actual is None or not _complete(reference):
             return
-        constraint = self.resolve(owner, _name(reference), None, reference)
-        if constraint:
-            self.require(self.is_subtype(actual, constraint), 'prototype.classifier_constraint',
-                         f'{actual.key} does not satisfy prototype constraint {constraint.key}', node, '§4.7')
+        constraint = self.resolve(formal_owner, _name(reference), None, reference)
+        if constraint is None:
+            return
+        policy = self.prototype_substitution_rule(formal_owner, prototype, policy_owner, binding_owner)
+        if policy is None:
+            return
+        if policy == 'signature_match':
+            self.pending('prototype.signature_match_unsupported',
+                         'Signature_Match requires a full classifier-signature compatibility check', node, '§4.5 L5 / §4.7')
+            return
+        # Classifier_Match means the same component type (§4.5 L4), not
+        # identical implementation names. Both implemented policies compare
+        # types even when either classifier reference selects an implementation.
+        actual_type = (self.resolve(actual, actual.key.rsplit('.', 1)[0], {actual.category}, node, False)
+                       if actual.implementation else actual)
+        constraint_type = (self.resolve(constraint, constraint.key.rsplit('.', 1)[0], {constraint.category}, reference, False)
+                           if constraint.implementation else constraint)
+        if actual_type is None or constraint_type is None:
+            return
+        matches = (actual_type.key == constraint_type.key if policy == 'classifier_match'
+                   else self.is_subtype(actual_type, constraint_type))
+        if not matches:
+            # A known actual may still extend a forward-declared classifier.
+            # That later ancestor can establish the required subtype relation;
+            # failure to find it in this snapshot is not a final incompatibility.
+            report = self.pending if policy == 'type_extension' and self.namespace_can_grow(actual_type) else self.conflict
+            report('prototype.classifier_constraint',
+                   f'{actual.key} must satisfy {policy} against prototype constraint {constraint.key}', node, '§4.7')
+
+    def check_package_aliases(self, package):
+        """An unused alias still has naming/type obligations (§4.2 N11–N17)."""
+        claimed = {}
+        for part in package.parts:
+            for section in part.children:
+                if section.production not in {'public_section', 'private_section'}:
+                    continue
+                scope = self.attributes.get(section, 'scope')
+                for alias in (n for n in _walk(section) if n.production in
+                              {'package_alias', 'classifier_alias', 'wildcard_alias'}):
+                    target_node = self.bound(alias, 'target')
+                    if not _complete(target_node):
+                        continue
+                    target_name = _name(target_node)
+                    target_package = target_name.rsplit('::', 1)[0] if alias.production == 'classifier_alias' else target_name
+                    if target_package not in scope['imports']:
+                        report = self.pending if (section.production == 'private_section' and
+                                                 self.public_visibility_open(package)) else self.conflict
+                        report('alias.import_required', f'Alias target package {target_package} must be explicitly imported', alias, '§4.2 N11')
+                    target = self.packages.get(target_package)
+                    if target is None:
+                        if target_package in self.property_sets:
+                            self.conflict('alias.package_kind', f'{target_package} is a property set, not a package', alias, '§4.2 N11')
+                        else:
+                            self.pending('alias.package_defined', f'Define alias target package {target_package}', alias, '§4.2 N11')
+                    if alias.production == 'classifier_alias':
+                        classifier = self.symbols.get(target_name)
+                        if classifier is None:
+                            public = target.sections.get('public_section') if target is not None else None
+                            report = self.conflict if _complete(public) else self.pending
+                            report('alias.classifier_defined', f'Define aliased type {target_name}', alias, '§4.2 N12')
+                        else:
+                            kind = _first(alias, 'category', 'feature_group_category')
+                            if _complete(kind):
+                                self.require(classifier.category == _text(kind), 'alias.category',
+                                             f'Alias category {_text(kind)} differs from {classifier.category}', alias, '§4.2 N12/N13')
+                            self.require(not classifier.private, 'alias.public_target', 'An alias cannot expose a private classifier', alias, '§4.2 N12')
+                            self.require(not classifier.implementation, 'alias.type_target', 'An alias must name a component or feature-group type', alias, '§4.2 N13')
+                    if alias.production == 'wildcard_alias':
+                        aliases = [declaration.name for declaration in self.symbols.values()
+                                   if declaration.package.name == target_package and not declaration.private and not declaration.implementation]
+                    else:
+                        name = self.bound(alias, 'name')
+                        aliases = [_name(name) if name is not None else target_name.rsplit('::', 1)[-1]]
+                    for name in aliases:
+                        self.require(name not in claimed, 'alias.unique_name', f'Duplicate imported alias name {name}', alias, '§4.2 N14–N16')
+                        self.require(package.name + '::' + name not in self.symbols, 'alias.classifier_collision',
+                                     f'Alias {name} collides with a classifier declaration', alias, '§4.2 N14–N16')
+                        if alias.production == 'package_alias':
+                            self.require(name not in scope['imports'] and name != package.name,
+                                         'alias.package_name_collision', f'Alias {name} conflicts with a package name', alias, '§4.2 N14')
+                        claimed[name] = alias
 
     def global_checks(self):
         for package in self.packages.values():
+            self.check_package_aliases(package)
             for imported in package.imports | package.import_all:
                 if imported not in self.packages and imported not in self.property_sets:
                     self.pending('import.defined', f'Provide imported model unit {imported}', package.node, '§4.2')
         graph = {}
-        for owner in self.symbols.values():
+        for key, public in self.symbols.items():
+            owner = self._private_completions.get(key, public)
             if owner.implementation:
                 graph[owner.key] = [self.qualified(owner.package, child.classifier, owner.node) for child in
                                     self.inherited(owner, 'children').values() if '.' in child.classifier]
@@ -4705,7 +5553,7 @@ class _Check:
     def run(self):
         self.collect()
         self.check_property_declarations()
-        for owner in tuple(self.symbols.values()):
+        for owner in tuple(self.symbols.values()) + tuple(self._private_completions.values()):
             self.check_declaration(owner)
         self.global_checks()
         if not self.results:
@@ -4720,7 +5568,10 @@ class _Check:
             if not desc:
                 return
             if desc['kind'] == 'named':
-                key = self.property_key(desc['reference'], desc['scope'], self.property_types)
+                key = self.property_type_key(desc)
+                if key is None:
+                    return
+                self.check_property_reference_visibility(desc['reference'], desc['scope'], desc['node'])
                 if key in active:
                     self.conflict('property.type_acyclic', f'Property type cycle through {key}', desc['node'], '§11')
                     return
@@ -4732,8 +5583,29 @@ class _Check:
                 return
             if 'item' in desc:
                 inspect(desc['item'], active)
-            if desc.get('units'):
+                if desc['kind'] == 'range':
+                    base = self.resolve_type(desc['item'])
+                    if base is not None:
+                        self.require(base['kind'] in {'integer', 'real'}, 'property.range_base_type',
+                                     'A range type must have an integer or real base', desc['node'], '§11.1.1')
+            if desc['kind'] in {'integer', 'real'} and desc.get('units'):
                 inspect(desc['units'], active)
+                units = self.resolve_type(desc['units'])
+                if units is not None:
+                    self.require(units['kind'] == 'units', 'property.units_type',
+                                 'A numeric units designator must name a units type', desc['node'], '§11.1.1')
+            if desc['kind'] in {'integer', 'real'} and desc.get('bounds'):
+                # Check the type declaration even if no property ever uses it.
+                # Suppress its own range restriction while checking its bounds,
+                # otherwise each endpoint would recursively check itself.
+                scalar = dict(desc, bounds=())
+                for bound in desc['bounds']:
+                    self.validate_value(bound, scalar, desc['node'])
+                if len(desc['bounds']) == 2:
+                    low, high = (self.numeric_value(bound, scalar) for bound in desc['bounds'])
+                    if low is not None and high is not None:
+                        self.require(low <= high, 'property.type_range_order',
+                                     'Numeric type lower bound exceeds its upper bound', desc['node'], '§11.1.1 L1')
             for child in desc.get('fields', {}).values():
                 inspect(child, active)
         for key, desc in self.property_types.items():
@@ -4742,11 +5614,48 @@ class _Check:
         for key, definition in self.property_defs.items():
             if key.rsplit('::', 1)[0] not in builtins:
                 inspect(definition['type'])
+                self.require('all' not in definition['owners'] or len(definition['owners']) == 1,
+                             'property.all_exclusive', 'The all property owner cannot be combined with other owners',
+                             definition['node'], '§11.1.2 L3')
+                for owner in definition['owners']:
+                    if '::' in owner:
+                        # An applies-to classifier uses the property's defining
+                        # set's imports, not the package of a later association.
+                        # A qualified spelling alone does not grant visibility.
+                        self.check_property_reference_visibility(owner, definition['scope'], definition['node'])
+                        classifier = self.symbols.get(owner)
+                        if classifier is None:
+                            self.pending('property.owner_defined', f'Define property owner classifier {owner}', definition['node'], '§11.1.2 N4')
+                        elif classifier.private:
+                            self.conflict('property.owner_public', f'Property owner classifier {owner} must be public', definition['node'], '§11.1.2 N4')
                 if definition['default'] is not None:
+                    default_type = self.resolve_type(definition['type'])
+                    while default_type is not None and default_type['kind'] == 'list':
+                        default_type = self.resolve_type(default_type['item'])
+                    if default_type is not None:
+                        self.require(default_type['kind'] not in {'classifier', 'reference'},
+                                     'property.reference_default', 'Classifier/reference properties cannot declare a default value',
+                                     definition['node'], '§11.1.2 L2')
                     self.validate_value(definition['default'], definition['type'], definition['node'])
         for key, constant in self.constants.items():
             if key.rsplit('::', 1)[0] not in builtins:
                 inspect(constant['type'])
+                # Mirror the fixed OSATE validator's recursive type walk:
+                # checkPropertyConstant / containsClassifierOrReferenceType
+                # at b8308b7, and AS5506D §11.1.3 L1. Empty lists must not
+                # bypass the ban merely because there is no element to visit.
+                def forbidden_type(desc, visited=()):
+                    desc = self.resolve_type(desc)
+                    if desc is None or id(desc) in visited:
+                        return False
+                    if desc['kind'] in {'classifier', 'reference'}:
+                        return True
+                    nested = list(desc.get('fields', {}).values())
+                    if 'item' in desc:
+                        nested.append(desc['item'])
+                    return any(forbidden_type(item, visited + (id(desc),)) for item in nested)
+                self.require(not forbidden_type(constant['type']), 'property.constant_reference_type',
+                             'Property constants cannot contain classifier/reference types', constant['node'], '§11.1.3 L1')
                 self._constant_stack.add(key)
                 try:
                     self.validate_value(constant['value'], constant['type'], constant['node'])
@@ -4840,6 +5749,11 @@ BINDINGS = {
 # This is intentionally a literal inventory: a new source production must be
 # reviewed and added here or bound, rather than being automatically ignored.
 STRUCTURAL = frozenset('''
+opaque_annex_body empty_annex_body adjacent_constant_marker adjacent_signed_range
+adjacent_signed_expression adjacent_bracket_expression adjacent_word_value adjacent_delimited_value
+adjacent_modal_value adjacent_word_modal_value adjacent_delimited_modal_value adjacent_word_assignment adjacent_delimited_assignment
+end_to_end_chain end_to_end_refinement_chain
+word_numeric_value signed_numeric_value word_numeric_term signed_numeric_term word_type_range signed_type_range
 word_path_segment delimited_path_segment word_contained_path delimited_contained_path word_applies_to delimited_applies_to
 word_value delimited_value word_expression delimited_expression word_modal_value delimited_modal_value word_assignment delimited_assignment word_type_designator delimited_type_designator word_list_type delimited_list_type word_property_type delimited_property_type word_number_type delimited_number_type word_range_type delimited_range_type word_classifier_type delimited_classifier_type word_reference_type delimited_reference_type
 aadl_declaration aadl_specification abstract_feature_spec access_category access_direction access_spec
@@ -4920,7 +5834,12 @@ def _attribute_scope(ctx):
         raise RuleDefinitionError('A visibility section requires a package parent')
     imports, import_all, renames = set(), set(), {}
     if ctx.node.production == 'private_section':
-        public = next((child for child in package.children if child.production == 'public_section'), None)
+        package_name = ctx.get(package, 'name')
+        # Reading project membership is a tracked dependency: a public part
+        # arriving in a later file invalidates this private scope's attributes.
+        public = next((section for unit in ctx.project.all_units for part in _find(unit, 'package_spec')
+                       if ctx.get(part, 'name') == package_name
+                       for section in _direct(part, 'public_section')), None)
         if public is not None:
             inherited = ctx.get(public, 'scope')
             imports.update(inherited['imports'])
@@ -5004,6 +5923,43 @@ def _attribute_reference_key(ctx):
 
 def _attribute_reference_target(ctx):
     key = ctx.get(ctx.node, 'reference_key')
+    reference = _name(ctx.node)
+    if key is not None and '::' not in reference and '.' not in reference:
+        owner = ctx.parent()
+        while owner is not None and owner.production not in _CLASSIFIER_PRODUCTIONS:
+            owner = ctx.parent(owner)
+        scopes, seen = ([owner] if owner is not None else []), set()
+        while scopes:
+            scope = scopes.pop()
+            if id(scope) in seen:
+                continue
+            seen.add(id(scope))
+            # A component-local formal shadows package classifiers. This
+            # reference attribute must agree with _Check.resolve; otherwise
+            # the independent category constraint could reject a valid formal
+            # merely because an unrelated package classifier shares its name.
+            formals = _section_items(scope, 'prototypes', 'prototype')
+            if any(_field(formal, 'declaration_name') == reference for formal in formals):
+                return None  # prototype-aware category/binding checks run in resolve
+            signature = ctx.get(scope, 'signature')
+            if signature is None:
+                continue
+            ancestor_keys = []
+            if signature['implementation']:
+                ancestor_keys.append(signature['key'].rsplit('.', 1)[0])
+            for extension in _direct(scope, 'type_extension') + _direct(scope, 'implementation_extension'):
+                base = _first(extension, 'classifier_reference')
+                if base is not None:
+                    ancestor_keys.append(ctx.get(base, 'reference_key'))
+            if signature['private']:
+                public = ctx.lookup('symbols', signature['key'])
+                if not isinstance(public, Missing) and public['node'] is not scope:
+                    scopes.append(public['node'])
+            for ancestor_key in ancestor_keys:
+                ancestor = ctx.lookup('symbols', ancestor_key) if ancestor_key is not None else None
+                if ancestor is None or isinstance(ancestor, Missing) or not _complete(ancestor['node']):
+                    return None  # a future/incomplete ancestor may still declare the formal
+                scopes.append(ancestor['node'])
     return None if key is None else ctx.lookup('symbols', key)
 
 
@@ -5143,6 +6099,155 @@ def evaluate(project, plan=None, final=False, attributes=None):
     return _Check(project, plan, final or getattr(project, 'final', False), attributes).run()
 
 
+def _method_regressions():
+    """Small language-owned witnesses for a language-neutral offline runner.
+
+    Each prefix must first be accepted. Probe the append against that immutable
+    state and compare expected_allowed; expected_rule identifies a rejected
+    rule, not a new scientific metric. complete_source is an optional legal
+    completion witness beginning with prefix + probe. project selects a source
+    or an AADL-PROJECT container. These are rule diagnostics, never requirements
+    samples or inputs silently injected into a generation experiment.
+    """
+    cases = []
+
+    def add(name, prefix, probe, expected_allowed, *, rest=None, rule=None, project=False):
+        case = {'name': name, 'prefix': prefix, 'probe': probe,
+                'expected_allowed': expected_allowed, 'project': project}
+        if rest is not None:
+            case['complete_source'] = prefix + probe + rest
+        if rule is not None:
+            case['expected_rule'] = rule
+        cases.append(case)
+
+    header = ('package MethodChecks\npublic\n'
+              'system Leaf\nend Leaf;\n'
+              'system Root\nend Root;\n')
+    members = (header + 'system implementation Root.impl\nsubcomponents\n'
+               ' item: system Leaf;\n')
+    closing = 'end Root.impl;\nend MethodChecks;\n'
+    add('member_open_name_keeps_alternative', members, 'item', True,
+        rest='_next: system Leaf;\n' + closing)
+    add('member_name_extension', members + 'item', '_next: system Leaf;\n', True, rest=closing)
+    add('member_duplicate_at_colon', members + 'item', ':', False, rule='name.unique_member')
+    add('member_duplicate_before_category', members, 'item:', False, rule='name.unique_member')
+    add('member_duplicate_partial_category', members, 'item: syst', False, rule='name.unique_member')
+    add('member_duplicate_category_alternatives', members, 'item: system', False, rule='name.unique_member')
+    add('member_duplicate_case_insensitive', members, 'ITEM:', False, rule='name.unique_member')
+    add('member_distinct_name_partial_category', members, 'other: syst', True,
+        rest='em Leaf;\n' + closing)
+    other_scope = (members + 'end Root.impl;\n'
+                   'system Other\nend Other;\n'
+                   'system implementation Other.impl\nsubcomponents\n')
+    add('member_same_name_other_classifier', other_scope, 'item: system Leaf;\n', True,
+        rest='end Other.impl;\nend MethodChecks;\n')
+    inherited = (header + 'system implementation Root.base\nsubcomponents\n'
+                 ' item: system Leaf;\nend Root.base;\n'
+                 'system implementation Root.derived extends Root.base\nsubcomponents\n')
+    add('member_inherited_refinement_prefix', inherited, 'item:', True,
+        rest=' refined to system Leaf;\nend Root.derived;\nend MethodChecks;\n')
+    add('member_inherited_refinement_complete', inherited, 'item: refined to system Leaf;\n', True,
+        rest='end Root.derived;\nend MethodChecks;\n')
+    future_base = header + 'system implementation Root.derived extends Root.base\nsubcomponents\n'
+    add('member_forward_base_refinement', future_base, 'item: refined to system Leaf;\n', True,
+        rest=('end Root.derived;\nsystem implementation Root.base\nsubcomponents\n'
+              ' item: system Leaf;\nend Root.base;\nend MethodChecks;\n'))
+
+    connections = ('package MethodChecks\npublic\n'
+                   'system Leaf\nfeatures\n'
+                   ' accept: in event port;\n emit: out event port;\n'
+                   ' duplex: in out event port;\n bad: out event port;\n bad_next: in event port;\n'
+                   'end Leaf;\n'
+                   'system Root\nfeatures\n'
+                   ' incoming: in event port;\n outgoing: out event port;\n'
+                   ' outgoing_next: in event port;\n duplex: in out event port;\n'
+                   'end Root;\nsystem implementation Root.impl\nsubcomponents\n'
+                   ' child: system Leaf;\nconnections\n c: port ')
+    add('connection_boundary_out_source_at_arrow', connections + 'outgoing ', '->', False,
+        rule='connection.endpoint_direction')
+    add('connection_boundary_out_source_before_long_destination', connections + 'outgoing ',
+        '-> child.accept_repeated', False, rule='connection.endpoint_direction')
+    add('connection_boundary_in_source_at_arrow', connections + 'incoming ', '->', True,
+        rest=' child.accept;\n' + closing)
+    add('connection_child_out_source', connections + 'child.emit ', '->', True,
+        rest=' outgoing;\n' + closing)
+    add('connection_child_in_source_at_arrow', connections + 'child.accept ', '->', False,
+        rule='connection.endpoint_direction')
+    add('connection_bidirectional_requires_in_out', connections + 'incoming ', '<->', False,
+        rule='connection.endpoint_direction')
+    add('connection_bidirectional_in_out', connections + 'duplex ', '<->', True,
+        rest=' child.duplex;\n' + closing)
+    add('connection_partial_arrow', connections + 'incoming ', '-', True,
+        rest='> child.accept;\n' + closing)
+    add('connection_partial_bidirectional_arrow', connections + 'duplex ', '<-', True,
+        rest='> child.duplex;\n' + closing)
+    add('connection_source_identifier_can_grow', connections, 'outgoing', True,
+        rest='_next -> child.accept;\n' + closing)
+    add('connection_destination_keeps_viable_branch', connections + 'incoming -> child.', 'bad', True,
+        rest='_next;\n' + closing)
+    add('connection_destination_fixed_bad_direction', connections + 'incoming -> child.bad', ';', False,
+        rule='connection.endpoint_direction')
+    add('connection_destination_identifier_extension', connections + 'incoming -> child.bad', '_next;', True,
+        rest='\n' + closing)
+    add('connection_comment_before_arrow', connections + 'incoming -- source role is not fixed yet\n',
+        '->', True, rest=' child.accept;\n' + closing)
+
+    prototype = ('package MethodChecks\npublic\nprocessor Actual\nend Actual;\n'
+                 'system Leaf\nfeatures\n emit: out event port;\nend Leaf;\n'
+                 'system Root\nprototypes\n Actual: system;\nfeatures\n'
+                 ' outgoing: out event port;\nend Root;\n'
+                 'system implementation Root.impl (Actual => system Leaf)\nsubcomponents\n'
+                 ' child: system Actual;\nconnections\n c: port child.emit ')
+    add('connection_prototype_shadows_package_classifier', prototype, '->', True,
+        rest=' outgoing;\n' + closing)
+
+    # The later declaration in this same file supplies a genuinely unresolved
+    # source classifier. Keep the forward obligation while constructing a peer
+    # system; no hierarchy-based declaration ordering or second file is needed.
+    source = ('package P\npublic\n'
+              'system Root\nfeatures\n outgoing: out event port;\nend Root;\n'
+              'system implementation Root.impl\nsubcomponents\n'
+              ' child: system Leaf.impl;\nconnections\n c: port child.emit')
+    project_prefix = 'AADL-PROJECT 1\nFILE\n|' + source.replace('\n', '\n|')
+    project_rest = (' outgoing;\n|end Root.impl;\n|system Leaf\n|features\n'
+                    '| emit: out event port;\n|end Leaf;\n'
+                    '|system implementation Leaf.impl\n|end Leaf.impl;\n'
+                    '|end P;\nEND_FILE\nEND_PROJECT\n')
+    add('connection_forward_source_same_file', project_prefix, ' ->', True,
+        rest=project_rest, project=True)
+    forward = ('package DeferredCheck public system Main end Main; '
+               'system implementation Main.base subcomponents '
+               'child: system Later.base; end Main.base; ')
+    add('same_file_forward_implementation_closes_obligation', forward,
+        'system Later end Later; system implementation Later.base end Later.base; ', True,
+        rest='end DeferredCheck; ')
+    add('same_file_forward_wrong_category_is_conflict', forward,
+        'process Later end Later; process implementation Later.base end Later.base; ', False,
+        rule='reference.category')
+    # The active profile generates one file containing one model unit. Reject
+    # a second package before it can be
+    # mistaken for a locally valid complete candidate.
+    one_unit = 'package FileProfile\npublic\nsystem Item\nend Item;\nend FileProfile;\n'
+    add('file_profile_rejects_second_package', one_unit, 'package Another ', False)
+    add('file_profile_allows_trailing_comment', one_unit, '-- complete unit\n', True, rest='')
+    # A fixed category word is stable at EOF even when its lexer uses a regex.
+    # Reject the last character that proves the conflict, without banning a
+    # valid unfinished keyword in a different owning category.
+    device_owner = ('package PrefixCategory public device D end D; '
+                    'device implementation D.i subcomponents x: devic')
+    add('fixed_category_eof_conflict', device_owner, 'e', False, rule='containment.category')
+    system_owner = ('package PrefixCategory public device D end D; system S end S; '
+                    'system implementation S.i subcomponents x: devic')
+    add('fixed_category_eof_valid_owner', system_owner, 'e', True,
+        rest=' D; end S.i; end PrefixCategory;')
+    add('fixed_category_mixed_case_conflict', device_owner[:-5] + 'DeViC', 'E', False,
+        rule='containment.category')
+    return tuple(cases)
+
+
+METHOD_REGRESSIONS = _method_regressions()
+
+
 def validate_instance(path):
     """Check explicit instance obligations on the exact OSATE-produced artifact.
 
@@ -5158,13 +6263,26 @@ def validate_instance(path):
         results.append(RuleResult(status, rule, message, source=str(path),
                                   standard=f'{STANDARD} {clause}', osate=OSATE_SOURCE))
     try:
-        root = ET.parse(path).getroot()
+        document = ET.parse(path).getroot()
     except (OSError, ET.ParseError) as exc:
         emit(Status.CONFLICT, 'instance.readable_xml', str(exc), '§13')
         return SemanticReport(tuple(results))
     local = lambda tag: tag.rsplit('}', 1)[-1]
-    if local(root.tag) != 'SystemInstance' or root.get('category', '').lower() != 'system':
+    instance_tag = '{http://aadl.info/AADL/2.0/instance}SystemInstance'
+    root, root_fragment = document, '/'
+    if document.tag == '{http://www.omg.org/XMI}XMI':
+        candidates = [(i, node) for i, node in enumerate(document) if node.tag == instance_tag]
+        if len(candidates) != 1:
+            emit(Status.CONFLICT, 'instance.system_root', 'XMI must contain exactly one system instance', '§13.1')
+            return SemanticReport(tuple(results))
+        ordinal, root = candidates[0]
+        # EMF fragments in a multi-root resource begin with the actual root
+        # ordinal (/0/@...), not the single-root //@... form. Other top-level
+        # objects describe data classifiers and cannot satisfy this system's C9.
+        root_fragment = '/' + str(ordinal)
+    if root.tag != instance_tag or root.get('category', '').lower() != 'system':
         emit(Status.CONFLICT, 'instance.system_root', 'The artifact must have a system root', '§13.1')
+        return SemanticReport(tuple(results))
     components = [root] + [n for n in root.iter() if local(n.tag) == 'componentInstance']
     categories = {n.get('category', '').replace('_', ' ').lower() for n in components}
     missing = {'thread', 'processor', 'memory'} - categories
@@ -5184,7 +6302,9 @@ def validate_instance(path):
     # Build EMF containment fragments using each child's feature-specific index.
     # This checks links in the instance document, not references back to source
     # .aadl classifiers (those have already been linked by OSATE).
-    fragments = {'/': root, '': root}
+    fragments = {root_fragment: root}
+    if root_fragment == '/':
+        fragments[''] = root
     def index(element, fragment):
         counts = {}
         for child in element:
@@ -5195,7 +6315,7 @@ def validate_instance(path):
             fragments[child_fragment] = child
             fragments[child_fragment.lstrip('/')] = child
             index(child, child_fragment)
-    index(root, '/')
+    index(root, root_fragment)
     for connection in (n for n in root.iter() if local(n.tag) == 'connectionInstance'):
         for endpoint in ('source', 'destination'):
             reference = connection.get(endpoint)

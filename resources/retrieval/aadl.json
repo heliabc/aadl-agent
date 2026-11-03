@@ -1,0 +1,599 @@
+{
+  "schema_version": 1,
+  "version": "aadl-prompt-knowledge-3-single-source",
+  "description": "Frozen prompt-only core-language knowledge for one generated AADL source file containing one model unit. No experiment results, reference answers, online memories or model-generated summaries are indexed.",
+  "entries": [
+    {
+      "id": "port-kinds",
+      "title": "Event, data, and event-data ports",
+      "keywords": [
+        "事件端口",
+        "数据端口",
+        "事件数据端口",
+        "event data port",
+        "classifier",
+        "direction"
+      ],
+      "applicability": "A requirement specifies an event notification, sampled data, or an event carrying typed data.",
+      "explanation": "Preserve all three decisions independently: direction (in/out/in out), port kind (event/data/event data), and any required data classifier. An event port carries no data classifier; a data or event data port can name a data classifier. Write 'data port Reading', never 'data port type Reading'. Do not simplify a required event data port into an event port just because both parse. Static validity does not establish requirement coverage.",
+      "family": "independent_language_microexamples",
+      "origin": "Project-authored generic language example; not extracted from evaluation requirements or reference models.",
+      "sources": [
+        {
+          "document": "SAE AS5506D",
+          "version": "2022",
+          "locator": "Core features and port specifications",
+          "kind": "paraphrase; no standard text reproduced"
+        },
+        {
+          "document": "OSATE core AADL grammar and validators",
+          "version": "b8308b7",
+          "locator": "core/org.osate.xtext.aadl2",
+          "url": "https://github.com/osate/osate2/tree/b8308b7/core/org.osate.xtext.aadl2"
+        }
+      ],
+      "examples": [
+        {
+          "files": {
+            "PortKinds.aadl": "package PortKinds\npublic\ndata Reading\nend Reading;\ndevice Monitor\nfeatures\n  tick: out event port;\n  level: out data port Reading;\n  update: in event data port Reading;\nend Monitor;\ndevice implementation Monitor.minimal\nend Monitor.minimal;\nend PortKinds;\n"
+          },
+          "validation": {
+            "local_valid": true,
+            "osate_status": "passed",
+            "source_files_sha256": {
+              "PortKinds.aadl": "ec30b4bddbdd6f54bd8fa17e56bc2a51c06c09f699c0ac7ebf38b91ab656acd7"
+            },
+            "local_rule_sha256": "6ebf6629a001a4a1e3fabd9137b86a4ea7d3406a96f596ff87415bee3127790e",
+            "osate_cli_version": "0.3.0",
+            "osate_binary_provenance": [
+              {
+                "file": "osate-cli.jar",
+                "sha256": "169f943de2f046c05ea9a5e0a540a2c9aa575e5a9dbcf637e3de9a71c639e549"
+              },
+              {
+                "file": "org.osate.xtext.aadl2_9.1.0.v20260928-1804.jar",
+                "sha256": "8d695f12a402b568ccc4b9cd2996fa5ccf521184fe3f1879a36109c88ec085e6"
+              },
+              {
+                "file": "osate-workspace-server-0.3.0.jar",
+                "sha256": "bf02f4aa3ebf3d581acc63ead929f9bcedb2df23aed4317967b38d964c14df3d"
+              }
+            ],
+            "evidence": "resources/retrieval/validation/port-kinds.json",
+            "evidence_sha256": "94d2128fd1c58bfb236d6147ea2233e331f594635b23f2ebff295e8c5c1c1a5f"
+          }
+        }
+      ]
+    },
+    {
+      "id": "type-and-implementation",
+      "title": "Component types and implementations",
+      "keywords": [
+        "type",
+        "implementation",
+        "classifier",
+        "类型",
+        "实现",
+        "分类器",
+        "device",
+        "system"
+      ],
+      "applicability": "Declaring a component interface and its implementation, or selecting a subcomponent classifier.",
+      "explanation": "A component type declares its features; an implementation names its own type followed by a dot and an implementation suffix. The category and end name must match. Do not replace a required system with a device to avoid a modeling difficulty. A subcomponent may legally use an appropriate type classifier; when the requirement asks for an implementation or a concrete instance hierarchy, provide the requested implementation rather than silently dropping it.",
+      "family": "independent_language_microexamples",
+      "origin": "Project-authored generic language example; not extracted from evaluation requirements or reference models.",
+      "sources": [
+        {
+          "document": "SAE AS5506D",
+          "version": "2022",
+          "locator": "Component types, implementations and subcomponents (§4.3–4.5)",
+          "kind": "paraphrase; no standard text reproduced"
+        },
+        {
+          "document": "OSATE core AADL grammar and validators",
+          "version": "b8308b7",
+          "locator": "core/org.osate.xtext.aadl2",
+          "url": "https://github.com/osate/osate2/tree/b8308b7/core/org.osate.xtext.aadl2"
+        }
+      ],
+      "examples": [
+        {
+          "files": {
+            "ClassifierForms.aadl": "package ClassifierForms\npublic\ndevice Beacon\nfeatures\n  pulse: out event port;\nend Beacon;\ndevice implementation Beacon.physical\nend Beacon.physical;\nsystem Installation\nend Installation;\nsystem implementation Installation.physical\nsubcomponents\n  indicator: device Beacon.physical;\nend Installation.physical;\nend ClassifierForms;\n"
+          },
+          "validation": {
+            "local_valid": true,
+            "osate_status": "passed",
+            "source_files_sha256": {
+              "ClassifierForms.aadl": "6d0f7e463e16a86d66d430b9d5c7ee138a094fe9ce0777d2a3cae572b5651dc3"
+            },
+            "local_rule_sha256": "6ebf6629a001a4a1e3fabd9137b86a4ea7d3406a96f596ff87415bee3127790e",
+            "osate_cli_version": "0.3.0",
+            "osate_binary_provenance": [
+              {
+                "file": "osate-cli.jar",
+                "sha256": "169f943de2f046c05ea9a5e0a540a2c9aa575e5a9dbcf637e3de9a71c639e549"
+              },
+              {
+                "file": "org.osate.xtext.aadl2_9.1.0.v20260928-1804.jar",
+                "sha256": "8d695f12a402b568ccc4b9cd2996fa5ccf521184fe3f1879a36109c88ec085e6"
+              },
+              {
+                "file": "osate-workspace-server-0.3.0.jar",
+                "sha256": "bf02f4aa3ebf3d581acc63ead929f9bcedb2df23aed4317967b38d964c14df3d"
+              }
+            ],
+            "evidence": "resources/retrieval/validation/type-and-implementation.json",
+            "evidence_sha256": "d93f60598f056242f46bfadb94f24f1bd730e307933ff99136a3bffad38aa945"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sibling-system-connection",
+      "title": "Connect two sibling system subcomponents",
+      "keywords": [
+        "sibling system",
+        "nested system",
+        "同级",
+        "子系统",
+        "连接",
+        "direction",
+        "endpoint"
+      ],
+      "applicability": "A parent system contains sibling systems whose ports communicate.",
+      "explanation": "The parent's implementation owns subcomponent declarations and their connection. A source out port on one child can connect to a destination in port on the other child. Use child-name.feature-name for both endpoints. Types are declared at package scope; their containment hierarchy is expressed through implementation subcomponents, not by nesting type declarations textually. Keep the categories and connection directions requested by the user.",
+      "family": "independent_language_microexamples",
+      "origin": "Project-authored generic language example; not extracted from evaluation requirements or reference models.",
+      "sources": [
+        {
+          "document": "SAE AS5506D",
+          "version": "2022",
+          "locator": "Subcomponents (§4.5) and connections (§9)",
+          "kind": "paraphrase; no standard text reproduced"
+        },
+        {
+          "document": "OSATE core AADL grammar and validators",
+          "version": "b8308b7",
+          "locator": "core/org.osate.xtext.aadl2",
+          "url": "https://github.com/osate/osate2/tree/b8308b7/core/org.osate.xtext.aadl2"
+        }
+      ],
+      "examples": [
+        {
+          "files": {
+            "SystemWiring.aadl": "package SystemWiring\npublic\nsystem Notifier\nfeatures\n  notice: out event port;\nend Notifier;\nsystem implementation Notifier.minimal\nend Notifier.minimal;\nsystem Observer\nfeatures\n  arrival: in event port;\nend Observer;\nsystem implementation Observer.minimal\nend Observer.minimal;\nsystem Assembly\nend Assembly;\nsystem implementation Assembly.minimal\nsubcomponents\n  notifier_part: system Notifier.minimal;\n  observer_part: system Observer.minimal;\nconnections\n  delivery: port notifier_part.notice -> observer_part.arrival;\nend Assembly.minimal;\nend SystemWiring;\n"
+          },
+          "validation": {
+            "local_valid": true,
+            "osate_status": "passed",
+            "source_files_sha256": {
+              "SystemWiring.aadl": "80045501ca5b9889bc2f70b52930e83753f31cc4bae7376b0d45232b89aea592"
+            },
+            "local_rule_sha256": "6ebf6629a001a4a1e3fabd9137b86a4ea7d3406a96f596ff87415bee3127790e",
+            "osate_cli_version": "0.3.0",
+            "osate_binary_provenance": [
+              {
+                "file": "osate-cli.jar",
+                "sha256": "169f943de2f046c05ea9a5e0a540a2c9aa575e5a9dbcf637e3de9a71c639e549"
+              },
+              {
+                "file": "org.osate.xtext.aadl2_9.1.0.v20260928-1804.jar",
+                "sha256": "8d695f12a402b568ccc4b9cd2996fa5ccf521184fe3f1879a36109c88ec085e6"
+              },
+              {
+                "file": "osate-workspace-server-0.3.0.jar",
+                "sha256": "bf02f4aa3ebf3d581acc63ead929f9bcedb2df23aed4317967b38d964c14df3d"
+              }
+            ],
+            "evidence": "resources/retrieval/validation/sibling-system-connection.json",
+            "evidence_sha256": "bd2663bef0dae628d12b8990706294c6310138c100658c791892e2e44db7f0e2"
+          }
+        }
+      ]
+    },
+    {
+      "id": "forward-local-reference",
+      "title": "A local classifier may be defined later",
+      "keywords": [
+        "forward reference",
+        "后定义",
+        "前向引用",
+        "未定义",
+        "missing definition",
+        "category conflict",
+        "pending"
+      ],
+      "applicability": "A subcomponent references a classifier whose declaration occurs later in the same package.",
+      "explanation": "A missing declaration in a generation prefix is a pending obligation, not proof of an error. Later define the referenced type and implementation with the required category; append-only generation cannot repair an already established category conflict. End the complete project only after outstanding required definitions are resolved. Forward references do not justify inheritance or containment cycles, and example declarations are not available in the generated project.",
+      "family": "independent_language_microexamples",
+      "origin": "Project-authored generic language example; not extracted from evaluation requirements or reference models.",
+      "sources": [
+        {
+          "document": "SAE AS5506D",
+          "version": "2022",
+          "locator": "Name resolution and component classifier references (§4)",
+          "kind": "paraphrase; no standard text reproduced"
+        },
+        {
+          "document": "OSATE core AADL grammar and validators",
+          "version": "b8308b7",
+          "locator": "core/org.osate.xtext.aadl2",
+          "url": "https://github.com/osate/osate2/tree/b8308b7/core/org.osate.xtext.aadl2"
+        }
+      ],
+      "examples": [
+        {
+          "files": {
+            "DeferredLocal.aadl": "package DeferredLocal\npublic\nsystem Cabinet\nend Cabinet;\nsystem implementation Cabinet.minimal\nsubcomponents\n  panel_part: system Panel.minimal;\nend Cabinet.minimal;\nsystem Panel\nend Panel;\nsystem implementation Panel.minimal\nend Panel.minimal;\nend DeferredLocal;\n"
+          },
+          "validation": {
+            "local_valid": true,
+            "osate_status": "passed",
+            "source_files_sha256": {
+              "DeferredLocal.aadl": "76d1f8e7e896e02ebf9d862b17b854d2409f32b57a9f003c08f03969b51a69eb"
+            },
+            "local_rule_sha256": "6ebf6629a001a4a1e3fabd9137b86a4ea7d3406a96f596ff87415bee3127790e",
+            "osate_cli_version": "0.3.0",
+            "osate_binary_provenance": [
+              {
+                "file": "osate-cli.jar",
+                "sha256": "169f943de2f046c05ea9a5e0a540a2c9aa575e5a9dbcf637e3de9a71c639e549"
+              },
+              {
+                "file": "org.osate.xtext.aadl2_9.1.0.v20260928-1804.jar",
+                "sha256": "8d695f12a402b568ccc4b9cd2996fa5ccf521184fe3f1879a36109c88ec085e6"
+              },
+              {
+                "file": "osate-workspace-server-0.3.0.jar",
+                "sha256": "bf02f4aa3ebf3d581acc63ead929f9bcedb2df23aed4317967b38d964c14df3d"
+              }
+            ],
+            "evidence": "resources/retrieval/validation/forward-local-reference.json",
+            "evidence_sha256": "088cc21a21540afa5131a81e64688ef19b309a36e3d0b24995d85c22f790a167"
+          }
+        }
+      ]
+    },
+    {
+      "id": "data-size-units",
+      "title": "Data size, property units and precise quantities",
+      "keywords": [
+        "data_size",
+        "property",
+        "bytes",
+        "kbyte",
+        "数据类型",
+        "大小",
+        "属性",
+        "字节",
+        "单位"
+      ],
+      "applicability": "A requirement fixes the storage size of a data classifier.",
+      "explanation": "Attach Data_Size to the intended data classifier in its properties section, preserve the requested magnitude, and use units defined by the loaded property environment. The pinned AADL Size_Units defines KByte as 1000 Bytes; do not silently interpret it as 1024 Bytes. If the source requirement is ambiguous about decimal/binary units, record that evaluation ambiguity rather than declaring exact fulfillment. A well-typed size property alone does not specify record fields or prove end-to-end format consistency.",
+      "family": "independent_language_microexamples",
+      "origin": "Project-authored generic language example; not extracted from evaluation requirements or reference models.",
+      "sources": [
+        {
+          "document": "SAE AS5506D",
+          "version": "2022",
+          "locator": "Properties (§11); OSATE built-in AADL_Project::Size_Units and Memory_Properties::Data_Size",
+          "kind": "paraphrase; no standard text reproduced"
+        },
+        {
+          "document": "OSATE core AADL grammar and validators",
+          "version": "b8308b7",
+          "locator": "core/org.osate.xtext.aadl2",
+          "url": "https://github.com/osate/osate2/tree/b8308b7/core/org.osate.xtext.aadl2"
+        }
+      ],
+      "examples": [
+        {
+          "files": {
+            "StorageExample.aadl": "package StorageExample\npublic\nwith Memory_Properties;\ndata Packet\nproperties\n  Memory_Properties::Data_Size => 12 Bytes;\nend Packet;\nend StorageExample;\n"
+          },
+          "validation": {
+            "local_valid": true,
+            "osate_status": "passed",
+            "source_files_sha256": {
+              "StorageExample.aadl": "ef017a28ca736b13f8c9e5a38f74d657af9d4bf0be914a9b91b4441ba7f4ce2f"
+            },
+            "local_rule_sha256": "6ebf6629a001a4a1e3fabd9137b86a4ea7d3406a96f596ff87415bee3127790e",
+            "osate_cli_version": "0.3.0",
+            "osate_binary_provenance": [
+              {
+                "file": "osate-cli.jar",
+                "sha256": "169f943de2f046c05ea9a5e0a540a2c9aa575e5a9dbcf637e3de9a71c639e549"
+              },
+              {
+                "file": "org.osate.xtext.aadl2_9.1.0.v20260928-1804.jar",
+                "sha256": "8d695f12a402b568ccc4b9cd2996fa5ccf521184fe3f1879a36109c88ec085e6"
+              },
+              {
+                "file": "osate-workspace-server-0.3.0.jar",
+                "sha256": "bf02f4aa3ebf3d581acc63ead929f9bcedb2df23aed4317967b38d964c14df3d"
+              }
+            ],
+            "evidence": "resources/retrieval/validation/data-size-units.json",
+            "evidence_sha256": "35f4cb4ba756127d2ef223436d4c33732b8cfb6e8962c734de047ef6bd66a57b"
+          }
+        }
+      ]
+    },
+    {
+      "id": "one-unit-per-file",
+      "title": "Single-source output and model-unit closure",
+      "keywords": [
+        "single file",
+        "multiple packages",
+        "missing EOF",
+        "extraneous input",
+        "单文件",
+        "多个包",
+        "END_FILE",
+        "END_PROJECT"
+      ],
+      "applicability": "Closing the single generated source, or diagnosing an extra package/model unit outside the configured output scope.",
+      "explanation": "The current generation scope is exactly one .aadl source file containing one package or one property set. Multiple model units are outside this output scope; do not add another file to bypass the limit. A single package may contain many component types and implementations, including legal references to declarations later in that same package. Close its AADL model unit before closing the file. END_FILE and END_PROJECT are transport control lines, not AADL source: do not prefix them with the source-line marker. All required local declarations must exist before project closure. This is the selected generation and OSATE profile, not a claim that AADL itself cannot express larger projects.",
+      "family": "independent_language_microexamples",
+      "origin": "Project-authored generic language example; not extracted from evaluation requirements or reference models.",
+      "sources": [
+        {
+          "document": "SAE AS5506D",
+          "version": "2022",
+          "locator": "OSATE Aadl2.xtext file entry and this project's file-container profile",
+          "kind": "paraphrase; no standard text reproduced"
+        },
+        {
+          "document": "OSATE core AADL grammar and validators",
+          "version": "b8308b7",
+          "locator": "core/org.osate.xtext.aadl2",
+          "url": "https://github.com/osate/osate2/tree/b8308b7/core/org.osate.xtext.aadl2"
+        }
+      ],
+      "examples": [
+        {
+          "files": {
+            "StandaloneLibrary.aadl": "package StandaloneLibrary\npublic\ndata Scalar\nend Scalar;\ndevice Sampler\nfeatures\n  measurement: out data port Scalar;\nend Sampler;\nend StandaloneLibrary;\n"
+          },
+          "validation": {
+            "local_valid": true,
+            "osate_status": "passed",
+            "source_files_sha256": {
+              "StandaloneLibrary.aadl": "bafe2fa8b15a373b11c649572bfcfc3c3b0e4e792ce1f29be56385b46d4b0aed"
+            },
+            "local_rule_sha256": "6ebf6629a001a4a1e3fabd9137b86a4ea7d3406a96f596ff87415bee3127790e",
+            "osate_cli_version": "0.3.0",
+            "osate_binary_provenance": [
+              {
+                "file": "osate-cli.jar",
+                "sha256": "169f943de2f046c05ea9a5e0a540a2c9aa575e5a9dbcf637e3de9a71c639e549"
+              },
+              {
+                "file": "org.osate.xtext.aadl2_9.1.0.v20260928-1804.jar",
+                "sha256": "8d695f12a402b568ccc4b9cd2996fa5ccf521184fe3f1879a36109c88ec085e6"
+              },
+              {
+                "file": "osate-workspace-server-0.3.0.jar",
+                "sha256": "bf02f4aa3ebf3d581acc63ead929f9bcedb2df23aed4317967b38d964c14df3d"
+              }
+            ],
+            "evidence": "resources/retrieval/validation/one-unit-per-file.json",
+            "evidence_sha256": "628fef9a5a627c3d60b027d905efe570b199245eb45c66a307401d4d4ea144fc"
+          }
+        }
+      ]
+    },
+    {
+      "id": "connection-boundary-direction",
+      "title": "Direction depends on connection context",
+      "keywords": [
+        "connection",
+        "direction",
+        "endpoint",
+        "incoming",
+        "outgoing",
+        "连接",
+        "方向",
+        "端点"
+      ],
+      "applicability": "Checking connections between a parent boundary and a child, or diagnosing source/destination direction errors.",
+      "explanation": "A child source endpoint is normally out (or in out); a child destination is in (or in out). At the containing component boundary, an incoming parent port can be the source of an internal connection to a child's input, and a child's output can connect to an outgoing parent port. Do not apply the child-source-out rule to the parent boundary. Resolve endpoint ownership and features before checking both-end compatibility; defer information that genuinely requires later definitions.",
+      "family": "independent_language_microexamples",
+      "origin": "Project-authored generic language example; not extracted from evaluation requirements or reference models.",
+      "sources": [
+        {
+          "document": "SAE AS5506D",
+          "version": "2022",
+          "locator": "Connection endpoint context and direction (§9)",
+          "kind": "paraphrase; no standard text reproduced"
+        },
+        {
+          "document": "OSATE core AADL grammar and validators",
+          "version": "b8308b7",
+          "locator": "core/org.osate.xtext.aadl2",
+          "url": "https://github.com/osate/osate2/tree/b8308b7/core/org.osate.xtext.aadl2"
+        }
+      ],
+      "examples": [
+        {
+          "files": {
+            "BoundaryWiring.aadl": "package BoundaryWiring\npublic\nsystem FilterUnit\nfeatures\n  ingress: in event port;\n  egress: out event port;\nend FilterUnit;\nsystem implementation FilterUnit.minimal\nend FilterUnit.minimal;\nsystem Boundary\nfeatures\n  incoming: in event port;\n  outgoing: out event port;\nend Boundary;\nsystem implementation Boundary.minimal\nsubcomponents\n  filter_part: system FilterUnit.minimal;\nconnections\n  enter_filter: port incoming -> filter_part.ingress;\n  leave_filter: port filter_part.egress -> outgoing;\nend Boundary.minimal;\nend BoundaryWiring;\n"
+          },
+          "validation": {
+            "local_valid": true,
+            "osate_status": "passed",
+            "source_files_sha256": {
+              "BoundaryWiring.aadl": "7dd5c3b9e6f414b664bd148824e1a33dfe41a04fc491ea94079f3ec4b4f8320f"
+            },
+            "local_rule_sha256": "6ebf6629a001a4a1e3fabd9137b86a4ea7d3406a96f596ff87415bee3127790e",
+            "osate_cli_version": "0.3.0",
+            "osate_binary_provenance": [
+              {
+                "file": "osate-cli.jar",
+                "sha256": "169f943de2f046c05ea9a5e0a540a2c9aa575e5a9dbcf637e3de9a71c639e549"
+              },
+              {
+                "file": "org.osate.xtext.aadl2_9.1.0.v20260928-1804.jar",
+                "sha256": "8d695f12a402b568ccc4b9cd2996fa5ccf521184fe3f1879a36109c88ec085e6"
+              },
+              {
+                "file": "osate-workspace-server-0.3.0.jar",
+                "sha256": "bf02f4aa3ebf3d581acc63ead929f9bcedb2df23aed4317967b38d964c14df3d"
+              }
+            ],
+            "evidence": "resources/retrieval/validation/connection-boundary-direction.json",
+            "evidence_sha256": "e073df74a11d21e710d60377d666ecc9a713372841ff96d0f0d5889ad13d805a"
+          }
+        }
+      ]
+    },
+    {
+      "id": "names-and-scope",
+      "title": "Names, scope and end-name matching",
+      "keywords": [
+        "name",
+        "duplicate",
+        "uniqueness",
+        "scope",
+        "case insensitive",
+        "名称",
+        "重名",
+        "大小写",
+        "作用域"
+      ],
+      "applicability": "A diagnostic concerns duplicate members, mismatched end names or invisible declarations.",
+      "explanation": "AADL names are case-insensitive. A completed duplicate member name in the same relevant scope is a conflict; differently scoped members may share a name. Do not reject an unfinished identifier merely because its current spelling matches a declared name: it may still be extended. Match the package/type/implementation end name with its opening name. Keep declarations in their intended public/private section. Retrieval does not change declaration visibility or define a missing classifier.",
+      "family": "independent_language_microexamples",
+      "origin": "Project-authored generic language example; not extracted from evaluation requirements or reference models.",
+      "sources": [
+        {
+          "document": "SAE AS5506D",
+          "version": "2022",
+          "locator": "Naming (§15), visibility (§4.2) and component declaration endings",
+          "kind": "paraphrase; no standard text reproduced"
+        },
+        {
+          "document": "OSATE core AADL grammar and validators",
+          "version": "b8308b7",
+          "locator": "core/org.osate.xtext.aadl2",
+          "url": "https://github.com/osate/osate2/tree/b8308b7/core/org.osate.xtext.aadl2"
+        }
+      ],
+      "examples": []
+    }
+  ],
+  "query_expansions": {
+    "event data port": [
+      "event data",
+      "事件数据",
+      "事件型数据"
+    ],
+    "event port": [
+      "event port",
+      "事件端口",
+      "事件输出",
+      "事件输入"
+    ],
+    "data port": [
+      "data port",
+      "数据端口",
+      "数据输入",
+      "数据输出"
+    ],
+    "system sibling subcomponents": [
+      "同级",
+      "子系统",
+      "嵌套",
+      "sibling",
+      "nested"
+    ],
+    "connection direction endpoint": [
+      "连接",
+      "方向",
+      "端点",
+      "connection",
+      "endpoint"
+    ],
+    "classifier implementation type": [
+      "分类器",
+      "实现",
+      "类型",
+      "classifier",
+      "implementation"
+    ],
+    "forward reference definition": [
+      "后定义",
+      "前向引用",
+      "未定义",
+      "forward reference",
+      "unresolved",
+      "couldn't resolve"
+    ],
+    "data_size bytes units": [
+      "大小",
+      "字节",
+      "单位",
+      "data_size",
+      "bytes",
+      "kbyte"
+    ],
+    "single file package eof": [
+      "单文件",
+      "多个包",
+      "missing eof",
+      "extraneous input",
+      "multiple packages"
+    ],
+    "name matching uniqueness": [
+      "重名",
+      "名称",
+      "大小写",
+      "duplicate",
+      "end name",
+      "case insensitive"
+    ]
+  },
+  "generation_scope": {
+    "name": "single_source",
+    "source_files": 1,
+    "model_units_per_file": 1
+  },
+  "single_source_validation": {
+    "local_rule_sha256": "6ebf6629a001a4a1e3fabd9137b86a4ea7d3406a96f596ff87415bee3127790e",
+    "all_example_source_files": 1,
+    "local_examples_checked": 7,
+    "osate_examples_checked": 7,
+    "evidence": [
+      {
+        "path": "resources/retrieval/validation/port-kinds.json",
+        "sha256": "94d2128fd1c58bfb236d6147ea2233e331f594635b23f2ebff295e8c5c1c1a5f"
+      },
+      {
+        "path": "resources/retrieval/validation/type-and-implementation.json",
+        "sha256": "d93f60598f056242f46bfadb94f24f1bd730e307933ff99136a3bffad38aa945"
+      },
+      {
+        "path": "resources/retrieval/validation/sibling-system-connection.json",
+        "sha256": "bd2663bef0dae628d12b8990706294c6310138c100658c791892e2e44db7f0e2"
+      },
+      {
+        "path": "resources/retrieval/validation/forward-local-reference.json",
+        "sha256": "088cc21a21540afa5131a81e64688ef19b309a36e3d0b24995d85c22f790a167"
+      },
+      {
+        "path": "resources/retrieval/validation/data-size-units.json",
+        "sha256": "35f4cb4ba756127d2ef223436d4c33732b8cfb6e8962c734de047ef6bd66a57b"
+      },
+      {
+        "path": "resources/retrieval/validation/one-unit-per-file.json",
+        "sha256": "628fef9a5a627c3d60b027d905efe570b199245eb45c66a307401d4d4ea144fc"
+      },
+      {
+        "path": "resources/retrieval/validation/connection-boundary-direction.json",
+        "sha256": "e073df74a11d21e710d60377d666ecc9a713372841ff96d0f0d5889ad13d805a"
+      }
+    ],
+    "osate_policy": "All seven unmodified examples freshly checked with the configured OSATE; temporary workspaces removed."
+  }
+}

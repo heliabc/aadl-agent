@@ -1,0 +1,654 @@
+{
+  "case_id": "a3d_paparazzi",
+  "title": "Paparazzi airborne architecture - derived example requirements",
+  "independent_evaluation_eligible": false,
+  "root_classifiers": [
+    "paparazzi_system::paparazzi.basic_archi",
+    "paparazzi_system::paparazzi.PnP_tasks_interruptions",
+    "paparazzi_system::paparazzi.PP_tasks_interruptions",
+    "paparazzi_system::paparazzi.PP_tasks_AP_interruptions"
+  ],
+  "coverage": [
+    "Covers the common airborne hierarchy, MCU0/MCU1 process and hardware boundaries, task sets, modeled connections and all four scheduling variants.",
+    "The four configurations are alternatives within one case, not four independent requirement datasets."
+  ],
+  "limitations": [
+    "These are source-derived architectural requirements, not executable control laws or a claim of validation. Existing OSATE validation is not a pass.",
+    "The source declares modes without transitions and leaves several task inputs/behavior bodies unimplemented; no transition guards, servo algorithms, sensor processing or failsafe actions are invented.",
+    "The imported source references historical C files; those references are not proof that matching C bodies are present.",
+    "Paper table 2 gives radio-control/stabilization/inter-MCU-send frequencies of 40/20/20 Hz, while this fixed model uses periods of 100/100/250 ms. This draft follows the model snapshot and does not merge the paper timing table.",
+    "The original AADLib source has historical linking/type issues and a GPL provenance comment despite its repository-level BSD-3-Clause license; this draft does not relicense the imported source."
+  ],
+  "original_requirement_status": "A publisher-hosted PapaBench paper and explicit PapaBench v0.4 provenance were located. No standalone original requirement set matching all four revised AADLib configurations was established.",
+  "source_search_evidence": [
+    {
+      "title": "Pinned Paparazzi provenance",
+      "url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/paparazzi_system.aadl#L4-L22",
+      "finding": "Lines 7-13 identify documentation/C origins, PapaBench v0.4 and later AADLv2 corrections/extensions.",
+      "license_note": "Repository LICENSE is BSD-3-Clause; the file also records GNU-GPL origins, so preserve both notices."
+    },
+    {
+      "title": "PapaBench: a Free Real-Time Benchmark (WCET 2006)",
+      "url": "https://drops.dagstuhl.de/entities/document/10.4230/OASIcs.WCET.2006.678",
+      "finding": "Read the six-page publisher PDF; pp. 1-2 describe the airborne split, p. 3 gives task-frequency tables and mode/precedence discussion. Historical design evidence; timing differs from this snapshot.",
+      "license_note": "Publisher lists CC BY-NC-ND 3.0 for the paper. Benchmark code licensing is separate. Cached for review; no paper prose is copied into these model-derived requirements.",
+      "cached_context": [
+        {
+          "local_cache": ".cache/a3d/requirements-evidence/aadlib-context/papabench-wcet2006.pdf",
+          "sha256": "355ff52d955a1edfb98838e6fa947d995fde95df945afd1155403a6c8ea79b8a"
+        }
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "id": "PAP-001",
+      "text": "The example shall model one airborne system containing two separate subsystems: an autopilot (MCU0) and a fly-by-wire controller (MCU1), connected to one SPI bus. The ground station is outside the modeled system boundary.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/paparazzi_system.aadl",
+          "line_start": 29,
+          "line_end": 68,
+          "sha256": "cad413d2341b778e8aa60b1a991a59f005120fa68841a0672d0d9190713bec79",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "2f057176bc8e0ea81af4da94063b3f80fe6f4e87868b6fb8708364bac5151ca7",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/paparazzi_system.aadl#L29-L68"
+        }
+      ]
+    },
+    {
+      "id": "PAP-002",
+      "text": "The airborne boundary shall accept radio-control event-data input and forward it to MCU1; MCU1 shall expose an outgoing inter-MCU message channel to MCU0, and MCU0 shall expose a return event-data channel to MCU1.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/paparazzi_system.aadl",
+          "line_start": 50,
+          "line_end": 68,
+          "sha256": "cad413d2341b778e8aa60b1a991a59f005120fa68841a0672d0d9190713bec79",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "85953c519ee8721e00077d2a168034587434db9e4f3cdb29ca0c28607d8a8ea2",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/paparazzi_system.aadl#L50-L68"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/flybywire_subsys.aadl",
+          "line_start": 13,
+          "line_end": 19,
+          "sha256": "81aca4fed0e5152573f2bd50107d9a54af4409908df2c83399ccac61e6441415",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "6dca0f1f8f7765b97a1cc2a0ea322ff2f97d2b04b2d2c1a5322bbe6884d61a7f",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/flybywire_subsys.aadl#L13-L19"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/autopilot_subsys.aadl",
+          "line_start": 14,
+          "line_end": 21,
+          "sha256": "755f2bf582f1c5d7c57bbf351b50330144842de93f756375e5c2468030761cfb",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "06dbd26b8059bcbf4ef56bc651369cca46b5dad16022f7d9b0f822e556bd6366",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/autopilot_subsys.aadl#L14-L21"
+        }
+      ]
+    },
+    {
+      "id": "PAP-003",
+      "text": "MCU0 shall contain one processor, one RAM, a memory bus, a device bus, a modem bus and one navigation/stabilization/control process. That process shall be bound to the MCU0 processor and RAM.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/autopilot_subsys.aadl",
+          "line_start": 23,
+          "line_end": 38,
+          "sha256": "755f2bf582f1c5d7c57bbf351b50330144842de93f756375e5c2468030761cfb",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "f49cad39553d4f07df5de196f10d83c7e3dc63ea986f8451d5116b653bb70674",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/autopilot_subsys.aadl#L23-L38"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/autopilot_subsys.aadl",
+          "line_start": 72,
+          "line_end": 76,
+          "sha256": "755f2bf582f1c5d7c57bbf351b50330144842de93f756375e5c2468030761cfb",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "bc80f7b4a9b8a6053b52c6a2d9890a61b48b9253289b69e2e4b54324fa0ac405",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/autopilot_subsys.aadl#L72-L76"
+        }
+      ]
+    },
+    {
+      "id": "PAP-004",
+      "text": "MCU0 shall include pressure, voltage, compass, air-speed, camera, transmitter, GPS and infrared devices. The pressure, voltage, compass, air-speed and GPS data ports shall feed corresponding process-boundary inputs, and the GPS error event shall feed the process GPS-event input.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/autopilot_subsys.aadl",
+          "line_start": 28,
+          "line_end": 38,
+          "sha256": "755f2bf582f1c5d7c57bbf351b50330144842de93f756375e5c2468030761cfb",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "778938d022c371a79513b3c4cea39480f8d7ba93f1b390161141a0b40e64f6c0",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/autopilot_subsys.aadl#L28-L38"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/autopilot_subsys.aadl",
+          "line_start": 55,
+          "line_end": 61,
+          "sha256": "755f2bf582f1c5d7c57bbf351b50330144842de93f756375e5c2468030761cfb",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "91cfced77ce0cb5ae2ca6a9390a36f079afd013fde9dea9fe30d63377648ec15",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/autopilot_subsys.aadl#L55-L61"
+        }
+      ]
+    },
+    {
+      "id": "PAP-005",
+      "text": "MCU0 shall connect its process telemetry output to the transmitter data input and the camera video output to the transmitter video input. The inter-MCU input and output shall be delegated through the navigation/stabilization/control process boundary.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/autopilot_subsys.aadl",
+          "line_start": 63,
+          "line_end": 70,
+          "sha256": "755f2bf582f1c5d7c57bbf351b50330144842de93f756375e5c2468030761cfb",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "61117eeb4f0033de13b720118d7d525538db6890acc968e95ef872334f853f29",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/autopilot_subsys.aadl#L63-L70"
+        }
+      ]
+    },
+    {
+      "id": "PAP-006",
+      "text": "MCU1 shall contain one processor, one RAM, memory and device buses, one radio receiver, one servo counter and one radio-command/servo-control process. Its process shall be bound to its processor and RAM.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/flybywire_subsys.aadl",
+          "line_start": 21,
+          "line_end": 36,
+          "sha256": "81aca4fed0e5152573f2bd50107d9a54af4409908df2c83399ccac61e6441415",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "4779e256ea621a84e5c32079421ce25e505724893ee81df45517ec05451cdef0",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/flybywire_subsys.aadl#L21-L36"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/flybywire_subsys.aadl",
+          "line_start": 72,
+          "line_end": 77,
+          "sha256": "81aca4fed0e5152573f2bd50107d9a54af4409908df2c83399ccac61e6441415",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "72fdd6964e794ad1ee021bd409cabd913adbd91a70f598d813a42805132e1c08",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/flybywire_subsys.aadl#L72-L77"
+        }
+      ]
+    },
+    {
+      "id": "PAP-007",
+      "text": "MCU1 shall provide six distinct servo devices and command channels: elevator, rudder, left and right ailerons, and left and right motors. Each process command output shall pass through the corresponding counter channel to its servo.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/flybywire_subsys.aadl",
+          "line_start": 30,
+          "line_end": 35,
+          "sha256": "81aca4fed0e5152573f2bd50107d9a54af4409908df2c83399ccac61e6441415",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "1a41f74892e8cb3fc193d14bdf4d74a6a9a313881d018e2c14b1e0f9a34ec899",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/flybywire_subsys.aadl#L30-L35"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/flybywire_subsys.aadl",
+          "line_start": 58,
+          "line_end": 70,
+          "sha256": "81aca4fed0e5152573f2bd50107d9a54af4409908df2c83399ccac61e6441415",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "0687c69ee1623f5f9fa1a1bbc9708482a5c63ffc96cc6450655f9ba3d05d34aa",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/flybywire_subsys.aadl#L58-L70"
+        }
+      ]
+    },
+    {
+      "id": "PAP-008",
+      "text": "The MCU1 radio receiver shall receive the external radio-control input and forward its command data and event indication to the servo-control process. That process shall receive autopilot commands and expose messages for MCU0.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/flybywire_subsys.aadl",
+          "line_start": 51,
+          "line_end": 56,
+          "sha256": "81aca4fed0e5152573f2bd50107d9a54af4409908df2c83399ccac61e6441415",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "e9cb46d5c34b51fd4f22ac7635e79c7383f85d69537deab4bf3a890e4f08e7e9",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/flybywire_subsys.aadl#L51-L56"
+        }
+      ]
+    },
+    {
+      "id": "PAP-009",
+      "text": "The autopilot process shall contain eight periodic task instances: radio control, stabilization, inter-MCU sending, GPS data acquisition, navigation, altitude control, climb control and ground reporting.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/autopilot_soft.aadl",
+          "line_start": 233,
+          "line_end": 246,
+          "sha256": "f52527860da6961fe44458b197fae945e4fa8a06c3303e6b82affec470058bce",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "3fc011c5d9c7f6dcdfe0d140284f162537e0f4efdd7bd96a948cfacf0917e928",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/autopilot_soft.aadl#L233-L246"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/autopilot_soft.aadl",
+          "line_start": 25,
+          "line_end": 147,
+          "sha256": "f52527860da6961fe44458b197fae945e4fa8a06c3303e6b82affec470058bce",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "9ea8ecb9104995ac5ba61130900790e552f985a3d34bf6955bf449c433f4eea1",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/autopilot_soft.aadl#L25-L147"
+        }
+      ]
+    },
+    {
+      "id": "PAP-010",
+      "text": "The radio-control and stabilization tasks shall each have a 100 ms period; their execution-time intervals shall be 15,600-21,100 us and 5,681-6,654 us respectively.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/autopilot_soft.aadl",
+          "line_start": 25,
+          "line_end": 48,
+          "sha256": "f52527860da6961fe44458b197fae945e4fa8a06c3303e6b82affec470058bce",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "0f389ba3a198d65fa5b12bcf86c7f6401e0ae40778322f571d57502d39c34c28",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/autopilot_soft.aadl#L25-L48"
+        }
+      ]
+    },
+    {
+      "id": "PAP-011",
+      "text": "The inter-MCU sending task and GPS acquisition task shall each have a 250 ms period; their execution-time intervals shall be 233-471 us and 5,987-6,659 us respectively.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/autopilot_soft.aadl",
+          "line_start": 57,
+          "line_end": 79,
+          "sha256": "f52527860da6961fe44458b197fae945e4fa8a06c3303e6b82affec470058bce",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "b46bed8d5edaf6fbb08b0184c248057a61df21aeb6a29e5c6f407ccdd65029d6",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/autopilot_soft.aadl#L57-L79"
+        }
+      ]
+    },
+    {
+      "id": "PAP-012",
+      "text": "Navigation, altitude control and climb control shall each have a 250 ms period; their execution-time intervals shall be 44,420-53,350 us, 1,478-1,660 us and 5,429-6,241 us respectively.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/autopilot_soft.aadl",
+          "line_start": 91,
+          "line_end": 133,
+          "sha256": "f52527860da6961fe44458b197fae945e4fa8a06c3303e6b82affec470058bce",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "83b52d824b81dea1662152d33e5696f48ef659d0e7c3dfd53d52963c73518f68",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/autopilot_soft.aadl#L91-L133"
+        }
+      ]
+    },
+    {
+      "id": "PAP-013",
+      "text": "The ground-reporting task shall have a 100 ms period and an execution-time interval of 5,000-12,220 us.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/autopilot_soft.aadl",
+          "line_start": 141,
+          "line_end": 148,
+          "sha256": "f52527860da6961fe44458b197fae945e4fa8a06c3303e6b82affec470058bce",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "6fb4feabf6f08328cc16c7813fb2162a9927ff689326b1848bebb67faa5b982f",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/autopilot_soft.aadl#L141-L148"
+        }
+      ]
+    },
+    {
+      "id": "PAP-014",
+      "text": "The autopilot process shall additionally contain four interrupt-handler thread instances: two SPI handlers, one modem handler and one GPS handler. Their execution-time intervals shall be 251-447 us, 151-228 us, 303-520 us and 283-493 us respectively.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/autopilot_soft.aadl",
+          "line_start": 159,
+          "line_end": 213,
+          "sha256": "f52527860da6961fe44458b197fae945e4fa8a06c3303e6b82affec470058bce",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "bea88f2d82cd66208a5db3ac7126791de3ab497c8aba4e1332df74aefa0c6d53",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/autopilot_soft.aadl#L159-L213"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/autopilot_soft.aadl",
+          "line_start": 242,
+          "line_end": 245,
+          "sha256": "f52527860da6961fe44458b197fae945e4fa8a06c3303e6b82affec470058bce",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "77c3c116cf79eea15e6461c1549427fed9f284875250622dcbed2531872b1571",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/autopilot_soft.aadl#L242-L245"
+        }
+      ]
+    },
+    {
+      "id": "PAP-015",
+      "text": "GPS acquisition shall provide position event data to navigation. In auto and home modes, navigation shall provide desired altitude to altitude control, which shall provide desired climb to climb control; the two control values shall use Float_32 event-data ports.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/autopilot_soft.aadl",
+          "line_start": 83,
+          "line_end": 124,
+          "sha256": "f52527860da6961fe44458b197fae945e4fa8a06c3303e6b82affec470058bce",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "0077f8b6953526ec28c974dfeae233eef4f20b4512e5b0a8f1857134e7c456dd",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/autopilot_soft.aadl#L83-L124"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/autopilot_soft.aadl",
+          "line_start": 252,
+          "line_end": 255,
+          "sha256": "f52527860da6961fe44458b197fae945e4fa8a06c3303e6b82affec470058bce",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "3ab2e00da493721e96f9294c3205d60aaed3aa311cd6ca5ee737c8168cb307a1",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/autopilot_soft.aadl#L252-L255"
+        }
+      ]
+    },
+    {
+      "id": "PAP-016",
+      "text": "The autopilot process infrared data input shall feed the stabilization task. The GPS stream input shall feed the GPS interrupt handler.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/autopilot_soft.aadl",
+          "line_start": 252,
+          "line_end": 257,
+          "sha256": "f52527860da6961fe44458b197fae945e4fa8a06c3303e6b82affec470058bce",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "c8ae0e364515d991cb8ea31bbb743ebb3658ff8a4bdc32aa51dbae319e77b9f9",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/autopilot_soft.aadl#L252-L257"
+        }
+      ]
+    },
+    {
+      "id": "PAP-017",
+      "text": "In manual, auto and home modes, the autopilot sending task shall feed the first SPI handler, then the second SPI handler, then the process inter-MCU output. Reception from MCU1 through the two SPI handlers shall be enabled only in manual mode.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/autopilot_soft.aadl",
+          "line_start": 259,
+          "line_end": 264,
+          "sha256": "f52527860da6961fe44458b197fae945e4fa8a06c3303e6b82affec470058bce",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "93b0b330810452d0ae78ab71413820c413181de17483004d99fd7e1c2d1de9a2",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/autopilot_soft.aadl#L259-L264"
+        }
+      ]
+    },
+    {
+      "id": "PAP-018",
+      "text": "Ground reporting shall pass through the modem handler to the process ground-transmission output in manual, auto and home modes.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/autopilot_soft.aadl",
+          "line_start": 266,
+          "line_end": 267,
+          "sha256": "f52527860da6961fe44458b197fae945e4fa8a06c3303e6b82affec470058bce",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "6b87cc1da0e329f3a105845b469b6ff662c93fa2af3193cddcb2594361eb1443",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/autopilot_soft.aadl#L266-L267"
+        }
+      ]
+    },
+    {
+      "id": "PAP-019",
+      "text": "The autopilot process shall declare manual as its initial mode and shall also declare auto and home modes. These mode declarations shall define connection availability; no autonomous transition condition is specified by this example.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/autopilot_soft.aadl",
+          "line_start": 250,
+          "line_end": 275,
+          "sha256": "f52527860da6961fe44458b197fae945e4fa8a06c3303e6b82affec470058bce",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "0c7aad6b82745845d89c79d348f21c532e3cf3c0cae6bb957716101721b86342",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/autopilot_soft.aadl#L250-L275"
+        }
+      ]
+    },
+    {
+      "id": "PAP-020",
+      "text": "The MCU1 process shall contain five periodic tasks: PPM/radio-command checking and sending to the autopilot at 25 ms periods; servo transmission, autopilot-value checking and failsafe checking at 50 ms periods.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/flybywire_soft.aadl",
+          "line_start": 23,
+          "line_end": 88,
+          "sha256": "3101deee1fc152bbcf4012307e2ed9da447eb51d3aea0d033344ea4b3a9a59b9",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "415e10d77ad1b414981e3d08815a23c5250abe41ee1722b573d69c41c513da0d",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/flybywire_soft.aadl#L23-L88"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/flybywire_soft.aadl",
+          "line_start": 214,
+          "line_end": 220,
+          "sha256": "3101deee1fc152bbcf4012307e2ed9da447eb51d3aea0d033344ea4b3a9a59b9",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "e004e8ebe5b06531fc0db3c426339e2b5a8c5660e060fffc66d094baa6b13567",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/flybywire_soft.aadl#L214-L220"
+        }
+      ]
+    },
+    {
+      "id": "PAP-021",
+      "text": "The MCU1 process shall additionally contain eight interrupt-handler thread instances: one for each of the six servo channels, one SPI handler and one radio handler.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/flybywire_soft.aadl",
+          "line_start": 222,
+          "line_end": 230,
+          "sha256": "3101deee1fc152bbcf4012307e2ed9da447eb51d3aea0d033344ea4b3a9a59b9",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "d080fec1e35e4799183db93e27405c5be0cd31892c23e1f3cfacf367e2dc4b21",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/flybywire_soft.aadl#L222-L230"
+        }
+      ]
+    },
+    {
+      "id": "PAP-022",
+      "text": "The MCU1 process shall retain four Boolean state-data components: system mode, radio available, radio really lost and autopilot health. This requirement specifies stored architectural data only; it does not define an update algorithm.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/flybywire_soft.aadl",
+          "line_start": 232,
+          "line_end": 236,
+          "sha256": "3101deee1fc152bbcf4012307e2ed9da447eb51d3aea0d033344ea4b3a9a59b9",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "c44a1edec02ad2c098d18b143ec2f694962bb5c5b31ce873ec845727a7388dbc",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/flybywire_soft.aadl#L232-L236"
+        }
+      ]
+    },
+    {
+      "id": "PAP-023",
+      "text": "In manual mode, the MCU1 process shall pass incoming radio-control event data to its radio handler, and its sending task shall forward an outgoing message through the SPI handler to MCU0. Autopilot command reception through the SPI handler shall be present in manual and auto modes.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/flybywire_soft.aadl",
+          "line_start": 237,
+          "line_end": 242,
+          "sha256": "3101deee1fc152bbcf4012307e2ed9da447eb51d3aea0d033344ea4b3a9a59b9",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "a6674797bcece0acd49e5e7979f37a64d4739ea5f7448867afab9ef58bc334c4",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/flybywire_soft.aadl#L237-L242"
+        }
+      ]
+    },
+    {
+      "id": "PAP-024",
+      "text": "Each of the six MCU1 servo interrupt handlers shall drive its matching signed 16-bit process command output.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/flybywire_soft.aadl",
+          "line_start": 92,
+          "line_end": 96,
+          "sha256": "3101deee1fc152bbcf4012307e2ed9da447eb51d3aea0d033344ea4b3a9a59b9",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "ec66f6a0c5933135a6a72877d2da5d3aef099bc6c7fbb22ad6add11ea4a729ff",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/flybywire_soft.aadl#L92-L96"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/flybywire_soft.aadl",
+          "line_start": 206,
+          "line_end": 211,
+          "sha256": "3101deee1fc152bbcf4012307e2ed9da447eb51d3aea0d033344ea4b3a9a59b9",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "72eec43acbe35daa58d67ea876583e82e0fc4b9db6c68fe64809b2554b771e41",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/flybywire_soft.aadl#L206-L211"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/flybywire_soft.aadl",
+          "line_start": 244,
+          "line_end": 249,
+          "sha256": "3101deee1fc152bbcf4012307e2ed9da447eb51d3aea0d033344ea4b3a9a59b9",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "218d789d7aa56c1d7b58c38fa344f6fa6b06fefcec589cb6b372000ea38ab190",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/flybywire_soft.aadl#L244-L249"
+        }
+      ]
+    },
+    {
+      "id": "PAP-025",
+      "text": "The MCU1 process shall declare manual as its initial mode, plus auto and failsafe modes. Transition triggers and failsafe control actions are outside these source declarations.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/flybywire_soft.aadl",
+          "line_start": 250,
+          "line_end": 256,
+          "sha256": "3101deee1fc152bbcf4012307e2ed9da447eb51d3aea0d033344ea4b3a9a59b9",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "20148c7d304a96557a18b53a10bd8db08ba599e1e9e1949c113d451a49801205",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/flybywire_soft.aadl#L250-L256"
+        }
+      ]
+    },
+    {
+      "id": "PAP-026",
+      "text": "The basic_archi configuration shall retain the common airborne architecture and periodic task properties without adding a system-level interrupt-dispatch or scheduler override.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/paparazzi_system.aadl",
+          "line_start": 35,
+          "line_end": 38,
+          "sha256": "cad413d2341b778e8aa60b1a991a59f005120fa68841a0672d0d9190713bec79",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "1477f94b1d6f9a078f7ad53339061f9c87c1e98b72768c2913b6dfcfd8b84e05",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/paparazzi_system.aadl#L35-L38"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/paparazzi_system.aadl",
+          "line_start": 72,
+          "line_end": 100,
+          "sha256": "cad413d2341b778e8aa60b1a991a59f005120fa68841a0672d0d9190713bec79",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "ac5ee982a2435fc2fa244b0aeaf051b75439b86c4ae2e3dd22d768a4c0d4c29c",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/paparazzi_system.aadl#L72-L100"
+        }
+      ],
+      "scope": "paparazzi_system::paparazzi.basic_archi"
+    },
+    {
+      "id": "PAP-027",
+      "text": "The PnP_tasks_interruptions configuration shall extend basic_archi and configure both processors for rate-monotonic scheduling with preemption disabled.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/paparazzi_system.aadl",
+          "line_start": 75,
+          "line_end": 89,
+          "sha256": "cad413d2341b778e8aa60b1a991a59f005120fa68841a0672d0d9190713bec79",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "c43e4205faee11dbc2877837938a78b1d8995717d1493043bb819d12d86eab26",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/paparazzi_system.aadl#L75-L89"
+        }
+      ],
+      "scope": "paparazzi_system::paparazzi.PnP_tasks_interruptions"
+    },
+    {
+      "id": "PAP-028",
+      "text": "In PnP_tasks_interruptions, autopilot SPI handlers shall be periodic at 50 ms, modem at 100 ms, and GPS at 250 ms. MCU1 elevator, left motor, right motor, left aileron, right aileron and rudder handlers shall have periods of 50, 52, 54, 56, 58 and 60 ms respectively; its SPI and radio handlers shall each have a 25 ms period. These are periods, not offsets.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/paparazzi_system.aadl",
+          "line_start": 91,
+          "line_end": 118,
+          "sha256": "cad413d2341b778e8aa60b1a991a59f005120fa68841a0672d0d9190713bec79",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "68b861f73d62bb3a33a0c69f1e7b9031ad3ca0fa28bafca62301b43b29d6d608",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/paparazzi_system.aadl#L91-L118"
+        }
+      ],
+      "scope": "paparazzi_system::paparazzi.PnP_tasks_interruptions and inherited PP_tasks_interruptions"
+    },
+    {
+      "id": "PAP-029",
+      "text": "The PP_tasks_interruptions configuration shall extend PnP_tasks_interruptions, retain its periodic interrupt properties and rate-monotonic scheduler, and enable preemption on both processors.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/paparazzi_system.aadl",
+          "line_start": 124,
+          "line_end": 132,
+          "sha256": "cad413d2341b778e8aa60b1a991a59f005120fa68841a0672d0d9190713bec79",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "2e02752af97ff37c1123df09d3dbc3e497fe2431d5312e6f40f9017db54288d8",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/paparazzi_system.aadl#L124-L132"
+        }
+      ],
+      "scope": "paparazzi_system::paparazzi.PP_tasks_interruptions"
+    },
+    {
+      "id": "PAP-030",
+      "text": "The PP_tasks_AP_interruptions configuration shall extend basic_archi, use rate-monotonic preemptive scheduling on both processors, and make all four autopilot interrupt handlers and all eight MCU1 interrupt handlers aperiodic; it shall retain the common periodic ordinary-task declarations.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/paparazzi/paparazzi_system.aadl",
+          "line_start": 138,
+          "line_end": 170,
+          "sha256": "cad413d2341b778e8aa60b1a991a59f005120fa68841a0672d0d9190713bec79",
+          "note": "Active model declarations; requirements describe this snapshot, not an independently validated flight implementation.",
+          "span_sha256": "8f4788a16668ec70e39e1d9d2d2798e842321427bc2008a7dca31a0a72899eb2",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/paparazzi/paparazzi_system.aadl#L138-L170"
+        }
+      ],
+      "scope": "paparazzi_system::paparazzi.PP_tasks_AP_interruptions"
+    }
+  ],
+  "schema_version": 1,
+  "requirement_origin": "derived_example",
+  "is_gold_reference": false,
+  "source_repository": "OpenAADL/AADLib",
+  "source_ref": "c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a",
+  "author_requirement_meaning": "Paraphrased author prose embedded in source models; not an independent original specification.",
+  "curation_method": "AI-assisted architecture reconstruction with line-level source review; no claim of complete functional coverage or contract proof."
+}

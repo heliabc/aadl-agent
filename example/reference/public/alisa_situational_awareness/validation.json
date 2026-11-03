@@ -1,0 +1,322 @@
+{
+  "status": "failed",
+  "validator": "osate-cli",
+  "version": "0.3.0",
+  "path_base": "example",
+  "errors": 11,
+  "warnings": 27,
+  "is_gold_reference": false,
+  "diagnostics": [
+    {
+      "severity": "warning",
+      "message": "JMRMIS in 'with' clause of public package section is not used.",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessCommon/packages/ASSAComponents/ASSAAssessment.aadl",
+      "line": 6,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessCommon/packages/ASSAComponents/ASSAAssessment.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "ACVIP in 'with' clause of public package section is not used.",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessCommon/packages/ASSAComponents/ASSAAssessment.aadl",
+      "line": 6,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessCommon/packages/ASSAComponents/ASSAAssessment.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "ASSAHardware in 'with' clause of public package section is not used.",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessCommon/packages/ASSAComponents/ASSADisplayAnnunication.aadl",
+      "line": 7,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessCommon/packages/ASSAComponents/ASSADisplayAnnunication.aadl"
+    },
+    {
+      "severity": "error",
+      "message": "Couldn't resolve reference to BusFeatureClassifier 'ASSAHardware::ARINC664'.",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessCommon/packages/ASSAComponents/ASSADisplayAnnunication.aadl",
+      "line": 13,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessCommon/packages/ASSAComponents/ASSADisplayAnnunication.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "EMV2 in 'with' clause of public package section is not used.",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessCommon/packages/ASSAComponents/ASSASensors.aadl",
+      "line": 8,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessCommon/packages/ASSAComponents/ASSASensors.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "ASSAHardware in 'with' clause of public package section is not used.",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessCommon/packages/ASSAComponents/ASSASensors.aadl",
+      "line": 8,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessCommon/packages/ASSAComponents/ASSASensors.aadl"
+    },
+    {
+      "severity": "error",
+      "message": "Couldn't resolve reference to BusFeatureClassifier 'ASSAHardware::MIL_STD_1553_Bus'.",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessCommon/packages/ASSAComponents/ASSASensors.aadl",
+      "line": 114,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessCommon/packages/ASSAComponents/ASSASensors.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "TrackTypes in 'with' clause of public package section is not used.",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessCommon/packages/ASSASystem.aadl",
+      "line": 7,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessCommon/packages/ASSASystem.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "Data_Model in 'with' clause of public package section is not used.",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessCommon/packages/ASSASystem.aadl",
+      "line": 8,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessCommon/packages/ASSASystem.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "ASSAHardware in 'with' clause of public package section is not used.",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessCommon/packages/ASSASystem.aadl",
+      "line": 10,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessCommon/packages/ASSASystem.aadl"
+    },
+    {
+      "severity": "error",
+      "message": "Couldn't resolve reference to BusFeatureClassifier 'ASSAHardware::ARINC664'.",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessCommon/packages/ASSASystem.aadl",
+      "line": 15,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessCommon/packages/ASSASystem.aadl"
+    },
+    {
+      "severity": "error",
+      "message": "Outgoing propagation may only have a single error type",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessCommon/packages/ASSASystem.aadl",
+      "line": 62,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessCommon/packages/ASSASystem.aadl"
+    },
+    {
+      "severity": "error",
+      "message": "Couldn't resolve reference to BusFeatureClassifier 'ASSAHardware::ARINC664'.",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessCommon/packages/ComputePlatform/ASSAPlatform.aadl",
+      "line": 14,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessCommon/packages/ComputePlatform/ASSAPlatform.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "Expected feature 'network' to have classifier 'ASSAHardware::MIL_STD_1553_Bus'",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessCommon/packages/ComputePlatform/ASSAPlatform.aadl",
+      "line": 26,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessCommon/packages/ComputePlatform/ASSAPlatform.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "Expected feature 'network' to have classifier 'ASSAHardware::ARINC664'",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessCommon/packages/ComputePlatform/ASSAPlatform.aadl",
+      "line": 28,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessCommon/packages/ComputePlatform/ASSAPlatform.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "Expected feature 'switchaccess' to have classifier 'ASSAHardware::ARINC664'",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessCommon/packages/ComputePlatform/ASSAPlatform.aadl",
+      "line": 29,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessCommon/packages/ComputePlatform/ASSAPlatform.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "JMRMIS in 'with' clause is not used.",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessCommon/propertysets/JMRMISConstants.aadl",
+      "line": 5,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessCommon/propertysets/JMRMISConstants.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "ACVIP in 'with' clause is not used.",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessCommon/propertysets/JMRMISConstants.aadl",
+      "line": 5,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessCommon/propertysets/JMRMISConstants.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "JMRMIS in 'with' clause is not used.",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessCommon/propertysets/MISConfigurationConstants.aadl",
+      "line": 5,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessCommon/propertysets/MISConfigurationConstants.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "Expected feature 'AssessedInformation' to have classifier 'TrackTypes::AssessedTrackSet'",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessSystem/packages/ASSA/ASSASystem_Design.aadl",
+      "line": 39,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessSystem/packages/ASSA/ASSASystem_Design.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "Expected feature 'RadarInformation' to have classifier 'TrackTypes::CorrelatedRadarTrackSet'",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessSystem/packages/ASSA/ASSASystem_Design.aadl",
+      "line": 91,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessSystem/packages/ASSA/ASSASystem_Design.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "Expected feature 'AssessedInformation' to have classifier 'TrackTypes::AssessedTrackSet'",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessSystem/packages/ASSA/ASSASystem_Design.aadl",
+      "line": 92,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessSystem/packages/ASSA/ASSASystem_Design.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "Expected feature 'OutgoingOwnAircraftPosition' to have classifier 'MissionSystemDataTypes::Position'",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessSystem/packages/ASSA/ASSASystem_Design.aadl",
+      "line": 94,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessSystem/packages/ASSA/ASSASystem_Design.aadl"
+    },
+    {
+      "severity": "error",
+      "message": "'SourceTracks' and 'Sourcetracks' have incompatible classifiers.",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessSystem/packages/ASSA/ASSASystem_Functional.aadl",
+      "line": 46,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessSystem/packages/ASSA/ASSASystem_Functional.aadl"
+    },
+    {
+      "severity": "error",
+      "message": "Source propagation  SourceTracks{SensorDataOmission,SensorDataOutofRange,EarlyDelivery,LateDelivery,HighRate,LowRate,SensorLoss} has error types not handled by destination propagation Sourcetracks{SensorDataOmission,SensorDataOutofRange,EarlyDelivery,LateDelivery}",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessSystem/packages/ASSA/ASSASystem_Functional.aadl",
+      "line": 46,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessSystem/packages/ASSA/ASSASystem_Functional.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "Expected feature 'RadarInformation' to have classifier 'TrackTypes::CorrelatedRadarTrackSet'",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessSystem/packages/ASSA/ASSASystem_Functional.aadl",
+      "line": 48,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessSystem/packages/ASSA/ASSASystem_Functional.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "Expected feature 'AssessedInformation' to have classifier 'TrackTypes::AssessedTrackSet'",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessSystem/packages/ASSA/ASSASystem_Functional.aadl",
+      "line": 49,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessSystem/packages/ASSA/ASSASystem_Functional.aadl"
+    },
+    {
+      "severity": "error",
+      "message": "'SourceTracks' and 'Sourcetracks' have incompatible classifiers.",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessSystem/packages/ASSA/ASSASystem_Functional.aadl",
+      "line": 78,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessSystem/packages/ASSA/ASSASystem_Functional.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "Expected feature 'AssessedInformation' to have classifier 'TrackTypes::AssessedTrackSet'",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessSystem/packages/ASSA/ASSASystem_Functional.aadl",
+      "line": 82,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessSystem/packages/ASSA/ASSASystem_Functional.aadl"
+    },
+    {
+      "severity": "error",
+      "message": "'SourceTracks' and 'Sourcetracks1' have incompatible classifiers.",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessSystem/packages/ASSA/ASSASystem_Functional.aadl",
+      "line": 111,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessSystem/packages/ASSA/ASSASystem_Functional.aadl"
+    },
+    {
+      "severity": "error",
+      "message": "'SourceTracks' and 'Sourcetracks2' have incompatible classifiers.",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessSystem/packages/ASSA/ASSASystem_Functional.aadl",
+      "line": 112,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessSystem/packages/ASSA/ASSASystem_Functional.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "Classifier CorrelatedThreatTrackSet refined to CorrelatedTrackSetDiff does not satisfy 'Type Extension'",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessSystem/packages/ASSA/MISServices.aadl",
+      "line": 73,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessSystem/packages/ASSA/MISServices.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "JMRMIS in 'with' clause of public package section is not used.",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessSystem/packages/ASSA/SAAwarenessAnnunciation.aadl",
+      "line": 6,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessSystem/packages/ASSA/SAAwarenessAnnunciation.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "ASSAHardware in 'with' clause of public package section is not used.",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessSystem/packages/ASSA/SAAwarenessAnnunciation.aadl",
+      "line": 8,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessSystem/packages/ASSA/SAAwarenessAnnunciation.aadl"
+    },
+    {
+      "severity": "error",
+      "message": "Couldn't resolve reference to BusFeatureClassifier 'ASSAHardware::ARINC664'.",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessSystem/packages/ASSA/SAAwarenessAnnunciation.aadl",
+      "line": 32,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessSystem/packages/ASSA/SAAwarenessAnnunciation.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "JMRMIS in 'with' clause of public package section is not used.",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessSystem/packages/Protocols/MISProtocols.aadl",
+      "line": 6,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessSystem/packages/Protocols/MISProtocols.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "ACVIP in 'with' clause of public package section is not used.",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessSystem/packages/Protocols/MISProtocols.aadl",
+      "line": 6,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessSystem/packages/Protocols/MISProtocols.aadl"
+    },
+    {
+      "severity": "warning",
+      "message": "Ending 'PullInputDataset.CrossPartitionTasks' does not match defining identifier 'PullInputDataset.PT'",
+      "path": "reference/public/alisa_situational_awareness/SituationalAwarenessSystem/packages/Protocols/MISProtocols.aadl",
+      "line": 156,
+      "rule_id": "osate.diagnostic",
+      "source_url": "https://github.com/osate/alisa-examples/blob/2eb11ca21d188fa278421442ee65b2389403e4e5/SituationalAwarenessSystem/SituationalAwarenessSystem/packages/Protocols/MISProtocols.aadl"
+    }
+  ],
+  "original_result_provenance": {
+    "path": ".runs/reference-validation-20261102/alisa_situational_awareness/result.json",
+    "path_base": "repository",
+    "sha256": "923c40478682a0f803652547b6608fefdfa8d63cc6579a0738ec8c1d6b7658ee",
+    "retained": false,
+    "reason": "Temporary reference-validation run removed; diagnostics in this file are retained."
+  }
+}

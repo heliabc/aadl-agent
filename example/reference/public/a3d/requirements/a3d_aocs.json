@@ -1,0 +1,519 @@
+{
+  "case_id": "a3d_aocs",
+  "title": "AOCS subsystem interfaces and deployment - derived example requirements",
+  "independent_evaluation_eligible": false,
+  "root_classifiers": [
+    "AOCS::AOCS_Subsystem.impl"
+  ],
+  "coverage": [
+    "Covers the instantiated root, eight functional thread declarations, two modes, device interfaces, explicit internal functional connections, process-boundary wiring and processor/bus bindings.",
+    "This is a structural design example with incomplete internal delegation, not a closed-loop satellite controller."
+  ],
+  "limitations": [
+    "The root instantiates thread types, not software_aocs thread implementations; periods, deadlines and execution times of the unselected .impl classifiers are deliberately not imposed.",
+    "The model includes only six connections inside the process. Boundary sensor/control/telemetry connections do not establish complete routes to every internal thread. The telemetry sensor-input TODO is not converted into a new requirement.",
+    "The telemetry force_command direction and the telecommand power_status_TRU spelling are inconsistent with neighboring declarations; neither is imposed as a normative interface requirement.",
+    "No control laws, failure thresholds, recovery guards, real-time feasibility or mission-safety guarantees are inferred. Existing OSATE validation is not a pass.",
+    "The upstream AOCS prototype describes CSP/FSP modes and excludes orbit control, whereas this AADLib root has NM/SM and an OCF thread. Its numerical prototype requirements therefore are not imported."
+  ],
+  "original_requirement_status": "The AADLib README names the historical ETH AOCS Framework design-document website. The author-maintained project site and its document archive were read. They are domain/framework design material; a version-pinned original requirement set for this exact AADLib root has not been established.",
+  "source_search_evidence": [
+    {
+      "title": "Pinned AADLib example provenance",
+      "url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/README#L36-L38",
+      "finding": "Identifies the AOCS model as derived from the ETH AocsFramework design document. The fixed repository tree contains model files but no dedicated AOCS requirement document.",
+      "license_note": "AADLib repository LICENSE is BSD-3-Clause; it does not itself license external PDFs."
+    },
+    {
+      "title": "Author-maintained AOCS Framework documentation",
+      "url": "https://www.pnp-software.com/AocsFramework/ProjectCodeAndDocumentation.html",
+      "finding": "Read project overview, background, code/documentation index and copyright page; downloaded the linked FrameworkDocumentation_070201.ZIP. AocsDescription.pdf issue 1.2 (4 July 2002), p. 6 describes its general/domain scope; pp. 12-16 cover the eight functions; p. 30 discusses example scheduling.",
+      "license_note": "The project copyright page grants GPL terms to source/binary code, not an explicit general license for all documentation. External PDFs remain review-cache evidence only.",
+      "cached_context": [
+        {
+          "local_cache": ".cache/a3d/requirements-evidence/aadlib-context/aocs-framework-documentation-070201.zip",
+          "sha256": "1d448cca2f8c9ed1f8bfda17a4c63de814d28d01056dcaf6be9300a366701883"
+        },
+        {
+          "local_cache": ".cache/a3d/requirements-evidence/aadlib-context/AocsDescription.pdf",
+          "sha256": "df16a610bf33671bde2b541b7c81661661e8f41d7a1a3ec1fe7c8eb75d73400e"
+        },
+        {
+          "local_cache": ".cache/a3d/requirements-evidence/aadlib-context/AocsPrototypeDefinition.pdf",
+          "sha256": "c21f10db6709f96d4514511fd1df700f459a15b52aa931841966506b5f3b313e"
+        }
+      ]
+    },
+    {
+      "title": "AOCS Framework source document archive",
+      "url": "https://www.pnp-software.com/AocsFramework/ProjectDocumentation/FrameworkDocumentation_070201.ZIP",
+      "finding": "Read AocsPrototypeDefinition.pdf issue 1.1 (30 April 2002), pp. 7-8: a framework test prototype rather than a full user specification; it uses CSP/FSP and omits orbit control. This prevents treating it as the exact root specification.",
+      "license_note": "No explicit broad PDF redistribution permission verified. Keep links/metadata in formal artifacts; do not package full documents automatically."
+    }
+  ],
+  "requirements": [
+    {
+      "id": "AOCS-001",
+      "text": "The AOCS subsystem shall contain one AOCS processing process, one LEON2-derived processor, eight sensor devices, three actuator devices, a satellite central-computer device, a watchdog device, an internal DMA bus and a satellite OBDH bus.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/aocs.aadl",
+          "line_start": 96,
+          "line_end": 122,
+          "sha256": "c956cbfcc06d42ee436c1b32214dfefc27bc3e09aef04ca9d0293a36cf30800e",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "0f566b3c7bfc0150813bbe8bbb74fe31587e64359560d8cbdd418e3aa125dc92",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/aocs.aadl#L96-L122"
+        }
+      ]
+    },
+    {
+      "id": "AOCS-002",
+      "text": "The AOCS processing process shall be bound to the dedicated LEON2-derived processor; the processor shall declare a round-robin scheduling protocol.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/aocs.aadl",
+          "line_start": 96,
+          "line_end": 99,
+          "sha256": "c956cbfcc06d42ee436c1b32214dfefc27bc3e09aef04ca9d0293a36cf30800e",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "539ae7fa7dc0a7c95ecfe8e0c9bcd38adcb61a4d6d05935d2032b16da01e2027",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/aocs.aadl#L96-L99"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/aocs.aadl",
+          "line_start": 179,
+          "line_end": 180,
+          "sha256": "c956cbfcc06d42ee436c1b32214dfefc27bc3e09aef04ca9d0293a36cf30800e",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "554d6c63c0c9f5ff971c788e9e174f7b5e19b49a727bd282065f652143f27353",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/aocs.aadl#L179-L180"
+        }
+      ]
+    },
+    {
+      "id": "AOCS-003",
+      "text": "The eight sensor devices shall be FSS, CSS, SPS, ES, MGM, GYR, STR and GPS. Each shall expose an outgoing typed measurement data port, an incoming power-status data port, an incoming sensor-reconfiguration data port and a required DMA-bus access.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/hardware_aocs.aadl",
+          "line_start": 21,
+          "line_end": 87,
+          "sha256": "8b63a6f5170765126a08b7c47c8d31c93021d880901975cd2a5dda4fbec785a0",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "8a3aa8f7f980fbde3079c8f9e4168259831efa5d0eb383c2a29237dbb515dcd5",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/hardware_aocs.aadl#L21-L87"
+        }
+      ]
+    },
+    {
+      "id": "AOCS-004",
+      "text": "The three actuator devices shall be THU, RW and MGT. Each shall expose an incoming typed control-data port, an incoming power-status data port, an incoming actuator-reconfiguration data port and a required DMA-bus access.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/hardware_aocs.aadl",
+          "line_start": 93,
+          "line_end": 115,
+          "sha256": "8b63a6f5170765126a08b7c47c8d31c93021d880901975cd2a5dda4fbec785a0",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "a85eb04cfee9856a8528d8211a4f2fe9e91eab14df87b899b154e09c22869a9b",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/hardware_aocs.aadl#L93-L115"
+        }
+      ]
+    },
+    {
+      "id": "AOCS-005",
+      "text": "The satellite central-computer device shall provide telecommands to the AOCS process and receive telemetry from it; these two process-boundary connections shall be bound to the OBDH bus.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/hardware_aocs.aadl",
+          "line_start": 131,
+          "line_end": 136,
+          "sha256": "8b63a6f5170765126a08b7c47c8d31c93021d880901975cd2a5dda4fbec785a0",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "d6d66def8e594e6f4b10f1d7c2e97d54634e8358c29c0134fcfdc445c99ca9e6",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/hardware_aocs.aadl#L131-L136"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/aocs.aadl",
+          "line_start": 133,
+          "line_end": 133,
+          "sha256": "c956cbfcc06d42ee436c1b32214dfefc27bc3e09aef04ca9d0293a36cf30800e",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "d0cab22bc2c53941639be7b88a17da7a9112eeb271c80db9f500287647791cc8",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/aocs.aadl#L133-L133"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/aocs.aadl",
+          "line_start": 149,
+          "line_end": 150,
+          "sha256": "c956cbfcc06d42ee436c1b32214dfefc27bc3e09aef04ca9d0293a36cf30800e",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "78e47ba4b90fc3f28514bffe6970d37877e0df130d037c677b0626c82a8a7b50",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/aocs.aadl#L149-L150"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/aocs.aadl",
+          "line_start": 209,
+          "line_end": 210,
+          "sha256": "c956cbfcc06d42ee436c1b32214dfefc27bc3e09aef04ca9d0293a36cf30800e",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "7d4a7fea49c92271208a49d69650d5c7ff5d2ba9d8d881c1448556708911569f",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/aocs.aadl#L209-L210"
+        }
+      ]
+    },
+    {
+      "id": "AOCS-006",
+      "text": "The process shall contain eight functional thread instances: attitude control (ACF), orbit control (OCF), telecommand processing (TCP), telemetry processing (TMP), failure detection/isolation (FDR), failure recovery (FR), reconfiguration (Reconfig), and manoeuvre execution (ME). The root shall reference their thread types, without selecting the separately declared .impl classifiers.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/aocs.aadl",
+          "line_start": 72,
+          "line_end": 81,
+          "sha256": "c956cbfcc06d42ee436c1b32214dfefc27bc3e09aef04ca9d0293a36cf30800e",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "9ce71bed107a371c02c4d78c88947b6d8b981bd8f635c1267bb4703723d81d37",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/aocs.aadl#L72-L81"
+        }
+      ]
+    },
+    {
+      "id": "AOCS-007",
+      "text": "The process shall declare normal mode as initial and safe mode as the second mode. Forcing_Safe_Mode shall change normal to safe, and Getting_Back_To_Normal_Mode shall change safe to normal.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/aocs.aadl",
+          "line_start": 89,
+          "line_end": 94,
+          "sha256": "c956cbfcc06d42ee436c1b32214dfefc27bc3e09aef04ca9d0293a36cf30800e",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "6204b025e5907a9b777c375fa8ea48dae686ea993c038a1e99fb9fabeb7350d5",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/aocs.aadl#L89-L94"
+        }
+      ]
+    },
+    {
+      "id": "AOCS-008",
+      "text": "Orbit control, failure detection/isolation, failure recovery and manoeuvre execution shall be active only in normal mode. Attitude control, telecommand processing, telemetry processing and reconfiguration shall have no mode restriction at their subcomponent declarations.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/aocs.aadl",
+          "line_start": 72,
+          "line_end": 81,
+          "sha256": "c956cbfcc06d42ee436c1b32214dfefc27bc3e09aef04ca9d0293a36cf30800e",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "9ce71bed107a371c02c4d78c88947b6d8b981bd8f635c1267bb4703723d81d37",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/aocs.aadl#L72-L81"
+        }
+      ]
+    },
+    {
+      "id": "AOCS-009",
+      "text": "The attitude-control thread interface shall accept nominal attitude, sensed gyroscope attitude and fine-sun-sensor direction, and shall expose a reaction-wheel torque-reference output.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/software_aocs.aadl",
+          "line_start": 9,
+          "line_end": 15,
+          "sha256": "3857bfd42580ce73fb323161f90ace018183d3eca847f1fba6abf275640a4815",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "9abf9449acb9cd9e438acf9a2990e1e0df9f3136ce588405322e675ea875fcbd",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/software_aocs.aadl#L9-L15"
+        }
+      ]
+    },
+    {
+      "id": "AOCS-010",
+      "text": "The orbit-control thread interface shall accept a nominal orbit and expose a thruster-force reference output.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/software_aocs.aadl",
+          "line_start": 17,
+          "line_end": 21,
+          "sha256": "3857bfd42580ce73fb323161f90ace018183d3eca847f1fba6abf275640a4815",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "eead7fc9a064087fd70859b44282d21173b8fa75b150c8f900434002ac89fd92",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/software_aocs.aadl#L17-L21"
+        }
+      ]
+    },
+    {
+      "id": "AOCS-011",
+      "text": "Within the process, telecommand processing shall supply nominal attitude to attitude control and nominal orbit to orbit control.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/aocs.aadl",
+          "line_start": 82,
+          "line_end": 84,
+          "sha256": "c956cbfcc06d42ee436c1b32214dfefc27bc3e09aef04ca9d0293a36cf30800e",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "aa6940893521a1683cfdde7e42012296da00cb8ff7922578015c538dfb0c0905",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/aocs.aadl#L82-L84"
+        }
+      ]
+    },
+    {
+      "id": "AOCS-012",
+      "text": "Within the process, telecommand processing shall send manoeuvre commands to manoeuvre execution and shall supply the attitude window and checking thresholds to failure detection/isolation.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/aocs.aadl",
+          "line_start": 86,
+          "line_end": 88,
+          "sha256": "c956cbfcc06d42ee436c1b32214dfefc27bc3e09aef04ca9d0293a36cf30800e",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "f0f7212bb367c39d4a5dc1b3b112677f77d5ed0bea724083394372afde588989",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/aocs.aadl#L86-L88"
+        }
+      ]
+    },
+    {
+      "id": "AOCS-013",
+      "text": "Within the process, failure recovery shall supply reconfiguration commands to the reconfiguration thread.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/aocs.aadl",
+          "line_start": 85,
+          "line_end": 85,
+          "sha256": "c956cbfcc06d42ee436c1b32214dfefc27bc3e09aef04ca9d0293a36cf30800e",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "87996e7038348eb518548d3fce53aaa725de8b05143cf909c0e602e67422c3e9",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/aocs.aadl#L85-L85"
+        }
+      ]
+    },
+    {
+      "id": "AOCS-014",
+      "text": "At the process boundary, GYR measurement data shall feed the sensed-attitude input and FSS measurement data shall feed the sun-direction input. The process torque-reference output shall connect to RW, and its force-reference output shall connect to THU.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/aocs.aadl",
+          "line_start": 124,
+          "line_end": 130,
+          "sha256": "c956cbfcc06d42ee436c1b32214dfefc27bc3e09aef04ca9d0293a36cf30800e",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "8a7ee779eb0fff0b33e630bdb27466cc2e8486adf39051cd36f175b44dbf655a",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/aocs.aadl#L124-L130"
+        }
+      ]
+    },
+    {
+      "id": "AOCS-015",
+      "text": "At the process boundary, eleven distinct power-status outputs shall connect to the matching power-status inputs of the eight sensors and the THU, RW and MGT actuators.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/aocs.aadl",
+          "line_start": 134,
+          "line_end": 144,
+          "sha256": "c956cbfcc06d42ee436c1b32214dfefc27bc3e09aef04ca9d0293a36cf30800e",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "5798f8b705256a2f209c5cfa2da821a006c71894d34158a57f03d6ee31dd6005",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/aocs.aadl#L134-L144"
+        }
+      ]
+    },
+    {
+      "id": "AOCS-016",
+      "text": "At the process boundary, eleven reconfiguration outputs shall connect to the matching eight sensor-reconfiguration and three actuator-reconfiguration inputs.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/aocs.aadl",
+          "line_start": 163,
+          "line_end": 174,
+          "sha256": "c956cbfcc06d42ee436c1b32214dfefc27bc3e09aef04ca9d0293a36cf30800e",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "f8a04956028bd927cf5dffd0087b5b2c1ab49d9720817ead7425e9078fff06cb",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/aocs.aadl#L163-L174"
+        }
+      ]
+    },
+    {
+      "id": "AOCS-017",
+      "text": "At the process boundary, a manoeuvre torque-command output shall connect to RW and a manoeuvre force-command output shall connect to THU.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/aocs.aadl",
+          "line_start": 64,
+          "line_end": 69,
+          "sha256": "c956cbfcc06d42ee436c1b32214dfefc27bc3e09aef04ca9d0293a36cf30800e",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "3a42ef87ca291d22845d259d17ce479274908c3a6d263009614dbeb4303b3c74",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/aocs.aadl#L64-L69"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/aocs.aadl",
+          "line_start": 176,
+          "line_end": 178,
+          "sha256": "c956cbfcc06d42ee436c1b32214dfefc27bc3e09aef04ca9d0293a36cf30800e",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "fcd04939563bf3caada38a8a7ebfeedb9472c0d13a8dbb921a4a99f0ecdbb0e6",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/aocs.aadl#L176-L178"
+        }
+      ]
+    },
+    {
+      "id": "AOCS-018",
+      "text": "The watchdog device shall accept a watchdog event from the AOCS process and return an anomaly-detected event to the process.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/hardware_aocs.aadl",
+          "line_start": 121,
+          "line_end": 125,
+          "sha256": "8b63a6f5170765126a08b7c47c8d31c93021d880901975cd2a5dda4fbec785a0",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "e0365ff90f9ca8f473eee00948efd9e2ecbf7da155ec47016680c4fa8380522b",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/hardware_aocs.aadl#L121-L125"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/aocs.aadl",
+          "line_start": 152,
+          "line_end": 154,
+          "sha256": "c956cbfcc06d42ee436c1b32214dfefc27bc3e09aef04ca9d0293a36cf30800e",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "d52f54a2b0e3f77589d093114acb1aab994bc607b282cc07a0a4abe4a7979003",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/aocs.aadl#L152-L154"
+        }
+      ]
+    },
+    {
+      "id": "AOCS-019",
+      "text": "The process outputs Force_mode_to_SM and Force_mode_to_NM shall be connected back to its safe-mode and normal-mode transition inputs respectively, providing the declared manual mode-change paths.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/aocs.aadl",
+          "line_start": 145,
+          "line_end": 147,
+          "sha256": "c956cbfcc06d42ee436c1b32214dfefc27bc3e09aef04ca9d0293a36cf30800e",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "eaffd4f5984399b3a3a5cf67ed28c3d5d4797f1f9cd952fdab3e9016d5efb69e",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/aocs.aadl#L145-L147"
+        }
+      ]
+    },
+    {
+      "id": "AOCS-020",
+      "text": "The process outputs Changing_mode_to_SM and Changing_mode_to_NM shall be connected back to its safe-mode and normal-mode transition inputs respectively, providing the declared recovery mode-change paths.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/aocs.aadl",
+          "line_start": 156,
+          "line_end": 161,
+          "sha256": "c956cbfcc06d42ee436c1b32214dfefc27bc3e09aef04ca9d0293a36cf30800e",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "fddb6cea66012e80d7193a212d37c972a2c30da1aa22bbd7bc45fe5f3e4057e5",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/aocs.aadl#L156-L161"
+        }
+      ]
+    },
+    {
+      "id": "AOCS-021",
+      "text": "The 28 explicitly named DMA connections shall be bound to the DMA bus: four attitude/orbit paths, eleven power-status paths, eleven reconfiguration paths and two manoeuvre-output paths.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/aocs.aadl",
+          "line_start": 124,
+          "line_end": 178,
+          "sha256": "c956cbfcc06d42ee436c1b32214dfefc27bc3e09aef04ca9d0293a36cf30800e",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "5b5a0eb9d9282e95f211de994c7a1f003cd566250db5e7c101887d254c6102ac",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/aocs.aadl#L124-L178"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/aocs.aadl",
+          "line_start": 181,
+          "line_end": 208,
+          "sha256": "c956cbfcc06d42ee436c1b32214dfefc27bc3e09aef04ca9d0293a36cf30800e",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "f4ddc53f1b9964c41b84888685e0b0ec5b9d7696cdf0bff3f456dc54aff0827c",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/aocs.aadl#L181-L208"
+        }
+      ]
+    },
+    {
+      "id": "AOCS-022",
+      "text": "The failure-detection/isolation thread interface shall expose inputs for gyroscope attitude, fine-sun direction, attitude window, eight typed sensor measurements and check thresholds, together with a watchdog-event output and an anomaly-detected input. This specifies the interface only; no detection algorithm is defined.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/software_aocs.aadl",
+          "line_start": 70,
+          "line_end": 91,
+          "sha256": "3857bfd42580ce73fb323161f90ace018183d3eca847f1fba6abf275640a4815",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "7ff9c33e6f20dca09175d94b6b2cf913eb7ebea4a3ee3e5680eef505b97ceaf7",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/software_aocs.aadl#L70-L91"
+        }
+      ]
+    },
+    {
+      "id": "AOCS-023",
+      "text": "The reconfiguration thread interface shall accept one reconfiguration command and expose eight sensor-reconfiguration outputs and three actuator-reconfiguration outputs; the manoeuvre-execution interface shall accept a manoeuvre command and expose reaction-wheel torque and thruster-force outputs.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/software_aocs.aadl",
+          "line_start": 101,
+          "line_end": 123,
+          "sha256": "3857bfd42580ce73fb323161f90ace018183d3eca847f1fba6abf275640a4815",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "7669c10309dd07faa7e8d68df2ad32eb3f4f0316a630e463430f59566a1c60fd",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/software_aocs.aadl#L101-L123"
+        }
+      ]
+    },
+    {
+      "id": "AOCS-024",
+      "text": "The telemetry thread shall expose eight typed sensor-measurement inputs and an outgoing telemetry data port. The example does not require a sensor-to-telemetry route through the process boundary because that routing is not completed in this source.",
+      "origin_kind": "model_derived",
+      "evidence": [
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/software_aocs.aadl",
+          "line_start": 55,
+          "line_end": 68,
+          "sha256": "3857bfd42580ce73fb323161f90ace018183d3eca847f1fba6abf275640a4815",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "72d9b29e3aa87c17564e9f7d7dfaec3ea1d3929ad4bfe45426cfa0790c80eb99",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/software_aocs.aadl#L55-L68"
+        },
+        {
+          "local_source": "reference/public/a3d/sources/aadlib/examples/aocs/aocs.aadl",
+          "line_start": 41,
+          "line_end": 43,
+          "sha256": "c956cbfcc06d42ee436c1b32214dfefc27bc3e09aef04ca9d0293a36cf30800e",
+          "note": "Active source declarations; process-boundary wiring is not evidence of missing internal delegation.",
+          "span_sha256": "08fa244bd8b40f2068673f22e710866e269697fa1121066199294f0d41823c43",
+          "source_url": "https://github.com/OpenAADL/AADLib/blob/c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a/examples/aocs/aocs.aadl#L41-L43"
+        }
+      ]
+    }
+  ],
+  "schema_version": 1,
+  "requirement_origin": "derived_example",
+  "is_gold_reference": false,
+  "source_repository": "OpenAADL/AADLib",
+  "source_ref": "c8a5c7e310b37761bb5ecc7b5ff3fc6cbd42716a",
+  "author_requirement_meaning": "Paraphrased author prose embedded in source models; not an independent original specification.",
+  "curation_method": "AI-assisted architecture reconstruction with line-level source review; no claim of complete functional coverage or contract proof."
+}

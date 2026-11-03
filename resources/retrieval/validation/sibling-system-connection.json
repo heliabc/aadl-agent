@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "entry_id": "sibling-system-connection",
+  "example": 1,
+  "validated_at_utc": "2026-11-03T07:08:09.885510+00:00",
+  "scope": "syntax_and_supported_static_semantics",
+  "local_rule_sha256": "6ebf6629a001a4a1e3fabd9137b86a4ea7d3406a96f596ff87415bee3127790e",
+  "source_files_sha256": {
+    "SystemWiring.aadl": "80045501ca5b9889bc2f70b52930e83753f31cc4bae7376b0d45232b89aea592"
+  },
+  "local": {
+    "valid": true,
+    "pending": [],
+    "diagnostics": []
+  },
+  "osate": {
+    "status": "passed",
+    "version": "0.3.0",
+    "binary_provenance": [
+      {
+        "file": "osate-cli.jar",
+        "sha256": "169f943de2f046c05ea9a5e0a540a2c9aa575e5a9dbcf637e3de9a71c639e549"
+      },
+      {
+        "file": "org.osate.xtext.aadl2_9.1.0.v20260928-1804.jar",
+        "sha256": "8d695f12a402b568ccc4b9cd2996fa5ccf521184fe3f1879a36109c88ec085e6"
+      },
+      {
+        "file": "osate-workspace-server-0.3.0.jar",
+        "sha256": "bf02f4aa3ebf3d581acc63ead929f9bcedb2df23aed4317967b38d964c14df3d"
+      }
+    ],
+    "diagnostics": []
+  },
+  "workspaces_retained": false,
+  "source_text_location": "Parent knowledge-corpus example files; SHA256 verified before and after checking.",
+  "model_inference_performed": false
+}

@@ -17,6 +17,7 @@ import re
 import regex
 from lark import Lark
 from lark.exceptions import UnexpectedInput
+from llguidance import LLMatcher
 
 from .semantic_types import SyntaxNode, ParseResourceError, RuleDefinitionError
 
@@ -144,7 +145,69 @@ class GrammarFrontend:
                         for name, term in self.terminals.items()}
         self.incremental_safe = all(_append_stable_regex(term.pattern.to_regexp())
                                     for term in self.terminals.values())
+        # A full EOF match is not necessarily a stable token: identifiers can
+        # grow, and a closed quoted string can sometimes continue by escaping
+        # its final quote. Cache isolated regex automata to distinguish those
+        # cases from genuinely finished fixed words/operators.
+        self._extension_matchers = {}
+        self.extension_unproven_terminals = set()
         self._checkpoint_owner = object()
+
+    def _terminal_can_extend(self, name: str, text: str) -> bool:
+        """Whether a complete terminal match has a strict continuation.
+
+        The same llguidance regex implementation used by constrained decoding
+        answers whether any ordinary UTF-8 byte can follow this exact match.
+        EOS is excluded. Each query owns its matcher, so probing cannot mutate
+        another candidate or the cached initial automaton.
+
+        Standalone frontend users may supply Python-only regex constructs such
+        as lookaround. If the backend cannot prove their continuation language,
+        retain the old conservative alternative and expose its terminal name;
+        unsupported syntax must never cause an invented early conflict. The
+        current AADL terminal set is fully supported and uses no such fallback.
+        """
+        terminal = self.terminals[name]
+        # Width counts Unicode characters, as does the semantic syntax tree.
+        # This proof applies to every bounded terminal, not just language words.
+        if len(text) >= terminal.pattern.max_width:
+            return False
+        # Bound both entry count and retained text; a large comment or string
+        # is queried without caching instead of occupying the entire cache.
+        if len(text) <= 4096:
+            return self._cached_terminal_extension(name, text)
+        return self._query_terminal_extension(name, text)
+
+    @lru_cache(maxsize=1024)
+    def _cached_terminal_extension(self, name: str, text: str) -> bool:
+        return self._query_terminal_extension(name, text)
+
+    def _query_terminal_extension(self, name: str, text: str) -> bool:
+        terminal = self.terminals[name]
+        if name not in self._extension_matchers:
+            # Imported lazily to share the existing neutral byte tokenizer
+            # without adding a second tokenizer or a module-import cycle.
+            from .rules import byte_tokenizer
+            initial = LLMatcher(byte_tokenizer(), LLMatcher.grammar_from_regex(
+                terminal.pattern.to_regexp()), log_level=0)
+            self._extension_matchers[name] = None if initial.is_error() else initial
+        initial = self._extension_matchers[name]
+        if initial is None:
+            self.extension_unproven_terminals.add(name)
+            return True
+        matcher = initial.deep_copy()
+        if not matcher.consume_tokens(list(text.encode('utf-8'))) or not matcher.is_accepting():
+            # Different regex dialects can disagree on a character class. Only
+            # a proven agreement may turn a live partial branch into a closed one.
+            self.extension_unproven_terminals.add(name)
+            return True
+        mask = matcher.compute_bitmask()
+        if matcher.is_error():
+            raise ParseResourceError('Terminal continuation query failed: ' + matcher.get_error())
+        # Byte tokens occupy bits 0..255; bit 256 is EOS and proves completion,
+        # not a strict extension. A legal first byte includes valid Unicode
+        # continuations, so no ASCII-only candidate alphabet is approximated.
+        return any(mask[:32])
 
     def _node(self, rule_index, children, text, start, end, source, complete):
         rule = self.rules[rule_index]
@@ -319,7 +382,7 @@ class GrammarFrontend:
                 # at EOF can also grow ("B.im" -> "B.impl"). Preserve that
                 # alternative until a real separator makes its value immutable.
                 tail = pattern.fullmatch(text[pos:], partial=True)
-                if tail is not None and (tail.partial or self.terminals[name].pattern.type == "re"):
+                if tail is not None and (tail.partial or self._terminal_can_extend(name, text[pos:])):
                     next_restart = min(next_restart, pos)
                     child = SyntaxNode(name, text[pos:], (), pos, size, False, source)
                     key = (index, dot, origin)

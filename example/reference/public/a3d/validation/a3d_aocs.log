@@ -1,0 +1,28 @@
+CORE
+osate-cli 0.3.0
+Created D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\01fcd0d6\r\osate-run-bda37c6173154fe18da3c4499dfb5b89\model\.project
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\01fcd0d6\r\osate-run-bda37c6173154fe18da3c4499dfb5b89\session-home"
+55032
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\01fcd0d6\r\osate-run-bda37c6173154fe18da3c4499dfb5b89\session-home"
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\01fcd0d6\r\osate-run-bda37c6173154fe18da3c4499dfb5b89\model\m006.aadl:6:6: error: Couldn't resolve reference to ModelUnit 'Deployment'.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\01fcd0d6\r\osate-run-bda37c6173154fe18da3c4499dfb5b89\model\m006.aadl:19:5: error: Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\01fcd0d6\r\osate-run-bda37c6173154fe18da3c4499dfb5b89\model\m006.aadl:19:39: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'Native'. For classifier references use classifier( <ref> ).
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\01fcd0d6\r\osate-run-bda37c6173154fe18da3c4499dfb5b89\model\m006.aadl:33:3: error: Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\01fcd0d6\r\osate-run-bda37c6173154fe18da3c4499dfb5b89\model\m006.aadl:33:36: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'LEON_ORK'. For classifier references use classifier( <ref> ).
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\01fcd0d6\r\osate-run-bda37c6173154fe18da3c4499dfb5b89\model\m006.aadl:69:5: error: Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\01fcd0d6\r\osate-run-bda37c6173154fe18da3c4499dfb5b89\model\m006.aadl:69:39: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'VxWorks'. For classifier references use classifier( <ref> ).
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\01fcd0d6\r\osate-run-bda37c6173154fe18da3c4499dfb5b89\model\m006.aadl:74:5: error: Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\01fcd0d6\r\osate-run-bda37c6173154fe18da3c4499dfb5b89\model\m006.aadl:74:39: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'VxWorks'. For classifier references use classifier( <ref> ).
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\01fcd0d6\r\osate-run-bda37c6173154fe18da3c4499dfb5b89\session-home"
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\01fcd0d6\r\osate-run-bda37c6173154fe18da3c4499dfb5b89\model\m006.aadl:6:6: error: Couldn't resolve reference to ModelUnit 'Deployment'.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\01fcd0d6\r\osate-run-bda37c6173154fe18da3c4499dfb5b89\model\m006.aadl:19:5: error: Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\01fcd0d6\r\osate-run-bda37c6173154fe18da3c4499dfb5b89\model\m006.aadl:19:39: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'Native'. For classifier references use classifier( <ref> ).
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\01fcd0d6\r\osate-run-bda37c6173154fe18da3c4499dfb5b89\model\m006.aadl:33:3: error: Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\01fcd0d6\r\osate-run-bda37c6173154fe18da3c4499dfb5b89\model\m006.aadl:33:36: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'LEON_ORK'. For classifier references use classifier( <ref> ).
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\01fcd0d6\r\osate-run-bda37c6173154fe18da3c4499dfb5b89\model\m006.aadl:69:5: error: Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\01fcd0d6\r\osate-run-bda37c6173154fe18da3c4499dfb5b89\model\m006.aadl:69:39: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'VxWorks'. For classifier references use classifier( <ref> ).
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\01fcd0d6\r\osate-run-bda37c6173154fe18da3c4499dfb5b89\model\m006.aadl:74:5: error: Couldn't resolve reference to property definition 'Deployment::Execution_Platform'.
+D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\01fcd0d6\r\osate-run-bda37c6173154fe18da3c4499dfb5b89\model\m006.aadl:74:39: error: Couldn't resolve reference to Property Constant, Property Definition, Enumeration or Unit literal 'VxWorks'. For classifier references use classifier( <ref> ).
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\01fcd0d6\r\osate-run-bda37c6173154fe18da3c4499dfb5b89\session-home"
+Picked up JAVA_TOOL_OPTIONS: -Dosate.cli.home="D:\AADL-multi-agent\aadl-single-agent\.cache\a3d\validation\01fcd0d6\r\osate-run-bda37c6173154fe18da3c4499dfb5b89\session-home"
+AOCS::AOCS_Subsystem.impl

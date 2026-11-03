@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AADL Model Metadata Schema",
+  "description": "Schema describing metadata associated with each AADL architectural model in the dataset.",
+  "type": "object",
+  "properties": {
+    "model_id": {
+      "type": "string",
+      "description": "Unique identifier assigned to the model"
+    },
+    "repository_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL of the original GitHub repository"
+    },
+    "file_path": {
+      "type": "string",
+      "description": "Path of the AADL file within the repository"
+    },
+    "num_components": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of architectural components in the model"
+    },
+    "num_connections": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of connections between components"
+    },
+    "generic_domain_labels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of assigned application domain labels"
+    },
+    "specific_domain_labels": {
+      "type": "string",
+      "description": "Identifier of the specific-problem cluster"
+    }
+  },
+  "required": [
+    "model_id",
+    "repository_url",
+    "file_path",
+    "num_components",
+    "num_connections",
+    "generic_domain_labels",
+    "specific_domain_labels"
+  ],
+  "additionalProperties": false
+}
